@@ -65,6 +65,29 @@ export type Turn = { role: 'user' | 'assistant'; content: string };
 
 /** One call. `turns` carries the brief and, on a repair attempt, the previous answer + errors. */
 export async function callModel(turns: Turn[]): Promise<{ text: string; usage: Usage }> {
+  try {
+    return await request(turns);
+  } catch (err) {
+    /* a rejected key is a configuration problem too: without this it would be swallowed by the
+       fallback and the app would quietly serve the same generic report forever */
+    if (err instanceof Anthropic.AuthenticationError) {
+      throw new ConfigError(
+        'La chiave ANTHROPIC_API_KEY è stata rifiutata (401). Controlla di aver incollato una ' +
+        'chiave API di console.anthropic.com — inizia con "sk-ant-" — senza spazi o virgolette, ' +
+        'poi rilancia il deploy.'
+      );
+    }
+    if (err instanceof Anthropic.PermissionDeniedError) {
+      throw new ConfigError(
+        'La chiave ANTHROPIC_API_KEY non ha i permessi necessari (403), oppure il workspace non ' +
+        'ha credito. Controlla su console.anthropic.com.'
+      );
+    }
+    throw err;
+  }
+}
+
+async function request(turns: Turn[]): Promise<{ text: string; usage: Usage }> {
   const res = await getClient().messages.create({
     model: MODEL,
     max_tokens: 16000,
