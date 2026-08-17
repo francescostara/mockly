@@ -86,11 +86,46 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     for (i = 0; i < t.rows.length; i++) {
       r = t.rows[i]; o = {};
       for (k = 0; k < cols.length; k++) {
-        var c = cols[k];
-        o[c] = dims[c] ? dims[c][r[k]].id : r[k];
+        var c = cols[k], mb = dims[c] ? dims[c][r[k]] : null;
+        o[c] = mb ? mb.id : r[k];
+        /* a member may name its parent dimension member — derived, never stored per row */
+        if (mb && mb.parent && mb.parentDim) o[mb.parentDim] = mb.parent;
       }
       out[i] = o;
     }
+    return out;
+  };
+
+  /* integer allocation by largest remainder — the parts always sum to the total exactly */
+  M.allocInt = function (ws, total) {
+    var s = ws.reduce((a, b) => a + b, 0) || 1, n = ws.length;
+    var ideal = ws.map(w => w / s * total), out = ideal.map(v => Math.floor(v));
+    var diff = Math.round(total) - out.reduce((a, b) => a + b, 0);
+    var ord = ideal.map((v, i) => ({ i: i, f: v - Math.floor(v) })).sort((a, b) => (b.f - a.f) || (a.i - b.i));
+    for (var k = 0; diff > 0 && n; k++, diff--) out[ord[k % n].i]++;
+    for (var k2 = 0; diff < 0 && n; k2++, diff++) out[ord[n - 1 - (k2 % n)].i] = Math.max(0, out[ord[n - 1 - (k2 % n)].i] - 1);
+    return out;
+  };
+
+  /* Expand a share model into the detail grain at load: shipping 27 shares instead of ~700
+     literal rows is the "smallest sufficient data model" rule, and the children tie out to
+     their parent by construction. */
+  M.expandDetail = function (F, dims, dm) {
+    var kidsOf = {}, out = [];
+    dims[dm.dim].forEach(mb => (kidsOf[mb.parent] = kidsOf[mb.parent] || []).push(mb));
+    F.forEach(function (r) {
+      var kids = kidsOf[r[dm.parentDim]] || [];
+      if (!kids.length) return;
+      var ws = kids.map(k => dm.shares[k.id] || 0), s = ws.reduce((a, b) => a + b, 0) || 1;
+      var counts = dm.counts ? M.allocInt(ws, r[dm.counts.from] || 0) : null;
+      kids.forEach(function (k, i) {
+        var o = { y: r.y, m: r.m };
+        o[dm.dim] = k.id; o[dm.parentDim] = k.parent;
+        dm.fields.forEach(fl => o[fl] = (r[fl] || 0) * ws[i] / s);
+        if (counts) o[dm.counts.field] = counts[i];
+        out.push(o);
+      });
+    });
     return out;
   };
 
@@ -99,7 +134,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var A = {};
     var dims = DATA.dims || {};
     var F = M.materialize(DATA.facts, dims);
-    var DT = DATA.detail ? M.materialize(DATA.detail, dims) : null;
+    var DT = DATA.detail ? M.materialize(DATA.detail, dims)
+      : DATA.detailModel ? M.expandDetail(F, dims, DATA.detailModel) : null;
     var meta = SPEC.meta || {};
     var f = M.fmt(meta);
     var g = M.grid(SPEC.grid.contentWidth, SPEC.grid.gutter, SPEC.grid.columns);
@@ -486,7 +522,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   M.V.hbar = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, dim = b.dim, ms = b.measure;
     h = v.h || h || 190;
-    var det = !!b.detail, rows = A.slice({ detail: det, ignore: b.parent && !S.f[b.parent] ? [] : [] });
+    var det = !!b.detail, rows = A.slice({ detail: det });   /* ranked lists respect every filter */
     var acc = {};
     rows.forEach(function (r) {
       var id = r[dim]; if (id === undefined) return;
