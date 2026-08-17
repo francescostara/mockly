@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildUserMessage, PROMPT_STATS } from '@/lib/prompt';
 import { callModel, extractJson, emptyUsage, addUsage, MODEL, type Turn, type Usage } from '@/lib/model';
 import { STUB_RESPONSE } from '@/lib/stub';
+import { engine, dataBuilder } from '@/lib/engine';
 import type { IntakeAnswers } from '@/lib/intake';
 
 export const runtime = 'nodejs';
@@ -40,6 +41,11 @@ export async function POST(req: NextRequest) {
 
     const { spec, dataParams } = extractJson(text);
 
+    /* expand the declared generator, then render — both server-side, both deterministic */
+    const data = dataBuilder.build(dataParams);
+    const html = engine.render(spec, data);
+    const advisories = engine.lint(spec, data);
+
     const meta = {
       model: process.env.MOCKLY_STUB === '1' ? 'stub' : MODEL,
       valid: true,
@@ -47,11 +53,14 @@ export async function POST(req: NextRequest) {
       fallback: false,
       latencyMs: Date.now() - started,
       systemPromptTokens: PROMPT_STATS.approxTokens,
+      bytes: Buffer.byteLength(html),
+      advisories,
+      tieOut: (data as { tieOut?: unknown }).tieOut,
       ...usage
     };
     console.log('[mockly:generate]', JSON.stringify(meta));
 
-    return NextResponse.json({ spec, dataParams, meta });
+    return NextResponse.json({ html, meta });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[mockly:generate] failed', message);

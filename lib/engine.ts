@@ -1,12 +1,17 @@
-/* The engine is plain CommonJS and reads engine/runtime.js off disk at render time.
- * Loading it with createRequire keeps it OUT of the webpack bundle, so __dirname inside
- * render.js still points at the real engine directory. next.config.ts tells Vercel's file
- * tracer to ship those files. */
+/* The engine is plain CommonJS and reads engine/runtime.js off disk at render time, so it must
+ * stay OUT of the webpack bundle — bundled, __dirname would point at .next/server and the
+ * runtime file would not be found.
+ *
+ * `eval('require')` is opaque to webpack's static analysis, so nothing gets bundled and the
+ * real CommonJS loader is used at runtime. Paths are absolute (resolved from process.cwd())
+ * because the bundle's own module path is not the repo root. next.config.ts tells Vercel's
+ * file tracer to ship engine/ with the function. */
 
-import { createRequire } from 'node:module';
 import path from 'node:path';
 
-const requireCJS = createRequire(path.join(process.cwd(), 'package.json'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const nodeRequire: NodeRequire = eval('require');
+const fromRoot = (...p: string[]) => nodeRequire(path.join(process.cwd(), ...p));
 
 type EngineModule = {
   render: (spec: unknown, data: unknown) => string;
@@ -17,5 +22,5 @@ type EngineModule = {
 
 type DataBuilderModule = { build: (dataParams: unknown) => Record<string, unknown> };
 
-export const engine: EngineModule = requireCJS('./engine/render.js');
-export const dataBuilder: DataBuilderModule = requireCJS('./engine/data-builder.js');
+export const engine: EngineModule = fromRoot('engine', 'render.js');
+export const dataBuilder: DataBuilderModule = fromRoot('engine', 'data-builder.js');
