@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian Components — Financial &amp; Sales Report</title>
+<style>
+:root{
+  --ink:#16202E; --ink2:#3A4759; --muted:#7A879B; --muted2:#9AA6B8;
+  --canvas:#EDF0F4; --card:#FFFFFF; --line:#E2E7EE; --line2:#F0F3F7;
+  --rail:#0E2439; --rail2:#173B5C; --navy:#12304F; --navy2:#1F4E79;
+  --steel:#4A7FA8; --steel2:#8FB3CC; --steel3:#C6D7E4;
+  --good:#2E7D5B; --bad:#B3453B; --amber:#C08A2E;
+  --font:"Segoe UI","Segoe UI Web (West European)",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;background:#D8DEE6;font-family:var(--font);-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#canvas{width:1280px;height:720px;transform-origin:center center;background:var(--canvas);
+  display:flex;box-shadow:0 8px 40px rgba(12,25,45,.28);position:relative}
+.tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ---------- LEFT RAIL ---------- */
+#rail{width:188px;flex:0 0 188px;background:var(--rail);color:#C8D6E4;display:flex;flex-direction:column;padding:16px 0}
+.brand{padding:0 16px 16px;border-bottom:1px solid rgba(255,255,255,.09)}
+.brand .mk{display:flex;align-items:center;gap:8px}
+.brand .sq{width:20px;height:20px;background:var(--steel);position:relative;flex:0 0 20px}
+.brand .sq:after{content:"";position:absolute;left:5px;top:5px;width:10px;height:10px;background:var(--rail)}
+.brand .nm{font-size:12.5px;font-weight:600;letter-spacing:.3px;color:#fff}
+.brand .sub{font-size:9.5px;color:#7E97AE;letter-spacing:.6px;text-transform:uppercase;margin-top:5px}
+.navgrp{padding:14px 10px 4px}
+.navlbl{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:#5E7B96;padding:0 6px 7px}
+.navbtn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;border:0;background:transparent;color:#B9CBDB;
+  font-family:var(--font);font-size:12px;text-align:left;cursor:pointer;border-radius:2px;margin-bottom:2px;transition:background .12s}
+.navbtn:hover{background:rgba(255,255,255,.07)}
+.navbtn.on{background:var(--steel);color:#fff;font-weight:600}
+.navbtn .ic{width:14px;height:14px;flex:0 0 14px;opacity:.85}
+.slgrp{padding:12px 16px 0}
+.slrow{display:flex;gap:4px;flex-wrap:wrap}
+.chip{flex:1;min-width:38px;padding:5px 2px;text-align:center;font-size:10.5px;border:1px solid rgba(255,255,255,.16);
+  background:transparent;color:#B9CBDB;cursor:pointer;font-family:var(--font);border-radius:2px}
+.chip:hover{background:rgba(255,255,255,.08)}
+.chip.on{background:#fff;color:var(--rail);border-color:#fff;font-weight:600}
+.bulist{margin-top:6px}
+.buitem{display:flex;align-items:center;gap:7px;padding:5px 6px;font-size:11px;color:#B9CBDB;cursor:pointer;border-radius:2px}
+.buitem:hover{background:rgba(255,255,255,.07)}
+.buitem .dot{width:8px;height:8px;flex:0 0 8px;border-radius:1px}
+.buitem.on{color:#fff;font-weight:600;background:rgba(255,255,255,.11)}
+.railfoot{margin-top:auto;padding:0 16px;font-size:8.5px;color:#4E6A85;line-height:1.5}
+
+/* ---------- HEADER ---------- */
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#hdr{height:60px;flex:0 0 60px;background:#fff;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;padding:0 18px;gap:14px}
+#hdr .ttl{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
+#hdr .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+#hdr .spacer{flex:1}
+.ctx{display:flex;align-items:center;gap:6px}
+.ctxpill{font-size:10px;color:var(--ink2);background:#F2F5F9;border:1px solid var(--line);padding:4px 8px;border-radius:2px}
+.ctxpill b{font-weight:600;color:var(--navy2)}
+.resetb{font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:5px 9px;
+  border-radius:2px;cursor:pointer;font-family:var(--font)}
+.resetb:hover{color:var(--bad);border-color:#E3C4C0}
+.updated{font-size:9.5px;color:var(--muted2);text-align:right;line-height:1.5}
+
+/* ---------- PAGE ---------- */
+#page{flex:1;padding:14px 16px;overflow:hidden}
+.row{display:flex;gap:12px}
+.row+.row{margin-top:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:2px;position:relative;
+  box-shadow:0 1px 1px rgba(20,35,60,.04)}
+.card>.ch{padding:11px 13px 6px;display:flex;align-items:baseline;gap:8px}
+.card .ch h3{margin:0;font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
+.card .ch .hs{font-size:9.5px;color:var(--muted)}
+.card .ch .hr{margin-left:auto;font-size:9px;color:var(--muted2)}
+
+/* KPI */
+.kpi{flex:1;padding:11px 13px 10px;display:flex;flex-direction:column;justify-content:space-between}
+.kpi .k{font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .vr{display:flex;align-items:flex-end;gap:8px;margin-top:5px}
+.kpi .v{font-size:27px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-.9px}
+.kpi .d{font-size:11px;font-weight:600;padding-bottom:2px}
+.kpi .det{font-size:9.5px;color:var(--muted);margin-top:7px;letter-spacing:.05px}
+.up{color:var(--good)} .dn{color:var(--bad)} .fl{color:var(--muted)}
+.kpi .bar{height:3px;background:var(--line2);margin-top:8px;position:relative}
+.kpi .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--steel)}
+.kpi .bar u{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--amber)}
+
+/* table */
+.mx{padding:2px 8px 8px}
+.mx.dense td{padding:4px 6px}
+.mx.dense th{padding:4px 6px}
+table{width:100%;border-collapse:collapse;font-size:10.5px}
+th{text-align:right;font-weight:600;color:var(--muted);font-size:9px;letter-spacing:.5px;text-transform:uppercase;
+  padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child{text-align:left}
+td{padding:5px 6px;text-align:right;color:var(--ink2);border-bottom:1px solid var(--line2);white-space:nowrap}
+td:first-child{text-align:left;color:var(--ink);font-weight:500}
+tr.r{cursor:pointer}
+tr.r:hover td{background:#F5F8FB}
+tr.r.dim td{opacity:.38}
+tr.r.sel td{background:#EAF1F7}
+tr.tot td{font-weight:600;color:var(--ink);border-bottom:0;border-top:1px solid var(--line);background:#FAFCFD}
+.dg{width:14px;display:inline-block;text-align:center;color:var(--steel);opacity:0;font-size:11px}
+tr.r:hover .dg{opacity:1}
+.swatch{display:inline-block;width:7px;height:7px;border-radius:1px;margin-right:6px;vertical-align:middle}
+
+/* legend + misc */
+.lgd{display:flex;gap:12px;padding:0 13px 9px;font-size:9.5px;color:var(--muted)}
+.lgd i{display:inline-block;width:9px;height:9px;border-radius:1px;margin-right:5px;vertical-align:-1px}
+.lgd .ln{display:inline-block;width:11px;height:0;border-top:2px dashed var(--amber);margin-right:5px;vertical-align:3px}
+svg{display:block}
+svg .hit{cursor:pointer}
+svg .dimd{opacity:.28}
+.hint{position:absolute;right:11px;bottom:8px;font-size:8.5px;color:var(--muted2)}
+#tip{position:fixed;pointer-events:none;background:#0F2237;color:#fff;font-size:10.5px;padding:6px 9px;border-radius:2px;
+  opacity:0;transition:opacity .1s;z-index:50;line-height:1.55;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#tip b{font-weight:600}
+.backb{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--steel);background:transparent;border:1px solid var(--line);
+  padding:6px 10px;border-radius:2px;cursor:pointer;font-family:var(--font)}
+.backb:hover{background:#F2F7FB}
+.drillhd{display:flex;align-items:center;gap:12px;padding:0 0 12px}
+.drillhd .dt{font-size:15px;font-weight:600;color:var(--ink)}
+.drillhd .dsub{font-size:10.5px;color:var(--muted);margin-top:2px}
+.watermark{position:absolute;left:196px;bottom:4px;font-size:8px;color:#B6C1CE;letter-spacing:.4px}
+.small{font-size:9.5px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="stage"><div id="canvas">
+  <div id="rail">
+    <div class="brand">
+      <div class="mk"><div class="sq"></div><div class="nm">MERIDIAN</div></div>
+      <div class="sub">Components S.p.A.</div>
+    </div>
+    <div class="navgrp">
+      <div class="navlbl">Report pages</div>
+      <button class="navbtn on" data-page="fin"><svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M2 13h12v1H2zM3 7h2v5H3zM6.5 4h2v8h-2zM10 8.5h2V12h-2z"/></svg>Financial</button>
+      <button class="navbtn" data-page="sls"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 11.5 6 7l3 2.5L14 4"/><path d="M10.5 4H14v3.5"/></svg>Sales</button>
+    </div>
+    <div class="slgrp">
+      <div class="navlbl">Fiscal year</div>
+      <div class="slrow" id="slYear"></div>
+    </div>
+    <div class="slgrp">
+      <div class="navlbl">Quarter</div>
+      <div class="slrow" id="slQtr"></div>
+    </div>
+    <div class="slgrp">
+      <div class="navlbl">Business unit</div>
+      <div class="bulist" id="slBu"></div>
+    </div>
+    <div class="railfoot">Source: SAP FI/CO · Salesforce<br>Refresh 06:00 CET</div>
+  </div>
+
+  <div id="main">
+    <div id="hdr">
+      <div>
+        <div class="ttl" id="hTtl">Financial Management</div>
+        <div class="sub" id="hSub">Group performance vs budget · consolidated</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="ctx" id="hCtx"></div>
+      <button class="resetb" id="btnReset">Clear filters</button>
+      <div class="updated">Last refresh<br><b id="hDate">—</b></div>
+    </div>
+    <div id="page"></div>
+    <div class="watermark">Demonstration report · synthetic data · not actual company figures</div>
+  </div>
+</div></div>
+<div id="tip"></div>
+
+<script>
+/* ================= utils ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=mulberry32(20260723);
+const j=(lo,hi)=>lo+R()*(hi-lo);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const eur=(v,d)=>{const a=Math.abs(v),s=v<0?'-':'';d=d===undefined?1:d;
+  if(a>=1e6)return s+'€'+(a/1e6).toFixed(d)+'M'; if(a>=1e3)return s+'€'+Math.round(a/1e3)+'K'; return s+'€'+Math.round(a)};
+const eurF=v=>(v<0?'-':'')+'€'+Math.round(Math.abs(v)).toLocaleString('en-US');
+const pc=(v,d)=>(v*100).toFixed(d===undefined?1:d)+'%';
+const sg=v=>(v>0?'+':'')+eur(v);
+const N=v=>Math.round(v).toLocaleString('en-US');
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+/* ================= model ================= */
+const BUS=[
+ {id:'AUT',n:'Automotive',       w:.34,gm:.305,c:'#12304F'},
+ {id:'IND',n:'Industrial Systems',w:.28,gm:.378,c:'#1F4E79'},
+ {id:'ENE',n:'Energy',           w:.23,gm:.421,c:'#4A7FA8'},
+ {id:'AFT',n:'Aftermarket',      w:.15,gm:.468,c:'#8FB3CC'}
+];
+const BU=Object.fromEntries(BUS.map(b=>[b.id,b]));
+const REPS=[
+ {id:'r1',n:'Elena Marchetti', bu:'AUT',w:.56},{id:'r2',n:'Tobias Reinhardt',bu:'AUT',w:.44},
+ {id:'r3',n:'Marc Delacroix',  bu:'IND',w:.53},{id:'r4',n:'Sofia Nyberg',   bu:'IND',w:.47},
+ {id:'r5',n:'Andrea Fenu',     bu:'ENE',w:.58},{id:'r6',n:'Katrin Voss',    bu:'ENE',w:.42},
+ {id:'r7',n:'Luca Bertani',    bu:'AFT',w:.61},{id:'r8',n:'Hannah Okafor',  bu:'AFT',w:.39}
+];
+const REP=Object.fromEntries(REPS.map(r=>[r.id,r]));
+const CUS=[
+ {id:'c1',n:'Bauer Fahrzeugtechnik',bu:'AUT',w:.40},{id:'c2',n:'Lombard Mobility',bu:'AUT',w:.34},{id:'c3',n:'Aurora Motors',bu:'AUT',w:.26},
+ {id:'c4',n:'Helvetia Machining',bu:'IND',w:.38},{id:'c5',n:'Kessler Automation',bu:'IND',w:.33},{id:'c6',n:'Nordkraft Systems',bu:'IND',w:.29},
+ {id:'c7',n:'Iberia Renovables',bu:'ENE',w:.42},{id:'c8',n:'Voltaris Grid',bu:'ENE',w:.31},{id:'c9',n:'Adriatic Power',bu:'ENE',w:.27},
+ {id:'c10',n:'Rete Ricambi Italia',bu:'AFT',w:.36},{id:'c11',n:'Provance Parts',bu:'AFT',w:.28},
+ {id:'c12',n:'Baltic Service Hub',bu:'AFT',w:.20},{id:'c13',n:'Meridian Direct',bu:'AFT',w:.16}
+];
+const CU=Object.fromEntries(CUS.map(c=>[c.id,c]));
+const YEARS=[2023,2024,2025];      /* generated */
+const SELY=[2024,2025];            /* selectable in the slicer */
+const SEAS=[.90,.94,1.08,1.02,1.06,1.11,.88,.58,1.06,1.12,1.09,1.16];
+const YTOT={2023:41_050_000,2024:44_180_000,2025:48_620_000};
+const OPEX={personnel:.148,logistics:.052,marketing:.028,ga:.041};
+
+const FIN=[],SAL=[];
+YEARS.forEach(y=>{
+  BUS.forEach(b=>{
+    for(let m=0;m<12;m++){
+      const base=YTOT[y]*b.w*(SEAS[m]/12)*j(.93,1.07);
+      const rev=base;
+      const budget=base*j(.92,1.09);
+      const gm=b.gm*j(.96,1.04);
+      const cogs=rev*(1-gm);
+      const f={y,m,bu:b.id,rev,budget,cogs,
+        personnel:rev*OPEX.personnel*j(.9,1.1),logistics:rev*OPEX.logistics*j(.85,1.15),
+        marketing:rev*OPEX.marketing*j(.7,1.35),ga:rev*OPEX.ga*j(.93,1.07)};
+      FIN.push(f);
+      const rs=REPS.filter(r=>r.bu===b.id), cs=CUS.filter(c=>c.bu===b.id);
+      rs.forEach(r=>{
+        const rrev=rev*r.w;
+        let wsum=cs.reduce((a,c)=>a+c.w,0);
+        cs.forEach(c=>{
+          const v=rrev*(c.w/wsum)*j(.8,1.2);
+          SAL.push({y,m,bu:b.id,rep:r.id,cus:c.id,rev:v,
+            orders:Math.max(1,Math.round(v/j(21000,42000))),
+            won:Math.round(j(2,9)),lost:Math.round(j(1,7))});
+        });
+      });
+    }
+  });
+});
+/* rescale sales so it ties to finance revenue exactly */
+YEARS.forEach(y=>{for(let m=0;m<12;m++){BUS.forEach(b=>{
+  const f=FIN.find(x=>x.y===y&&x.m===m&&x.bu===b.id);
+  const rows=SAL.filter(x=>x.y===y&&x.m===m&&x.bu===b.id);
+  const s=rows.reduce((a,x)=>a+x.rev,0); const k=f.rev/s;
+  rows.forEach(x=>x.rev*=k);
+});}});
+
+/* ================= state ================= */
+const S={page:'fin',year:2025,qtr:'ALL',bu:null,month:null,rep:null,cus:null,drill:null,from:'fin'};
+const QM={ALL:[0,1,2,3,4,5,6,7,8,9,10,11],Q1:[0,1,2],Q2:[3,4,5],Q3:[6,7,8],Q4:[9,10,11]};
+const inQ=m=>QM[S.qtr].includes(m);
+function fFin(y,o){o=o||{};return FIN.filter(f=>f.y===y&&inQ(f.m)
+  &&(o.allBu||!S.bu||f.bu===S.bu)&&(o.allMonth||S.month===null||f.m===S.month))}
+function fSal(y,o){o=o||{};return SAL.filter(f=>f.y===y&&inQ(f.m)
+  &&(o.allBu||!S.bu||f.bu===S.bu)&&(o.allMonth||S.month===null||f.m===S.month)
+  &&(o.allRep||!S.rep||f.rep===S.rep)&&(o.allCus||!S.cus||f.cus===S.cus))}
+const sum=(a,k)=>a.reduce((x,r)=>x+r[k],0);
+function fin(rows){const rev=sum(rows,'rev'),cogs=sum(rows,'cogs'),
+  op=sum(rows,'personnel')+sum(rows,'logistics')+sum(rows,'marketing')+sum(rows,'ga');
+  return{rev,cogs,op,budget:sum(rows,'budget'),gp:rev-cogs,gm:rev?(rev-cogs)/rev:0,
+    eb:rev-cogs-op,ebm:rev?(rev-cogs-op)/rev:0,
+    personnel:sum(rows,'personnel'),logistics:sum(rows,'logistics'),
+    marketing:sum(rows,'marketing'),ga:sum(rows,'ga')}}
+
+/* ================= chart helpers ================= */
+function axisTicks(max,n){n=n||4;const raw=max/n;const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const st=[1,2,2.5,5,10].map(x=>x*mag).find(x=>x>=raw)||10*mag;
+  const out=[];for(let v=0;v<=st*n+1;v+=st){out.push(v);if(v>=max)break}return out}
+
+function barLine(w,h,data,o){
+  o=o||{};const m={t:14,r:o.r||46,b:24,l:o.l||50};
+  const iw=w-m.l-m.r, ih=h-m.t-m.b;
+  const max=Math.max(...data.map(d=>Math.max(d.a,d.b)))*1.12||1;
+  const tk=axisTicks(max), top=tk[tk.length-1];
+  const Y=v=>m.t+ih-(v/top)*ih;
+  const bw=Math.min(26,iw/data.length*.56), step=iw/data.length;
+  let s=`<svg width="${w}" height="${h}">`;
+  tk.forEach(t=>{s+=`<line x1="${m.l}" y1="${Y(t).toFixed(1)}" x2="${m.l+iw}" y2="${Y(t).toFixed(1)}" stroke="${t?'#EFF3F7':'#DCE3EB'}" stroke-width="1"/>`
+    +`<text x="${m.l-7}" y="${Y(t)+3.5}" text-anchor="end" font-size="9" fill="#9AA6B8" class="tnum">${eur(t,0)}</text>`});
+  data.forEach((d,i)=>{
+    const cx=m.l+step*i+step/2;
+    const sel=(S.month!==null&&S.month!==d.m);
+    s+=`<rect class="hit ${sel?'dimd':''}" x="${(cx-bw/2).toFixed(1)}" y="${Y(d.a).toFixed(1)}" width="${bw}" height="${(m.t+ih-Y(d.a)).toFixed(1)}" fill="${o.c||'#1F4E79'}" data-f="month:${d.m}" data-tip="<b>${d.l}</b><br>${o.la||'Actual'}: ${eurF(d.a)}<br>${o.lb||'Budget'}: ${eurF(d.b)}<br>Var: ${sg(d.a-d.b)}"/>`;
+    s+=`<text x="${cx}" y="${h-8}" text-anchor="middle" font-size="9" fill="#8B98AA">${d.l}</text>`;
+  });
+  let p='';data.forEach((d,i)=>{const cx=m.l+step*i+step/2;p+=(i?'L':'M')+cx.toFixed(1)+','+Y(d.b).toFixed(1)});
+  s+=`<path d="${p}" fill="none" stroke="#C08A2E" stroke-width="1.6" stroke-dasharray="4 3"/>`;
+  data.forEach((d,i)=>{const cx=m.l+step*i+step/2;
+    s+=`<circle cx="${cx.toFixed(1)}" cy="${Y(d.b).toFixed(1)}" r="2.6" fill="#fff" stroke="#C08A2E" stroke-width="1.5"/>`});
+  return s+'</svg>'
+}
+
+function waterfall(w,h,steps){
+  const m={t:14,r:8,b:34,l:50}, iw=w-m.l-m.r, ih=h-m.t-m.b;
+  let run=0;const pts=steps.map(s=>{if(s.t==='tot'){const o={f:0,to:s.v};run=s.v;return o}
+    const o={f:run,to:run+s.v};run+=s.v;return o});
+  const max=Math.max(...pts.map(p=>Math.max(p.f,p.to)))*1.1||1;
+  const tk=axisTicks(max),top=tk[tk.length-1];
+  const Y=v=>m.t+ih-(v/top)*ih;
+  const step=iw/steps.length, bw=Math.min(38,step*.62);
+  let s=`<svg width="${w}" height="${h}">`;
+  tk.forEach(t=>{s+=`<line x1="${m.l}" y1="${Y(t).toFixed(1)}" x2="${m.l+iw}" y2="${Y(t).toFixed(1)}" stroke="${t?'#EFF3F7':'#DCE3EB'}"/>`
+   +`<text x="${m.l-7}" y="${Y(t)+3.5}" text-anchor="end" font-size="9" fill="#9AA6B8" class="tnum">${eur(t,0)}</text>`});
+  steps.forEach((st,i)=>{
+    const p=pts[i],cx=m.l+step*i+step/2;
+    const y1=Y(Math.max(p.f,p.to)),y2=Y(Math.min(p.f,p.to));
+    const col=st.t==='tot'?'#12304F':(st.v<0?'#B3453B':'#2E7D5B');
+    s+=`<rect x="${(cx-bw/2).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw}" height="${Math.max(1,y2-y1).toFixed(1)}" fill="${col}"
+        class="hit" data-tip="<b>${st.l}</b><br>${eurF(st.v)}"/>`;
+    if(i<steps.length-1)s+=`<line x1="${(cx+bw/2).toFixed(1)}" y1="${Y(p.to).toFixed(1)}" x2="${(m.l+step*(i+1)+step/2-bw/2).toFixed(1)}" y2="${Y(p.to).toFixed(1)}" stroke="#C3CDD9" stroke-dasharray="2 2"/>`;
+    s+=`<text x="${cx}" y="${(y1-5).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="#5B6B7F" class="tnum">${eur(st.v,1)}</text>`;
+    s+=`<text x="${cx}" y="${h-19}" text-anchor="middle" font-size="8.5" fill="#8B98AA">${st.l}</text>`;
+  });
+  return s+'</svg>'
+}
+
+function hbar(w,h,data,o){
+  o=o||{};const lw=o.lw||128, m={t:6,r:52,b:6,l:lw}, ih=h-m.t-m.b, iw=w-m.l-m.r;
+  const max=Math.max(...data.map(d=>d.v))||1;
+  const rh=ih/data.length, bh=Math.min(15,rh*.6);
+  let s=`<svg width="${w}" height="${h}">`;
+  data.forEach((d,i)=>{
+    const y=m.t+rh*i+rh/2, bl=(d.v/max)*iw;
+    const dim=o.selKey&&S[o.selKey]&&S[o.selKey]!==d.id;
+    s+=`<g class="hit ${dim?'dimd':''}" ${o.f?`data-f="${o.f}:${d.id}"`:''} data-tip="<b>${esc(d.l)}</b><br>${o.unit||''}${eurF(d.v)}${d.x?'<br>'+d.x:''}">`;
+    s+=`<rect x="0" y="${(y-rh/2).toFixed(1)}" width="${w}" height="${rh.toFixed(1)}" fill="transparent"/>`;
+    s+=`<text x="${lw-9}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#3A4759">${esc(d.l)}</text>`;
+    s+=`<rect x="${lw}" y="${(y-bh/2).toFixed(1)}" width="${Math.max(1,bl).toFixed(1)}" height="${bh}" fill="${d.c||o.c||'#4A7FA8'}"/>`;
+    s+=`<text x="${(lw+bl+7).toFixed(1)}" y="${(y+3.5).toFixed(1)}" font-size="9.5" fill="#7A879B" class="tnum">${eur(d.v)}</text></g>`;
+  });
+  return s+'</svg>'
+}
+
+function donut(w,h,data,o){
+  o=o||{};const cx=w*.36,cy=h/2,rO=Math.min(w*.32,h*.42),rI=rO*.62;
+  const tot=data.reduce((a,d)=>a+d.v,0)||1;let ang=-Math.PI/2;
+  let s=`<svg width="${w}" height="${h}">`;
+  data.forEach(d=>{
+    const a2=ang+(d.v/tot)*Math.PI*2, big=(a2-ang)>Math.PI?1:0;
+    const p=(r,a)=>[(cx+r*Math.cos(a)).toFixed(2),(cy+r*Math.sin(a)).toFixed(2)];
+    const [x1,y1]=p(rO,ang),[x2,y2]=p(rO,a2),[x3,y3]=p(rI,a2),[x4,y4]=p(rI,ang);
+    const dim=o.selKey&&S[o.selKey]&&S[o.selKey]!==d.id;
+    s+=`<path class="hit ${dim?'dimd':''}" d="M${x1},${y1} A${rO},${rO} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${rI},${rI} 0 ${big} 0 ${x4},${y4} Z"
+      fill="${d.c}" stroke="#fff" stroke-width="1.5" ${o.f?`data-f="${o.f}:${d.id}"`:''}
+      data-tip="<b>${esc(d.l)}</b><br>${eurF(d.v)}<br>${pc(d.v/tot)} of total"/>`;
+    ang=a2;
+  });
+  s+=`<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="600" fill="#16202E" class="tnum">${eur(tot)}</text>`;
+  s+=`<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="8.5" fill="#9AA6B8">${o.center||'TOTAL'}</text>`;
+  const lx=w*.66;let ly=cy-(data.length*17)/2+8;
+  data.forEach(d=>{
+    s+=`<rect x="${lx}" y="${ly-7}" width="8" height="8" rx="1" fill="${d.c}"/>`;
+    s+=`<text x="${lx+13}" y="${ly}" font-size="10" fill="#3A4759">${esc(d.l)}</text>`;
+    s+=`<text x="${w-8}" y="${ly}" text-anchor="end" font-size="9.5" fill="#8B98AA" class="tnum">${pc(d.v/tot,0)}</text>`;
+    ly+=17});
+  return s+'</svg>'
+}
+
+function line2(w,h,data){
+  const m={t:14,r:12,b:24,l:50},iw=w-m.l-m.r,ih=h-m.t-m.b;
+  const max=Math.max(...data.map(d=>Math.max(d.a,d.b)))*1.12||1;
+  const tk=axisTicks(max),top=tk[tk.length-1],Y=v=>m.t+ih-(v/top)*ih;
+  const step=data.length>1?iw/(data.length-1):iw;
+  const X=i=>m.l+step*i;
+  let s=`<svg width="${w}" height="${h}">`;
+  tk.forEach(t=>{s+=`<line x1="${m.l}" y1="${Y(t).toFixed(1)}" x2="${m.l+iw}" y2="${Y(t).toFixed(1)}" stroke="${t?'#EFF3F7':'#DCE3EB'}"/>`
+   +`<text x="${m.l-7}" y="${Y(t)+3.5}" text-anchor="end" font-size="9" fill="#9AA6B8" class="tnum">${eur(t,0)}</text>`});
+  let ar='',pa='',pb='';
+  data.forEach((d,i)=>{pa+=(i?'L':'M')+X(i).toFixed(1)+','+Y(d.a).toFixed(1);pb+=(i?'L':'M')+X(i).toFixed(1)+','+Y(d.b).toFixed(1)});
+  ar=pa+`L${X(data.length-1).toFixed(1)},${(m.t+ih)}L${m.l},${m.t+ih}Z`;
+  s+=`<path d="${ar}" fill="#1F4E79" opacity=".07"/>`;
+  s+=`<path d="${pb}" fill="none" stroke="#9AA6B8" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  s+=`<path d="${pa}" fill="none" stroke="#1F4E79" stroke-width="2"/>`;
+  data.forEach((d,i)=>{s+=`<circle class="hit" cx="${X(i).toFixed(1)}" cy="${Y(d.a).toFixed(1)}" r="3" fill="#fff" stroke="#1F4E79" stroke-width="1.8"
+    data-tip="<b>${d.l}</b><br>Current: ${eurF(d.a)}<br>Prior year: ${eurF(d.b)}<br>Var: ${sg(d.a-d.b)}"/>`;
+    s+=`<text x="${X(i).toFixed(1)}" y="${h-8}" text-anchor="middle" font-size="9" fill="#8B98AA">${d.l}</text>`});
+  return s+'</svg>'
+}
+
+/* KPI card */
+function kpi(k,val,cur,ref,det,o){
+  o=o||{};const dv=(ref&&isFinite(ref)&&Math.abs(ref)>1e-9)?(cur-ref)/Math.abs(ref):0;
+  const cls=Math.abs(dv)<.002?'fl':(dv>0?(o.inv?'dn':'up'):(o.inv?'up':'dn'));
+  const arw=Math.abs(dv)<.002?'—':(dv>0?'▲':'▼');
+  const prog=o.prog!==undefined?o.prog:null;
+  return `<div class="card kpi" style="flex:1">
+    <div><div class="k">${k}</div>
+    <div class="vr"><div class="v tnum">${val}</div><div class="d ${cls} tnum">${arw} ${pc(Math.abs(dv))}</div></div></div>
+    <div><div class="det tnum">${det}</div>
+    ${prog!==null?`<div class="bar"><i style="width:${Math.min(100,prog*100).toFixed(0)}%"></i><u style="left:${Math.min(100,(o.mark||1)*100).toFixed(0)}%"></u></div>`:''}
+    </div></div>`
+}
+
+/* ================= pages ================= */
+function monthsOf(){return QM[S.qtr]}
+
+function pageFin(){
+  const cur=fin(fFin(S.year)),prev=fin(fFin(S.year-1));
+  const curAll=fin(fFin(S.year,{allMonth:true}));
+  const series=monthsOf().map(m=>{const r=FIN.filter(f=>f.y===S.year&&f.m===m&&(!S.bu||f.bu===S.bu));
+    return{m,l:MON[m],a:sum(r,'rev'),b:sum(r,'budget')}});
+  const steps=[{l:'Revenue',v:cur.rev,t:'tot'},{l:'COGS',v:-cur.cogs},{l:'Personnel',v:-cur.personnel},
+    {l:'Logistics',v:-cur.logistics},{l:'Marketing',v:-cur.marketing},{l:'G&A',v:-cur.ga},{l:'EBITDA',v:cur.eb,t:'tot'}];
+  const costs=[{id:'cogs',l:'Cost of goods sold',v:cur.cogs,c:'#12304F'},{id:'per',l:'Personnel',v:cur.personnel,c:'#1F4E79'},
+    {id:'log',l:'Logistics & freight',v:cur.logistics,c:'#4A7FA8'},{id:'ga',l:'General & admin',v:cur.ga,c:'#8FB3CC'},
+    {id:'mkt',l:'Marketing',v:cur.marketing,c:'#C6D7E4'}];
+  const rows=BUS.map(b=>{const c=fin(fFin(S.year,{allBu:true}).filter(f=>f.bu===b.id)),
+    p=fin(fFin(S.year-1,{allBu:true}).filter(f=>f.bu===b.id));return{b,c,p}});
+  const tot=fin(fFin(S.year,{allBu:true}));
+
+  return `
+  <div class="row">
+    ${kpi('Revenue',eur(cur.rev,2),cur.rev,prev.rev,
+      `PY ${eur(prev.rev,2)} | CY ${eur(cur.rev,2)} | Var ${sg(cur.rev-prev.rev)}`,
+      {prog:cur.rev/cur.budget,mark:1})}
+    ${kpi('Gross margin',pc(cur.gm),cur.gm,prev.gm,
+      `PY ${pc(prev.gm)} | CY ${pc(cur.gm)} | Var ${((cur.gm-prev.gm)*100>0?'+':'')+((cur.gm-prev.gm)*100).toFixed(1)} pp`)}
+    ${kpi('EBITDA',eur(cur.eb,2),cur.eb,prev.eb,
+      `Margin ${pc(cur.ebm)} | PY ${pc(prev.ebm)} | Var ${eur(cur.eb-prev.eb)}`)}
+    ${kpi('Revenue vs budget',eur(cur.rev-cur.budget,2),cur.rev,cur.budget,
+      `Budget ${eur(cur.budget,2)} | Actual ${eur(cur.rev,2)} | Ach. ${pc(cur.rev/cur.budget,0)}`)}
+  </div>
+  <div class="row">
+    <div class="card" style="width:648px">
+      <div class="ch"><h3>Revenue vs budget</h3><span class="hs">by month · ${S.year}</span>
+        <span class="hr">click a bar to filter the page</span></div>
+      <div class="lgd"><span><i style="background:#1F4E79"></i>Actual</span><span><span class="ln"></span>Budget</span></div>
+      ${barLine(648,196,series)}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>EBITDA bridge</h3><span class="hs">revenue to EBITDA</span></div>
+      ${waterfall(400,226,steps)}
+    </div>
+  </div>
+  <div class="row">
+    <div class="card" style="width:400px">
+      <div class="ch"><h3>Cost structure</h3><span class="hs">% of revenue</span></div>
+      ${hbar(400,214,costs.map(c=>({...c,x:pc(c.v/cur.rev)+' of revenue'})),{lw:132})}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Performance by business unit</h3>
+        <span class="hr">right-click a row to drill through</span></div>
+      <div class="mx">
+      <table><thead><tr><th>Business unit</th><th>Revenue</th><th>Budget</th><th>Var %</th><th>GM %</th><th>EBITDA</th><th>EBITDA %</th></tr></thead><tbody>
+      ${rows.map(r=>{const v=(r.c.rev-r.c.budget)/r.c.budget;
+        const cl=S.bu?(S.bu===r.b.id?'sel':'dim'):'';
+        return `<tr class="r ${cl}" data-f="bu:${r.b.id}" data-drill="bu:${r.b.id}">
+        <td><span class="swatch" style="background:${r.b.c}"></span>${r.b.n}<span class="dg">›</span></td>
+        <td class="tnum">${eur(r.c.rev,2)}</td><td class="tnum">${eur(r.c.budget,2)}</td>
+        <td class="tnum ${v>0?'up':'dn'}">${(v>0?'▲ ':'▼ ')+pc(Math.abs(v))}</td>
+        <td class="tnum">${pc(r.c.gm)}</td><td class="tnum">${eur(r.c.eb,2)}</td><td class="tnum">${pc(r.c.ebm)}</td></tr>`}).join('')}
+      <tr class="tot"><td>Group total</td><td class="tnum">${eur(tot.rev,2)}</td><td class="tnum">${eur(tot.budget,2)}</td>
+        <td class="tnum">${pc((tot.rev-tot.budget)/tot.budget)}</td><td class="tnum">${pc(tot.gm)}</td>
+        <td class="tnum">${eur(tot.eb,2)}</td><td class="tnum">${pc(tot.ebm)}</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>`
+}
+
+function pageSls(){
+  const cur=fSal(S.year),prev=fSal(S.year-1);
+  const rev=sum(cur,'rev'),ord=sum(cur,'orders'),prv=sum(prev,'rev'),pord=sum(prev,'orders');
+  const aov=ord?rev/ord:0,paov=pord?prv/pord:0;
+  const won=sum(cur,'won'),lost=sum(cur,'lost'),wr=won/(won+lost);
+  const pwon=sum(prev,'won'),plost=sum(prev,'lost'),pwr=pwon/(pwon+plost);
+  const series=monthsOf().map(m=>{
+    const a=SAL.filter(f=>f.y===S.year&&f.m===m&&(!S.bu||f.bu===S.bu)&&(!S.rep||f.rep===S.rep)&&(!S.cus||f.cus===S.cus));
+    const b=SAL.filter(f=>f.y===S.year-1&&f.m===m&&(!S.bu||f.bu===S.bu)&&(!S.rep||f.rep===S.rep)&&(!S.cus||f.cus===S.cus));
+    return{m,l:MON[m],a:sum(a,'rev'),b:sum(b,'rev')}});
+  const byBu=BUS.map(b=>({id:b.id,l:b.n,c:b.c,v:sum(fSal(S.year,{allBu:true}).filter(f=>f.bu===b.id),'rev')}));
+  const byCus=CUS.map(c=>({id:c.id,l:c.n,v:sum(fSal(S.year,{allCus:true}).filter(f=>f.cus===c.id),'rev'),c:BU[c.bu].c}))
+    .sort((a,b)=>b.v-a.v).slice(0,7);
+  const reps=REPS.map(r=>{const c=fSal(S.year,{allRep:true}).filter(f=>f.rep===r.id),
+    p=fSal(S.year-1,{allRep:true}).filter(f=>f.rep===r.id);
+    const rv=sum(c,'rev'),o=sum(c,'orders'),tg=(sum(p,'rev')||rv)*1.08;
+    return{r,rv,o,tg,aov:o?rv/o:0,wr:(sum(c,'won')+sum(c,'lost'))?sum(c,'won')/(sum(c,'won')+sum(c,'lost')):0}})
+    .sort((a,b)=>b.rv-a.rv);
+
+  return `
+  <div class="row">
+    ${kpi('Net sales',eur(rev,2),rev,prv,`PY ${eur(prv,2)} | CY ${eur(rev,2)} | Var ${sg(rev-prv)}`)}
+    ${kpi('Orders',N(ord),ord,pord,`PY ${N(pord)} | CY ${N(ord)} | Var ${(ord-pord>0?'+':'')+N(ord-pord)}`)}
+    ${kpi('Average order value',eurF(aov),aov,paov,`PY ${eurF(paov)} | CY ${eurF(aov)} | Var ${(aov-paov>0?'+':'')+eurF(aov-paov)}`)}
+    ${kpi('Win rate',pc(wr),wr,pwr,`Won ${N(won)} | Lost ${N(lost)} | PY ${pc(pwr)}`)}
+  </div>
+  <div class="row">
+    <div class="card" style="width:648px">
+      <div class="ch"><h3>Net sales vs prior year</h3><span class="hs">by month</span>
+        <span class="hr">click a point to filter the page</span></div>
+      <div class="lgd"><span><i style="background:#1F4E79"></i>${S.year}</span><span><span class="ln" style="border-color:#9AA6B8"></span>${S.year-1}</span></div>
+      ${line2(648,196,series)}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Mix by business unit</h3><span class="hs">click to filter</span></div>
+      ${donut(400,226,byBu,{f:'bu',selKey:'bu',center:'NET SALES'})}
+    </div>
+  </div>
+  <div class="row">
+    <div class="card" style="width:400px">
+      <div class="ch"><h3>Top customers</h3><span class="hs">top 7 by net sales</span></div>
+      ${hbar(400,206,byCus,{f:'cus',selKey:'cus',lw:140})}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Sales rep performance</h3>
+        <span class="hr">right-click a row to drill through</span></div>
+      <div class="mx dense">
+      <table><thead><tr><th>Sales rep</th><th>Business unit</th><th>Net sales</th><th>vs target</th><th>Orders</th><th>AOV</th><th>Win rate</th></tr></thead><tbody>
+      ${reps.map(x=>{const v=x.tg?(x.rv-x.tg)/x.tg:0;const cl=S.rep?(S.rep===x.r.id?'sel':'dim'):'';
+        return `<tr class="r ${cl}" data-f="rep:${x.r.id}" data-drill="rep:${x.r.id}">
+        <td>${x.r.n}<span class="dg">›</span></td>
+        <td style="text-align:left;font-weight:400;color:#7A879B"><span class="swatch" style="background:${BU[x.r.bu].c}"></span>${BU[x.r.bu].n}</td>
+        <td class="tnum">${eur(x.rv,2)}</td>
+        <td class="tnum ${v>0?'up':'dn'}">${(v>0?'▲ ':'▼ ')+pc(Math.abs(v))}</td>
+        <td class="tnum">${N(x.o)}</td><td class="tnum">${eurF(x.aov)}</td><td class="tnum">${pc(x.wr,0)}</td></tr>`}).join('')}
+      </tbody></table></div>
+    </div>
+  </div>`
+}
+
+function pageDrill(){
+  const d=S.drill, isBu=d.t==='bu';
+  const name=isBu?BU[d.id].n:REP[d.id].n;
+  const sub=isBu?'Business unit detail':'Sales rep detail · '+BU[REP[d.id].bu].n;
+  const col=isBu?BU[d.id].c:BU[REP[d.id].bu].c;
+  const sel=f=>isBu?f.bu===d.id:f.rep===d.id;
+  const cur=SAL.filter(f=>f.y===S.year&&inQ(f.m)&&sel(f)),prev=SAL.filter(f=>f.y===S.year-1&&inQ(f.m)&&sel(f));
+  const rev=sum(cur,'rev'),prv=sum(prev,'rev'),ord=sum(cur,'orders'),pord=sum(prev,'orders');
+  const won=sum(cur,'won'),lost=sum(cur,'lost');
+  const fr=FIN.filter(f=>f.y===S.year&&inQ(f.m)&&(isBu?f.bu===d.id:f.bu===REP[d.id].bu));
+  const fm=fin(fr);
+  const series=monthsOf().map(m=>({m,l:MON[m],
+    a:sum(SAL.filter(f=>f.y===S.year&&f.m===m&&sel(f)),'rev'),
+    b:sum(SAL.filter(f=>f.y===S.year-1&&f.m===m&&sel(f)),'rev')}));
+  const cusRows=CUS.filter(c=>isBu?c.bu===d.id:c.bu===REP[d.id].bu).map(c=>({
+    id:c.id,l:c.n,c:col,v:sum(cur.filter(f=>f.cus===c.id),'rev'),
+    o:sum(cur.filter(f=>f.cus===c.id),'orders')})).sort((a,b)=>b.v-a.v);
+  const partner=isBu?REPS.filter(r=>r.bu===d.id):CUS.filter(c=>c.bu===REP[d.id].bu);
+
+  return `
+  <div class="drillhd">
+    <button class="backb" id="btnBack">‹ Back to ${S.from==='fin'?'Financial':'Sales'}</button>
+    <div><div class="dt"><span class="swatch" style="background:${col};width:9px;height:9px"></span>${name}</div>
+      <div class="dsub">${sub} · FY${S.year}${S.qtr!=='ALL'?' · '+S.qtr:''}</div></div>
+  </div>
+  <div class="row">
+    ${kpi('Net sales',eur(rev,2),rev,prv,`PY ${eur(prv,2)} | CY ${eur(rev,2)} | Var ${sg(rev-prv)}`)}
+    ${kpi('Orders',N(ord),ord,pord,`PY ${N(pord)} | CY ${N(ord)} | Var ${(ord-pord>0?'+':'')+N(ord-pord)}`)}
+    ${kpi('Average order value',eurF(ord?rev/ord:0),ord?rev/ord:0,pord?prv/pord:0,
+      `Won ${N(won)} | Lost ${N(lost)} | Win rate ${pc((won+lost)?won/(won+lost):0,0)}`)}
+    ${kpi('Gross margin',pc(fm.gm),fm.gm,fm.gm*.98,`Unit GM ${pc(fm.gm)} | EBITDA ${eur(fm.eb,2)} | ${pc(fm.ebm)} margin`)}
+  </div>
+  <div class="row">
+    <div class="card" style="width:648px">
+      <div class="ch"><h3>Monthly trend</h3><span class="hs">${name} · current vs prior year</span></div>
+      <div class="lgd"><span><i style="background:#1F4E79"></i>${S.year}</span><span><span class="ln" style="border-color:#9AA6B8"></span>${S.year-1}</span></div>
+      ${line2(648,220,series)}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Customer breakdown</h3><span class="hs">net sales</span></div>
+      ${hbar(400,234,cusRows,{lw:148})}
+    </div>
+  </div>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>${isBu?'Sales reps in this unit':'Accounts covered'}</h3>
+        <span class="hr">detail rows for the selected context</span></div>
+      <div class="mx"><table><thead><tr>
+        <th>${isBu?'Sales rep':'Account'}</th><th>Net sales</th><th>Orders</th><th>AOV</th><th>Share of unit</th><th>vs prior year</th></tr></thead><tbody>
+      ${partner.map(p=>{
+        const cr=cur.filter(f=>isBu?f.rep===p.id:f.cus===p.id);
+        const pr=prev.filter(f=>isBu?f.rep===p.id:f.cus===p.id);
+        const v=sum(cr,'rev'),o=sum(cr,'orders'),pv=sum(pr,'rev');
+        const dv=(pv&&isFinite(pv))?(v-pv)/pv:0;
+        return `<tr class="r"><td>${p.n}</td><td class="tnum">${eur(v,2)}</td><td class="tnum">${N(o)}</td>
+        <td class="tnum">${eurF(o?v/o:0)}</td><td class="tnum">${pc(rev?v/rev:0,0)}</td>
+        <td class="tnum ${dv>0?'up':'dn'}">${(dv>0?'▲ ':'▼ ')+pc(Math.abs(dv))}</td></tr>`}).join('')}
+      </tbody></table></div>
+    </div>
+  </div>`
+}
+
+/* ================= render ================= */
+const $=s=>document.querySelector(s);
+function render(){
+  $('#slYear').innerHTML=SELY.map(y=>`<button class="chip ${S.year===y?'on':''}" data-y="${y}">FY${String(y).slice(2)}</button>`).join('');
+  $('#slQtr').innerHTML=['ALL','Q1','Q2','Q3','Q4'].map(q=>`<button class="chip ${S.qtr===q?'on':''}" data-q="${q}">${q==='ALL'?'All':q}</button>`).join('');
+  $('#slBu').innerHTML=BUS.map(b=>`<div class="buitem ${S.bu===b.id?'on':''}" data-b="${b.id}"><span class="dot" style="background:${b.c}"></span>${b.n}</div>`).join('');
+  document.querySelectorAll('.navbtn').forEach(n=>n.classList.toggle('on',n.dataset.page===S.page));
+
+  const T={fin:['Financial Management','Group performance vs budget · consolidated'],
+           sls:['Sales Management','Commercial performance by rep, customer and unit'],
+           drl:['Detail view','Drill-through from '+(S.from==='fin'?'Financial Management':'Sales Management')]};
+  $('#hTtl').textContent=T[S.page][0]; $('#hSub').textContent=T[S.page][1];
+  $('#hDate').textContent='23 Jul 2026, 06:00';
+
+  const c=[];
+  c.push(`<div class="ctxpill">FY<b>${S.year}</b></div>`);
+  if(S.qtr!=='ALL')c.push(`<div class="ctxpill">Quarter <b>${S.qtr}</b></div>`);
+  if(S.bu)c.push(`<div class="ctxpill">Unit <b>${BU[S.bu].n}</b></div>`);
+  if(S.month!==null)c.push(`<div class="ctxpill">Month <b>${MON[S.month]}</b></div>`);
+  if(S.rep)c.push(`<div class="ctxpill">Rep <b>${REP[S.rep].n}</b></div>`);
+  if(S.cus)c.push(`<div class="ctxpill">Customer <b>${CU[S.cus].n}</b></div>`);
+  $('#hCtx').innerHTML=c.join('');
+
+  $('#page').innerHTML = S.page==='fin'?pageFin() : S.page==='sls'?pageSls() : pageDrill();
+}
+
+/* ================= interactions ================= */
+const tip=$('#tip');
+document.addEventListener('mouseover',e=>{
+  const t=e.target.closest('[data-tip]'); if(!t){tip.style.opacity=0;return}
+  tip.innerHTML=t.getAttribute('data-tip'); tip.style.opacity=1;
+});
+document.addEventListener('mousemove',e=>{
+  if(tip.style.opacity==='1'){
+    let x=e.clientX+14,y=e.clientY+16;
+    if(x+tip.offsetWidth>innerWidth-8)x=e.clientX-tip.offsetWidth-14;
+    if(y+tip.offsetHeight>innerHeight-8)y=e.clientY-tip.offsetHeight-14;
+    tip.style.left=x+'px';tip.style.top=y+'px';
+  }
+});
+document.addEventListener('mouseout',e=>{if(!e.relatedTarget||!e.relatedTarget.closest('[data-tip]'))tip.style.opacity=0});
+
+document.addEventListener('click',e=>{
+  const nav=e.target.closest('.navbtn');
+  if(nav){S.page=nav.dataset.page;S.drill=null;S.rep=null;S.cus=null;render();return}
+  const y=e.target.closest('[data-y]'); if(y){S.year=+y.dataset.y;render();return}
+  const q=e.target.closest('[data-q]'); if(q){S.qtr=q.dataset.q;S.month=null;render();return}
+  const b=e.target.closest('[data-b]'); if(b){S.bu=S.bu===b.dataset.b?null:b.dataset.b;render();return}
+  if(e.target.closest('#btnReset')){S.bu=S.month=S.rep=S.cus=null;S.qtr='ALL';render();return}
+  if(e.target.closest('#btnBack')){S.page=S.from;S.drill=null;render();return}
+  const f=e.target.closest('[data-f]');
+  if(f){const [k,v]=f.dataset.f.split(':');
+    if(k==='month'){S.month=S.month===+v?null:+v}
+    else{S[k]=S[k]===v?null:v}
+    render();return}
+});
+document.addEventListener('contextmenu',e=>{
+  const d=e.target.closest('[data-drill]'); if(!d)return;
+  e.preventDefault();
+  const [t,id]=d.dataset.drill.split(':');
+  S.from=S.page; S.drill={t,id}; S.page='drl'; tip.style.opacity=0; render();
+});
+
+/* fit to viewport, Power BI style */
+function fit(){
+  const st=$('#stage'),cv=$('#canvas');
+  const k=Math.min(st.clientWidth/1280,st.clientHeight/720);
+  cv.style.transform='scale('+k+')';
+}
+addEventListener('resize',fit);
+render(); fit();
+</script>
+</body>
+</html>

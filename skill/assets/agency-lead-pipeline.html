@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northbeam Studio — Lead Scouting &amp; Pipeline</title>
+<style>
+:root{
+  --bg:#111420; --card:#191D2B; --card2:#1F2434; --line:#2A3143; --line2:#232939;
+  --ink:#EDF0F7; --ink2:#B4BECF; --muted:#7C879E; --muted2:#5A6480;
+  --acc:#7A5AF8; --acc2:#2FC2C9;
+  --s0:#3D4A6B; --s1:#4C6FE0; --s2:#2E9BD6; --s3:#22B5A6; --s4:#F0A63C; --s5:#35C48A; --s6:#E0576B;
+  --up:#35C48A; --dn:#E0576B;
+  --font:"Segoe UI","Segoe UI Web (West European)",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;background:#0A0C13;font-family:var(--font);-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#canvas{width:1280px;height:720px;transform-origin:center center;background:var(--bg);
+  display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,.6);position:relative}
+.tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* header */
+#hdr{height:64px;flex:0 0 64px;display:flex;align-items:center;padding:0 20px;gap:22px;
+  background:linear-gradient(180deg,#161A28 0%,#141826 100%);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .gl{width:26px;height:26px;border-radius:50%;background:conic-gradient(from 210deg,var(--acc),var(--acc2),var(--s4),var(--acc));
+  position:relative}
+.brand .gl:after{content:"";position:absolute;inset:6px;border-radius:50%;background:#161A28}
+.brand .nm{font-size:14px;font-weight:600;color:#fff;letter-spacing:-.2px;line-height:1.15}
+.brand .sub{font-size:9px;color:var(--muted2);letter-spacing:1.3px;text-transform:uppercase;margin-top:2px}
+.tabs{display:flex;gap:3px;margin-left:6px}
+.tab{padding:7px 14px;border:0;background:transparent;color:var(--muted);font-family:var(--font);font-size:12px;
+  cursor:pointer;border-radius:20px;letter-spacing:.1px}
+.tab:hover{color:var(--ink2);background:rgba(255,255,255,.04)}
+.tab.on{background:var(--acc);color:#fff;font-weight:600}
+.sp{flex:1}
+.hmeta{text-align:right;font-size:9px;color:var(--muted2);line-height:1.6;letter-spacing:.3px}
+.hmeta b{color:var(--ink2);font-weight:500}
+
+/* filter bar */
+#fbar{height:44px;flex:0 0 44px;display:flex;align-items:center;gap:8px;padding:0 20px;
+  background:#141826;border-bottom:1px solid var(--line)}
+.flbl{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted2);margin-right:2px}
+.chip{padding:5px 11px;font-size:10.5px;border:1px solid var(--line);background:transparent;color:var(--ink2);
+  cursor:pointer;font-family:var(--font);border-radius:14px;white-space:nowrap}
+.chip:hover{border-color:#3C465E;color:#fff}
+.chip.on{background:#252B3D;border-color:var(--acc);color:#fff;font-weight:600}
+.chip .d{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:-.5px}
+.div{width:1px;height:18px;background:var(--line);margin:0 6px}
+.ctxpill{font-size:9.5px;color:var(--ink2);background:#20263A;border:1px solid #313A52;padding:4px 9px;border-radius:12px}
+.ctxpill b{color:#fff;font-weight:600}
+.ctxpill i{font-style:normal;color:var(--muted2);margin-left:5px}
+.resetb{font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:5px 10px;
+  border-radius:14px;cursor:pointer;font-family:var(--font)}
+.resetb:hover{color:var(--dn);border-color:#4A2E38}
+
+/* page */
+#page{flex:1;padding:14px;overflow:hidden}
+.row{display:flex;gap:12px}
+.row+.row{margin-top:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;position:relative}
+.card>.ch{padding:11px 14px 5px;display:flex;align-items:baseline;gap:8px}
+.card .ch h3{margin:0;font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
+.card .ch .hs{font-size:9.5px;color:var(--muted2)}
+.card .ch .hr{margin-left:auto;font-size:9px;color:var(--muted2)}
+
+.kpi{flex:1;padding:12px 14px 11px;display:flex;flex-direction:column;justify-content:space-between;
+  background:linear-gradient(180deg,#1C2131 0%,#191D2B 100%)}
+.kpi .k{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .vr{display:flex;align-items:flex-end;gap:8px;margin-top:6px}
+.kpi .v{font-size:28px;font-weight:600;color:#fff;line-height:1;letter-spacing:-1.1px}
+.kpi .d{font-size:11px;font-weight:600;padding-bottom:3px}
+.kpi .det{font-size:9.5px;color:var(--muted);margin-top:6px}
+.up{color:var(--up)} .dn{color:var(--dn)} .fl{color:var(--muted)}
+.kpi .spk{margin-top:5px}
+
+/* table */
+.mx{padding:2px 10px 6px}
+.mx.dense td{padding:3px 6px}
+.mx.dense th{padding:3px 6px}
+table{width:100%;border-collapse:collapse;font-size:10.5px}
+th{text-align:right;font-weight:600;color:var(--muted2);font-size:8.5px;letter-spacing:.7px;text-transform:uppercase;
+  padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child{text-align:left}
+td{padding:4px 6px;text-align:right;color:var(--ink2);border-bottom:1px solid var(--line2);white-space:nowrap}
+td:first-child{text-align:left;color:var(--ink);font-weight:500}
+tr.r{cursor:pointer}
+tr.r:hover td{background:#212739}
+tr.r.dim td{opacity:.35}
+tr.r.sel td{background:#242C42}
+tr.tot td{font-weight:600;color:#fff;border-bottom:0;border-top:1px solid var(--line);background:#1D2231}
+.dg{display:inline-block;width:13px;text-align:center;color:var(--acc);opacity:0;font-size:11px}
+tr.r:hover .dg{opacity:1}
+.sw{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.db{display:inline-block;width:54px;height:5px;background:#252B3D;border-radius:3px;vertical-align:middle;margin-right:7px;overflow:hidden}
+.db i{display:block;height:100%;background:var(--acc);border-radius:3px}
+.tagr{display:inline-block;font-size:8.5px;letter-spacing:.4px;padding:1px 6px;border-radius:8px;
+  border:1px solid var(--line);color:var(--muted);text-transform:uppercase}
+.tagr.ae{border-color:#3A3266;color:#A796F5}
+.tagr.sdr{border-color:#2C4A55;color:#63C4C9}
+.stg{display:inline-block;font-size:9px;padding:2px 7px;border-radius:9px;color:#0E1119;font-weight:600}
+
+.lgd{display:flex;gap:12px;padding:0 14px 8px;font-size:9.5px;color:var(--muted)}
+.lgd i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:-.5px}
+.lgd .ln{display:inline-block;width:11px;height:0;border-top:2px solid var(--s4);margin-right:5px;vertical-align:3px}
+svg{display:block}
+svg .hit{cursor:pointer}
+svg .dimd{opacity:.25}
+#tip{position:fixed;pointer-events:none;background:#0A0D16;border:1px solid #2C3448;color:#EDF0F7;font-size:10.5px;
+  padding:7px 10px;border-radius:5px;opacity:0;transition:opacity .1s;z-index:50;line-height:1.6;white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.55)}
+#tip b{font-weight:600;color:#fff}
+.backb{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);background:#1C2131;border:1px solid var(--line);
+  padding:6px 12px;border-radius:14px;cursor:pointer;font-family:var(--font)}
+.backb:hover{border-color:var(--acc);color:#fff}
+.drillhd{display:flex;align-items:center;gap:14px;padding:0 0 12px}
+.drillhd .dt{font-size:15px;font-weight:600;color:#fff;display:flex;align-items:center}
+.drillhd .dsub{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.2px}
+.wm{position:absolute;right:14px;bottom:3px;font-size:8px;color:#39415A;letter-spacing:.4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="stage"><div id="canvas">
+  <div id="hdr">
+    <div class="brand"><div class="gl"></div>
+      <div><div class="nm">NORTHBEAM</div><div class="sub">Growth Studio</div></div></div>
+    <div class="tabs">
+      <button class="tab on" data-page="scout">Lead scouting</button>
+      <button class="tab" data-page="pipe">Pipeline &amp; sellers</button>
+    </div>
+    <div class="sp"></div>
+    <div class="hmeta">Synced from HubSpot · Apollo · LinkedIn Sales Nav<br><b id="hDate">—</b></div>
+  </div>
+  <div id="fbar">
+    <span class="flbl">Period</span><span id="fPer" style="display:flex;gap:6px"></span>
+    <span class="div"></span>
+    <span class="flbl">Channel</span><span id="fChan" style="display:flex;gap:6px"></span>
+    <span class="div"></span>
+    <span id="fCtx" style="display:flex;gap:6px"></span>
+    <span class="sp"></span>
+    <button class="resetb" id="btnReset">Clear filters</button>
+  </div>
+  <div id="page"></div>
+  <div class="wm">Demonstration report · synthetic data</div>
+</div></div>
+<div id="tip"></div>
+
+<script>
+/* ============ utils ============ */
+function mb(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=mb(70726);
+const j=(a,b)=>a+R()*(b-a);
+const pick=(arr,ws)=>{let r=R()*ws.reduce((a,b)=>a+b,0);for(let i=0;i<arr.length;i++){r-=ws[i];if(r<=0)return arr[i]}return arr[arr.length-1]};
+const eur=(v,d)=>{const a=Math.abs(v),s=v<0?'-':'';d=d===undefined?1:d;
+  if(a>=1e6)return s+'€'+(a/1e6).toFixed(d)+'M';if(a>=1e3)return s+'€'+Math.round(a/1e3)+'K';return s+'€'+Math.round(a)};
+const eurF=v=>(v<0?'-':'')+'€'+Math.round(Math.abs(v)).toLocaleString('en-US');
+const pc=(v,d)=>(v*100).toFixed(d===undefined?1:d)+'%';
+const N=v=>Math.round(v).toLocaleString('en-US');
+const sg=v=>(v>0?'+':'')+N(v);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+/* ============ dimensions ============ */
+const MLAB=[];{const nm=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let y=24,m=6;for(let i=0;i<24;i++){MLAB.push(nm[m]+" '"+y);m++;if(m===12){m=0;y++}}}
+/* index 0 = Jul 24 ... index 23 = Jun 26 */
+const NICHES=[
+ {id:'den',n:'Dental & aesthetic clinics',vol:1.00,q:.41,w:.57,val:14500,cyc:34,c:'#7A5AF8'},
+ {id:'fit',n:'Boutique fitness studios',  vol:.86,q:.36,w:.53,val: 9200,cyc:27,c:'#4C6FE0'},
+ {id:'law',n:'Legal & tax firms',         vol:.62,q:.31,w:.45,val:21000,cyc:58,c:'#2E9BD6'},
+ {id:'ecm',n:'Fashion e-commerce',        vol:.94,q:.44,w:.50,val:17800,cyc:41,c:'#22B5A6'},
+ {id:'fnb',n:'Food & beverage local',     vol:.78,q:.29,w:.63,val: 6400,cyc:19,c:'#35C48A'},
+ {id:'rea',n:'Real estate agencies',      vol:.70,q:.34,w:.43,val:12600,cyc:47,c:'#F0A63C'},
+ {id:'sas',n:'B2B SaaS',                  vol:.52,q:.26,w:.37,val:38500,cyc:76,c:'#E0576B'}
+];
+const NI=Object.fromEntries(NICHES.map(n=>[n.id,n]));
+const CHANS=[
+ {id:'li',n:'LinkedIn outbound',w:.30,qm:1.14,cpl:6.2,c:'#4C6FE0'},
+ {id:'em',n:'Cold email',       w:.27,qm:.78, cpl:1.9,c:'#2E9BD6'},
+ {id:'ps',n:'Paid social',      w:.19,qm:.86, cpl:9.4,c:'#F0A63C'},
+ {id:'rf',n:'Referral',         w:.13,qm:1.62,cpl:2.1,c:'#35C48A'},
+ {id:'in',n:'Events & inbound', w:.11,qm:1.44,cpl:14.8,c:'#7A5AF8'}
+];
+const CH=Object.fromEntries(CHANS.map(c=>[c.id,c]));
+const SELL=[
+ {id:'s1',n:'Giulia Ferrante', r:'SDR',w:.40,sk:1.08},
+ {id:'s2',n:'Marco Ruggeri',   r:'SDR',w:.33,sk:.94},
+ {id:'s3',n:'Nora Lindqvist',  r:'SDR',w:.27,sk:1.16},
+ {id:'s4',n:'Davide Moretti',  r:'AE', w:.29,sk:1.12},
+ {id:'s5',n:'Yasmin Haddad',   r:'AE', w:.26,sk:1.21},
+ {id:'s6',n:'Tom Bergström',   r:'AE', w:.24,sk:.91},
+ {id:'s7',n:'Chiara Pilloni',  r:'AE', w:.21,sk:1.03}
+];
+const SE=Object.fromEntries(SELL.map(s=>[s.id,s]));
+const SDRS=SELL.filter(s=>s.r==='SDR'),AES=SELL.filter(s=>s.r==='AE');
+const STAGES=[{k:0,n:'Sourced',c:'#3D4A6B'},{k:1,n:'Contacted',c:'#4C6FE0'},{k:2,n:'Qualified',c:'#2E9BD6'},
+  {k:3,n:'Meeting',c:'#22B5A6'},{k:4,n:'Proposal',c:'#F0A63C'},{k:5,n:'Won',c:'#35C48A'}];
+const PROB={2:.20,3:.45,4:.70};
+const WORDS=['Aurora','Vento','Kessel','Marlowe','Nordica','Selva','Rialto','Corvo','Lumen','Ferra','Brama','Verta',
+ 'Salto','Nube','Fabbri','Torre','Piana','Cedro','Falco','Miro','Zenit','Palma','Ostro','Vela','Ambra','Rovere'];
+const PAT={den:['Studio Dentistico %','Clinica %','% Dental Care'],fit:['% Athletic Club','Studio %','% Performance'],
+ law:['% & Partners','Studio Legale %','% Consulting'],ecm:['% Milano','% Atelier','Maison %'],
+ fnb:['Trattoria %','% Bistrot','Forno %'],rea:['% Immobiliare','% Properties','Agenzia %'],
+ sas:['% Labs','%io','% Systems']};
+
+/* ============ leads ============ */
+const LEADS=[];
+for(let m=0;m<24;m++){
+  const growth=1+m*.021, seas=[.92,.86,1.04,1.10,1.06,.72,.58,1.02,1.12,1.08,.94,.66][ (m+6)%12 ];
+  NICHES.forEach(nc=>{
+    const cnt=Math.round(14*nc.vol*growth*seas*j(.85,1.15));
+    for(let i=0;i<cnt;i++){
+      const ch=pick(CHANS,CHANS.map(c=>c.w));
+      const sdr=pick(SDRS,SDRS.map(s=>s.w)), ae=pick(AES,AES.map(s=>s.w));
+      let st=0;
+      if(R()<.87*j(.95,1.05))st=1;
+      if(st===1&&R()<nc.q*ch.qm*sdr.sk*j(.9,1.1))st=2;
+      if(st===2&&R()<.68*ae.sk*j(.92,1.08))st=3;
+      if(st===3&&R()<.66*j(.92,1.08))st=4;
+      let status='dead';
+      if(st>=2){const age=23-m; const pOpen=age<=1?.60:age<=3?.27:age<=5?.11:.03;
+        status=R()<pOpen?'open':(st>=4&&R()<nc.w*ae.sk*j(.88,1.12)?'won':'lost')}
+      const pat=PAT[nc.id][Math.floor(R()*PAT[nc.id].length)];
+      LEADS.push({m,ni:nc.id,ch:ch.id,sdr:sdr.id,ae:ae.id,st,status,
+        co:pat.replace('%',WORDS[Math.floor(R()*WORDS.length)]),
+        val:Math.round(nc.val*j(.45,2.1)/100)*100,
+        cost:+(ch.cpl*j(.8,1.25)).toFixed(2),
+        days:Math.round(nc.cyc*j(.6,1.5)),
+        touch:Math.round(j(3,14))});
+    }
+  });
+}
+
+/* ============ state ============ */
+const S={page:'scout',per:6,chan:null,ni:null,sell:null,stage:null,mo:null,drill:null,from:'scout'};
+const END=23;
+const win=(p,off)=>{const hi=END-(off||0)*p, lo=hi-p+1; return[Math.max(0,lo),hi]};
+const inW=(m,w)=>m>=w[0]&&m<=w[1];
+function F(o){o=o||{};const w=win(S.per,o.prev?1:0);
+  return LEADS.filter(l=>inW(l.m,w)
+    &&(o.allChan||!S.chan||l.ch===S.chan)
+    &&(o.allNi||!S.ni||l.ni===S.ni)
+    &&(o.allSell||!S.sell||l.sdr===S.sell||l.ae===S.sell)
+    &&(o.allStage||S.stage===null||l.st===S.stage)
+    &&(o.allMo||S.mo===null||l.m===S.mo))}
+const cnt=(a,f)=>a.filter(f).length;
+const sm=(a,f,k)=>a.reduce((x,l)=>x+(f(l)?l[k]:0),0);
+function M(a){
+  const src=a.length,qual=cnt(a,l=>l.st>=2),meet=cnt(a,l=>l.st>=3),prop=cnt(a,l=>l.st>=4);
+  const won=cnt(a,l=>l.status==='won'),lost=cnt(a,l=>l.status==='lost'),open=cnt(a,l=>l.status==='open');
+  const cost=a.reduce((x,l)=>x+l.cost,0);
+  const wonV=sm(a,l=>l.status==='won','val');
+  const pipe=sm(a,l=>l.status==='open','val');
+  const wpipe=a.reduce((x,l)=>x+(l.status==='open'?l.val*(PROB[l.st]||.1):0),0);
+  const wl=won+lost;
+  const cyc=won?a.filter(l=>l.status==='won').reduce((x,l)=>x+l.days,0)/won:0;
+  return{src,qual,meet,prop,won,lost,open,cost,wonV,pipe,wpipe,
+    qr:src?qual/src:0,mr:qual?meet/qual:0,wr:wl?won/wl:0,
+    cpql:qual?cost/qual:0,cyc,aov:won?wonV/won:0}
+}
+
+/* ============ charts ============ */
+function ticks(max,n){n=n||4;const raw=max/n,mag=Math.pow(10,Math.floor(Math.log10(raw)||0));
+  const st=[1,2,2.5,5,10].map(x=>x*mag).find(x=>x>=raw)||10*mag;
+  const o=[];for(let v=0;v<=st*n+1e-9;v+=st){o.push(v);if(v>=max)break}return o}
+
+function funnel(w,h,rows){
+  const lw=86,rw=54,m={t:6,b:6},ih=h-m.t-m.b,rh=ih/rows.length,bh=Math.min(19,rh*.52);
+  const max=rows[0].v||1,iw=w-lw-rw-14;
+  let s=`<svg width="${w}" height="${h}">`;
+  rows.forEach((r,i)=>{
+    const y=m.t+rh*i+rh/2, bl=Math.max(2,(r.v/max)*iw);
+    const dim=S.stage!==null&&S.stage!==r.k;
+    s+=`<g class="hit ${dim?'dimd':''}" data-f="stage:${r.k}" data-tip="<b>${r.n}</b><br>${N(r.v)} leads<br>${pc(r.v/max)} of sourced${r.cv!==undefined?'<br>Step conversion: '+pc(r.cv):''}">`;
+    s+=`<rect x="0" y="${(y-rh/2).toFixed(1)}" width="${w}" height="${rh.toFixed(1)}" fill="transparent"/>`;
+    s+=`<text x="${lw-10}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#B4BECF">${r.n}</text>`;
+    s+=`<rect x="${lw}" y="${(y-bh/2).toFixed(1)}" width="${bl.toFixed(1)}" height="${bh}" rx="2" fill="${r.c}"/>`;
+    s+=`<text x="${(lw+bl+8).toFixed(1)}" y="${(y+3.5).toFixed(1)}" font-size="10" fill="#EDF0F7" class="tnum" font-weight="600">${N(r.v)}</text>`;
+    if(i>0&&r.cv!==undefined)
+      s+=`<text x="${w-4}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="${r.cv>=.5?'#35C48A':r.cv>=.3?'#F0A63C':'#7C879E'}" class="tnum">▼ ${pc(r.cv,0)}</text>`;
+    s+='</g>';
+  });
+  return s+'</svg>'
+}
+
+function grpBar(w,h,data,o){
+  o=o||{};const m={t:12,r:o.r||10,b:24,l:44},iw=w-m.l-m.r,ih=h-m.t-m.b;
+  const max=Math.max(...data.map(d=>Math.max(d.a,d.b||0)))*1.14||1;
+  const tk=ticks(max),top=tk[tk.length-1],Y=v=>m.t+ih-(v/top)*ih;
+  const step=iw/data.length,bw=Math.min(o.two?11:22,step*(o.two?.28:.5));
+  let s=`<svg width="${w}" height="${h}">`;
+  tk.forEach(t=>{s+=`<line x1="${m.l}" y1="${Y(t).toFixed(1)}" x2="${m.l+iw}" y2="${Y(t).toFixed(1)}" stroke="${t?'#212739':'#2E3648'}"/>`
+   +`<text x="${m.l-7}" y="${Y(t)+3.5}" text-anchor="end" font-size="9" fill="#5A6480" class="tnum">${o.money?eur(t,0):N(t)}</text>`});
+  data.forEach((d,i)=>{
+    const cx=m.l+step*i+step/2, dim=S.mo!==null&&S.mo!==d.m;
+    const x1=o.two?cx-bw-1:cx-bw/2;
+    s+=`<rect class="hit ${dim?'dimd':''}" x="${x1.toFixed(1)}" y="${Y(d.a).toFixed(1)}" width="${bw}" height="${Math.max(0,m.t+ih-Y(d.a)).toFixed(1)}" rx="1.5" fill="${o.c1||'#4C6FE0'}" data-f="mo:${d.m}" data-tip="<b>${d.l}</b><br>${o.n1||'Value'}: ${o.money?eurF(d.a):N(d.a)}${o.two?'<br>'+(o.n2||'')+': '+(o.money?eurF(d.b):N(d.b)):''}"/>`;
+    if(o.two)s+=`<rect class="hit ${dim?'dimd':''}" x="${(cx+1).toFixed(1)}" y="${Y(d.b).toFixed(1)}" width="${bw}" height="${Math.max(0,m.t+ih-Y(d.b)).toFixed(1)}" rx="1.5" fill="${o.c2||'#35C48A'}" data-f="mo:${d.m}" data-tip="<b>${d.l}</b><br>${o.n1||''}: ${o.money?eurF(d.a):N(d.a)}<br>${o.n2||''}: ${o.money?eurF(d.b):N(d.b)}"/>`;
+    if(i%(data.length>9?2:1)===0)s+=`<text x="${cx}" y="${h-8}" text-anchor="middle" font-size="8.5" fill="#5A6480">${d.l}</text>`;
+  });
+  if(o.line){
+    const mx=Math.max(...data.map(d=>d.p))*1.25||1;const Y2=v=>m.t+ih-(v/mx)*ih;
+    let p='';data.forEach((d,i)=>{const cx=m.l+step*i+step/2;p+=(i?'L':'M')+cx.toFixed(1)+','+Y2(d.p).toFixed(1)});
+    s+=`<path d="${p}" fill="none" stroke="#F0A63C" stroke-width="1.8"/>`;
+    data.forEach((d,i)=>{const cx=m.l+step*i+step/2;
+      s+=`<circle class="hit" cx="${cx.toFixed(1)}" cy="${Y2(d.p).toFixed(1)}" r="2.6" fill="#111420" stroke="#F0A63C" stroke-width="1.6"
+        data-tip="<b>${d.l}</b><br>${o.n1||''}: ${N(d.a)}<br>${o.nl||'Rate'}: ${pc(d.p)}"/>`});
+  }
+  return s+'</svg>'
+}
+
+function hbar(w,h,data,o){
+  o=o||{};const lw=o.lw||140,m={t:5,r:o.r||46,b:5},ih=h-m.t-m.b,iw=w-lw-m.r;
+  const max=Math.max(...data.map(d=>d.v))||1,rh=ih/data.length,bh=Math.min(o.bh||14,rh*.54);
+  let s=`<svg width="${w}" height="${h}">`;
+  data.forEach((d,i)=>{
+    const y=m.t+rh*i+rh/2,bl=Math.max(1,(d.v/max)*iw);
+    const dim=o.selKey&&S[o.selKey]&&S[o.selKey]!==d.id;
+    s+=`<g class="hit ${dim?'dimd':''}" ${o.f?`data-f="${o.f}:${d.id}"`:''} data-tip="${d.tip||('<b>'+esc(d.l)+'</b><br>'+(o.money?eurF(d.v):N(d.v)))}">`;
+    s+=`<rect x="0" y="${(y-rh/2).toFixed(1)}" width="${w}" height="${rh.toFixed(1)}" fill="transparent"/>`;
+    s+=`<text x="${lw-9}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#B4BECF">${esc(d.l)}</text>`;
+    s+=`<rect x="${lw}" y="${(y-bh/2).toFixed(1)}" width="${iw}" height="${bh}" rx="2" fill="#212739"/>`;
+    s+=`<rect x="${lw}" y="${(y-bh/2).toFixed(1)}" width="${bl.toFixed(1)}" height="${bh}" rx="2" fill="${d.c||o.c||'#7A5AF8'}"/>`;
+    if(d.v2!==undefined)s+=`<rect x="${lw}" y="${(y-bh/2).toFixed(1)}" width="${Math.max(1,(d.v2/max)*iw).toFixed(1)}" height="${bh}" rx="2" fill="${o.c2||'#EDF0F7'}" opacity=".85"/>`;
+    s+=`<text x="${w-4}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#8E99B0" class="tnum">${d.lab||(o.money?eur(d.v):N(d.v))}</text></g>`;
+  });
+  return s+'</svg>'
+}
+
+function stackH(w,h,data){
+  const tot=data.reduce((a,d)=>a+d.v,0)||1,bh=26,y=8;let x=0;
+  let s=`<svg width="${w}" height="${h}">`;
+  data.forEach(d=>{
+    const bl=(d.v/tot)*w;
+    const dim=S.stage!==null&&S.stage!==d.k;
+    s+=`<rect class="hit ${dim?'dimd':''}" x="${x.toFixed(1)}" y="${y}" width="${Math.max(0,bl-1.5).toFixed(1)}" height="${bh}" rx="2" fill="${d.c}"
+      data-f="stage:${d.k}" data-tip="<b>${d.n}</b><br>${eurF(d.v)} open<br>${N(d.c2)} deals · ${pc(d.v/tot)} of pipeline"/>`;
+    x+=bl});
+  x=0;
+  data.forEach(d=>{const bl=(d.v/tot)*w;
+    if(bl>52){s+=`<text x="${(x+bl/2).toFixed(1)}" y="${y+bh+15}" text-anchor="middle" font-size="9" fill="#8E99B0">${d.n}</text>`;
+      s+=`<text x="${(x+bl/2).toFixed(1)}" y="${y+bh+28}" text-anchor="middle" font-size="10" fill="#EDF0F7" class="tnum" font-weight="600">${eur(d.v)}</text>`}
+    x+=bl});
+  return s+'</svg>'
+}
+
+function spark(w,h,vals,col){
+  const mx=Math.max(...vals)||1,mn=Math.min(...vals);
+  const X=i=>i*(w/(vals.length-1)),Y=v=>h-2-((v-mn)/((mx-mn)||1))*(h-4);
+  let p='';vals.forEach((v,i)=>p+=(i?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1));
+  return `<svg width="${w}" height="${h}"><path d="${p}L${X(vals.length-1).toFixed(1)},${h}L0,${h}Z" fill="${col}" opacity=".13"/>
+    <path d="${p}" fill="none" stroke="${col}" stroke-width="1.5"/></svg>`
+}
+
+function kpi(k,val,cur,ref,det,o){
+  o=o||{};const fin=(ref&&isFinite(ref)&&Math.abs(ref)>1e-9)?(cur-ref)/Math.abs(ref):0;
+  const cls=Math.abs(fin)<.002?'fl':(fin>0?(o.inv?'dn':'up'):(o.inv?'up':'dn'));
+  const ar=Math.abs(fin)<.002?'—':(fin>0?'▲':'▼');
+  return `<div class="card kpi" style="flex:1">
+    <div><div class="k">${k}</div>
+    <div class="vr"><div class="v tnum">${val}</div><div class="d ${cls} tnum">${ar} ${pc(Math.abs(fin))}</div></div></div>
+    <div><div class="det tnum">${det}</div>
+    ${o.spk?`<div class="spk">${spark(o.w||150,16,o.spk,o.sc||'#7A5AF8')}</div>`:''}</div></div>`
+}
+
+/* ============ pages ============ */
+function monthsIn(){const w=win(S.per,0),o=[];for(let m=w[0];m<=w[1];m++)o.push(m);return o}
+function seriesBy(fn){return monthsIn().map(m=>{
+  const a=LEADS.filter(l=>l.m===m&&(!S.chan||l.ch===S.chan)&&(!S.ni||l.ni===S.ni)&&(!S.sell||l.sdr===S.sell||l.ae===S.sell));
+  return Object.assign({m,l:MLAB[m].slice(0,3)},fn(a))})}
+
+function pageScout(){
+  const a=F(),p=F({prev:true}),c=M(a),pv=M(p);
+  const all=F({allStage:true});
+  const fr=[
+   {k:0,n:'Sourced',  v:all.length,             c:'#3D4A6B'},
+   {k:1,n:'Contacted',v:cnt(all,l=>l.st>=1),    c:'#4C6FE0'},
+   {k:2,n:'Qualified',v:cnt(all,l=>l.st>=2),    c:'#2E9BD6'},
+   {k:3,n:'Meeting',  v:cnt(all,l=>l.st>=3),    c:'#22B5A6'},
+   {k:4,n:'Proposal', v:cnt(all,l=>l.st>=4),    c:'#F0A63C'},
+   {k:5,n:'Won',      v:cnt(all,l=>l.status==='won'),c:'#35C48A'}];
+  fr.forEach((r,i)=>{if(i)r.cv=fr[i-1].v?r.v/fr[i-1].v:0});
+  const byNi=NICHES.map(n=>{const s=F({allNi:true}).filter(l=>l.ni===n.id);const mm=M(s);
+    return{id:n.id,l:n.n.length>24?n.n.slice(0,23)+'…':n.n,v:mm.src,v2:mm.qual,c:n.c,
+      lab:N(mm.src)+' / '+N(mm.qual),
+      tip:`<b>${n.n}</b><br>Sourced: ${N(mm.src)}<br>Qualified: ${N(mm.qual)} (${pc(mm.qr)})<br>Won: ${N(mm.won)} · ${eurF(mm.wonV)}`}})
+    .sort((x,y)=>y.v-x.v);
+  const byCh=CHANS.map(ch=>{const s=F({allChan:true}).filter(l=>l.ch===ch.id);const mm=M(s);
+    return{id:ch.id,l:ch.n,v:mm.qual,c:ch.c,lab:eurF(mm.cpql)+' CPQL',
+      tip:`<b>${ch.n}</b><br>Sourced: ${N(mm.src)}<br>Qualified: ${N(mm.qual)} (${pc(mm.qr)})<br>Spend: ${eurF(mm.cost)}<br>Cost per qualified lead: ${eurF(mm.cpql)}`}})
+    .sort((x,y)=>y.v-x.v);
+  const ser=seriesBy(x=>{const mm=M(x);return{a:mm.src,p:mm.qr}});
+  const rows=NICHES.map(n=>{const s=F({allNi:true}).filter(l=>l.ni===n.id);return{n,m:M(s)}})
+    .sort((x,y)=>y.m.wonV-x.m.wonV);
+  const maxPipe=Math.max(...rows.map(r=>r.m.pipe))||1;
+  const tot=M(F({allNi:true}));
+
+  return `
+  <div class="row">
+    ${kpi('Leads sourced',N(c.src),c.src,pv.src,`Prev ${N(pv.src)} | Now ${N(c.src)} | Var ${sg(c.src-pv.src)}`,
+      {spk:ser.map(x=>x.a),sc:'#4C6FE0'})}
+    ${kpi('Qualification rate',pc(c.qr),c.qr,pv.qr,`Qualified ${N(c.qual)} of ${N(c.src)} | Prev ${pc(pv.qr)}`,
+      {spk:ser.map(x=>x.p),sc:'#2E9BD6'})}
+    ${kpi('Cost per qualified lead',eurF(c.cpql),c.cpql,pv.cpql,`Spend ${eurF(c.cost)} | Prev ${eurF(pv.cpql)} | Var ${eurF(c.cpql-pv.cpql)}`,
+      {inv:true,spk:ser.map(x=>x.a),sc:'#F0A63C'})}
+    ${kpi('Meetings booked',N(c.meet),c.meet,pv.meet,`Qual→meeting ${pc(c.mr)} | Prev ${N(pv.meet)} | Var ${sg(c.meet-pv.meet)}`,
+      {spk:ser.map(x=>x.a),sc:'#22B5A6'})}
+  </div>
+  <div class="row">
+    <div class="card" style="width:400px">
+      <div class="ch"><h3>Scouting funnel</h3><span class="hs">step conversion</span></div>
+      ${funnel(400,176,fr)}
+    </div>
+    <div class="card" style="width:470px">
+      <div class="ch"><h3>Sourced vs qualified by niche</h3><span class="hr">click to filter</span></div>
+      <div class="lgd"><span><i style="background:#3D4A6B"></i>Sourced</span><span><i style="background:#EDF0F7"></i>Qualified</span></div>
+      ${hbar(470,152,byNi.map(x=>({...x,c:'#333C56'})),{f:'ni',selKey:'ni',lw:150,c2:'#7A5AF8',bh:13})}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Channel efficiency</h3><span class="hs">qualified · CPQL</span></div>
+      ${hbar(358,176,byCh,{f:'chan',selKey:'chan',lw:112,r:66,bh:13})}
+    </div>
+  </div>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Niche scouting performance</h3><span class="hs">ranked by closed-won value</span>
+        <span class="hr">right-click a row to drill through</span></div>
+      <div class="mx"><table><thead><tr>
+        <th>Niche</th><th>Sourced</th><th>Qual.</th><th>Qual rate</th><th>Meetings</th><th>Won</th>
+        <th>Win rate</th><th>Avg deal</th><th>Closed won</th><th>Open pipeline</th><th>Cycle</th></tr></thead><tbody>
+      ${rows.map(r=>{const cl=S.ni?(S.ni===r.n.id?'sel':'dim'):'';
+        return `<tr class="r ${cl}" data-f="ni:${r.n.id}" data-drill="ni:${r.n.id}">
+        <td><span class="sw" style="background:${r.n.c}"></span>${r.n.n}<span class="dg">›</span></td>
+        <td class="tnum">${N(r.m.src)}</td><td class="tnum">${N(r.m.qual)}</td>
+        <td class="tnum" style="color:${r.m.qr>=.38?'#35C48A':r.m.qr>=.30?'#B4BECF':'#E0576B'}">${pc(r.m.qr)}</td>
+        <td class="tnum">${N(r.m.meet)}</td><td class="tnum">${N(r.m.won)}</td>
+        <td class="tnum">${pc(r.m.wr,0)}</td><td class="tnum">${eur(r.m.aov)}</td>
+        <td class="tnum" style="color:#fff">${eur(r.m.wonV)}</td>
+        <td class="tnum"><span class="db"><i style="width:${(r.m.pipe/maxPipe*100).toFixed(0)}%"></i></span>${eur(r.m.pipe)}</td>
+        <td class="tnum">${Math.round(r.m.cyc)}d</td></tr>`}).join('')}
+      <tr class="tot"><td>All niches</td><td class="tnum">${N(tot.src)}</td><td class="tnum">${N(tot.qual)}</td>
+        <td class="tnum">${pc(tot.qr)}</td><td class="tnum">${N(tot.meet)}</td><td class="tnum">${N(tot.won)}</td>
+        <td class="tnum">${pc(tot.wr,0)}</td><td class="tnum">${eur(tot.aov)}</td><td class="tnum">${eur(tot.wonV)}</td>
+        <td class="tnum">${eur(tot.pipe)}</td><td class="tnum">${Math.round(tot.cyc)}d</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>`
+}
+
+function pagePipe(){
+  const a=F(),p=F({prev:true}),c=M(a),pv=M(p);
+  const openL=F({allStage:true}).filter(l=>l.status==='open');
+  const stk=[2,3,4].map(k=>{const g=openL.filter(l=>l.st===k);const st=STAGES[k];
+    return{k,n:st.n,c:st.c,v:g.reduce((x,l)=>x+l.val,0),c2:g.length}});
+  const ser=seriesBy(x=>{const mm=M(x);return{a:mm.qual,b:mm.won,p:mm.wr}});
+  const sellRows=SELL.map(s=>{
+    const own=F({allSell:true}).filter(l=>s.r==='SDR'?l.sdr===s.id:l.ae===s.id);
+    return{s,m:M(own)}}).sort((x,y)=>y.m.wonV-x.m.wonV);
+  const maxP=Math.max(...sellRows.map(r=>r.m.pipe))||1;
+  const board=sellRows.filter(r=>r.s.r==='AE').map(r=>({id:r.s.id,l:r.s.n,v:r.m.wonV,c:'#7A5AF8',
+    lab:eur(r.m.wonV),tip:`<b>${r.s.n}</b> · AE<br>Closed won: ${eurF(r.m.wonV)}<br>Deals won: ${N(r.m.won)}<br>Win rate: ${pc(r.m.wr)}<br>Open pipeline: ${eurF(r.m.pipe)}`}))
+    .sort((x,y)=>y.v-x.v);
+  const deals=openL.slice().sort((x,y)=>y.val-x.val).slice(0,7);
+
+  return `
+  <div class="row">
+    ${kpi('Open pipeline',eur(c.pipe,2),c.pipe,pv.pipe,`${N(c.open)} open deals | Weighted ${eur(c.wpipe,2)} | Prev ${eur(pv.pipe,2)}`,
+      {spk:ser.map(x=>x.a),sc:'#7A5AF8'})}
+    ${kpi('Closed won',eur(c.wonV,2),c.wonV,pv.wonV,`Deals ${N(c.won)} | Avg ${eurF(c.aov)} | Prev ${eur(pv.wonV,2)}`,
+      {spk:ser.map(x=>x.b),sc:'#35C48A'})}
+    ${kpi('Win rate',pc(c.wr),c.wr,pv.wr,`Won ${N(c.won)} | Lost ${N(c.lost)} | Prev ${pc(pv.wr)}`,
+      {spk:ser.map(x=>x.p),sc:'#2E9BD6'})}
+    ${kpi('Avg sales cycle',Math.round(c.cyc)+'d',c.cyc,pv.cyc,`Prev ${Math.round(pv.cyc)}d | Now ${Math.round(c.cyc)}d | Var ${Math.round(c.cyc-pv.cyc)}d`,
+      {inv:true,spk:ser.map(x=>x.b),sc:'#F0A63C'})}
+  </div>
+  <div class="row">
+    <div class="card" style="width:400px">
+      <div class="ch"><h3>Open pipeline by stage</h3><span class="hr">click to filter</span></div>
+      ${stackH(372,74,stk)}
+      <div class="ch" style="padding-top:2px"><h3 style="font-size:11px">Weighted forecast</h3>
+        <span class="hs">20 / 45 / 70% by stage</span></div>
+      ${hbar(372,86,stk.map(x=>({id:x.k,l:x.n,v:x.v*PROB[x.k],c:x.c,lab:eur(x.v*PROB[x.k]),
+        tip:`<b>${x.n}</b><br>Open: ${eurF(x.v)}<br>Probability: ${pc(PROB[x.k],0)}<br>Weighted: ${eurF(x.v*PROB[x.k])}`})),{lw:82,bh:12})}
+    </div>
+    <div class="card" style="width:470px">
+      <div class="ch"><h3>Qualified vs won by month</h3><span class="hs">win rate on right</span></div>
+      <div class="lgd"><span><i style="background:#4C6FE0"></i>Qualified</span><span><i style="background:#35C48A"></i>Won</span><span><span class="ln"></span>Win rate</span></div>
+      ${grpBar(470,170,ser,{two:true,line:true,n1:'Qualified',n2:'Won',nl:'Win rate'})}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>AE leaderboard</h3><span class="hs">closed won</span></div>
+      ${hbar(358,188,board,{f:'sell',selKey:'sell',lw:118,r:52,bh:13})}
+    </div>
+  </div>
+  <div class="row">
+    <div class="card" style="width:760px">
+      <div class="ch"><h3>Seller performance</h3><span class="hs">SDR sourcing · AE closing</span>
+        <span class="hr">right-click a row to drill through</span></div>
+      <div class="mx"><table><thead><tr>
+        <th>Seller</th><th>Role</th><th>Leads</th><th>Qual.</th><th>Meetings</th><th>Won</th><th>Win rate</th>
+        <th>Closed won</th><th>Open pipeline</th></tr></thead><tbody>
+      ${sellRows.map(r=>{const cl=S.sell?(S.sell===r.s.id?'sel':'dim'):'';
+        return `<tr class="r ${cl}" data-f="sell:${r.s.id}" data-drill="sell:${r.s.id}">
+        <td>${r.s.n}<span class="dg">›</span></td>
+        <td style="text-align:left"><span class="tagr ${r.s.r.toLowerCase()}">${r.s.r}</span></td>
+        <td class="tnum">${N(r.m.src)}</td><td class="tnum">${N(r.m.qual)}</td><td class="tnum">${N(r.m.meet)}</td>
+        <td class="tnum">${N(r.m.won)}</td>
+        <td class="tnum" style="color:${r.m.wr>=.35?'#35C48A':r.m.wr>=.25?'#B4BECF':'#E0576B'}">${pc(r.m.wr,0)}</td>
+        <td class="tnum" style="color:#fff">${eur(r.m.wonV)}</td>
+        <td class="tnum"><span class="db"><i style="width:${(r.m.pipe/maxP*100).toFixed(0)}%"></i></span>${eur(r.m.pipe)}</td></tr>`}).join('')}
+      </tbody></table></div>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Largest open deals</h3><span class="hs">by value</span></div>
+      <div class="mx dense"><table><thead><tr><th>Account</th><th>Niche</th><th>Stage</th><th>Owner</th><th>Value</th></tr></thead><tbody>
+      ${deals.map(d=>`<tr class="r" data-drill="ni:${d.ni}"><td>${esc(d.co)}</td>
+        <td style="text-align:left;color:#7C879E">${NI[d.ni].n.split(' ')[0]}</td>
+        <td style="text-align:left"><span class="stg" style="background:${STAGES[d.st].c}">${STAGES[d.st].n}</span></td>
+        <td style="text-align:left;color:#B4BECF">${SE[d.ae].n.split(' ')[0]}</td>
+        <td class="tnum" style="color:#fff">${eur(d.val)}</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>
+  </div>`
+}
+
+function pageDrill(){
+  const d=S.drill,isNi=d.t==='ni';
+  const ent=isNi?NI[d.id]:SE[d.id];
+  const name=ent.n,col=isNi?ent.c:'#7A5AF8';
+  const sel=l=>isNi?l.ni===d.id:(ent.r==='SDR'?l.sdr===d.id:l.ae===d.id);
+  const w=win(S.per,0),wp=win(S.per,1);
+  const a=LEADS.filter(l=>inW(l.m,w)&&sel(l)),p=LEADS.filter(l=>inW(l.m,wp)&&sel(l));
+  const c=M(a),pv=M(p);
+  const fr=[0,1,2,3,4,5].map(k=>{const st=STAGES[k];
+    return{k,n:st.n,c:st.c,v:k===5?cnt(a,l=>l.status==='won'):cnt(a,l=>l.st>=k)}});
+  fr.forEach((r,i)=>{if(i)r.cv=fr[i-1].v?r.v/fr[i-1].v:0});
+  const ser=monthsIn().map(m=>{const g=a.filter(l=>l.m===m);const mm=M(g);
+    return{m,l:MLAB[m].slice(0,3),a:mm.src,b:mm.won,p:mm.qr}});
+  const brk=isNi
+    ? CHANS.map(ch=>{const g=a.filter(l=>l.ch===ch.id);const mm=M(g);
+        return{id:ch.id,l:ch.n,v:mm.src,c:ch.c,lab:N(mm.src)+' · '+pc(mm.qr,0),
+          tip:`<b>${ch.n}</b><br>Sourced: ${N(mm.src)}<br>Qual rate: ${pc(mm.qr)}<br>CPQL: ${eurF(mm.cpql)}`}})
+    : NICHES.map(n=>{const g=a.filter(l=>l.ni===n.id);const mm=M(g);
+        return{id:n.id,l:n.n.length>22?n.n.slice(0,21)+'…':n.n,v:mm.src,c:n.c,lab:N(mm.src)+' · '+pc(mm.qr,0),
+          tip:`<b>${n.n}</b><br>Sourced: ${N(mm.src)}<br>Qual rate: ${pc(mm.qr)}<br>Won: ${N(mm.won)}`}});
+  brk.sort((x,y)=>y.v-x.v);
+  const deals=a.filter(l=>l.status==='open').sort((x,y)=>y.val-x.val).slice(0,6);
+
+  return `
+  <div class="drillhd">
+    <button class="backb" id="btnBack">‹ Back to ${S.from==='scout'?'Lead scouting':'Pipeline'}</button>
+    <div><div class="dt"><span class="sw" style="background:${col};width:9px;height:9px"></span>${name}</div>
+      <div class="dsub">${isNi?'Niche detail':'Seller detail · '+ent.r} · last ${S.per} months${S.chan?' · '+CH[S.chan].n:''}</div></div>
+  </div>
+  <div class="row">
+    ${kpi('Leads sourced',N(c.src),c.src,pv.src,`Prev ${N(pv.src)} | Now ${N(c.src)} | Var ${sg(c.src-pv.src)}`,{spk:ser.map(x=>x.a),sc:'#4C6FE0'})}
+    ${kpi('Qualification rate',pc(c.qr),c.qr,pv.qr,`Qualified ${N(c.qual)} | Meetings ${N(c.meet)} | Prev ${pc(pv.qr)}`,{spk:ser.map(x=>x.p),sc:'#2E9BD6'})}
+    ${kpi('Closed won',eur(c.wonV,2),c.wonV,pv.wonV,`Deals ${N(c.won)} | Win rate ${pc(c.wr,0)} | Avg ${eurF(c.aov)}`,{spk:ser.map(x=>x.b),sc:'#35C48A'})}
+    ${kpi('Open pipeline',eur(c.pipe,2),c.pipe,pv.pipe,`${N(c.open)} deals | Weighted ${eur(c.wpipe,2)} | Cycle ${Math.round(c.cyc)}d`,{spk:ser.map(x=>x.a),sc:'#F0A63C'})}
+  </div>
+  <div class="row">
+    <div class="card" style="width:400px">
+      <div class="ch"><h3>Funnel</h3><span class="hs">${name}</span></div>
+      ${funnel(400,170,fr)}
+    </div>
+    <div class="card" style="width:470px">
+      <div class="ch"><h3>Sourced and won by month</h3></div>
+      <div class="lgd"><span><i style="background:#4C6FE0"></i>Sourced</span><span><i style="background:#35C48A"></i>Won</span><span><span class="ln"></span>Qual rate</span></div>
+      ${grpBar(470,150,ser,{two:true,line:true,n1:'Sourced',n2:'Won',nl:'Qual rate'})}
+    </div>
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>${isNi?'Channel breakdown':'Niche coverage'}</h3><span class="hs">sourced · qual rate</span></div>
+      ${hbar(358,170,brk,{lw:isNi?110:124,r:66,bh:12})}
+    </div>
+  </div>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <div class="ch"><h3>Open opportunities</h3><span class="hs">${name} · top ${deals.length} by value</span></div>
+      <div class="mx dense"><table><thead><tr><th>Account</th><th>${isNi?'Channel':'Niche'}</th><th>Stage</th>
+        <th>Owner</th><th>Touches</th><th>Days in cycle</th><th>Value</th><th>Weighted</th></tr></thead><tbody>
+      ${deals.length?deals.map(l=>`<tr class="r"><td>${esc(l.co)}</td>
+        <td style="text-align:left;color:#7C879E">${isNi?CH[l.ch].n:NI[l.ni].n}</td>
+        <td style="text-align:left"><span class="stg" style="background:${STAGES[l.st].c}">${STAGES[l.st].n}</span></td>
+        <td style="text-align:left;color:#B4BECF">${SE[l.ae].n}</td>
+        <td class="tnum">${l.touch}</td><td class="tnum">${l.days}d</td>
+        <td class="tnum" style="color:#fff">${eurF(l.val)}</td>
+        <td class="tnum">${eurF(l.val*(PROB[l.st]||.1))}</td></tr>`).join('')
+        :'<tr><td colspan="8" style="text-align:center;color:#5A6480;padding:18px">No open opportunities in this selection. Widen the period or clear the channel filter.</td></tr>'}
+      </tbody></table></div>
+    </div>
+  </div>`
+}
+
+/* ============ render ============ */
+const $=s=>document.querySelector(s);
+function render(){
+  $('#fPer').innerHTML=[3,6,12].map(p=>`<button class="chip ${S.per===p?'on':''}" data-p="${p}">${p}M</button>`).join('');
+  $('#fChan').innerHTML=CHANS.map(c=>`<button class="chip ${S.chan===c.id?'on':''}" data-c="${c.id}"><span class="d" style="background:${c.c}"></span>${c.n}</button>`).join('');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.page===S.page));
+  const w=win(S.per,0);
+  $('#hDate').textContent=MLAB[w[0]]+' – '+MLAB[w[1]]+' · refreshed 23 Jul 2026, 07:30';
+  const cx=[];
+  if(S.ni)cx.push(`<span class="ctxpill">Niche <b>${NI[S.ni].n}</b><i>×</i></span>`);
+  if(S.sell)cx.push(`<span class="ctxpill">Seller <b>${SE[S.sell].n}</b><i>×</i></span>`);
+  if(S.stage!==null)cx.push(`<span class="ctxpill">Stage <b>${STAGES[S.stage].n}</b><i>×</i></span>`);
+  if(S.mo!==null)cx.push(`<span class="ctxpill">Month <b>${MLAB[S.mo]}</b><i>×</i></span>`);
+  $('#fCtx').innerHTML=cx.join('');
+  $('#page').innerHTML=S.page==='scout'?pageScout():S.page==='pipe'?pagePipe():pageDrill();
+}
+
+/* ============ interactions ============ */
+const tip=$('#tip');
+document.addEventListener('mouseover',e=>{const t=e.target.closest('[data-tip]');
+  if(!t){tip.style.opacity=0;return} tip.innerHTML=t.getAttribute('data-tip'); tip.style.opacity=1});
+document.addEventListener('mousemove',e=>{if(tip.style.opacity==='1'){
+  let x=e.clientX+14,y=e.clientY+16;
+  if(x+tip.offsetWidth>innerWidth-8)x=e.clientX-tip.offsetWidth-14;
+  if(y+tip.offsetHeight>innerHeight-8)y=e.clientY-tip.offsetHeight-14;
+  tip.style.left=x+'px';tip.style.top=y+'px'}});
+document.addEventListener('mouseout',e=>{if(!e.relatedTarget||!e.relatedTarget.closest('[data-tip]'))tip.style.opacity=0});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(t){S.page=t.dataset.page;S.drill=null;S.stage=null;S.mo=null;render();return}
+  const p=e.target.closest('[data-p]'); if(p){S.per=+p.dataset.p;S.mo=null;render();return}
+  const c=e.target.closest('[data-c]'); if(c){S.chan=S.chan===c.dataset.c?null:c.dataset.c;render();return}
+  if(e.target.closest('#btnReset')){S.chan=S.ni=S.sell=null;S.stage=null;S.mo=null;render();return}
+  if(e.target.closest('#btnBack')){S.page=S.from;S.drill=null;render();return}
+  const f=e.target.closest('[data-f]');
+  if(f){const [k,v]=f.dataset.f.split(':');
+    if(k==='stage'){S.stage=S.stage===+v?null:+v}
+    else if(k==='mo'){S.mo=S.mo===+v?null:+v}
+    else{S[k]=S[k]===v?null:v}
+    render();return}
+});
+document.addEventListener('contextmenu',e=>{const d=e.target.closest('[data-drill]'); if(!d)return;
+  e.preventDefault(); const[t,id]=d.dataset.drill.split(':');
+  S.from=S.page==='drl'?S.from:S.page; S.drill={t,id}; S.page='drl'; tip.style.opacity=0; render()});
+function fit(){const st=$('#stage'),cv=$('#canvas');
+  cv.style.transform='scale('+Math.min(st.clientWidth/1280,st.clientHeight/720)+')'}
+addEventListener('resize',fit); render(); fit();
+</script>
+</body>
+</html>

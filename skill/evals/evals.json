@@ -1,0 +1,157 @@
+{
+  "about": "Test briefs for the dashboard-mockup-generator skill. Each case is a fresh brief in a domain not covered by the gold-standard examples. Run each from a clean context (skill attached, this conversation NOT in context), then check the assertions. objective = machine-checkable; realism = judgement + the QA harness; aesthetic = human review.",
+  "cases": [
+    {
+      "id": "social-monthly",
+      "brief": "Report social mensile multi-piattaforma per un cliente beverage: Instagram, TikTok, LinkedIn, YouTube, Facebook. Focus su reach, engagement e crescita follower, con split paid/organic. Pubblico: il marketing manager del cliente.",
+      "expected_aesthetic": "agency-modern (marketing audience)",
+      "expected_language": "it",
+      "assertions": {
+        "objective": [
+          "canvas is exactly 1280x720",
+          "single page plus a drill-through detail page (no second main page, since the brief did not ask)",
+          "KPI band is the full-width top row",
+          "no row on the page has more than 3 visuals",
+          "cross-filter works: clicking a platform/donut/bar/row filters the page",
+          "drill-through works: right-click a platform row opens a detail page with a back button",
+          "tooltips present on every data element",
+          "single self-contained HTML file, no external dependencies",
+          "synthetic-data watermark present",
+          "no NaN/undefined/Infinity in any filter/drill state (QA sweep)",
+          "page closes with the full-width performance matrix (totals row + drill-through)",
+          "KPI cards label the variance basis explicitly (YoY or MoM)",
+          "a Year>Quarter>Month dropdown date slicer is present (Power BI style)",
+          "the trend/timeline visual is exempt from the month/quarter filter (keeps its full series)"
+        ],
+        "realism": [
+          "at least one negative storyline (e.g. a platform with declining engagement or negative follower growth)",
+          "engagement rates are platform-plausible (IG ~1-4%, LinkedIn ~2-5%, not 40%)",
+          "paid always has spend and cost; organic does not",
+          "platform totals reconcile with the group KPI band",
+          "muted/desaturated palette (no brand specified)"
+        ],
+        "aesthetic": [
+          "if a table is present it anchors the column split; other visuals conform to it",
+          "vertical edges align across ALL rows (one page-wide column boundary, level 3 aligns to level 2 aligns to level 1)",
+          "visuals aligned to the KPI column grid (edges line up top to bottom; integer column spans, no off-grid widths)",
+          "visual frames aligned, equal gutters",
+          "harmonic proportion (no visual dwarfing the rest)",
+          "agency-modern styling appropriate to a marketing audience",
+          "commentary/labels in Italian",
+          "chart choice fits the analytical intent (not the same bars+donut every time)",
+          "pie/donut used only for 2-5 categories; 6+ uses sorted bar or 100% stacked",
+          "palette varied within the aesthetic (not identical to other reports)"
+        ]
+      }
+    },
+    {
+      "id": "ecommerce-retail",
+      "brief": "Monthly e-commerce report for a fashion online store: sales, returns, acquisition channels, repeat-purchase rate. Audience: the founder.",
+      "expected_aesthetic": "corporate-sober or agency-modern",
+      "expected_language": "en",
+      "assertions": {
+        "objective": [
+          "canvas 1280x720",
+          "single page plus drill-through",
+          "full-width KPI band on top",
+          "max 3 visuals per row",
+          "cross-filter and drill-through and tooltips all wired",
+          "single self-contained file",
+          "watermark present",
+          "clean across all states in the QA sweep",
+          "page closes with the full-width performance matrix (totals row + drill-through)",
+          "KPI cards label the variance basis explicitly (YoY or MoM)",
+          "a Year>Quarter>Month dropdown date slicer is present (Power BI style)",
+          "the trend/timeline visual is exempt from the month/quarter filter (keeps its full series)"
+        ],
+        "realism": [
+          "return rate is fashion-plausible (~20-40%), not 2% and not 80%",
+          "at least one negative storyline (a channel with rising CAC, or a category with high returns)",
+          "AOV varies by channel but within one order of magnitude",
+          "sales net of returns reconciles across visuals",
+          "muted palette (no brand given)"
+        ],
+        "aesthetic": [
+          "if a table is present it anchors the column split; other visuals conform to it",
+          "vertical edges align across ALL rows (one page-wide column boundary, level 3 aligns to level 2 aligns to level 1)",
+          "visuals aligned to the KPI column grid (edges line up top to bottom; integer column spans, no off-grid widths)",
+          "frames aligned, balanced proportion",
+          "aesthetic appropriate to a founder audience",
+          "chart choice fits the analytical intent (not the same bars+donut every time)",
+          "pie/donut used only for 2-5 categories; 6+ uses sorted bar or 100% stacked",
+          "palette varied within the aesthetic (not identical to other reports)"
+        ]
+      }
+    },
+    {
+      "id": "saas-metrics",
+      "brief": "SaaS growth dashboard for a Series A leadership team: MRR, net revenue retention, churn, new vs expansion, CAC payback. Audience: the exec team and board.",
+      "expected_aesthetic": "executive-minimal (board audience)",
+      "expected_language": "en",
+      "assertions": {
+        "objective": [
+          "canvas 1280x720",
+          "single page plus drill-through",
+          "full-width KPI band on top",
+          "max 3 visuals per row",
+          "interactions all wired",
+          "single self-contained file",
+          "watermark present",
+          "clean across all states",
+          "page closes with the full-width performance matrix (totals row + drill-through)",
+          "KPI cards label the variance basis explicitly (YoY or MoM)",
+          "a Year>Quarter>Month dropdown date slicer is present (Power BI style)",
+          "the trend/timeline visual is exempt from the month/quarter filter (keeps its full series)"
+        ],
+        "realism": [
+          "NRR is plausible (~100-130% for a healthy SaaS), churn low single-digit monthly",
+          "at least one negative storyline (a cohort churning, CAC payback lengthening)",
+          "MRR components (new + expansion - churn) reconcile to net MRR movement",
+          "executive-minimal implies a narrative sentence is present by default",
+          "muted palette"
+        ],
+        "aesthetic": [
+          "if a table is present it anchors the column split; other visuals conform to it",
+          "vertical edges align across ALL rows (one page-wide column boundary, level 3 aligns to level 2 aligns to level 1)",
+          "visuals aligned to the KPI column grid (edges line up top to bottom; integer column spans, no off-grid widths)",
+          "executive-minimal styling (hairline rules, monochrome + variance colour)",
+          "narrative sentence recomputes on filter change",
+          "balanced, aligned composition",
+          "chart choice fits the analytical intent (not the same bars+donut every time)",
+          "pie/donut used only for 2-5 categories; 6+ uses sorted bar or 100% stacked",
+          "palette varied within the aesthetic (not identical to other reports)"
+        ]
+      }
+    },
+    {
+      "id": "messy-retail-human",
+      "brief": "mi serve qualcosa per far vedere al cliente come vanno le vendite del negozio, ho i dati su un excel, cose tipo fatturato per mese e per categoria, e quali prodotti vanno meglio. voglio una mock dashboard",
+      "expected_aesthetic": "corporate-sober (retail owner audience)",
+      "expected_language": "it",
+      "assertions": {
+        "objective": [
+          "runs the fixed intake questionnaire once (all items together), then generates without further ad-hoc questions",
+          "if the user declines/skips the questionnaire, applies muted defaults and generates now (never blocks on the Excel)",
+          "generates the mockup WITHOUT asking clarifying questions (mockup-first)",
+          "canvas 1280x720, single page + drill-through",
+          "full-width KPI band on top, KPI cards label YoY/MoM",
+          "Year>Quarter>Month dropdown slicer present; trend exempt from month/quarter",
+          "max 3 visuals per row; page closes with full-width matrix",
+          "clean across all states in the QA sweep"
+        ],
+        "realism": [
+          "retail-plausible numbers (AOV, category mix, margins)",
+          "at least one negative storyline (a category or product declining)",
+          "totals reconcile; muted palette"
+        ],
+        "aesthetic": [
+          "vertical edges align across all rows; table anchors the split",
+          "harmonic proportion; Italian labels",
+          "chart choice fits the analytical intent (not the same bars+donut every time)",
+          "pie/donut used only for 2-5 categories; 6+ uses sorted bar or 100% stacked",
+          "palette varied within the aesthetic (not identical to other reports)"
+        ]
+      }
+    }
+  ]
+}
