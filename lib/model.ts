@@ -45,12 +45,16 @@ export function addUsage(a: Usage, b: Usage): Usage {
   };
 }
 
+/** A deployment problem, not a generation problem: it must NOT be papered over with the
+ *  fallback mockup, or a missing key looks like "the model keeps failing" forever. */
+export class ConfigError extends Error {}
+
 let client: Anthropic | null = null;
 function getClient(): Anthropic {
   if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error(
-      'ANTHROPIC_API_KEY non configurata. Mettila in .env.local per lo sviluppo locale ' +
-      'e nelle Environment Variables del progetto Vercel per il deploy.'
+    throw new ConfigError(
+      'ANTHROPIC_API_KEY non configurata. In locale mettila in .env.local; su Vercel in ' +
+      'Settings → Environment Variables, poi rilancia il deploy.'
     );
   }
   if (!client) client = new Anthropic();
