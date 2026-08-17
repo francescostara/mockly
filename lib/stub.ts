@@ -1,6 +1,40 @@
 /* Development stub — set MOCKLY_STUB=1 to exercise the whole pipeline (parse -> build data ->
  * validate -> render -> preview) without an API key and without spending credits.
- * It returns exactly what the model is asked to return: a bare JSON string. */
+ * It returns exactly what the model is asked to return: a bare JSON string.
+ *
+ * MOCKLY_STUB=broken returns a spec that fails validation every time, to exercise the
+ * repair-then-fallback path. */
+
+/** Deliberately invalid: 5 KPI cards on a 4-column grid, a row whose spans sum to 4, a
+ *  measure that sums a field the generator never emits, and no watermark. */
+export const STUB_BROKEN = JSON.stringify({
+  spec: {
+    meta: { title: 'Rotto', locale: 'it-IT', currency: '€' },
+    aesthetic: 'corporate-sober',
+    grid: { contentWidth: 1044, gutter: 12, columns: 4 },
+    model: {
+      sums: ['rev', 'inesistente'],
+      measures: [{ id: 'rev', label: 'Ricavi', agg: 'sum', field: 'rev', format: 'eur' }]
+    },
+    filters: { date: { default: { y: 2025 } }, dims: [{ id: 'nonEsiste', label: 'Boh', control: 'list' }] },
+    kpiBand: [
+      { id: 'a', label: 'A', measure: 'rev', span: 1 },
+      { id: 'b', label: 'B', measure: 'rev', span: 1 },
+      { id: 'c', label: 'C', measure: 'rev', span: 1 },
+      { id: 'd', label: 'D', measure: 'rev', span: 1 },
+      { id: 'e', label: 'E', measure: 'rev', span: 1 }
+    ],
+    pages: [{
+      id: 'main', title: 'Rotto',
+      rows: [{ visuals: [{ type: 'trend', span: 2, bind: { measure: 'rev' } }, { type: 'donut', span: 2, bind: { dim: 'seg', measure: 'rev' } }] }]
+    }]
+  },
+  dataParams: {
+    seed: 1, years: [2024, 2025],
+    dims: { seg: { members: [{ id: 'x', n: 'X', base: 1000, growth: 0.1, attrs: {} }] } },
+    facts: { dim: 'seg', fields: [{ id: 'rev', kind: 'seasonal' }] }
+  }
+});
 
 export const STUB_RESPONSE = JSON.stringify({
   spec: {
