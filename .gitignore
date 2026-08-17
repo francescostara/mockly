@@ -13,3 +13,5 @@ next-env.d.ts
 # secrets
 .env
 .env.local
+.vercel
+.env*
