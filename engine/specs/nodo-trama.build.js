@@ -42,32 +42,26 @@ function build() {
   Object.keys(MODELS).forEach(cid => MODELS[cid].forEach(n => modMembers.push({ id: cid + ':' + n, n: n, c: CATS[catIdx[cid]].c, parent: cid, parentDim: 'cat' })));
 
   /* ---- category grain: trend x seasonality x modest jitter ---- */
-  const facts = [];
-  YRS.forEach((y, yi) => CATS.forEach(cat => {
-    for (let m = 0; m < 12; m++) {
-      const rev = cat.base * Math.pow(1 + cat.gr, yi) * SEAS[m] * j(.93, 1.07);
+  const facts = DM.genMonthly({
+    j, years: YRS, seas: SEAS, dim: 'cat',
+    members: CATS.map(c => Object.assign({ growth: c.gr }, c)),
+    row: (rev, cat, yi) => {
       const onlShare = cat.onl * (yi === 1 ? ONLGROW : 1) * j(.85, 1.15);
       const mg = cat.mg * j(.97, 1.03);
-      const pieces = Math.max(1, Math.round(rev / (cat.aov * j(.85, 1.18))));
-      facts.push({
-        y, m, cat: cat.id,
+      return {
         rev: Math.round(rev),
         cost: Math.round(rev * (1 - mg)),
-        pieces,
+        pieces: Math.max(1, Math.round(rev / (cat.aov * j(.85, 1.18)))),
         online: Math.round(rev * Math.min(.6, onlShare))
-      });
+      };
     }
-  }));
+  });
 
   /* ---- model grain: a share vector per category, not ~700 literal rows.
          The runtime expands it against each fact row, so models always tie to their
          category exactly (data-realism.md "rescale to target", done at read time). ---- */
-  const shares = {};
-  Object.keys(MODELS).forEach(cid => {
-    const ws = MODELS[cid].map(() => j(.5, 1.5));
-    const s = ws.reduce((a, b) => a + b, 0);
-    MODELS[cid].forEach((n, k) => shares[cid + ':' + n] = ws[k] / s);
-  });
+  const shares = DM.shareVector(
+    Object.keys(MODELS).reduce((o, cid) => (o[cid] = MODELS[cid].map(n => cid + ':' + n), o), {}), j);
 
   const dims = { cat: CATS.map(c => ({ id: c.id, n: c.n, c: c.c })), mod: modMembers };
   return {

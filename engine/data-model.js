@@ -83,6 +83,35 @@ function seasonalValue(base, growth, yearIndex, seas, month, j) {
   return base * Math.pow(1 + growth, yearIndex) * seas[month] * j(.93, 1.07);
 }
 
+/* The monthly fact loop every report needs: for each year x member x month, draw the seasonal
+   base and let `row` derive the measures from it. `members` carry their own character
+   (base, growth, and whatever the callback reads) so segments tell a story. */
+function genMonthly(o) {
+  const j = o.j || rng(o.seed).j;
+  const seas = o.seas, out = [];
+  o.years.forEach((y, yi) => o.members.forEach(mb => {
+    for (let m = 0; m < 12; m++) {
+      const base = seasonalValue(mb.base, mb.growth, yi, mb.seas || seas, m, j);
+      const rec = { y, m };
+      rec[o.dim] = mb.id;
+      out.push(Object.assign(rec, o.row(base, mb, yi, m, j)));
+    }
+  }));
+  return out;
+}
+
+/* A share vector per parent, drawn once and normalised — the compact stand-in for a literal
+   child grain. The runtime expands it against each parent row (MK.expandDetail). */
+function shareVector(groups, j, lo, hi) {
+  const shares = {};
+  Object.keys(groups).forEach(gid => {
+    const ws = groups[gid].map(() => j(lo === undefined ? .5 : lo, hi === undefined ? 1.5 : hi));
+    const s = ws.reduce((a, b) => a + b, 0);
+    groups[gid].forEach((id, k) => shares[id] = ws[k] / s);
+  });
+  return shares;
+}
+
 /* ---------- tie-out report for the QA gate ---------- */
 function tieOut(facts, detail, fields) {
   const o = {};
@@ -93,4 +122,4 @@ function tieOut(facts, detail, fields) {
   return o;
 }
 
-module.exports = { rescaleTo, rescaleInt, ipf, jointRows, rng, seasonalValue, tieOut, sum };
+module.exports = { rescaleTo, rescaleInt, ipf, jointRows, rng, seasonalValue, genMonthly, shareVector, tieOut, sum };
