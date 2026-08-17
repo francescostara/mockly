@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { buildUserMessage, buildRepairMessage, PROMPT_STATS } from '@/lib/prompt';
-import { callModel, extractJson, emptyUsage, addUsage, ConfigError, MODEL, type Turn, type Usage } from '@/lib/model';
+import { callModel, extractJson, emptyUsage, addUsage, ConfigError, TransientError, MODEL, type Turn, type Usage } from '@/lib/model';
 import { checkAndRender } from '@/lib/validate';
 import { buildFallback } from '@/lib/fallback';
 import { record } from '@/lib/metering';
@@ -58,11 +58,16 @@ export async function POST(req: NextRequest) {
       answer = out.text;
       usage = addUsage(usage, out.usage);
     } catch (err) {
-      /* a missing/invalid key is a deployment problem: say so loudly instead of serving a
-         fallback mockup forever and looking like the model is broken */
+      /* account problems (no key, rejected key, no credit) and upstream hiccups are NOT
+         generation failures: say so loudly instead of serving a fallback mockup forever and
+         looking like the model is broken */
       if (err instanceof ConfigError) {
         console.error('[mockly:generate] configurazione:', err.message);
         return NextResponse.json({ error: err.message, config: true }, { status: 503 });
+      }
+      if (err instanceof TransientError) {
+        console.warn('[mockly:generate] temporaneo:', err.message);
+        return NextResponse.json({ error: err.message, retry: true }, { status: 503 });
       }
       /* a transport/refusal failure is not repairable by the model — go to fallback */
       lastErrors = [err instanceof Error ? err.message : String(err)];

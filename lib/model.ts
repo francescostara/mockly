@@ -45,9 +45,14 @@ export function addUsage(a: Usage, b: Usage): Usage {
   };
 }
 
-/** A deployment problem, not a generation problem: it must NOT be papered over with the
- *  fallback mockup, or a missing key looks like "the model keeps failing" forever. */
+/** An account or deployment problem (missing/rejected key, no credit), not a generation
+ *  problem: it must NOT be papered over with the fallback mockup, or the app looks like it
+ *  works while quietly serving the same generic report forever. */
 export class ConfigError extends Error {}
+
+/** A temporary upstream problem (rate limit, overload). Retrying later works; a fallback
+ *  mockup would hide the fact that nothing is actually wrong with the request. */
+export class TransientError extends Error {}
 
 let client: Anthropic | null = null;
 function getClient(): Anthropic {
@@ -68,23 +73,41 @@ export async function callModel(turns: Turn[]): Promise<{ text: string; usage: U
   try {
     return await request(turns);
   } catch (err) {
-    /* a rejected key is a configuration problem too: without this it would be swallowed by the
-       fallback and the app would quietly serve the same generic report forever */
-    if (err instanceof Anthropic.AuthenticationError) {
-      throw new ConfigError(
-        'La chiave ANTHROPIC_API_KEY è stata rifiutata (401). Controlla di aver incollato una ' +
-        'chiave API di console.anthropic.com — inizia con "sk-ant-" — senza spazi o virgolette, ' +
-        'poi rilancia il deploy.'
-      );
-    }
-    if (err instanceof Anthropic.PermissionDeniedError) {
-      throw new ConfigError(
-        'La chiave ANTHROPIC_API_KEY non ha i permessi necessari (403), oppure il workspace non ' +
-        'ha credito. Controlla su console.anthropic.com.'
-      );
-    }
-    throw err;
+    throw classify(err);
   }
+}
+
+/* Everything the API can reject us for, sorted into "you must fix something" vs "try again
+   later" vs "the model wrote something bad". Only the last one deserves the fallback mockup. */
+function classify(err: unknown): unknown {
+  if (err instanceof Anthropic.AuthenticationError) {
+    return new ConfigError(
+      'La chiave ANTHROPIC_API_KEY è stata rifiutata (401). Controlla di aver incollato una ' +
+      'chiave API di console.anthropic.com — inizia con "sk-ant-" — senza spazi o virgolette, ' +
+      'poi rilancia il deploy.'
+    );
+  }
+  if (err instanceof Anthropic.PermissionDeniedError) {
+    return new ConfigError(
+      'La chiave ANTHROPIC_API_KEY non ha i permessi necessari (403) per questo modello. ' +
+      'Controlla il workspace su console.anthropic.com.'
+    );
+  }
+  /* no credit arrives as a 400, not a 402 — it is an account problem, not a bad request */
+  if (err instanceof Anthropic.BadRequestError && /credit balance/i.test(err.message || '')) {
+    return new ConfigError(
+      'Il workspace Anthropic non ha credito. L\'API è prepagata e separata dall\'abbonamento a ' +
+      'Claude: aggiungi credito su console.anthropic.com/settings/billing e riprova. ' +
+      'Non serve rilanciare il deploy.'
+    );
+  }
+  if (err instanceof Anthropic.RateLimitError) {
+    return new TransientError('Troppe richieste verso l\'API in questo momento. Riprova tra qualche minuto.');
+  }
+  if (err instanceof Anthropic.InternalServerError) {
+    return new TransientError('L\'API di Anthropic è momentaneamente sovraccarica. Riprova tra qualche minuto.');
+  }
+  return err;
 }
 
 async function request(turns: Turn[]): Promise<{ text: string; usage: Usage }> {
