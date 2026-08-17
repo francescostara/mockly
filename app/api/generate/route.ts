@@ -14,6 +14,7 @@ import { buildUserMessage, buildRepairMessage, PROMPT_STATS } from '@/lib/prompt
 import { callModel, extractJson, emptyUsage, addUsage, MODEL, type Turn, type Usage } from '@/lib/model';
 import { checkAndRender } from '@/lib/validate';
 import { buildFallback } from '@/lib/fallback';
+import { record } from '@/lib/metering';
 import { STUB_RESPONSE, STUB_BROKEN } from '@/lib/stub';
 import type { IntakeAnswers } from '@/lib/intake';
 
@@ -106,7 +107,15 @@ export async function POST(req: NextRequest) {
     tieOut: (result.data as { tieOut?: unknown }).tieOut,
     ...usage
   };
-  console.log('[mockly:generate]', JSON.stringify(meta));
 
-  return NextResponse.json({ html: result.html, meta });
+  /* metering stub: one structured log line per generation + a per-process aggregate.
+     These are the numbers that will set the credit price. */
+  const session = record({
+    model: meta.model, valid: meta.valid, repairs, fallback,
+    tokensIn: usage.tokensIn, tokensOut: usage.tokensOut,
+    cacheRead: usage.cacheRead, cacheWrite: usage.cacheWrite,
+    costUsd: usage.costUsd, latencyMs: meta.latencyMs, bytes: meta.bytes
+  });
+
+  return NextResponse.json({ html: result.html, meta: { ...meta, session } });
 }

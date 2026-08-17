@@ -1,65 +1,134 @@
-# Mockly — repo
+# Mockly
 
-/ skill   -> the authoritative specification (SKILL.md + references + assets + evals).
-             The engine is built to satisfy these files; the skill is the spec.
-/ engine  -> the deterministic rendering engine: runtime.js, spec schema,
-             render(spec,data), data-model.js (rescale + IPF), fixtures per eval brief.
-/ test    -> unit tests + the headless jsdom harness over every eval brief.
+Generatore di mockup di dashboard BI: descrivi il report a voce tua, ottieni un file HTML
+singolo, interattivo, 1280x720, con dati sintetici plausibili, cross-filter, drill-through e
+tooltip — pronto da mandare al cliente.
 
-Rule: the skill is the spec, the engine is the implementation. When a rule changes it
-changes in /skill first, then /engine. Never the reverse.
-
-## The split
-
-An LLM used to generate the whole HTML file every time: data model, rendering engine and
-layout. The engine is the deterministic part, so it moved into code:
-
-| | who | what |
-|---|---|---|
-| **judgement** | the LLM | the SPEC: aesthetic, palette, which visual answers which question, the storyline, the labels — plus the data parameters (segment character, growth, seasonality) |
-| **determinism** | this engine | grid, formatting, aggregation, filtering, charts, slicer, cross-filter, drill-through, tooltips, fit-to-viewport, reconciliation |
-
-```js
-const { render } = require('./engine/render.js');
-const html = render(spec, data);        // one self-contained HTML file, byte-deterministic
+```
+/ skill   -> la specifica autorevole (SKILL.md + references + assets + evals).
+/ engine  -> il motore deterministico: runtime.js, render(spec,data), data-model.js,
+             data-builder.js, la grammatica della spec.
+/ app     -> l'MVP web (Next.js): chat di intake + una API route che genera.
+/ lib     -> il collante dell'app: prompt, chiamata al modello, validazione, fallback, metering.
+/ test    -> unit test + harness headless sui brief di /skill/evals.
 ```
 
-- `engine/spec-schema.md` + `engine/spec.d.ts` — the SPEC grammar.
-- `engine/runtime.js` — the engine, in `/*#region*/` blocks. `render()` inlines `core` plus
-  only the chart helpers the spec uses, comment-stripped, so no dead code ships.
-- `engine/data-model.js` — reconciled synthetic data: `rescaleTo`/`rescaleInt` on one axis,
-  `ipf`/`jointRows` on two (a joint matrix instead of two tables with one inert filter).
-- `engine/specs/*.js` — one fixture per eval brief, each an example of what an LLM writes.
+Regola: **la skill è la specifica, il motore è l'implementazione.** Quando cambia una regola,
+cambia prima in `/skill`, poi in `/engine`. Mai il contrario.
 
-## Commands
+## Come è diviso il lavoro
+
+| | chi | cosa produce |
+|---|---|---|
+| **giudizio** | l'LLM | la SPEC: estetica, palette, quale visual risponde a quale domanda, storyline, etichette — più i `dataParams`: carattere dei segmenti, crescita, stagionalità |
+| **determinismo** | il motore | griglia, formattazione, aggregazione, filtri, grafici SVG, slicer date, cross-filter, drill-through, tooltip, fit-to-viewport, riconciliazione |
+
+Stessa spec + stessi dati ⇒ stesso HTML, byte per byte.
+
+## L'app in locale
 
 ```bash
-npm install          # jsdom, for the harness only — nothing reaches the output file
-npm test             # unit tests + canonical equivalence + the harness over every eval brief
-node engine/build-all.js     # render every fixture into out/
+npm install
 ```
 
-## Where it stands
+Poi crea `.env.local`:
 
-`npm test` — 159 checks, 1040 rendered states, all green.
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
 
-| brief | aesthetic | size | states |
+```bash
+npm run dev
+```
+
+Apri <http://localhost:3000>, rispondi alle cinque domande, premi **Genera mockup**.
+
+### Variabili d'ambiente
+
+| variabile | obbligatoria | default | a cosa serve |
 |---|---|---|---|
-| messy-retail-human (Nodo & Trama) | corporate-sober | 44.9KB | 270 |
-| social-monthly | agency-modern | 47.2KB | 230 |
-| ecommerce-retail | corporate-sober | 57.4KB | 350 |
-| saas-metrics | executive-minimal | 43.9KB | 190 |
+| `ANTHROPIC_API_KEY` | sì (in produzione) | — | la chiave. Vive **solo server-side**, non arriva mai al browser |
+| `MOCKLY_MODEL` | no | `claude-sonnet-5` | il modello che scrive la spec |
+| `MOCKLY_STUB` | no | — | `1` usa una spec canned (nessuna chiamata, nessun credito); `broken` forza il percorso riparazione → fallback. Per lavorare sulla UI senza spendere |
 
-`test/canonical-equivalence.test.js` renders the Nodo & Trama spec and compares its structural
-signature against `skill/assets/canonical-retail-fullspec.html`: same canvas, shell, slicer,
-KPI band, grid composition (3+2 / 3+2), visual kinds, closing matrix and 12-point trend.
+Con `MOCKLY_STUB=1` l'app gira **senza chiave**: utile per sviluppare l'interfaccia.
 
-Two places where the fixtures follow the canonical example rather than a written rule (the
-harness reports both as notes rather than failures):
+## Come funziona una generazione
 
-- the canonical's donut has 6 slices; `chart-selection.md` says 2-5;
-- the canonical's closing matrix spans 3 of 5 columns, not the full width SKILL.md asks for.
+1. **La chat non costa nulla.** L'intake (le 5 domande di `SKILL.md`) è scriptato lato client:
+   nessuna chiamata al modello finché non premi «Genera mockup».
+2. **Una sola chiamata a pagamento** verso `/api/generate`. Il system prompt (~12k token) è
+   costruito dai file su disco ed è byte-stabile, quindi va in **prompt cache**: dalla seconda
+   generazione in poi quel prefisso costa ~0,1×.
+3. Il modello restituisce `{ spec, dataParams }`. Il server espande i dati
+   (`engine/data-builder.js`), valida e renderizza (`engine/render.js`).
+4. **Se la spec non è valida**, gli errori esatti tornano al modello per **una** riparazione
+   mirata. Se fallisce ancora, parte una **spec di fallback** deterministica costruita
+   dall'intake: l'utente ottiene comunque un mockup funzionante, mai una pagina di errore.
+5. Il mockup vive in un `<iframe sandbox="allow-scripts">`: gli script del report girano, ma
+   l'iframe è origine opaca e non può toccare la pagina che lo ospita.
 
-The engine enforces the rule where it is unambiguous (integer spans, ≤3 visuals per row,
-dropdown above 5 members, no decorative filters, no authored prose) and reports the judgement
-calls instead of overriding the spec author.
+### Metering (stub, niente fatturazione)
+
+Ogni generazione emette una riga strutturata su stdout:
+
+```
+[mockly:meter] {"model":"claude-sonnet-5","valid":true,"repairs":0,"fallback":false,
+"tokensIn":812,"tokensOut":4210,"cacheRead":12088,"costUsd":0.0672,"cacheHitRate":0.937,
+"latencyMs":31840,"run":7,"avgCostUsd":0.0689,"fallbackRate":0.0}
+```
+
+Sono i numeri che servono a calibrare i crediti: costo per generazione, hit rate della cache,
+quante volte la spec ha avuto bisogno di riparazione o è finita in fallback. L'aggregato è in
+memoria di processo (le istanze serverless sono effimere): la riga di log è il record durevole,
+da instradare a un log drain quando arriverà il billing vero.
+
+## Deploy su Vercel
+
+Il progetto è un'app Next.js standard: nessun `vercel.json` necessario.
+
+1. Push del repo su GitHub.
+2. Su Vercel: **Add New → Project → Import** il repo. Framework rilevato: Next.js. Root
+   directory: la radice del repo. Build command e output: quelli di default.
+3. **Settings → Environment Variables**: aggiungi `ANTHROPIC_API_KEY` (Production, Preview,
+   Development). Non serve nessun prefisso `NEXT_PUBLIC_`: la chiave deve restare server-side.
+4. Deploy.
+
+Oppure da CLI:
+
+```bash
+npx vercel link
+npx vercel env add ANTHROPIC_API_KEY
+npx vercel --prod
+```
+
+Due dettagli che contano:
+
+- **`maxDuration`**: la route dichiara 300s. Il piano **Hobby taglia a 60s**; una generazione
+  sta tipicamente in 20–60s, quindi ci sta, ma senza margine. Su **Pro** i 300s valgono davvero.
+- **Il motore non viene bundlato.** È CommonJS e legge `engine/runtime.js` da disco, quindi
+  `lib/engine.ts` lo carica a runtime e `next.config.ts` (`outputFileTracingIncludes`) dice a
+  Vercel di spedire `engine/**` e i file di `skill/references` insieme alla funzione. Se sposti
+  quelle cartelle, aggiorna anche quella lista.
+
+## Il motore, senza l'app
+
+```bash
+npm test                      # unit test + equivalenza col canonico + harness sui brief
+node engine/build-all.js      # renderizza le fixture in out/
+```
+
+`npm test` — 159 check, 1040 stati renderizzati. `test/canonical-equivalence.test.js` confronta
+la firma strutturale dell'output con `skill/assets/canonical-retail-fullspec.html`.
+
+## Stato e limiti noti
+
+- **Gli eval a contesto pulito non sono ancora stati eseguiti.** Le spec nelle fixture di test
+  sono scritte a mano: provano che la grammatica sa esprimere quei brief, non che il modello la
+  scriva bene. La misura di quanto spesso il modello produce una spec valida al primo colpo è
+  il prossimo passo, ed è quello che fissa il prezzo in crediti.
+- **«Condividi link» è uno stub.** Serve uno storage per l'HTML (Vercel Blob o simile).
+- **Una riparazione sola.** Se serve di più, meglio capire *perché* la spec esce male e
+  correggere il prompt, non aggiungere tentativi.
+- **Structured outputs non attivi.** Il JSON si estrae con un parser tollerante; passare a
+  `output_config.format` toglierebbe una classe di errori, ma va testato contro l'API vera.
