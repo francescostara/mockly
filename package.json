@@ -1,0 +1,15 @@
+{
+  "name": "mockly-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deterministic rendering engine for Mockly BI dashboard mockups",
+  "main": "engine/render.js",
+  "scripts": {
+    "smoke": "node test/runtime.smoke.js",
+    "build:nodo": "node engine/specs/nodo-trama.build.js",
+    "test": "node test/run.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}
