@@ -221,9 +221,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (m.agg === 'sum') a[m.id] = a[m.field !== undefined ? m.field : m.id] || 0;
         else if (m.agg === 'diff') a[m.id] = (a[m.a] || 0) - (a[m.b] || 0);
         else if (m.agg === 'ratio') a[m.id] = a[m.den] ? a[m.num] / a[m.den] : 0;
-        else if (m.agg === 'last') {          /* stock / point-in-time metric — never summed */
-          var best = -1, val = 0;
-          for (i = 0; i < rows.length; i++) { var t = rows[i].y * 12 + rows[i].m; if (t > best) { best = t; val = rows[i][m.field] || 0; } }
+        else if (m.agg === 'last') {
+          /* stock / point-in-time metric: never summed ACROSS months, but summed across the
+             members present in the latest month of the window (data-realism.md) */
+          var best = -1, t;
+          for (i = 0; i < rows.length; i++) { t = rows[i].y * 12 + rows[i].m; if (t > best) best = t; }
+          var val = 0;
+          for (i = 0; i < rows.length; i++) if (rows[i].y * 12 + rows[i].m === best) val += rows[i][m.field] || 0;
           a[m.id] = val;
         }
       }

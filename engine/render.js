@@ -60,10 +60,48 @@ function strip(src) {
     if (!/\s/.test(c)) prev = c; else if (c === '\n') prev = '\n';
     i++;
   }
-  const lean = out.split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+  const lean = squeeze(out).split('\n').map(l => l.trim()).filter(Boolean).join('\n');
   try { new Function(lean); } catch (err) { return src; }
   return lean;
 }
+
+/* Drop spaces that no parser needs: a space survives only between two word characters.
+ * Newlines are never touched, so automatic semicolon insertion behaves exactly as in source.
+ * String/template/regex literals are copied verbatim. */
+const WORD = /[A-Za-z0-9_$]/;
+function squeeze(src) {
+  let out = '', i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '"' || c === "'" || c === '`') {
+      let j = i + 1;
+      while (j < src.length) { if (src[j] === '\\') j += 2; else if (src[j] === c) break; else j++; }
+      out += src.slice(i, j + 1); i = j + 1; continue;
+    }
+    if (c === '/' && !WORD.test(prevSig(out)) && prevSig(out) !== ')' && prevSig(out) !== ']') {
+      let j = i + 1, cls = false;
+      while (j < src.length) {
+        if (src[j] === '\\') { j += 2; continue; }
+        if (src[j] === '[') cls = true; else if (src[j] === ']') cls = false;
+        else if (src[j] === '/' && !cls) break;
+        else if (src[j] === '\n') break;
+        j++;
+      }
+      while (j + 1 < src.length && /[gimsuy]/.test(src[j + 1])) j++;
+      out += src.slice(i, j + 1); i = j + 1; continue;
+    }
+    if (c === ' ' || c === '\t') {
+      let j = i; while (src[j] === ' ' || src[j] === '\t') j++;
+      const a = out[out.length - 1] || '', b = src[j] || '';
+      const glue = (a === '+' && b === '+') || (a === '-' && b === '-');
+      if ((WORD.test(a) && WORD.test(b)) || glue) out += ' ';
+      i = j; continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+const prevSig = s => { for (let k = s.length - 1; k >= 0; k--) if (!/\s/.test(s[k])) return s[k]; return ''; };
 
 /* ---------- palettes ---------- */
 const AESTHETICS = {
