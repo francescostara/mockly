@@ -1,4 +1,15 @@
 node_modules/
 tmp/
 out/
+share/
 *.log
+
+# next
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.vercel/
+
+# secrets
+.env
+.env.local

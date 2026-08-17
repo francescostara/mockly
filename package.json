@@ -1,15 +1,27 @@
 {
-  "name": "mockly-engine",
-  "version": "0.1.0",
+  "name": "mockly",
+  "version": "0.2.0",
   "private": true,
-  "description": "Deterministic rendering engine for Mockly BI dashboard mockups",
-  "main": "engine/render.js",
+  "description": "Mockly — deterministic BI mockup engine + MVP web app",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "smoke": "node test/runtime.smoke.js",
-    "build:nodo": "node engine/specs/nodo-trama.build.js",
+    "build:mockups": "node engine/build-all.js",
     "test": "node test/run.js"
   },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "next": "^15.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
   "devDependencies": {
-    "jsdom": "^24.1.0"
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "jsdom": "^24.1.0",
+    "typescript": "^5.7.0"
   }
 }
