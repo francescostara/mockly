@@ -11,7 +11,7 @@ const root = path.join(__dirname, '..');
 const evals = JSON.parse(fs.readFileSync(path.join(root, 'skill', 'evals', 'evals.json'), 'utf8'));
 
 let failed = 0;
-['runtime.smoke.js', 'data-model.test.js'].forEach(f => {
+['runtime.smoke.js', 'data-model.test.js', 'canonical-equivalence.test.js'].forEach(f => {
   try {
     process.stdout.write(execFileSync(process.execPath, [path.join(__dirname, f)], { encoding: 'utf8' }));
   } catch (err) {
