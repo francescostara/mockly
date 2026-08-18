@@ -23,6 +23,7 @@ const PORT = 3123;                // porta dedicata, per non pestare un dev serv
 const MAX_ATTEMPTS = 3;           // tentativi per generazione (rete / rate-limit)
 const BACKOFF_MS = [5000, 15000]; // attesa fra un tentativo e il successivo
 const REQUEST_TIMEOUT_MS = 300000;
+const MAX_TOTAL_COST_USD = 2.00;  // tetto duro: se il giro lo supera, si ferma
 
 const MODELS = ['sonnet', 'haiku'];   // haiku è ammesso ma oggi non si lancia
 
@@ -101,19 +102,23 @@ const csvCell = v => {
 
 /* ---------- server ---------- */
 
+/* Interroga la HOME, non /api/generate: quell'endpoint chiama il modello, quindi ogni sonda
+   sarebbe una generazione a pagamento. Con lo stub non si vedeva (costo zero, 20ms); in
+   modalita reale la sonda scadeva prima della generazione e ne lanciava una al secondo. */
 async function isUp() {
   try {
-    const r = await fetch('http://127.0.0.1:' + PORT + '/api/generate', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{}',
-      signal: AbortSignal.timeout(3000)
+    const r = await fetch('http://127.0.0.1:' + PORT + '/', {
+      method: 'GET',
+      signal: AbortSignal.timeout(4000)
     });
-    return r.status !== 404;
+    return r.status < 500;
   } catch { return false; }
 }
 
-async function startServer(dry) {
+let serverLogPath = null;
+
+async function startServer(dry, logPath) {
+  serverLogPath = logPath;
   if (await isUp()) {
     log('· server già in ascolto su :' + PORT + ', lo riuso');
     return null;
@@ -127,8 +132,9 @@ async function startServer(dry) {
     ['next', 'dev', '-p', String(PORT)],
     { env, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' });
 
-  child.stdout.on('data', d => { if (/error/i.test(String(d))) process.stderr.write(String(d)); });
-  child.stderr.on('data', d => process.stderr.write(String(d)));
+  const sink = fs.createWriteStream(logPath, { flags: 'a' });
+  child.stdout.on('data', d => { sink.write(String(d)); if (/error/i.test(String(d))) process.stderr.write(String(d)); });
+  child.stderr.on('data', d => { sink.write(String(d)); process.stderr.write(String(d)); });
 
   for (let i = 0; i < 90; i++) {
     await sleep(1000);
@@ -202,7 +208,8 @@ async function main() {
   log('output: eval-out/' + label + '/  ·  csv: eval-out/' + label + '.csv');
   log('');
 
-  const child = await startServer(dry);
+  const serverLog = path.join(path.dirname(csv), label + '-server.log');
+  const child = await startServer(dry, serverLog);
   const rows = [];
   let modeChecked = false;
 
@@ -271,6 +278,14 @@ async function main() {
 
         rows.push(row);
         fs.appendFileSync(csv, COLUMNS.map(c => csvCell(row[c])).join(',') + '\n');
+
+        /* tetto duro di spesa: nessun giro puo sfuggire di mano */
+        const spent = rows.reduce((a, r) => a + Number(r.cost_usd || 0), 0);
+        if (spent > MAX_TOTAL_COST_USD) {
+          log('');
+          log('  Tetto di spesa raggiunto ($' + spent.toFixed(2) + ' > $' + MAX_TOTAL_COST_USD.toFixed(2) + '): mi fermo.');
+          return;
+        }
       }
     }
   } finally {
@@ -300,6 +315,14 @@ function summarise(rows, csv, dir, label) {
   log('  costo medio                $' + avgCost.toFixed(4) + '   ·  totale $' + (avgCost * n).toFixed(4));
   log('  latenza media              ' + (avgLat / 1000).toFixed(1) + 's');
   log('');
+  /* controprova: l'endpoint a pagamento va chiamato una volta per generazione, non una di
+     piu. E' esattamente il difetto che la sonda di prontezza aveva introdotto. */
+  if (serverLogPath && fs.existsSync(serverLogPath)) {
+    const hits = fs.readFileSync(serverLogPath, 'utf8').split('[mockly:meter]').length - 1;
+    log('  chiamate a /api/generate   ' + hits + '  (attese ' + rows.length + ')' +
+      (hits === rows.length ? '  ok' : '  ATTENZIONE: non combaciano'));
+    log('');
+  }
   log('  csv:   ' + path.relative(process.cwd(), csv));
   log('  html:  ' + path.relative(process.cwd(), dir) + '/  (aprili e dai il voto a mano)');
   log('');
