@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { buildUserMessage, buildRepairMessage, PROMPT_STATS } from '@/lib/prompt';
-import { callModel, extractJson, emptyUsage, addUsage, ConfigError, TransientError, MODEL, type Turn, type Usage } from '@/lib/model';
+import { callModel, extractJson, emptyUsage, addUsage, ConfigError, TransientError, resolveModel, type Turn, type Usage } from '@/lib/model';
 import { checkAndRender } from '@/lib/validate';
 import { buildFallback } from '@/lib/fallback';
 import { record } from '@/lib/metering';
@@ -24,15 +24,15 @@ export const maxDuration = 300;
 
 const stubbed = () => process.env.MOCKLY_STUB === '1' || process.env.MOCKLY_STUB === 'broken';
 
-async function ask(turns: Turn[]): Promise<{ text: string; usage: Usage }> {
+async function ask(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
   if (process.env.MOCKLY_STUB === 'broken') return { text: STUB_BROKEN, usage: emptyUsage() };
   if (process.env.MOCKLY_STUB === '1') return { text: STUB_RESPONSE, usage: emptyUsage() };
-  return callModel(turns);
+  return callModel(turns, model);
 }
 
 export async function POST(req: NextRequest) {
   const started = Date.now();
-  let body: { brief?: string; intake?: IntakeAnswers };
+  let body: { brief?: string; intake?: IntakeAnswers; model?: string };
   try {
     body = await req.json();
   } catch {
@@ -41,6 +41,15 @@ export async function POST(req: NextRequest) {
 
   const brief = (body.brief || '').slice(0, 4000);
   const intake = body.intake || {};
+
+  /* the model may be chosen per request (the eval harness drives this); anything outside the
+     allowlist is refused rather than forwarded to the API */
+  let model: string;
+  try {
+    model = resolveModel(body.model);
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 400 });
+  }
 
   let usage: Usage = emptyUsage();
   let repairs = 0;
@@ -54,7 +63,7 @@ export async function POST(req: NextRequest) {
   for (let attempt = 0; attempt < 2; attempt++) {
     let answer: string;
     try {
-      const out = await ask(turns);
+      const out = await ask(turns, model);
       answer = out.text;
       usage = addUsage(usage, out.usage);
     } catch (err) {
@@ -106,7 +115,7 @@ export async function POST(req: NextRequest) {
   }
 
   const meta = {
-    model: stubbed() ? `stub:${process.env.MOCKLY_STUB}` : MODEL,
+    model: stubbed() ? `stub:${process.env.MOCKLY_STUB}` : model,
     valid: !fallback,
     repairs,
     fallback,

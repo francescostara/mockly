@@ -9,6 +9,26 @@ import { SYSTEM_PROMPT } from './prompt';
 /** Sonnet 5 by default, per the brief. Override with MOCKLY_MODEL. */
 export const MODEL = process.env.MOCKLY_MODEL || 'claude-sonnet-5';
 
+/** Short names a caller may ask for. Anything outside this list is refused: the model id
+ *  reaches the API and bills the account, so it is never taken from the request verbatim. */
+export const MODEL_ALIASES: Record<string, string> = {
+  sonnet: 'claude-sonnet-5',
+  haiku: 'claude-haiku-4-5',
+  opus: 'claude-opus-5'
+};
+
+/** Resolve a caller-supplied model name (alias or full id) against the allowlist. */
+export function resolveModel(requested?: string): string {
+  if (!requested) return MODEL;
+  const id = MODEL_ALIASES[requested] || requested;
+  if (!Object.values(MODEL_ALIASES).includes(id)) {
+    throw new ConfigError(
+      `Modello "${requested}" non ammesso. Valori validi: ${Object.keys(MODEL_ALIASES).join(', ')}.`
+    );
+  }
+  return id;
+}
+
 /* Standard list price per million tokens. Sonnet 5 also has an introductory $2/$10 through
    2026-08-31 — metering with the standard rate keeps the credit estimate conservative. */
 const PRICE: Record<string, { in: number; out: number }> = {
@@ -69,9 +89,9 @@ function getClient(): Anthropic {
 export type Turn = { role: 'user' | 'assistant'; content: string };
 
 /** One call. `turns` carries the brief and, on a repair attempt, the previous answer + errors. */
-export async function callModel(turns: Turn[]): Promise<{ text: string; usage: Usage }> {
+export async function callModel(turns: Turn[], model: string = MODEL): Promise<{ text: string; usage: Usage }> {
   try {
-    return await request(turns);
+    return await request(turns, model);
   } catch (err) {
     throw classify(err);
   }
@@ -110,9 +130,9 @@ function classify(err: unknown): unknown {
   return err;
 }
 
-async function request(turns: Turn[]): Promise<{ text: string; usage: Usage }> {
+async function request(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
   const res = await getClient().messages.create({
-    model: MODEL,
+    model,
     max_tokens: 16000,
     /* the cached prefix — one breakpoint on the last (only) system block */
     system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
@@ -136,7 +156,7 @@ async function request(turns: Turn[]): Promise<{ text: string; usage: Usage }> {
 
   if (res.stop_reason === 'refusal') throw new Error('Il modello ha rifiutato la richiesta.');
 
-  return { text, usage: { ...raw, costUsd: priceOf(MODEL, raw) } };
+  return { text, usage: { ...raw, costUsd: priceOf(model, raw) } };
 }
 
 /** Tolerant JSON extraction: the model is asked for bare JSON but may fence it. */
