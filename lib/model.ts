@@ -133,12 +133,17 @@ function classify(err: unknown): unknown {
 async function request(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
   const res = await getClient().messages.create({
     model,
-    max_tokens: 16000,
+    /* Misurato sul primo giro vero: ~11.900 token in uscita per chiamata, di cui il JSON e
+       ~2.000. Il resto era ragionamento, che sfondava il tetto di 16.000 e troncava la spec a
+       meta (da cui i "JSON non valido" e il costo triplo). Piu spazio e gratis: si paga solo
+       quello che viene davvero generato. */
+    max_tokens: 24000,
     /* the cached prefix — one breakpoint on the last (only) system block */
     system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    /* medium keeps latency inside a serverless function's budget; the task is structured
-       generation, not deep reasoning */
-    output_config: { effort: 'medium' },
+    /* Scrivere una spec e generazione strutturata, non ragionamento profondo: il giudizio
+       (quale visual, quale palette, quale storyline) sta nel prompt, non va riscoperto ogni
+       volta. A 'low' il modello pensa meno e scrive di piu. */
+    output_config: { effort: 'low' },
     messages: turns.map(t => ({ role: t.role, content: t.content }))
   });
 
@@ -155,6 +160,11 @@ async function request(turns: Turn[], model: string): Promise<{ text: string; us
   };
 
   if (res.stop_reason === 'refusal') throw new Error('Il modello ha rifiutato la richiesta.');
+  /* Il tetto di token raggiunto significa spec tagliata a meta: senza questo controllo
+     arrivava a valle come un incomprensibile "Expected ',' after array element". */
+  if (res.stop_reason === 'max_tokens') {
+    throw new Error('Risposta troncata: raggiunto il tetto di ' + 24000 + ' token in uscita, la spec e incompleta.');
+  }
 
   return { text, usage: { ...raw, costUsd: priceOf(model, raw) } };
 }

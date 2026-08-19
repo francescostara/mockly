@@ -22,7 +22,7 @@ const RUNS_PER_CASE = 2;          // alzalo se un giorno vuoi più ripetizioni
 const PORT = 3123;                // porta dedicata, per non pestare un dev server già aperto
 const MAX_ATTEMPTS = 3;           // tentativi per generazione (rete / rate-limit)
 const BACKOFF_MS = [5000, 15000]; // attesa fra un tentativo e il successivo
-const REQUEST_TIMEOUT_MS = 300000;
+const REQUEST_TIMEOUT_MS = 420000;
 const MAX_TOTAL_COST_USD = 2.00;  // tetto duro: se il giro lo supera, si ferma
 
 const MODELS = ['sonnet', 'haiku'];   // haiku è ammesso ma oggi non si lancia
@@ -183,7 +183,11 @@ async function generateWithRetry(testCase, model) {
     } catch (err) {
       if (err.fatal) throw err;
       last = err;
-      const retryable = err.retryable || err.name === 'TimeoutError' || err.name === 'AbortError' ||
+      /* Un timeout NON si ritenta: il server sta ancora lavorando e ogni ritentativo e
+         un'altra generazione a pagamento. Nel primo giro vero un solo caso in timeout ha
+         fatto partire sei chiamate al modello. Si ritenta solo cio che non e costato nulla:
+         connessione rifiutata, 5xx, rate limit. */
+      const retryable = err.retryable ||
         /fetch failed|ECONNRESET|ECONNREFUSED|socket/i.test(err.message || '');
       if (!retryable || attempt === MAX_ATTEMPTS) break;
       const wait = BACKOFF_MS[Math.min(attempt - 1, BACKOFF_MS.length - 1)];
