@@ -60,13 +60,26 @@ function inspect(html) {
     return chrome + Number(c.style.height ? parseFloat(c.style.height) : 90);
   })));
 
+  /* un filtro che non cambia il TESTO di una KPI e inerte, comunque appaia (Gate 5) */
+  const kpi = () => qa('#page .kpi .v').map(e => e.textContent).join('|');
+  const click = el => el && el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+  const inert = [];
+  [...new Set(qa('[data-f]').map(e => e.getAttribute('data-f')).filter(v => v && !v.endsWith(':')))]
+    .forEach(key => {
+      const before = kpi();
+      click(d.querySelector('[data-f="' + key + '"]'));
+      if (kpi() === before) inert.push(key);
+      click(d.querySelector('#btnReset'));
+    });
+
   const res = {
     placeholders: texts.filter(t => /\{[a-zA-Z]+\}/.test(t)),
     rows: rows.length,
     rowHeights,
     kpiDetail: qa('#page .kpi .det').map(e => e.textContent)[0] || '',
     legendItems: qa('#page .lgd span').length,
-    bad: /NaN|undefined|Infinity/.test(d.querySelector('#page').innerHTML)
+    bad: /NaN|undefined|Infinity/.test(d.querySelector('#page').innerHTML),
+    inert
   };
   dom.window.close();
   return res;
@@ -87,7 +100,7 @@ if (!fs.existsSync(src)) {
 fs.mkdirSync(out, { recursive: true });
 
 const files = fs.readdirSync(src).filter(f => f.endsWith('.html'));
-let overflow = 0, withPlaceholders = 0;
+let overflow = 0, withPlaceholders = 0, rejected = 0;
 
 console.log('ri-rendering di ' + files.length + ' spec reali con il motore corrente');
 console.log('');
@@ -98,7 +111,13 @@ for (const f of files) {
   try { ({ spec, data } = extract(html)); }
   catch (err) { console.log('  ' + f.padEnd(22) + ' SPEC non estraibile (' + err.message + ')'); continue; }
 
-  const fresh = render(spec, data);
+  let fresh;
+  try { fresh = render(spec, data); }
+  catch (err) {                                   /* una regola nuova puo bocciare una spec vecchia */
+    console.log('  ' + f.replace('.html', '').padEnd(20) + ' SPEC RIFIUTATA: ' + err.message.split(String.fromCharCode(10)).slice(1, 2).join('').trim());
+    rejected++;
+    continue;
+  }
   fs.writeFileSync(path.join(out, f), fresh);
 
   const before = inspect(html);
@@ -114,11 +133,13 @@ for (const f of files) {
   console.log('  ' + f.replace('.html', '').padEnd(20) +
     ' segnaposto ' + String(before.placeholders.length) + '->' + after.placeholders.length +
     '  altezza ' + usedAfter + '/' + budget + 'px' + (over > 0 ? '  SFORA di ' + over + 'px' : '  ok') +
-    (after.bad ? '  VALORI ROTTI' : ''));
+    (after.bad ? '  VALORI ROTTI' : '') +
+    (after.inert.length ? '  FILTRI INERTI: ' + after.inert.slice(0, 3).join(' ') : ''));
 }
 
 console.log('');
 console.log('  file con segnaposto residui : ' + withPlaceholders + '/' + files.length);
 console.log('  file che sforano in altezza : ' + overflow + '/' + files.length);
+if (rejected) console.log('  spec bocciate dalle regole  : ' + rejected + '/' + files.length);
 console.log('');
 console.log('  output: ' + out + '/');

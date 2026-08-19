@@ -189,12 +189,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          ignore   : [dim] ignore the page filter on these dims (own-breakdown visuals) */
     A.slice = function (o) {
       o = o || {};
-      var rows = o.detail ? (DT || []) : F;
       var y = o.y !== undefined ? o.y : S.y;
       var months = o.months || null;
       var pin = Object.assign({}, A.drillPin(), o.pin || {});
       var ignore = o.ignore || [];
-      return rows.filter(function (r) {
+      var rows = o.detail ? (DT || []) : F;
+      /* Una dimensione che vive solo nel grano di dettaglio (i corsi dentro una sede, i
+         prodotti dentro una categoria) non compare nelle righe dei fatti: filtrarci sopra
+         non cambierebbe nulla e il filtro sembrerebbe rotto. In quel caso si aggrega dal
+         dettaglio, che quelle colonne ce le ha. */
+      var detailOnly = !o.detail && DT && DT.length && A.detailOnly(pin, ignore);
+      var keep = function (r) {
         if (r.y !== y) return false;
         if (months) { if (!months.includes(r.m)) return false; }
         else if (!o.timeline && !A.inSel(r.m)) return false;
@@ -206,6 +211,21 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           if (S.f[k] && r[k] !== S.f[k]) return false;
         }
         return true;
+      };
+      var out = (detailOnly ? DT : rows).filter(keep);
+      if (detailOnly) out.fallback = F.filter(keep);   /* le misure che il dettaglio non ha */
+      return out;
+    };
+    /* c'e un filtro attivo su una dimensione che i fatti non hanno ma il dettaglio si?
+       (e il dettaglio porta tutte le misure sommabili, altrimenti si peggiorerebbe) */
+    A.detailOnly = function (pin, ignore) {
+      if (!F.length || !DT.length) return false;
+      var some = SUMS.some(function (s) { return DT[0][s] !== undefined; });
+      if (!some) return false;
+      return DIMK.some(function (d) {
+        if (ignore.includes(d)) return false;
+        var active = (pin[d] !== undefined && pin[d] !== null) || S.f[d];
+        return active && F[0][d] === undefined && DT[0][d] !== undefined;
       });
     };
     /* the drill-through page pins its entity on every visual of that page */
@@ -213,9 +233,20 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 
     /* ---------- THE shared aggregation layer ---------- */
     A.agg = function (rows) {
-      var a = { n: rows.length }, i, k;
-      for (k = 0; k < SUMS.length; k++) a[SUMS[k]] = 0;
-      for (i = 0; i < rows.length; i++) for (k = 0; k < SUMS.length; k++) a[SUMS[k]] += rows[i][SUMS[k]] || 0;
+      /* Quando il filtro attivo vive solo nel dettaglio, rows sono le righe di dettaglio e
+         rows.fallback quelle dei fatti: le misure che il dettaglio porta si aggregano da li,
+         le altre restano sui fatti — esattamente come una dimensione che non e collegata a
+         quella tabella dei fatti. Meglio un KPI che si muove su cio che puo, che un filtro
+         che non fa niente. */
+      var fb = rows.fallback, a = { n: rows.length }, i, k;
+      var src = function (field) {
+        return (fb && rows.length && rows[0][field] === undefined) ? fb : rows;
+      };
+      for (k = 0; k < SUMS.length; k++) {
+        var fld = SUMS[k], rs = src(fld), t = 0;
+        for (i = 0; i < rs.length; i++) t += rs[i][fld] || 0;
+        a[fld] = t;
+      }
       for (k = 0; k < MEAS.length; k++) {
         var m = MEAS[k];
         if (m.agg === 'sum') a[m.id] = a[m.field !== undefined ? m.field : m.id] || 0;
@@ -224,10 +255,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         else if (m.agg === 'last') {
           /* stock / point-in-time metric: never summed ACROSS months, but summed across the
              members present in the latest month of the window (data-realism.md) */
-          var best = -1, t;
-          for (i = 0; i < rows.length; i++) { t = rows[i].y * 12 + rows[i].m; if (t > best) best = t; }
+          var rl = src(m.field), best = -1, t2;
+          for (i = 0; i < rl.length; i++) { t2 = rl[i].y * 12 + rl[i].m; if (t2 > best) best = t2; }
           var val = 0;
-          for (i = 0; i < rows.length; i++) if (rows[i].y * 12 + rows[i].m === best) val += rows[i][m.field] || 0;
+          for (i = 0; i < rl.length; i++) if (rl[i].y * 12 + rl[i].m === best) val += rl[i][m.field] || 0;
           a[m.id] = val;
         }
       }
@@ -419,7 +450,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (cl('#btnBack')) { S.page = S.from; S.drill = null; A.render(); return; }
         var fe = cl('[data-f]');
         if (fe) {
-          var p = fe.getAttribute('data-f').split(':'), k = p[0], v = p[1];
+          var raw = fe.getAttribute('data-f'), ix = raw.indexOf(':'), k = raw.slice(0, ix), v = raw.slice(ix + 1);
           S.f[k] = (v === '' || S.f[k] === v) ? null : v;      /* toggle off when re-clicked */
           S.dd = null; A.render(); return;
         }
@@ -430,7 +461,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var d = e.target.closest && e.target.closest('[data-drill]');
         if (!d) return;
         e.preventDefault();
-        var p = d.getAttribute('data-drill').split(':');
+        var dr = d.getAttribute('data-drill'), dx = dr.indexOf(':'), p = [dr.slice(0, dx), dr.slice(dx + 1)];
         S.from = S.page === '__drill__' ? S.from : S.page;
         S.drill = { dim: p[0], id: p[1] }; S.page = '__drill__';
         if (tip) tip.style.opacity = 0;

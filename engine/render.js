@@ -304,6 +304,21 @@ function validate(spec, data) {
     if (!mem) { e.push(`filter dim "${fd.id}" has no members in data.dims`); return; }
     if (mem.length > LIST_MAX_MEMBERS && fd.control !== 'dropdown')
       e.push(`filter "${fd.id}" has ${mem.length} members: must be control:"dropdown" (QA Gate 6)`);
+
+    /* Un filtro deve poter muovere qualcosa nella banda KPI, altrimenti e un controllo
+       morto in cima alla pagina: o la dimensione sta nel grano dei fatti, o il grano di
+       dettaglio che la contiene porta almeno una misura usata dalle KPI (data-params.md). */
+    const factCols = new Set((data.facts && data.facts.cols) || []);
+    if (!factCols.has(fd.id)) {
+      const dm = data.detailModel;
+      const detailFields = new Set(dm && dm.dim === fd.id ? (dm.fields || []) : []);
+      const reaches = (spec.kpiBand || []).some(k => {
+        const m = (spec.model.measures || []).filter(x => x.id === k.measure)[0];
+        if (!m) return false;
+        return [m.field, m.num, m.den, m.a, m.b].filter(Boolean).some(x => detailFields.has(x));
+      });
+      if (!reaches) e.push(`filter dim "${fd.id}" non raggiunge nessuna KPI: non e una colonna dei fatti e il grano di dettaglio non porta misure della banda KPI — il filtro sarebbe inerte (QA Gate 5)`);
+    }
   });
 
   const pages = spec.pages.concat(spec.drill ? [spec.drill.page] : []);

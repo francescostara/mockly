@@ -115,6 +115,13 @@ to their parent exactly.
 
 Use `detail` whenever the drill-through page needs a finer grain than the matrix rows.
 
+**A dimension you put in the toolbar must be able to move a KPI card.** Either the dimension is
+a column of the fact grain, or the `detail` grain that carries it splits at least one measure
+the KPI band uses (`fields`). A dimension that only exists in the detail grain, splitting a
+measure no KPI card reads, produces a control that visibly does nothing — the engine rejects
+that spec rather than shipping a dead filter. Two ways out: add the dimension to the facts
+(`facts.split`), or extend `detail.fields` so a KPI measure lives at that grain.
+
 ## What the builder returns
 
 `dims` (with members), `years`, a columnar `facts` table, an optional `detailModel`, and a
