@@ -9,7 +9,18 @@
  */
 'use strict';
 const { JSDOM } = require('jsdom');
-const { render, toolbarBudget, lint, measurePage } = require('../engine/render.js');
+const { render, toolbarBudget, lint, measurePage, AESTHETICS } = require('../engine/render.js');
+
+/* contrasto WCAG: serve per la zona filtri, dove un grigio su grigio non si legge (BUG 5) */
+const lum = hex => {
+  const [r, g, b] = hex.replace('#', '').match(/../g).map(x => parseInt(x, 16) / 255)
+    .map(c => c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4));
+  return .2126 * r + .7152 * g + .0722 * b;
+};
+const contrast = (a, b) => {
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + .05) / (lo + .05);
+};
 
 const BAD = /NaN|undefined|Infinity/;
 
@@ -158,6 +169,14 @@ function runCase(id, fixture, evalCase) {
       t.includes(String(spec.filters.date.default.y - 1))), dets[0]);
   ok('nessuna sigla non spiegata nel descrittore KPI',
     dets.every(t => !/(AP|AC|PY|CY|PM|CM)/.test(t)), dets.find(t => /(AP|AC|PY|CY|PM|CM)/.test(t)) || '');
+
+  /* la zona filtri deve essere leggibile in tutte e tre le estetiche (domain-knowledge) */
+  const AE = AESTHETICS[spec.aesthetic];
+  const zone = AE.shell === 'rail' ? AE.tokens.rail : AE.tokens.card;
+  [['etichetta filtro', AE.tokens.flab], ['testo dei controlli', AE.shell === 'rail' ? AE.tokens.railInk : AE.tokens.ink2]]
+    .forEach(([what, col]) => ok('zona filtri: ' + what + ' leggibile', contrast(col, zone) >= 4.5,
+      col + ' su ' + zone + ' = ' + contrast(col, zone).toFixed(2) + ':1'));
+
 
   /* ---------- Gate 2: tie-out ---------- */
   Object.keys(data.tieOut || {}).filter(k => /_delta$/.test(k)).forEach(k =>

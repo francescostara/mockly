@@ -61,12 +61,20 @@ Light, side navigation, restrained. Trust over flash.
 ```
 --canvas:#EDF0F4  --card:#FFFFFF  --line:#E2E7EE  --ink:#16202E  --ink2:#3A4759  --muted:#7A879B
 --rail:#0E2439 (dark side nav)  --navy2:#1F4E79  --steel:#4A7FA8
+--flab:#9AA6B8 (micro-etichette dei filtri sul rail — contrasto 6.4:1)
 sequential blues: #12304F #1F4E79 #4A7FA8 #8FB3CC #C6D7E4
 --good:#2E7D5B  --bad:#B3453B  --amber:#C08A2E (budget/target line)
 font: Segoe UI stack.  Cards: 1px border, 2px radius, whisper shadow.
 ```
 Layout: dark left rail (brand, page buttons, slicers) + white content. KPI cards in a row,
 then charts, then a matrix with a totals row. See `assets/corporate-financial-sales.html`.
+
+**Filter-zone contrast is a hard floor, not a taste call.** The micro-labels above the
+slicers are 8.5px uppercase: at that size a grey-on-grey label is simply unreadable, and the
+dark aesthetic is where it bites hardest. Every text in the filter zone must clear **4.5:1**
+against the surface it sits on, and the micro-labels use the `--flab` token above, which is
+picked to clear 6:1 in each aesthetic. Do not reuse the dimmest grey of the palette there —
+that grey exists for footnotes on a card, not for the controls people have to find.
 
 ## 3. Aesthetic B — Agency modern (dark)
 
@@ -75,6 +83,7 @@ Dark, top navigation, colour carries meaning (funnel stage).
 ```
 --bg:#111420  --card:#191D2B  --card2:#1F2434  --line:#2A3143  --ink:#EDF0F7  --muted:#7C879E
 --acc:#7A5AF8 (violet)  --acc2:#2FC2C9 (teal)
+--flab:#9AA3B8 (micro-etichette dei filtri sulla toolbar — contrasto 6.6:1)
 stage ramp: Sourced #3D4A6B, Contacted #4C6FE0, Qualified #2E9BD6, Meeting #22B5A6, Proposal #F0A63C, Won #35C48A
 --up:#35C48A  --dn:#E0576B
 Cards: 6px radius, subtle top-lit gradient. Pill-shaped filter chips. Rounded bars.
@@ -90,6 +99,7 @@ variance. A generated narrative sentence is the hero element.
 ```
 --paper:#FFFFFF  --ink:#14171A  --ink2:#42484F  --mid:#6D747C  --muted:#9BA1A9  --rule:#E4E4E0
 grey ramp: #14171A #4E555D #868D95 #BEC3C9 #DDE0E3
+--flab:#5C6268 (micro-etichette dei filtri sulla toolbar — contrasto 6.2:1)
 --up:#1F6B4F  --dn:#A03328   (variance only — nothing else is coloured)
 narrative font: Georgia/serif ~18px.  Body/labels: Segoe UI. Uppercase micro-labels, wide tracking.
 ```
