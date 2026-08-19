@@ -87,7 +87,9 @@ function inspect(html) {
 
 /* altezza utile della pagina: 720 meno header/toolbar, padding e gutter */
 function pageBudget(spec, dense) {
-  const shell = 58 + (spec.aesthetic === 'corporate-sober' ? 0 : 46 + 40);
+  /* la barra del brand c'e solo se serve la nav di pagina (vedi render.js) */
+  const top = spec.aesthetic !== 'corporate-sober';
+  const shell = 58 + (top ? 40 + (spec.pages.filter(p => p.nav).length >= 2 ? 46 : 0) : 0);
   const rows = spec.pages[0].rows.length + 1;               /* +1 = banda KPI */
   const gutter = dense ? 8 : spec.grid.gutter;
   return 720 - shell - (dense ? 20 : 28) - gutter * (rows - 1);

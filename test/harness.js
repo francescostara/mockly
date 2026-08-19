@@ -203,6 +203,29 @@ function runCase(id, fixture, evalCase) {
   B.clk('#btnReset');
 
 
+  /* la zona filtri sta in una banda sola, e i controlli hanno la forma dell'asse
+     su cui vivono (pattern-library, filter placement) */
+  if (AE.shell !== 'rail') {
+    const band = B.q('#tools');
+    ok('toolbar: filtri, pill attive e reset nella stessa banda',
+      !!band && !!band.querySelector('#btnReset') && !!band.querySelector('#hCtx'),
+      band ? [...band.children].map(c => c.className || c.id).join(' ') : 'banda non trovata');
+    ok('nessuna banda sprecata per il solo brand',
+      spec.pages.filter(p => p.nav).length >= 2 || !B.q('#topbar'), 'topbar presente senza nav di pagina');
+  }
+  (spec.filters.dims || []).filter(fd => (fd.control || 'list') !== 'dropdown').forEach(fd => {
+    const grp = B.q('#fl_' + fd.id).parentElement;
+    ok(`filtro "${fd.id}": etichetta visibile accanto ai controlli`,
+      AE.shell === 'rail' ? !!grp.querySelector('.rlbl') : !!grp.querySelector('.flab'));
+    if (AE.shell !== 'rail') {
+      const items = [...B.q('#fl_' + fd.id).children];
+      const style = B.w.getComputedStyle(B.q('#fl_' + fd.id));
+      ok(`filtro "${fd.id}": chip in riga sulla toolbar, non una pila da rail`,
+        style.display === 'flex' && items.length > 1, style.display + ', ' + items.length + ' voci');
+    }
+  });
+
+
   /* ---------- Gate 2: tie-out ---------- */
   Object.keys(data.tieOut || {}).filter(k => /_delta$/.test(k)).forEach(k =>
     ok(`tie-out ${k.replace('_delta', '')} reconciles`, Math.abs(data.tieOut[k]) < 1, String(data.tieOut[k])));

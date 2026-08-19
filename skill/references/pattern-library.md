@@ -82,6 +82,25 @@ Decide by aesthetic (see `domain-knowledge.md`): corporate sober → left rail h
 (and page buttons together); agency modern and executive minimal → a top strip holding page
 nav and, on the same top axis, the filter chips/period controls.
 
+**"One place" includes what the filters produce, not just the controls.** On a top axis the
+active-filter pills and the reset button belong in the same strip as the slicers they describe:
+controls in one band and their state in the band below splits the filter zone in two just as
+surely as splitting left and top. The strip reads left to right: period, filters, then, pushed
+right, the active pills and reset. (On a left rail the rail is already the filter axis
+full-height, so pills and reset sit in the header strip above the page, next to the data they
+qualify — that is the one arrangement where they are not beside the controls.)
+
+**A filter axis is not a filter shape.** The same dimension list is a vertical stack of rows on
+a left rail and a horizontal row of chips on a top bar — a rail-shaped list dropped into a 40px
+toolbar simply stacks out of the band. Each toolbar group carries its dimension label
+(`SEGMENT`) in front of its controls, exactly as the rail puts the label above them; without it
+the top axis is a row of anonymous words.
+
+**Do not spend a band on a brand.** A top strip that carries only the wordmark is 46px of the
+720px canvas spent on nothing — with a single page there is no navigation to host, so the brand
+belongs beside the report title and the strip disappears. Keep the strip when there are pages
+to switch between.
+
 ### Density & the KPI band
 
 - The **KPI band is always the top row, spanning the full content width** — a single clean

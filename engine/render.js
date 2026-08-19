@@ -149,7 +149,10 @@ const AESTHETICS = {
  * c'e ma non si vede. Non e una cosa da lasciare al giudizio di chi scrive la spec: il
  * layout e responsabilita del motore, quindi le altezze vengono riscalate per stare dentro.
  */
-const SHELL_H = { rail: 58, top: 58 + 46 + 40 };  /* header, e per le estetiche top anche nav+toolbar */
+const H_HDR = 58, H_TOPBAR = 46, H_TOOLS = 40;
+const hasTopbar = spec => AESTHETICS[spec.aesthetic].shell === "top" && spec.pages.filter(p => p.nav).length >= 2;
+const shellPx = spec => AESTHETICS[spec.aesthetic].shell === "rail" ? H_HDR
+  : H_HDR + H_TOOLS + (hasTopbar(spec) ? H_TOPBAR : 0);
 const PAGE_PAD = 28;        /* padding verticale di #page */
 const KPI_H = 90;           /* banda KPI: altezza reale della card */
 const CHROME_H = 34;        /* intestazione della card (.ch) */
@@ -180,7 +183,7 @@ const chromeOf = v => (v.title ? CHROME_H : 0) + (v.legend ? LEGEND_H : 0);
 
 /** Altezza utile della pagina, al netto di shell, padding e gutter. */
 function pageBudget(spec, page, gutter) {
-  const shell = AESTHETICS[spec.aesthetic].shell === 'rail' ? SHELL_H.rail : SHELL_H.top;
+  const shell = shellPx(spec);
   const rows = (page.rows || []).length + (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length ? 1 : 0)
     + (page.drillHeader ? 1 : 0);
   return 720 - shell - PAGE_PAD - (gutter || spec.grid.gutter) * Math.max(0, rows - 1);
@@ -369,7 +372,9 @@ function toolbarBudget(spec, data) {
   const items = [];
   (spec.filters.dims || []).forEach(fd => {
     const n = (data.dims[fd.id] || []).length;
-    const w = fd.control === 'dropdown' ? W_DROPDOWN : n * (W_CHIP + W_GAP);
+    /* sulla toolbar ogni gruppo porta anche la sua etichetta (8.5px maiuscolo) */
+    const lab = onTop ? 14 + String(fd.label || '').length * 6.2 : 0;
+    const w = (fd.control === 'dropdown' ? W_DROPDOWN : n * (W_CHIP + W_GAP)) + lab;
     if (onTop) used += w + W_GAP;
     else used = Math.max(used, fd.control === 'dropdown' ? W_DROPDOWN : W_CHIP);   /* rail stacks vertically */
     items.push({ id: fd.id, control: fd.control || 'list', members: n, w });
@@ -417,7 +422,16 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .navbtn.on{background:rgba(255,255,255,.14);color:#fff}
 #tools{height:40px;flex:0 0 40px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 16px;position:relative}
 .slgrp{position:relative;width:${W_DATE}px}
-.fgrp{position:relative;width:${W_DROPDOWN}px}
+.fgrp{display:flex;align-items:center;gap:7px}
+.fgrp .flab{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flab);white-space:nowrap}
+.fgrp .fitems{position:relative}
+.fgrp.dd .fitems{width:${W_DROPDOWN}px}
+/* una lista sulla toolbar orizzontale: chip in riga, altrimenti impila righe da rail dentro 40px */
+.fgrp.chips .fitems{display:flex;align-items:center;gap:${W_GAP}px}
+.fgrp.chips .fitems>.catitem{border:1px solid var(--line);border-radius:${AESTHETICS[spec.aesthetic].tokens.radius === "0px" ? "0" : "999px"};
+  padding:4px 10px;font-size:11px;max-width:${W_CHIP}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fgrp.chips .fitems>.catitem.on{background:var(--c2);border-color:var(--c2);color:#fff}
+.fgrp.chips .fitems>.catitem.on .dot{background:#fff!important}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}`}
 .rlbl{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flab);padding:0 0 7px}
 .slbtn{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;background:${rail ? 'rgba(255,255,255,.05)' : 'transparent'};
@@ -441,6 +455,7 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .catitem:hover{background:rgba(127,127,127,.12)}
 .catitem .dot{width:8px;height:8px;flex:0 0 8px;border-radius:2px}
 .catitem.on{color:${rail ? '#fff' : 'var(--ink)'};font-weight:600;background:rgba(127,127,127,.14)}
+.hbrand{font-size:11px;font-weight:700;letter-spacing:1.4px;color:var(--ink);padding-right:14px;border-right:1px solid var(--line);white-space:nowrap}
 #hdr{height:58px;flex:0 0 58px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:14px}
 #hdr .ttl{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
 #hdr .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
@@ -518,20 +533,22 @@ function navButtons(spec) {
 function dimFilters(spec, rail) {
   return (spec.filters.dims || []).map(fd => rail
     ? `<div class="catgrp"><div class="rlbl">${esc(fd.label)}</div><div id="fl_${esc(fd.id)}"></div></div>`
-    : `<div class="fgrp" id="fl_${esc(fd.id)}"></div>`).join('');
+    : `<div class="fgrp ${fd.control === 'dropdown' ? 'dd' : 'chips'}"><span class="flab">${esc(fd.label)}</span><div class="fitems" id="fl_${esc(fd.id)}"></div></div>`).join('');
 }
-function header(spec) {
-  const m = spec.meta, T = m.strings || {};
+function header(spec, rail) {
+  const m = spec.meta, T = m.strings || {}, b = m.brand || {};
+  const inlineBrand = !rail && !hasTopbar(spec);
   return `<div id="hdr">
+      ${inlineBrand ? `<div class="hbrand">${esc((b.name || m.title).toUpperCase())}</div>` : ''}
       <div><div class="ttl" id="hTtl"></div><div class="sub" id="hSub"></div></div>
       <div class="spacer"></div>
-      <div class="ctxwrap" id="hCtx"></div>
-      <button class="resetb" id="btnReset">${esc(T.reset || 'Azzera filtri')}</button>
+      ${rail ? `<div class="ctxwrap" id="hCtx"></div>
+      <button class="resetb" id="btnReset">${esc(T.reset || 'Azzera filtri')}</button>` : ''}
       ${m.updated ? `<div class="updated">${esc(T.updatedLabel || 'Ultimo aggiornamento')}<br><b>${esc(m.updated)}</b></div>` : ''}
     </div>`;
 }
 function shell(spec) {
-  const A = AESTHETICS[spec.aesthetic], m = spec.meta, b = m.brand || {};
+  const A = AESTHETICS[spec.aesthetic], m = spec.meta, b = m.brand || {}, T2 = m.strings || {};
   if (A.shell === 'rail') {
     return `<div id="rail">
     <div class="brand"><div class="mk"><div class="sq"></div><div class="nm">${esc((b.name || m.title).toUpperCase())}</div></div>
@@ -542,16 +559,18 @@ function shell(spec) {
     ${m.source ? `<div class="railfoot">${esc(m.source)}</div>` : ''}
   </div>
   <div id="main">
-    ${header(spec)}
+    ${header(spec, true)}
     <div id="page"></div>
     <div class="wm">${esc(m.watermark)}</div>
   </div>`;
   }
-  return `<div id="topbar"><div class="nm">${esc((b.name || m.title).toUpperCase())}</div>${navButtons(spec)}<div class="spacer"></div>
-    ${b.tagline ? `<div class="updated">${esc(b.tagline)}</div>` : ''}</div>
-  <div id="tools">${dateSlicer(spec)}${dimFilters(spec, false)}</div>
+  return `${hasTopbar(spec) ? `<div id="topbar"><div class="nm">${esc((b.name || m.title).toUpperCase())}</div>${navButtons(spec)}<div class="spacer"></div>
+    ${b.tagline ? `<div class="updated">${esc(b.tagline)}</div>` : ''}</div>` : ''}
+  <div id="tools">${dateSlicer(spec)}${dimFilters(spec, false)}<div class="spacer"></div>
+    <div class="ctxwrap" id="hCtx"></div>
+    <button class="resetb" id="btnReset">${esc(T2.reset || 'Azzera filtri')}</button></div>
   <div id="main">
-    ${header(spec)}
+    ${header(spec, false)}
     <div id="page"></div>
     <div class="wm">${esc(m.watermark)}</div>
   </div>`;
