@@ -9,7 +9,7 @@
  */
 'use strict';
 const { JSDOM } = require('jsdom');
-const { render, toolbarBudget, lint } = require('../engine/render.js');
+const { render, toolbarBudget, lint, measurePage } = require('../engine/render.js');
 
 const BAD = /NaN|undefined|Infinity/;
 
@@ -90,11 +90,16 @@ function runCase(id, fixture, evalCase) {
     B.qa('#page .hit').every(e => e.hasAttribute('data-tip') || e.closest('[data-tip]')),
     `${B.qa('#page [data-tip]').length} tips`);
 
-  /* ---------- Gate 3: height budget ---------- */
-  const shellH = 58 + (spec.aesthetic === 'corporate-sober' ? 0 : 46 + 40);
-  const declared = spec.pages[0].rows.reduce((a, r) => a + Math.max(...r.visuals.map(v => (v.h || 0) + 34)), 0);
-  const budget = 720 - shellH - 28 - spec.grid.gutter * spec.pages[0].rows.length;
-  ok('page fits the 720px canvas', declared + 90 <= budget, `${declared + 90}px of ${budget}px`);
+  /* ---------- Gate 3: la pagina sta nel canvas, riga di chiusura compresa ----------
+     Il taglio della riga in fondo non si vede in jsdom (non fa layout): si controlla il
+     conto del motore, che e quello che decide le altezze emesse. */
+  spec.pages.forEach(p => {
+    const m = measurePage(spec, data, p.id);
+    ok(`pagina "${p.id}": ci sta nel canvas 720px`, m.over <= 0,
+      `${m.used}px di ${m.budget}px${m.dense ? ' (pagina densa)' : ''}`);
+    ok(`pagina "${p.id}": la riga di chiusura ha spazio utile`, m.lastRowH >= 120, `${m.lastRowH}px`);
+    ok(`pagina "${p.id}": nessun grafico sotto la soglia di leggibilita`, m.minChartH >= 100, `${m.minChartH}px`);
+  });
 
   /* ---------- Gate 6: toolbar budget ---------- */
   const tb = toolbarBudget(spec, data);
