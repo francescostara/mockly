@@ -133,19 +133,6 @@ const spec = {
         ]
       },
       {
-        visuals: [
-          {
-            type: 'hbar', span: 3, h: 124, title: 'Formati più visti', subtitle: 'impression per formato',
-            bind: { dim: 'fmt', measure: 'impr', top: 5, parent: 'plat', detail: true, subMeasure: 'eng', subUnit: ' int.' }
-          },
-          {
-            type: 'ribbon', span: 2, h: 124, title: 'Chi guida, trimestre per trimestre',
-            subtitle: 'ordine per impression',
-            bind: { dim: 'plat', measure: 'impr', by: 'q' }
-          }
-        ]
-      },
-      {
         flex: true,
         visuals: [{
           type: 'matrix', span: 5, title: 'Performance per piattaforma', subtitle: 'ordinata per reach',
@@ -159,6 +146,45 @@ const spec = {
               { measure: 'er', label: 'Eng. rate', kind: 'heat', scale: [.008, .06] },
               { measure: 'paidShare', label: 'Quota paid' },
               { measure: 'folNew', label: 'Follower' },
+              { measure: 'spend', label: 'Spesa' }
+            ]
+          }
+        }]
+      }
+    ]
+  }, {
+    /* Il canvas non regge due file di grafici + banda KPI + matrice con la shell alta:
+       al minimo leggibile servirebbero ~500px su 448 disponibili. Formati e ribbon stanno
+       su una seconda pagina invece di essere schiacciati (pattern-library, budget altezze). */
+    id: 'formati', title: 'Formati e leadership', subtitle: 'Cosa funziona per formato e chi guida nel tempo',
+    nav: 'Formati',
+    rows: [
+      {
+        visuals: [
+          {
+            type: 'hbar', span: 3, h: 210, title: 'Formati più visti', subtitle: 'impression per formato',
+            bind: { dim: 'fmt', measure: 'impr', top: 5, parent: 'plat', detail: true, subMeasure: 'eng', subUnit: ' int.' }
+          },
+          {
+            type: 'ribbon', span: 2, h: 210, title: 'Chi guida, trimestre per trimestre',
+            subtitle: 'ordine per impression',
+            bind: { dim: 'plat', measure: 'impr', by: 'q' }
+          }
+        ]
+      },
+      {
+        flex: true,
+        visuals: [{
+          type: 'matrix', span: 5, title: 'Performance per piattaforma', subtitle: 'ordinata per reach',
+          note: 'tasto destro su una riga per i formati',
+          bind: {
+            dim: 'plat', label: 'Piattaforma', sort: 'reach', totalsLabel: 'Totale profilo',
+            columns: [
+              { measure: 'impr', label: 'Impression' },
+              { measure: 'impr', label: '{basis}', kind: 'var' },
+              { measure: 'clicks', label: 'Click' },
+              { measure: 'ctr', label: 'CTR', kind: 'heat', scale: [.004, .03] },
+              { measure: 'paidShare', label: 'Quota paid' },
               { measure: 'spend', label: 'Spesa' }
             ]
           }

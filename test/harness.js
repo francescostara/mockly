@@ -80,6 +80,12 @@ function runCase(id, fixture, evalCase) {
   if (closingTable && Math.round(parseFloat(last.children[0].style.width)) !== spec.grid.contentWidth)
     R.notes.push('closing matrix is not full-width (mirrors the canonical example, not the SKILL.md rule)');
 
+  /* i token dei titoli devono arrivare risolti: un "{y} vs {py}" letterale in un mockup
+     mandato al cliente e imbarazzante quanto un NaN */
+  const tokenTexts = B.qa('#page .ch h3, #page .ch .hs, #page .ch .hr, #page .lgd, #page .dhd, #hTtl, #hSub')
+    .map(e => e.textContent).filter(t => /{[a-zA-Z]+}/.test(t));
+  ok('nessun segnaposto {..} nei testi visibili', tokenTexts.length === 0, tokenTexts.slice(0, 2).join(' | '));
+
   ok('tooltips on every data element', B.qa('#page [data-tip]').length > 15 &&
     B.qa('#page .hit').every(e => e.hasAttribute('data-tip') || e.closest('[data-tip]')),
     `${B.qa('#page [data-tip]').length} tips`);

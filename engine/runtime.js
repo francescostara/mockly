@@ -284,7 +284,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* ---------- page assembly ---------- */
     A.card = function (v, body, opts) {
       opts = opts || {};
-      var head = v.title ? '<div class="ch"><h3>' + M.esc(v.title) + '</h3>' +
+      var head = v.title ? '<div class="ch"><h3>' + M.esc(A.tpl(v.title)) + '</h3>' +
         (v.subtitle ? '<span class="hs">' + M.esc(A.tpl(v.subtitle)) + '</span>' : '') +
         (v.note ? '<span class="hr">' + M.esc(A.tpl(v.note)) + '</span>' : '') + '</div>' : '';
       return '<div class="card" style="width:' + g.span(v.span) + 'px' + (opts.flex ? ';display:flex;flex-direction:column' : '') + '">' +
@@ -569,7 +569,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var sortM = b.sort || (cols[0] || {}).measure;
     rows.sort((x, y) => A.mv(sortM, y.a) - A.mv(sortM, x.a));
     var tot = A.agg(A.slice({ ignore: [dim] })), totP = A.prev({ ignore: [dim] });
-    var head = '<tr><th>' + M.esc(b.label || dim) + '</th>' + cols.map(c => '<th>' + M.esc(A.tpl(c.label || A.meas(c.measure).label || '')) + '</th>').join('') + '</tr>';
+    var head = '<tr><th>' + M.esc(A.tpl(b.label || dim)) + '</th>' + cols.map(c => '<th>' + M.esc(A.tpl(c.label || A.meas(c.measure).label || '')) + '</th>').join('') + '</tr>';
     var cell = function (c, a, p, base) {
       var cv = A.mv(c.measure, a), pv = A.mv(c.measure, p);
       if (c.kind === 'var') {

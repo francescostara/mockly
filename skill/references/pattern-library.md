@@ -41,6 +41,24 @@ Layout budget inside the canvas: a header band (~58-64px), an optional filter/pe
 (~34-44px), then the page area. Three rows of visuals fit comfortably; tune each visual's
 height so the page fills the canvas without overflow (the QA sweep checks this).
 
+**The height budget is real, and it is small.** After the shell, padding and gutters the page
+area is about **598px** with a rail shell (`corporate-sober`) and about **512px** with a top
+bar (`agency-modern`, `executive-minimal`). A KPI band costs ~90px, and the closing matrix
+needs ~26px per member plus its header and totals row. That leaves roughly **200px per chart
+row on a rail shell, 110-150px on a top bar** — so `h: 260` on two chart rows does not fit and
+never did. Budget before writing heights:
+
+| shell | page area | KPI band | matrix (5 members) | left for chart rows |
+|---|---|---|---|---|
+| rail (`corporate-sober`) | 598 | 90 | ~200 | ~308 |
+| top bar (other two) | 512 | 90 | ~200 | ~222 |
+
+The engine enforces this: `render()` scales the declared heights down until the page fits,
+densifies the page (smaller gutters, compact matrix) when that is not enough, and reports an
+advisory when a page is simply over-dense. Nothing is ever painted below the canvas — but a
+page that has to be rescued loses chart height, so **write heights that already fit**: with a
+top-bar aesthetic prefer two chart rows plus the matrix, or drop the KPI band.
+
 ---
 
 ## 2. Layout & composition

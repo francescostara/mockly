@@ -143,6 +143,140 @@ const AESTHETICS = {
   }
 };
 
+/* ---------- fit-to-canvas ----------
+ * Il canvas e 1280x720 e #page ha overflow:hidden: se le altezze dichiarate nella spec
+ * superano lo spazio disponibile, la riga in fondo viene tagliata in silenzio — il grafico
+ * c'e ma non si vede. Non e una cosa da lasciare al giudizio di chi scrive la spec: il
+ * layout e responsabilita del motore, quindi le altezze vengono riscalate per stare dentro.
+ */
+const SHELL_H = { rail: 58, top: 58 + 46 + 40 };  /* header, e per le estetiche top anche nav+toolbar */
+const PAGE_PAD = 28;        /* padding verticale di #page */
+const KPI_H = 90;           /* banda KPI: altezza reale della card */
+const CHROME_H = 34;        /* intestazione della card (.ch) */
+const LEGEND_H = 18;        /* riga legenda, quando c'e */
+const MIN_CHART_H = 110;    /* sotto questa soglia un grafico non si legge piu */
+const MIN_FLEX_H = 150;     /* pavimento per una riga flex qualsiasi */
+const DENSE_MIN_CHART_H = 100;  /* nella pagina densa si accetta qualche px in meno */
+const DENSE_GUTTER = 8;     /* gutter della pagina densa */
+const DENSE_PAD = 20;       /* padding verticale della pagina densa */
+const TABLE_HEAD_H = 26;    /* intestazione della matrice (misurata nel browser) */
+const TABLE_ROW_H = 26;     /* una riga della matrice: padding 5+5, testo 10.5px, bordo */
+const TABLE_ROW_H_CMP = 20; /* la stessa riga in modalita compatta */
+
+/* Quanto spazio chiede DAVVERO una riga flex. Per la matrice non e una costante: dipende da
+   quanti membri ha la dimensione, cioe dai dati. Riservargliene meno significa tagliare le
+   ultime righe della tabella, che e proprio il bug segnalato. */
+function flexNeed(row, data, rowH) {
+  return Math.max(MIN_FLEX_H, ...row.visuals.map(v => {
+    if (v.type !== 'matrix') return MIN_FLEX_H;
+    const dim = (v.bind || {}).dim;
+    const members = ((data && data.dims && data.dims[dim]) || []).length || 5;
+    const totals = (v.bind || {}).totals === false ? 0 : 1;
+    return chromeOf(v) + TABLE_HEAD_H + (members + totals) * (rowH || TABLE_ROW_H) + 12;
+  }));
+}
+
+const chromeOf = v => (v.title ? CHROME_H : 0) + (v.legend ? LEGEND_H : 0);
+
+/** Altezza utile della pagina, al netto di shell, padding e gutter. */
+function pageBudget(spec, page, gutter) {
+  const shell = AESTHETICS[spec.aesthetic].shell === 'rail' ? SHELL_H.rail : SHELL_H.top;
+  const rows = (page.rows || []).length + (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length ? 1 : 0)
+    + (page.drillHeader ? 1 : 0);
+  return 720 - shell - PAGE_PAD - (gutter || spec.grid.gutter) * Math.max(0, rows - 1);
+}
+
+/** Quanto chiede una riga cosi com'e scritta nella spec. */
+const rowHeight = row => Math.max(...row.visuals.map(v => (v.h || (row.flex ? 0 : 200)) + chromeOf(v)));
+
+/** Riscala le altezze dei grafici finche la pagina ci sta. Ritorna il resoconto. */
+/* Un solo tentativo di fit. Non tocca la spec: restituisce il piano (fattore di scala e
+   spazio riservato alla riga flex), cosi si puo riprovare con la pagina densa senza che
+   la seconda passata scali un'altezza gia scalata. */
+function planFit(spec, page, data, dense) {
+  const rows = page.rows || [];
+  const gutter = dense ? DENSE_GUTTER : spec.grid.gutter;
+  const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
+  const minChart = dense ? DENSE_MIN_CHART_H : MIN_CHART_H;
+  let budget = pageBudget(spec, page, gutter) + (dense ? (PAGE_PAD - DENSE_PAD) : 0);
+  if (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H - 6 : KPI_H;
+  if (page.drillHeader) budget -= 46;
+
+  const fixed = rows.filter(r => !r.flex);
+  const flex = rows.filter(r => r.flex);
+  const wanted = flex.reduce((a, r) => a + flexNeed(r, data, rowH), 0);
+  const declared = fixed.reduce((a, r) => a + rowHeight(r), 0);
+
+  if (declared <= budget - wanted) return { scaled: false, tight: false, k: 1, declared, room: budget - wanted };
+
+  /* Si scala solo la parte grafico: il chrome (titolo, legenda) occupa quello che occupa.
+     Sotto MIN_CHART_H un grafico non si legge piu, quindi li ci si ferma. */
+  const chrome = fixed.reduce((a, r) => a + Math.max(...r.visuals.map(chromeOf)), 0);
+  const charts = declared - chrome;
+  const floorFixed = chrome + fixed.length * minChart;
+  const reserved = Math.max(flex.length * MIN_FLEX_H, Math.min(wanted, budget - floorFixed));
+  const room = budget - reserved;
+  const target = Math.max(room - chrome, fixed.length * minChart);
+  const k = charts > 0 ? target / charts : 1;
+
+  /* quanto occuperebbe applicando il piano: se supera ancora il budget, la matrice
+     perde delle righe — meglio lei di una fila di grafici tagliata a meta */
+  const fittedFixed = fixed.reduce((a, r) =>
+    a + Math.max(...r.visuals.map(v => Math.max(minChart, Math.round((v.h || 200) * k)) + chromeOf(v))), 0);
+  const over = Math.max(0, fittedFixed + wanted - budget);
+  return { scaled: true, tight: over > 0, over, k: Math.round(k * 1000) / 1000, declared, room, reserved, minChart };
+}
+
+/** Applica il fit alla pagina. Se anche al minimo leggibile non ci sta, riprova con la
+ *  pagina densa (gutter e padding ridotti, matrice compatta) prima di arrendersi. */
+function fitPage(spec, page, data) {
+  if (!(page.rows || []).length) return null;
+  let plan = planFit(spec, page, data, false);
+  if (plan.tight) {
+    const denser = planFit(spec, page, data, true);
+    if (denser.over < plan.over) plan = Object.assign(denser, { dense: true });
+  }
+  if (plan.scaled) page.rows.filter(r => !r.flex).forEach(r => r.visuals.forEach(v => {
+    v.h = Math.max(plan.minChart || MIN_CHART_H, Math.round((v.h || 200) * plan.k));
+  }));
+  return plan;
+}
+
+/** Applica il fit a ogni pagina, su una copia: la spec del chiamante non viene toccata. */
+function fitSpec(spec, data) {
+  const copy = JSON.parse(JSON.stringify(spec));
+  const report = [];
+  copy.pages.forEach(p => { const r = fitPage(copy, p, data); if (r && r.scaled) report.push({ page: p.id, ...r }); });
+  if (copy.drill && copy.drill.page) {
+    const r = fitPage(copy, copy.drill.page, data);
+    if (r && r.scaled) report.push({ page: 'drill', ...r });
+  }
+  return { spec: copy, report };
+}
+
+/** Quanto occupa davvero una pagina dopo il fit, e quanto spazio aveva.
+ *  L'harness usa questa, non una formula parallela: se il conto del motore e sbagliato,
+ *  deve sbagliare in un posto solo e il gate lo vede. */
+function measurePage(spec, data, pageId) {
+  const fitted = fitSpec(spec, data);
+  const page = fitted.spec.pages.find(p => p.id === pageId) || fitted.spec.pages[0];
+  const rep = fitted.report.filter(r => r.page === page.id)[0] || {};
+  const dense = !!rep.dense;
+  const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
+  let budget = pageBudget(fitted.spec, page, dense ? DENSE_GUTTER : spec.grid.gutter)
+    + (dense ? PAGE_PAD - DENSE_PAD : 0);
+  if (spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H - 6 : KPI_H;
+  const h = r => r.flex ? flexNeed(r, data, rowH) : rowHeight(r);
+  const rows = page.rows.map(h);
+  const charts = [].concat(...page.rows.filter(r => !r.flex).map(r => r.visuals.map(v => v.h || 200)));
+  return {
+    budget, used: rows.reduce((a, b) => a + b, 0), rows, dense,
+    over: rows.reduce((a, b) => a + b, 0) - budget,
+    lastRowH: rows[rows.length - 1],
+    minChartH: charts.length ? Math.min(...charts) : Infinity
+  };
+}
+
 /* ---------- validation — the hard gates, enforced before a byte is written ---------- */
 const MAX_PER_ROW = 3;
 const LIST_MAX_MEMBERS = 5;
@@ -202,7 +336,14 @@ function validate(spec, data) {
   if (e.length) throw new Error('spec validation failed:\n  - ' + e.join('\n  - '));
   return { types: [...types], advisories: warn };
 }
-const lint = (spec, data) => validate(spec, data).advisories;
+const lint = (spec, data) => {
+  const a = validate(spec, data).advisories;
+  fitSpec(spec, data).report.forEach(r => {
+    if (r.tight) a.push("pagina \"" + r.page + "\": troppe righe per il canvas — grafici al minimo leggibile e la matrice perde " + r.over + "px. Togli una riga, oppure usa una estetica con shell piu bassa.");
+    else a.push("pagina \"" + r.page + "\": altezze riscalate a " + r.k + "x per stare nel canvas 720px" + (r.dense ? ", pagina densa" : "") + ".");
+  });
+  return a;
+};
 
 /* ---------- Gate 6: toolbar width budget (jsdom computes no layout, so budget it here) ---------- */
 const W_DATE = 190, W_DROPDOWN = 168, W_CHIP = 92, W_GAP = 8, W_RESET = 96;
@@ -222,7 +363,7 @@ function toolbarBudget(spec, data) {
 }
 
 /* ---------- CSS ---------- */
-function css(spec) {
+function css(spec, compact) {
   const A = AESTHETICS[spec.aesthetic];
   const t = Object.assign({}, A.tokens, spec.palette || {});
   const ser = (spec.palette && spec.palette.series) || null;
@@ -252,7 +393,7 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .slgrp{padding:14px 16px 0;position:relative}
 .catgrp{padding:16px 16px 0}
 .railfoot{margin-top:auto;padding:0 16px;font-size:8.5px;color:var(--muted2);line-height:1.5}
-#main{flex:1;display:flex;flex-direction:column;min-width:0}`
+#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}`
       : `#topbar{height:46px;flex:0 0 46px;background:var(--rail);display:flex;align-items:center;gap:10px;padding:0 16px}
 #topbar .nm{font-size:13px;font-weight:600;color:#fff;letter-spacing:.4px}
 #topbar .spacer{flex:1}
@@ -262,7 +403,7 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 #tools{height:40px;flex:0 0 40px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 16px;position:relative}
 .slgrp{position:relative;width:${W_DATE}px}
 .fgrp{position:relative;width:${W_DROPDOWN}px}
-#main{flex:1;display:flex;flex-direction:column;min-width:0}`}
+#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}`}
 .rlbl{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted2);padding:0 0 7px}
 .slbtn{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;background:${rail ? 'rgba(255,255,255,.05)' : 'transparent'};
   border:1px solid ${rail ? 'rgba(255,255,255,.16)' : 'var(--line)'};border-radius:3px;color:${rail ? 'var(--railInk)' : 'var(--ink2)'};
@@ -296,8 +437,8 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .resetb{font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:5px 9px;border-radius:2px;cursor:pointer;font-family:var(--font)}
 .resetb:hover{color:var(--bad);border-color:var(--bad)}
 .updated{font-size:9.5px;color:var(--muted2);text-align:right;line-height:1.5}
-#page{flex:1;padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;gap:${spec.grid.gutter}px}
-.row{display:flex;gap:${spec.grid.gutter}px}
+#page{flex:1;min-height:0;padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;gap:${spec.grid.gutter}px}
+.row{display:flex;flex:0 0 auto;gap:${spec.grid.gutter}px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);position:relative;box-shadow:0 1px 1px rgba(20,35,60,.04)}
 .card>.ch{padding:10px 13px 5px;display:flex;align-items:baseline;gap:8px}
 .card .ch h3{margin:0;font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
@@ -312,6 +453,7 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .up{color:var(--good)}.dn{color:var(--bad)}.fl{color:var(--muted)}
 .narr{padding:12px 14px;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.55;color:var(--ink)}
 .mx{padding:2px 8px 8px;overflow:hidden}
+${compact ? String.raw`th,td{padding:2px 6px}.card>.ch{padding:7px 13px 3px}#page{padding:10px 16px;gap:8px}.row{gap:8px}.kpi{padding:8px 14px 7px}` : ``}
 table{width:100%;border-collapse:collapse;font-size:10.5px}
 th{text-align:right;font-weight:600;color:var(--muted);font-size:8.5px;letter-spacing:.4px;text-transform:uppercase;padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
 th:first-child{text-align:left}
@@ -415,7 +557,11 @@ function dataJSON(data) {
 }
 
 /* ---------- render ---------- */
-function render(spec, data) {
+function render(specIn, data) {
+  /* il fit avviene qui, prima della validazione: la spec emessa nel file e quella
+     effettivamente renderizzata, cosi cio che si vede e cio che si e validato */
+  const { spec, report } = fitSpec(specIn, data);
+  const compact = report.some(r => r.dense);   /* pagina sovraccarica: si stringe tutto il possibile */
   const { types } = validate(spec, data);
   const lang = (spec.meta.locale || 'it-IT').slice(0, 2);
   return `<!DOCTYPE html>
@@ -425,7 +571,7 @@ function render(spec, data) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(spec.meta.brand && spec.meta.brand.name ? spec.meta.brand.name + ' — ' + spec.meta.title : spec.meta.title)}</title>
 <style>
-${css(spec).split('\n').map(l => l.trim()).filter(Boolean).join('\n')}
+${css(spec, compact).split('\n').map(l => l.trim()).filter(Boolean).join('\n')}
 </style>
 </head>
 <body>
@@ -444,4 +590,4 @@ MK.boot(SPEC,DATA,document);
 `;
 }
 
-module.exports = { render, validate, lint, toolbarBudget, bundle, css, AESTHETICS };
+module.exports = { render, validate, lint, toolbarBudget, bundle, css, AESTHETICS, fitSpec, measurePage, pageBudget, rowHeight };
