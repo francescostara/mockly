@@ -196,16 +196,24 @@ align. Use a real minus sign `−` (U+2212), not a hyphen, for negatives in fina
 ## 5. The KPI card — house signature
 
 The author's KPI card is instantly recognisable and must be consistent across every mockup:
-a large value, a variance chip with ▲/▼, and a **dynamic descriptor line** reading
-`PY <prior> | CY <current> | Var <delta>` (or a domain equivalent). Optionally a progress
-bar with a target tick, or a sparkline.
+a large value, a variance chip with ▲/▼, and a **dynamic descriptor line** that names the two
+periods being compared and the delta — `2024 1,18 Mio € | 2025 1,34 Mio € | Var +156 mila €`.
+Optionally a progress bar with a target tick, or a sparkline.
+
+**Name the periods, do not abbreviate them.** The descriptor line spells out the period itself
+(`2024` / `2025`, `Q3 2024` / `Q3 2025`, `lug 2025` / `ago 2025`). Two-letter codes such as
+`AP`/`AC`, `PY`/`CY` or `PM`/`CM` are read fluently by whoever wrote the report and by nobody
+else: a client looking at the mockup for ten seconds should never have to decode a legend that
+is not there. The engine derives these labels from the selected period, so they are always in
+the report language and always match what the slicer says.
 
 **Always label the comparison basis on the variance.** Every variance must say whether it is
 **YoY** (year over year) or **MoM** (month over month) — never leave the reader to guess. The
 basis follows the selected date grain: a full year selected → YoY; a single month selected →
 MoM; a quarter → YoY vs the same quarter last year (or QoQ if that is the report's convention,
-but state it). Put the tag right after the percentage: `▲ 5,6% YoY`. Mirror it in the
-descriptor line (`PY … | CY …` for YoY; `PM … | CM …` for MoM).
+but state it). Put the tag right after the percentage: `▲ 5,6% YoY`. The descriptor line
+carries the same information by naming the periods (`2024 … | 2025 …` for YoY,
+`lug 2025 … | ago 2025 …` for MoM).
 
 ```js
 function kpi(label,val,cur,ref,detail,o={}){

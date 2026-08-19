@@ -150,6 +150,15 @@ function runCase(id, fixture, evalCase) {
     `trimestre attivo "${qOn}", kpi ${beforeCross} -> ${B.kpi()}`);
   B.clk('#btnReset');
 
+  /* il descrittore KPI nomina i periodi: niente sigle da decodificare (BUG 4) */
+  B.clk('#btnReset');
+  const dets = B.qa('#page .kpi .det').map(e => e.textContent);
+  ok('il descrittore KPI nomina i periodi confrontati',
+    dets.length > 0 && dets.every(t => t.includes(String(spec.filters.date.default.y)) &&
+      t.includes(String(spec.filters.date.default.y - 1))), dets[0]);
+  ok('nessuna sigla non spiegata nel descrittore KPI',
+    dets.every(t => !/(AP|AC|PY|CY|PM|CM)/.test(t)), dets.find(t => /(AP|AC|PY|CY|PM|CM)/.test(t)) || '');
+
   /* ---------- Gate 2: tie-out ---------- */
   Object.keys(data.tieOut || {}).filter(k => /_delta$/.test(k)).forEach(k =>
     ok(`tie-out ${k.replace('_delta', '')} reconciles`, Math.abs(data.tieOut[k]) < 1, String(data.tieOut[k])));

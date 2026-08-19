@@ -270,15 +270,24 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         '<div class="d ' + cls + ' tnum">' + ar + ' ' + f.pc(Math.abs(d)) + ' ' + A.basis() + '</div></div></div>' +
         '<div class="det tnum">' + A.detail(k, cv, pv) + '</div></div>';
     };
-    /* descriptor line: `PY <x> | CY <y> | Var <z>` (MoM: Prec. | Corr.) */
+    /* Riga descrittore: nomina i due periodi confrontati invece di abbreviarli.
+       "AP"/"AC" (o "PY"/"CY") li capisce chi ha scritto il report, non il cliente che lo
+       guarda per dieci secondi — e le etichette cosi restano nella lingua del report
+       senza vocabolario da mantenere (pattern-library, KPI card). */
+    A.periodPair = function () {
+      if (S.mo !== null) {
+        var pm = S.mo === 0 ? MON[11] + ' ' + (S.y - 1) : MON[S.mo - 1] + ' ' + S.y;
+        return { prev: pm, cur: MON[S.mo] + ' ' + S.y };
+      }
+      var q = S.q !== null ? 'Q' + (S.q + 1) + ' ' : '';
+      return { prev: q + (S.y - 1), cur: q + S.y };
+    };
     A.detail = function (k, cv, pv) {
-      var mom = A.basis() === 'MoM';
-      var lp = mom ? (T.prevShort || 'Prec.') : (T.pyShort || 'PY');
-      var lc = mom ? (T.curShort || 'Corr.') : (T.cyShort || 'CY');
+      var p = A.periodPair();
       var varTxt = (A.meas(k.measure).format === 'pc')
         ? f.pp(cv - pv)
         : (T.varShort || 'Var') + ' ' + (cv - pv >= 0 ? '+' : '−') + A.mfmt(k.measure, Math.abs(cv - pv));
-      return lp + ' ' + A.mfmt(k.measure, pv) + ' | ' + lc + ' ' + A.mfmt(k.measure, cv) + ' | ' + varTxt;
+      return p.prev + ' ' + A.mfmt(k.measure, pv) + ' | ' + p.cur + ' ' + A.mfmt(k.measure, cv) + ' | ' + varTxt;
     };
 
     /* ---------- page assembly ---------- */
