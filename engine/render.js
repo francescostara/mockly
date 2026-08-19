@@ -422,7 +422,6 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .slchip:hover{background:rgba(127,127,127,.12)}
 .slchip.on{background:${rail ? '#fff' : 'var(--c2)'};color:${rail ? 'var(--rail)' : '#fff'};border-color:${rail ? '#fff' : 'var(--c2)'};font-weight:600}
 .slchip.mo{flex:1 0 27%;font-size:9.5px;padding:4px 2px}
-.slchip.dis{opacity:.3;pointer-events:none}
 .catitem{display:flex;align-items:center;gap:8px;padding:5px 6px;font-size:11px;color:${rail ? 'var(--railInk)' : 'var(--ink2)'};cursor:pointer;border-radius:2px}
 .catitem:hover{background:rgba(127,127,127,.12)}
 .catitem .dot{width:8px;height:8px;flex:0 0 8px;border-radius:2px}

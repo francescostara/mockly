@@ -337,9 +337,14 @@ or glossary) rather than presenting it as exact. Silence is what makes "simplifi
 Provide a **Year → Quarter → Month** date filter as a compact **dropdown** (a button that opens
 a panel with the three levels), the way a Power BI report does — **not** a long row of chips and
 **not** year+quarter only. The Month level is required. A full, working, copy-ready
-implementation of this dropdown (button, panel, month-within-quarter disabling, and the state
-wiring) lives in `assets/canonical-retail-fullspec.html` under `#slBtn` / `#slPanel`; copy it
-rather than rebuilding, since this is the component most often dropped or simplified to chips.
+implementation of this dropdown (button, panel, and the state wiring) lives in
+`assets/canonical-retail-fullspec.html` under `#slBtn` / `#slPanel`; copy it rather than
+rebuilding, since this is the component most often dropped or simplified to chips.
+
+**Every month is always selectable, and the quarter follows the month.** Do not disable the
+months outside the selected quarter: picking March while Q3 is active must work in one click
+and move the quarter to Q1 by itself. Making the user go back to "all months" first is a dead
+end that reads as a broken control — the levels are a convenience, not a lock.
 
 **One critical exemption: the primary time-series / trend visual ignores the month and quarter
 filter and always shows the full series.** This mirrors Power BI's "edit interactions" — you do

@@ -337,9 +337,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         $('#slYear').innerHTML = YRS.map(y => '<button class="slchip ' + (S.y === y ? 'on' : '') + '" data-y="' + y + '">' + y + '</button>').join('');
         $('#slQtr').innerHTML = '<button class="slchip ' + (S.q === null ? 'on' : '') + '" data-q="all">' + (T.all || 'Tutto') + '</button>' +
           [0, 1, 2, 3].map(q => '<button class="slchip ' + (S.q === q ? 'on' : '') + '" data-q="' + q + '">Q' + (q + 1) + '</button>').join('');
-        var allowed = A.QMON(S.q);
         $('#slMon').innerHTML = '<button class="slchip mo ' + (S.mo === null ? 'on' : '') + '" data-m="all">' + (T.allM || 'Tutti') + '</button>' +
-          MON.map((mn, i) => '<button class="slchip mo ' + (S.mo === i ? 'on' : '') + ' ' + (allowed.includes(i) ? '' : 'dis') + '" data-m="' + i + '">' + mn + '</button>').join('');
+          MON.map((mn, i) => '<button class="slchip mo ' + (S.mo === i ? 'on' : '')+ '" data-m="' + i + '">' + mn + '</button>').join('');
       }
       /* dimension filters */
       FDIMS.forEach(function (fd) {
@@ -401,7 +400,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           A.render(); return;
         }
         var mm = cl('[data-m]');
-        if (mm && !mm.classList.contains('dis')) {
+        if (mm) {
           var mv = mm.getAttribute('data-m'); S.mo = mv === 'all' ? null : +mv;
           if (S.mo !== null) S.q = Math.floor(S.mo / 3);
           A.render(); return;

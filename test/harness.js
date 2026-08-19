@@ -139,6 +139,17 @@ function runCase(id, fixture, evalCase) {
   ok('a month selection switches the basis to MoM', /MoM/.test(B.q('#page .kpi .d').textContent));
   B.clk('#btnReset');
 
+  /* un mese di un altro trimestre si sceglie in un colpo solo: niente passaggio
+     obbligato da "tutti i mesi" (pattern-library, slicer date) */
+  B.clk('#btnReset');
+  B.clk('[data-q="2"]');
+  const beforeCross = B.kpi();
+  B.clk('[data-m="1"]');                       /* febbraio, che sta in Q1 */
+  const qOn = B.qa('#slQtr .slchip.on').map(e => e.getAttribute('data-q')).join();
+  ok('un mese di un altro trimestre e selezionabile direttamente', B.kpi() !== beforeCross && qOn === '0',
+    `trimestre attivo "${qOn}", kpi ${beforeCross} -> ${B.kpi()}`);
+  B.clk('#btnReset');
+
   /* ---------- Gate 2: tie-out ---------- */
   Object.keys(data.tieOut || {}).filter(k => /_delta$/.test(k)).forEach(k =>
     ok(`tie-out ${k.replace('_delta', '')} reconciles`, Math.abs(data.tieOut[k]) < 1, String(data.tieOut[k])));
