@@ -249,12 +249,21 @@ files contain production versions of each; the essentials:
   categories**, ideally to dramatise a Pareto/dominant split; for 6+ or near-equal slices use a
   sorted horizontal bar or a 100% stacked bar instead (see `chart-selection.md`).
 - **100% stacked bar** — composition / part-to-whole ("what share," not "how much"). 3-4 series.
-- **Ribbon** — rank change over time; shows category crossings a grouped bar hides.
+- **Ribbon** — rank change over time; shows category crossings a grouped bar hides. It is
+  pure colour: **it must carry its own legend**, or the reader has five coloured bands and no
+  way to tell which is which without hovering.
 - **Pareto** — sorted bars with a cumulative-% line for 80/20 contribution stories.
 - **Funnel** — stage-by-stage with step-conversion percentages. Core to pipeline pages.
 - **Sparkline** — tiny inline trend for matrix rows.
 - **Matrix / table** — the analytical heart. Rows carry `data-f` (cross-filter) and
   `data-drill` (drill-through). Include a totals row that recomputes with filters.
+
+**Legends: every chart whose meaning is carried by colour needs one, and it filters.** A
+legend entry is a control, not a caption — clicking it applies the same filter as clicking the
+slice or the band, and it dims in sync with the rest of the page (one shared slice layer, so
+there is no such thing as an inert legend). Keep it compact: the legend earns its space by
+sitting beside the chart (donut) or on one line above it (ribbon, stacked bars), never as a
+tall column of names with the chart squeezed into what is left.
 
 Two helpers for the less obvious charts (adapt colours to the aesthetic):
 

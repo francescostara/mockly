@@ -178,6 +178,31 @@ function runCase(id, fixture, evalCase) {
       col + ' su ' + zone + ' = ' + contrast(col, zone).toFixed(2) + ':1'));
 
 
+  /* i grafici che parlano solo col colore devono avere una legenda, e la legenda filtra
+     come tutto il resto (pattern-library, legende) */
+  spec.pages.forEach(p => {
+    const needs = [].concat(...p.rows.map(r => r.visuals)).filter(v => v.type === 'ribbon' || v.type === 'donut');
+    if (!needs.length) return;
+    B.clk(`[data-page="${p.id}"]`);
+    needs.forEach(v => {
+      const card = B.qa('#page .card').filter(c => {
+        const t = c.querySelector('.ch h3');
+        return t && t.textContent === v.title.replace(/{[a-zA-Z]+}/g, '').trim();
+      })[0] || B.qa('#page .card').filter(c => c.querySelector('g.hit[data-f]'))[0];
+      const entries = card ? B.qa('#page .card').indexOf(card) >= 0 ? [...card.querySelectorAll('g.hit[data-f]')] : [] : [];
+      ok(`${v.type} "${v.title}" ha una legenda`, entries.length >= 2, `${entries.length} voci`);
+      if (entries.length) {
+        const before = B.kpi();
+        B.clk(entries[0]);
+        ok(`la legenda di "${v.title}" filtra`, before !== B.kpi(), `${before} -> ${B.kpi()}`);
+        B.clk('#btnReset');
+      }
+    });
+  });
+  B.clk(`[data-page="${spec.pages[0].id}"]`);
+  B.clk('#btnReset');
+
+
   /* ---------- Gate 2: tie-out ---------- */
   Object.keys(data.tieOut || {}).filter(k => /_delta$/.test(k)).forEach(k =>
     ok(`tie-out ${k.replace('_delta', '')} reconciles`, Math.abs(data.tieOut[k]) < 1, String(data.tieOut[k])));

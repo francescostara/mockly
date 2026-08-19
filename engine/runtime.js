@@ -500,7 +500,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     h = v.h || h || 238;
     var data = A.byDim(dim, {}).map(r => ({ id: r.m.id, l: r.m.n, c: r.m.c, v: A.mv(ms, r.a) }))
       .filter(d => d.v > 0).sort((x, y) => y.v - x.v);
-    var cx = w * .33, cy = h / 2, rO = Math.min(w * .30, h * .42), rI = rO * .6;
+    var cx = w * .30, cy = h / 2, rO = Math.min(w * .26, h * .44), rI = rO * .6;
     var tot = data.reduce((a, d) => a + d.v, 0) || 1, ang = -Math.PI / 2;
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d) {
@@ -516,12 +516,22 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     });
     s += '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" class="tnum">' + A.mfmt(ms, tot) + '</text>';
     s += '<text x="' + cx + '" y="' + (cy + 12) + '" text-anchor="middle" font-size="8" fill="var(--muted2)">' + M.esc((v.centreLabel || A.meas(ms).label || '').toUpperCase()) + '</text>';
-    var lx = w * .60, ly = cy - (data.length * 15.5) / 2 + 6;
+    /* Legenda: sta accanto alla ciambella, e ogni voce filtra come la fetta.
+       Il passo si adatta all'altezza della card, cosi non deborda quando il fit
+       stringe il grafico (pattern-library, legende). */
+    var lx = w * .58, wide = w > 300;
+    var step = Math.max(11, Math.min(15.5, (h - 16) / Math.max(1, data.length)));
+    var ly = cy - (data.length * step) / 2 + step * .7;
     data.forEach(function (d) {
-      s += '<rect x="' + lx + '" y="' + (ly - 7) + '" width="8" height="8" rx="1.5" fill="' + d.c + '"/>' +
+      var dimd = S.f[dim] && S.f[dim] !== d.id;
+      s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" data-f="' + dim + ':' + d.id +
+        '" data-tip="<b>' + M.esc(d.l) + '</b><br>' + A.mfmt(ms, d.v) + '<br>' + f.pc(d.v / tot) + '">' +
+        '<rect x="' + lx + '" y="' + (ly - 7.5) + '" width="' + (w - lx - 4) + '" height="' + Math.min(step, 15) + '" fill="transparent"/>' +
+        '<rect x="' + lx + '" y="' + (ly - 6.5) + '" width="8" height="8" rx="1.5" fill="' + d.c + '"/>' +
         '<text x="' + (lx + 12) + '" y="' + ly + '" font-size="9.5" fill="var(--ink2)">' + M.esc(d.l) + '</text>' +
-        '<text x="' + (w - 4) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted2)" class="tnum">' + f.pc(d.v / tot, 0) + '</text>';
-      ly += 15.5;
+        (wide ? '<text x="' + (w - 42) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) + '</text>' : '') +
+        '<text x="' + (w - 4) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted2)" class="tnum">' + f.pc(d.v / tot, 0) + '</text></g>';
+      ly += step;
     });
     return A.card(v, s + '</svg>');
   };
@@ -697,7 +707,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var periods = (b.by === 'm' ? A.MON.map((l, i) => ({ l: l, months: [i] })) : [0, 1, 2, 3].map(q => ({ l: 'Q' + (q + 1), months: A.QMON(q) })));
     var cats = A.dims[dim];
     var val = (cid, pi) => A.mv(ms, A.agg(A.slice({ pin: { [dim]: cid }, months: periods[pi].months })));
-    var m = { t: 14, r: 10, b: 20, l: 34 }, iw = w - m.l - m.r, ih = h - m.t - m.b, gap = 6;
+    /* Il ribbon e fatto solo di colore: senza legenda restano cinque bande anonime.
+       Sta su una riga sola sopra il grafico, e ogni voce filtra (pattern-library, legende). */
+    var legH = 15, m = { t: 14 + legH, r: 10, b: 20, l: 34 };
+    var iw = w - m.l - m.r, ih = h - m.t - m.b, gap = 6;
     var X = i => m.l + (iw / (periods.length - 1)) * i;
     var cols = periods.map(function (_, pi) {
       var arr = cats.map(c => ({ c: c, v: val(c.id, pi) })).sort((a, z) => z.v - a.v);
@@ -718,6 +731,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (X(p) - 5).toFixed(1) + '" y="' + o.y0.toFixed(1) + '" width="10" height="' + Math.max(1, o.y1 - o.y0).toFixed(1) +
           '" fill="' + c.c + '" data-f="' + dim + ':' + c.id + '" data-tip="<b>' + M.esc(c.n + ' · ' + pd.l) + '</b><br>' + A.mfmt(ms, o.v) + '"/>';
       });
+    });
+    var lgx = m.l;
+    cats.forEach(function (c) {
+      var dimd = A.S.f[dim] && A.S.f[dim] !== c.id;
+      var tw = 13 + M.esc(c.n).length * 5.1;
+      if (lgx + tw > w - m.r) return;                 /* niente legenda che deborda */
+      s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" data-f="' + dim + ':' + c.id + '" data-tip="<b>' + M.esc(c.n) + '</b>">' +
+        '<rect x="' + lgx + '" y="2" width="' + tw + '" height="13" fill="transparent"/>' +
+        '<rect x="' + lgx + '" y="5" width="8" height="8" rx="1.5" fill="' + c.c + '"/>' +
+        '<text x="' + (lgx + 12) + '" y="12.5" font-size="9" fill="var(--ink2)">' + M.esc(c.n) + '</text></g>';
+      lgx += tw + 10;
     });
     periods.forEach((pd, p) => s += '<text x="' + X(p).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="9" fill="var(--muted)">' + M.esc(pd.l) + '</text>');
     return A.card(v, s + '</svg>');
