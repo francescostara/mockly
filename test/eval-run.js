@@ -59,7 +59,7 @@ const CASES = [
 ];
 
 const COLUMNS = ['id', 'run', 'model', 'valid_first_try', 'repairs', 'fallback',
-  'tokens_in', 'tokens_out', 'cost_usd', 'latency_ms', 'error'];
+  'tokens_in', 'tokens_out', 'cost_usd', 'latency_ms', 'fallback_reason', 'error'];
 
 /* ---------- utilità ---------- */
 
@@ -86,7 +86,8 @@ function reserveOutputs(model) {
   const root = path.join(process.cwd(), 'eval-out');
   fs.mkdirSync(root, { recursive: true });
   let label = model, n = 1;
-  while (fs.existsSync(path.join(root, label)) || fs.existsSync(path.join(root, label + '.csv'))) {
+  while (fs.existsSync(path.join(root, label)) || fs.existsSync(path.join(root, label + '.csv')) ||
+         fs.existsSync(path.join(root, label + '-server.log'))) {
     n += 1;
     label = model + '-' + n;
   }
@@ -258,7 +259,9 @@ async function main() {
             repairs: m.repairs, fallback: m.fallback ? 'S' : 'N',
             tokens_in: m.tokensIn, tokens_out: m.tokensOut,
             cost_usd: (m.costUsd || 0).toFixed(6),
-            latency_ms: m.latencyMs, error: ''
+            latency_ms: m.latencyMs,
+            fallback_reason: (m.errors && m.errors.length) ? String(m.errors[0]).slice(0, 200) : '',
+            error: ''
           };
           const esito = row.valid_first_try === 'S' ? 'ok primo colpo'
             : row.fallback === 'S' ? 'FALLBACK' : 'ok dopo riparazione';
@@ -267,7 +270,7 @@ async function main() {
         } catch (err) {
           row = {
             id: testCase.id, run, model, valid_first_try: '', repairs: '', fallback: '',
-            tokens_in: '', tokens_out: '', cost_usd: '', latency_ms: Date.now() - started,
+            tokens_in: '', tokens_out: '', cost_usd: '', latency_ms: Date.now() - started, fallback_reason: '',
             error: err.message
           };
           log('ERRORE  ' + err.message);

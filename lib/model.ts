@@ -131,7 +131,11 @@ function classify(err: unknown): unknown {
 }
 
 async function request(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
-  const res = await getClient().messages.create({
+  /* In streaming, non con create(): con un max_tokens alto l'SDK rifiuta le richieste non
+     streaming (stima che possano superare i 10 minuti) e lancia un errore prima ancora di
+     chiamare l'API. Lo streaming toglie anche il rischio di timeout HTTP sulle generazioni
+     lunghe; la risposta la consumiamo comunque tutta con finalMessage(). */
+  const stream = getClient().messages.stream({
     model,
     /* Misurato sul primo giro vero: ~11.900 token in uscita per chiamata, di cui il JSON e
        ~2.000. Il resto era ragionamento, che sfondava il tetto di 16.000 e troncava la spec a
@@ -146,6 +150,7 @@ async function request(turns: Turn[], model: string): Promise<{ text: string; us
     output_config: { effort: 'low' },
     messages: turns.map(t => ({ role: t.role, content: t.content }))
   });
+  const res = await stream.finalMessage();
 
   const text = res.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
