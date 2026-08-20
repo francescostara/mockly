@@ -14,9 +14,44 @@ const DEFAULT_SEAS = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
 function fail(msg) { const e = new Error(msg); e.dataParams = true; throw e; }
 
+/* Un esempio minimo ma COMPLETO, incollabile: l'errore non descrive il problema, mostra la
+   cura. Il modello copia la forma che vede, quindi la forma va messa nel messaggio. */
+function dimExample(dimId) {
+  return `"${dimId}": { "members": [ ` +
+    `{ "id": "a", "n": "Nome A", "base": 42000, "growth": 0.14, "attrs": {} }, ` +
+    `{ "id": "b", "n": "Nome B", "base": 31000, "growth": -0.09, "attrs": {} } ] }`;
+}
+
+/* I membri NON sono un accessorio della dimensione: sono la dimensione. Ogni messaggio qui
+   dice il nome della dim, dove va messo l'array e come e fatto un membro — perche il giro di
+   riparazione sia chirurgico invece di un tiro a indovinare (nell'eval un giro di riparazione
+   ha ripetuto lo stesso errore: il messaggio non insegnava dove intervenire). */
 function members(dp, dimId, what) {
-  const d = (dp.dims || {})[dimId];
-  if (!d || !Array.isArray(d.members) || !d.members.length) fail(`dataParams.dims["${dimId}"] ${what} has no members`);
+  const dims = (dp && dp.dims) || {};
+  const present = Object.keys(dims);
+  const d = dims[dimId];
+  if (!d || typeof d !== 'object' || Array.isArray(d)) {
+    fail(`dataParams.dims["${dimId}"] non esiste, ma ${what} la richiede: aggiungila dentro ` +
+      `dataParams.dims con i suoi membri co-locati — ${dimExample(dimId)}. ` +
+      `Dimensioni dichiarate: ${present.length ? present.join(', ') : 'nessuna'}.`);
+  }
+  if (!Array.isArray(d.members) || !d.members.length) {
+    const stray = Object.keys(d).filter(k => k !== 'members');
+    fail(`dataParams.dims["${dimId}"] manca "members" (la usa ${what}): aggiungi l'array dei ` +
+      `membri DENTRO questa dimensione, non altrove — ${dimExample(dimId)}. ` +
+      (stray.length ? `Qui dentro c'e solo: ${stray.join(', ')}.` : `L'oggetto e vuoto.`) +
+      ` Una dimensione senza membri non e dichiarabile: dichiararla significa popolarla.`);
+  }
+  d.members.forEach((m, i) => {
+    const where = `dataParams.dims["${dimId}"].members[${i}]`;
+    if (!m || typeof m !== 'object') fail(`${where} non e un oggetto membro — ${dimExample(dimId)}.`);
+    if (!m.id) fail(`${where} manca "id" (slug breve, es. "a") — ${dimExample(dimId)}.`);
+    if (!m.n) fail(`${where} ("${m.id}") manca "n", l'etichetta che il lettore vede — ${dimExample(dimId)}.`);
+    if (typeof m.base !== 'number' || !isFinite(m.base)) {
+      fail(`${where} ("${m.id}") manca "base" numerico: e il valore mensile della misura primaria ` +
+        `nel primo anno, senza il quale ogni numero del membro esce NaN — ${dimExample(dimId)}.`);
+    }
+  });
   return d.members;
 }
 
@@ -69,13 +104,13 @@ function build(dp) {
 
   const { j } = DM.rng(dp.seed || 20260101);
   const dimId = facts.dim || fail('facts.dim is missing');
-  const own = members(dp, dimId, '(facts.dim)');
+  const own = members(dp, dimId, 'facts.dim');
   own.forEach((m, i) => { if (!m.c) m.c = RAMP[i % RAMP.length]; });
 
   const splitCfg = facts.split || null;
   let splitMembers = null;
   if (splitCfg) {
-    splitMembers = members(dp, splitCfg.dim, '(facts.split.dim)');
+    splitMembers = members(dp, splitCfg.dim, 'facts.split.dim');
     splitMembers.forEach((m, i) => { if (!m.c) m.c = RAMP[i % RAMP.length]; });
     if (own.length * splitMembers.length > 60) fail('the joint grain is too large: keep members(dim) x members(split) under 60');
   }
@@ -142,7 +177,11 @@ function build(dp) {
     const kids = [], groups = {};
     parents.forEach(p => {
       const names = (d.members || {})[p.id] || [];
-      if (!names.length) fail(`detail.members is missing entries for "${p.id}"`);
+      if (!names.length) {
+        fail(`dataParams.detail.members non ha voci per il genitore "${p.id}" (${p.n}): ogni ` +
+          `membro di "${parentDim}" vuole i suoi figli, es. "members": { "${p.id}": ["Figlio A", ` +
+          `"Figlio B", "Figlio C"] }. Genitori da coprire: ${parents.map(x => x.id).join(', ')}.`);
+      }
       groups[p.id] = names.map(n => p.id + ':' + n);
       names.forEach(n => kids.push({ id: p.id + ':' + n, n: n, c: p.c, parent: p.id, parentDim: parentDim }));
     });
