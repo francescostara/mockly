@@ -130,6 +130,8 @@ function classify(err: unknown): unknown {
   return err;
 }
 
+const EMIT_TOOL = 'emit_report';
+
 async function request(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
   /* In streaming, non con create(): con un max_tokens alto l'SDK rifiuta le richieste non
      streaming (stima che possano superare i 10 minuti) e lancia un errore prima ancora di
@@ -148,14 +150,34 @@ async function request(turns: Turn[], model: string): Promise<{ text: string; us
        (quale visual, quale palette, quale storyline) sta nel prompt, non va riscoperto ogni
        volta. A 'low' il modello pensa meno e scrive di piu. */
     output_config: { effort: 'low' },
+    /* La spec NON si chiede "rispondi solo con JSON": si chiede come chiamata a strumento con
+       schema. E la differenza fra sperare che il modello non aggiunga una frase e non lasciargli
+       il posto dove scriverla — nell'eval due giri su dieci erano morti proprio cosi
+       ("Unexpected non-whitespace character after JSON"). Lo schema resta volutamente largo:
+       la grammatica vera la controlla il motore, qui serve solo la garanzia sintattica. */
+    tools: [{
+      name: EMIT_TOOL,
+      description: "Consegna il report finito. E l unico modo di rispondere: spec descrive il report, dataParams il generatore dei numeri.",
+      input_schema: {
+        type: 'object',
+        properties: {
+          spec: { type: 'object', description: 'La spec del report, secondo la grammatica.' },
+          dataParams: { type: 'object', description: 'I parametri del generatore dei dati.' }
+        },
+        required: ['spec', 'dataParams']
+      }
+    }],
+    tool_choice: { type: 'tool', name: EMIT_TOOL },
     messages: turns.map(t => ({ role: t.role, content: t.content }))
   });
   const res = await stream.finalMessage();
 
-  const text = res.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-    .map(b => b.text)
-    .join('');
+  /* la risposta arriva come input dello strumento: gia oggetto, niente da estrarre dal testo.
+     Il ramo testuale resta come rete di sicurezza se un modello ignorasse il tool_choice. */
+  const call = res.content.find((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use' && b.name === EMIT_TOOL);
+  const text = call
+    ? JSON.stringify(call.input)
+    : res.content.filter((b): b is Anthropic.TextBlock => b.type === 'text').map(b => b.text).join('');
 
   const raw = {
     tokensIn: res.usage.input_tokens ?? 0,

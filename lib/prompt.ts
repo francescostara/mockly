@@ -6,7 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { AUDIENCE_LABEL, PALETTE_LABEL, type IntakeAnswers } from './intake';
+import { AUDIENCE_LABEL, PALETTE_LABEL, SIZE_LABEL, type IntakeAnswers } from './intake';
 
 const ROOT = process.cwd();
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -114,11 +114,13 @@ export function buildUserMessage(brief: string, intake: IntakeAnswers): string {
   lines.push('RISPOSTE AL QUESTIONARIO DI INTAKE:');
   lines.push(`- Utente finale: ${AUDIENCE_LABEL[intake.audience || ''] || 'non indicato'}`);
   lines.push(`- Branding: ${PALETTE_LABEL[intake.branding || ''] || 'non indicato'}${intake.brandColors ? ` (${intake.brandColors})` : ''}`);
+  lines.push(`- Taglia del cliente: ${SIZE_LABEL[intake.size || ''] || SIZE_LABEL.unknown}`);
   lines.push(`- Confronto temporale: ${intake.comparison || 'non indicato — usa YoY'}`);
   lines.push(`- Ampiezza: ${intake.scope === 'multi' ? 'più pagine con focus distinti' : 'una pagina + drill-through'}`);
   lines.push('');
-  lines.push('Scegli l\'estetica dall\'utente finale, la palette dal branding, i KPI e i grafici');
-  lines.push('dal dominio. Rispondi con il solo oggetto JSON { "spec": ..., "dataParams": ... }.');
+  lines.push('Identifica la nicchia dal brief e costruisci col SUO vocabolario. La taglia qui');
+  lines.push('sopra decide fin dove spingerti nella stima dei dati (floor / probabile / raro).');
+  lines.push('Estetica dall\'utente finale, palette dal branding. Niente domande: un solo giro.');
   return lines.join('\n');
 }
 

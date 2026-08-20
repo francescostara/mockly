@@ -3,7 +3,7 @@
  * The answers become structured context for the single paid call (Genera mockup). */
 
 export type IntakeStep = {
-  id: 'audience' | 'branding' | 'domain' | 'comparison' | 'scope';
+  id: 'audience' | 'branding' | 'domain' | 'size' | 'comparison' | 'scope';
   question: string;
   hint?: string;
   /* 'text' steps take the free-text box instead of buttons */
@@ -44,7 +44,19 @@ export const INTAKE: IntakeStep[] = [
     id: 'domain',
     kind: 'text',
     question: 'Di cosa parla il report? Cosa deve far vedere o decidere?',
-    hint: 'Più sei concreto (settore, metriche, cosa ti chiede il cliente) meglio esce.'
+    hint: 'Più sei concreto meglio esce: settore, cosa ti chiede il cliente e — se li sai — gli strumenti da cui escono i dati (POS, gestionale, CRM, GA4, Meta, ERP, contabilità).'
+  },
+  {
+    id: 'size',
+    kind: 'options',
+    question: 'Quanto è grande il cliente?',
+    hint: 'Serve a capire quali dati è plausibile che abbia già: un negozio singolo non ha lo stesso storico di una catena.',
+    options: [
+      { value: 'small', label: 'Piccolo', note: 'una sede, pochi addetti' },
+      { value: 'mid', label: 'Strutturato', note: 'più sedi o team dedicato' },
+      { value: 'large', label: 'Grande', note: 'gruppo, CRM/ERP, BI già in casa' },
+      { value: 'unknown', label: 'Non so', note: 'stima tu dal brief' }
+    ]
   },
   {
     id: 'comparison',
@@ -76,6 +88,13 @@ export const AUDIENCE_LABEL: Record<string, string> = {
   manager: 'manager operativo',
   analyst: 'analista',
   owner: 'titolare non tecnico'
+};
+
+export const SIZE_LABEL: Record<string, string> = {
+  small: 'piccolo (una sede, pochi addetti) — resta sul livello floor dei dati',
+  mid: 'strutturato (più sedi o team dedicato) — floor + livello probabile',
+  large: 'grande (gruppo, CRM/ERP/BI in casa) — anche il livello raro, se il brief lo conferma',
+  unknown: 'non dichiarata — stimala dai segnali del brief'
 };
 
 export const PALETTE_LABEL: Record<string, string> = {
