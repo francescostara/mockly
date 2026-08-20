@@ -6,16 +6,26 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SYSTEM_PROMPT } from './prompt';
 
-/** Sonnet 5 by default, per the brief. Override with MOCKLY_MODEL. */
-export const MODEL = process.env.MOCKLY_MODEL || 'claude-sonnet-5';
-
-/** Short names a caller may ask for. Anything outside this list is refused: the model id
- *  reaches the API and bills the account, so it is never taken from the request verbatim. */
-export const MODEL_ALIASES: Record<string, string> = {
+/** Short names a caller may ask for, resolved before MODEL so MOCKLY_MODEL=haiku works too. */
+const MODEL_ALIASES_RAW: Record<string, string> = {
   sonnet: 'claude-sonnet-5',
   haiku: 'claude-haiku-4-5',
   opus: 'claude-opus-5'
 };
+
+/* Il passo generativo legge un brief e scrive un JSON piccolo secondo uno schema: e
+   categorizzazione + composizione guidata, non ragionamento profondo, e il giudizio di merito
+   sta gia scritto nel prompt cachato. Quindi il default e il modello piu economico, e Sonnet
+   resta a un cambio di variabile per il confronto nell eval. Le soglie dell eval NON cambiano:
+   qualunque modello si usi deve passare lo stesso test. */
+/** Haiku by default. Override with MOCKLY_MODEL (alias o id completo). */
+export const MODEL = process.env.MOCKLY_MODEL
+  ? (MODEL_ALIASES_RAW[process.env.MOCKLY_MODEL] || process.env.MOCKLY_MODEL)
+  : 'claude-haiku-4-5';
+
+/** Anything outside this list is refused: the model id reaches the API and bills the account,
+ *  so it is never taken from the request verbatim. */
+export const MODEL_ALIASES: Record<string, string> = MODEL_ALIASES_RAW;
 
 /** Resolve a caller-supplied model name (alias or full id) against the allowlist. */
 export function resolveModel(requested?: string): string {
@@ -88,10 +98,24 @@ function getClient(): Anthropic {
 
 export type Turn = { role: 'user' | 'assistant'; content: string };
 
+/** Deroghe al percorso principale. Servono a un solo caso oggi: una mini-chiamata di
+ *  classificazione, che non vuole ne il prefisso da 24k token ne lo strumento di consegna. */
+export type CallOptions = {
+  /** sostituisce SYSTEM_PROMPT; niente cache_control, e troppo corto per valerne la pena */
+  system?: string;
+  maxTokens?: number;
+  /** false = risposta libera in testo, senza emit_report */
+  structured?: boolean;
+};
+
 /** One call. `turns` carries the brief and, on a repair attempt, the previous answer + errors. */
-export async function callModel(turns: Turn[], model: string = MODEL): Promise<{ text: string; usage: Usage }> {
+export async function callModel(
+  turns: Turn[],
+  model: string = MODEL,
+  opts: CallOptions = {}
+): Promise<{ text: string; usage: Usage }> {
   try {
-    return await request(turns, model);
+    return await request(turns, model, opts);
   } catch (err) {
     throw classify(err);
   }
@@ -132,7 +156,9 @@ function classify(err: unknown): unknown {
 
 const EMIT_TOOL = 'emit_report';
 
-async function request(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
+async function request(turns: Turn[], model: string, opts: CallOptions = {}): Promise<{ text: string; usage: Usage }> {
+  const structured = opts.structured !== false;
+  const maxTokens = opts.maxTokens ?? 24000;
   /* In streaming, non con create(): con un max_tokens alto l'SDK rifiuta le richieste non
      streaming (stima che possano superare i 10 minuti) e lancia un errore prima ancora di
      chiamare l'API. Lo streaming toglie anche il rischio di timeout HTTP sulle generazioni
@@ -143,9 +169,13 @@ async function request(turns: Turn[], model: string): Promise<{ text: string; us
        ~2.000. Il resto era ragionamento, che sfondava il tetto di 16.000 e troncava la spec a
        meta (da cui i "JSON non valido" e il costo triplo). Piu spazio e gratis: si paga solo
        quello che viene davvero generato. */
-    max_tokens: 24000,
-    /* the cached prefix — one breakpoint on the last (only) system block */
-    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+    max_tokens: maxTokens,
+    /* the cached prefix — one breakpoint on the last (only) system block. Un system prompt
+       passato da chi chiama e corto per definizione: metterci un breakpoint costerebbe una
+       cache write senza mai ripagarla. */
+    system: opts.system
+      ? [{ type: 'text' as const, text: opts.system }]
+      : [{ type: 'text' as const, text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' as const } }],
     /* Scrivere una spec e generazione strutturata, non ragionamento profondo: il giudizio
        (quale visual, quale palette, quale storyline) sta nel prompt, non va riscoperto ogni
        volta. A 'low' il modello pensa meno e scrive di piu. */
@@ -153,21 +183,69 @@ async function request(turns: Turn[], model: string): Promise<{ text: string; us
     /* La spec NON si chiede "rispondi solo con JSON": si chiede come chiamata a strumento con
        schema. E la differenza fra sperare che il modello non aggiunga una frase e non lasciargli
        il posto dove scriverla — nell'eval due giri su dieci erano morti proprio cosi
-       ("Unexpected non-whitespace character after JSON"). Lo schema resta volutamente largo:
-       la grammatica vera la controlla il motore, qui serve solo la garanzia sintattica. */
-    tools: [{
+       ("Unexpected non-whitespace character after JSON"). */
+    ...(structured ? { tool_choice: { type: 'tool' as const, name: EMIT_TOOL } } : {}),
+    tools: !structured ? [] : [{
       name: EMIT_TOOL,
       description: "Consegna il report finito. E l unico modo di rispondere: spec descrive il report, dataParams il generatore dei numeri.",
       input_schema: {
         type: 'object',
         properties: {
-          spec: { type: 'object', description: 'La spec del report, secondo la grammatica.' },
-          dataParams: { type: 'object', description: 'I parametri del generatore dei dati.' }
+          spec: { type: 'object', description: 'La spec del report, secondo la grammatica di engine/spec.d.ts.' },
+          /* Lo schema resta largo OVUNQUE tranne che su dims: la grammatica vera la controlla il
+             motore. Su dims no, perche li si concentrava l intera classe di fallimento dell eval
+             (3 fallback su 4, sempre "dims[X] has no members"). Qui members e obbligatorio con
+             minItems 1, quindi la dimensione vuota non e nemmeno una forma che lo strumento
+             accetta: non e piu una regola da ricordare, e la firma della chiamata. */
+          dataParams: {
+            type: 'object',
+            description: 'Il generatore dei numeri, secondo engine/data-params.md.',
+            properties: {
+              dims: {
+                type: 'object',
+                description:
+                  'Ogni dimensione con i suoi membri DENTRO di se. Una dimensione dichiarata e ' +
+                  'lasciata vuota non e ammessa: dichiararla significa popolarla.',
+                additionalProperties: {
+                  type: 'object',
+                  properties: {
+                    members: {
+                      type: 'array',
+                      minItems: 1,
+                      description: 'I membri della dimensione. Almeno uno con growth negativo.',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', description: 'slug breve, es. "ig"' },
+                          n: { type: 'string', description: 'etichetta che il lettore vede' },
+                          c: { type: 'string', description: 'colore del membro, riusato in ogni visual' },
+                          base: { type: 'number', description: 'valore mensile della misura primaria nel primo anno' },
+                          growth: { type: 'number', description: 'crescita composta annua' },
+                          attrs: { type: 'object', description: 'attributi numerici letti dalle formule' }
+                        },
+                        required: ['id', 'n', 'base']
+                      }
+                    }
+                  },
+                  required: ['members']
+                }
+              },
+              facts: {
+                type: 'object',
+                description: 'La tabella fatti mensile: dim e la dimensione del ciclo, fields[0] e kind:"seasonal".',
+                properties: {
+                  dim: { type: 'string', description: 'chiave di dims su cui gira il ciclo mensile' },
+                  fields: { type: 'array', minItems: 1, items: { type: 'object' } }
+                },
+                required: ['dim', 'fields']
+              }
+            },
+            required: ['years', 'dims', 'facts']
+          }
         },
         required: ['spec', 'dataParams']
       }
     }],
-    tool_choice: { type: 'tool', name: EMIT_TOOL },
     messages: turns.map(t => ({ role: t.role, content: t.content }))
   });
   const res = await stream.finalMessage();
@@ -190,21 +268,43 @@ async function request(turns: Turn[], model: string): Promise<{ text: string; us
   /* Il tetto di token raggiunto significa spec tagliata a meta: senza questo controllo
      arrivava a valle come un incomprensibile "Expected ',' after array element". */
   if (res.stop_reason === 'max_tokens') {
-    throw new Error('Risposta troncata: raggiunto il tetto di ' + 24000 + ' token in uscita, la spec e incompleta.');
+    throw new Error('Risposta troncata: raggiunto il tetto di ' + maxTokens + ' token in uscita, la spec e incompleta.');
   }
 
   return { text, usage: { ...raw, costUsd: priceOf(model, raw) } };
 }
 
-/** Tolerant JSON extraction: the model is asked for bare JSON but may fence it. */
+/** Il primo oggetto JSON BILANCIATO, non "dalla prima graffa all ultima": se il modello
+ *  aggiunge una frase dopo l oggetto e quella frase contiene una graffa, il taglio ingenuo
+ *  includeva anche il commento e il parse moriva. Scansione consapevole di stringhe ed escape. */
+function firstBalancedObject(s: string): string | null {
+  const start = s.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === String.fromCharCode(92)) esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) return s.slice(start, i + 1);
+  }
+  return null;
+}
+
+/** Tolerant JSON extraction: the answer arrives as a tool call, but this stays as the net for
+ *  a model that ignored tool_choice — fenced, prefaced, or with a sentence trailing after. */
 export function extractJson(text: string): { spec: unknown; dataParams: unknown } {
   let s = text.trim();
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) s = fence[1].trim();
-  const first = s.indexOf('{');
-  const last = s.lastIndexOf('}');
-  if (first < 0 || last <= first) throw new Error('La risposta del modello non contiene JSON.');
-  const parsed = JSON.parse(s.slice(first, last + 1));
+  const obj = firstBalancedObject(s);
+  if (!obj) throw new Error('La risposta del modello non contiene JSON.');
+  const parsed = JSON.parse(obj);
   if (!parsed || typeof parsed !== 'object') throw new Error('Il JSON del modello non è un oggetto.');
   if (!parsed.spec || !parsed.dataParams) {
     throw new Error('Il JSON del modello non contiene entrambe le chiavi "spec" e "dataParams".');

@@ -56,6 +56,11 @@ export async function POST(req: NextRequest) {
   let fallback = false;
   let lastErrors: string[] = [];
 
+  /* PUNTO D INNESTO (non attivo) — riconoscimento nicchia come mini-chiamata separata.
+     Oggi la nicchia la riconosce questo stesso passo, leggendo la libreria dal prefisso
+     cachato. Per spezzarlo in due: lib/niche.ts, NICHE_CALL_ENABLED, poi passare l etichetta
+     a buildUserMessage. Resta spento finche l eval, con le stesse soglie, non dice che
+     conviene: il prezzo per token non e una prova. */
   const turns: Turn[] = [{ role: 'user', content: buildUserMessage(brief, intake) }];
   let result: ReturnType<typeof checkAndRender> | null = null;
 
