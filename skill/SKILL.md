@@ -56,9 +56,10 @@ their numbers.
 Follow these steps in order. Each references a detailed file — read it before you rely on it.
 
 1. **Read the brief and fix the frame.** Canvas is **always 1280x720, landscape** (Power BI
-   16:9 default) unless the user states otherwise. Default to **one page plus drill-through** —
-   a single well-composed page reads faster. But **generate multiple pages when the brief
-   carries distinct analytical focuses or audiences** — e.g. an executive overview *and* an
+   16:9 default) unless the user states otherwise. **Never assume a single page.** Real client
+   reports are frequently multi-page. Decide page count from the brief: use **filters** when the
+   same data structure repeats across a dimension (platform, store, month), and use **separate
+   pages** when there are genuinely distinct topics or analyses — e.g. an executive overview *and* an
    operational deep-dive, or one page per business line, or a "performance" page plus a
    "drivers" page. Each page gets its own hero visual and a purpose; don't split one story
    across two pages to pad. Use the top/side nav to switch pages. Identify: domain, audience,
@@ -192,8 +193,8 @@ The output should be lean: it generates faster, embeds better, and has less surf
 ## Optional deliverables (on request or when the audience needs them)
 
 - **"How to use" / KPI-glossary guide for the end user.** Include it **only when warranted**:
-  the report is **multi-page** *and* either the audience is inexperienced *or* the report has
-  **calculated / non-obvious KPIs that need explaining** (e.g. Net Achieved, a custom margin).
+  the report is **multi-page** *and* either the audience is inexperienced, the report has
+  **calculated / non-obvious KPIs that need explaining**, *or* it has **many segments/entities** (e.g. Net Achieved, a custom margin).
   Then add a documentation view — a dismissible ⓘ panel or a dedicated page — defining each KPI
   in plain language and explaining the pages and filters, in the report's language. For a
   single-page report or an expert audience with self-evident metrics, skip it. Never let it
@@ -217,6 +218,16 @@ Italian clients and in English otherwise — match that. Never mix two languages
   design philosophy (decision-questions, one-measure-many-grains, the revenue-vs-margin tension),
   his house layout, consistent entity colours, conditional-format matrices, and the chart
   techniques he actually uses. Highest-authority reference; read it first.
+- `references/niches.md` — **the domain knowledge library.** From the brief, identify the
+  niche, load its entry, and build with ITS KPIs, dimensions, signature visuals, and negative
+  storyline. Never produce a generic sales dashboard regardless of niche. Combine with
+  data-availability.md to estimate which KPIs the client can actually build.
+- `references/data-availability.md` — **estimate (not assume)** what data the client likely has:
+  it's a probability that depends on the client's SIZE/MATURITY, so each niche lists a floor
+  (almost always), a probable tier (depends on scale), and a rare tier (only if named). Build
+  defaults on the floor; include higher tiers when the brief implies enough scale; gate the rest.
+  Never ask for missing data mid-flow. Includes the pre-chat text that makes the user state
+  their size and data sources up front.
 - `references/chart-selection.md` — how to CHOOSE the right visual for each analytical question
   (ribbon, 100% stacked, Pareto, when pie is and isn't allowed) and how to vary the mix and
   palette. Read this to avoid shipping the same bars-and-donut every time.

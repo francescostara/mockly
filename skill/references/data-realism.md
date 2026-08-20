@@ -140,3 +140,34 @@ function ipf(seed, rowT, colT, iters=30){
 const REV = ipf(seedGrid, CHANNELS.map(c=>c.revenue), COUNTRIES.map(c=>c.revenue), 30);
 // channel value under a country filter:  S.country ? REV[ci][coIdx[S.country]] : CHANNELS[ci].revenue
 ```
+
+## Declaring a facts dimension means populating its members — always
+
+The single most common spec-generation failure: declaring a facts dimension and then leaving
+its members empty or writing them somewhere else. The renderer rejects a dimension with no
+members (correctly — a dimension with no members can't filter or aggregate anything), and the
+generation falls back. **A dimension IS its members.** Whenever you declare a `facts.dim`
+(platform, category, segment, channel, …), you must list its members inline, in the same place,
+in the same object — never a bare name, never members deferred elsewhere, never an empty dim.
+
+```jsonc
+// WRONG — declared but empty; the renderer rejects this and the whole spec falls back
+"dims": { "platform": {} }
+
+// RIGHT — the dimension and its members are one thing, co-located
+"dims": {
+  "platform": { "members": ["Instagram", "TikTok", "LinkedIn", "YouTube", "Facebook"] }
+}
+```
+
+If a visual references a dimension, that dimension must exist in `dims` WITH members. Before
+finishing the spec, check every dimension you named actually carries members. This one rule is
+responsible for the majority of first-pass generation failures; treat it as non-negotiable.
+
+## Emit the spec as one complete JSON object — nothing before or after
+
+The response must be exactly one JSON object: no prose preamble, no explanation after, no
+trailing text, no markdown fences. Text after the closing brace breaks parsing. If the runtime
+prefills the response with an opening brace, continue from there and stop at the matching close.
+The spec must also be complete — a spec truncated mid-object is invalid; keep the output compact
+enough (declarative params, no restated data) that it finishes within the token budget.

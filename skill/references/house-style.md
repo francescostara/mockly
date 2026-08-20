@@ -47,8 +47,9 @@ he thinks*: where the rules here are more specific than the generic guidance, fo
 - A **Chart / Table view toggle** on data-heavy visuals.
 - A dedicated **variation page (MoM / WoW)** with grouped columns for multi-metric change.
 - A **KPI-glossary / "how it works" page — only when warranted, not by default.** Include it
-  only for **multi-page** dashboards *and* when either the end user is inexperienced *or* the
-  report has **calculated / non-obvious KPIs that need explaining** (e.g. Net Achieved, MER vs
+  only for **multi-page** dashboards *and* when either the end user is inexperienced, the
+  report has **calculated / non-obvious KPIs that need explaining**, *or* it has **many
+  segments/entities** where reminding the reader what each means helps (e.g. Net Achieved, MER vs
   ROAS, a custom margin or profitability-floor concept). For a single-page report, or an expert
   audience with self-evident metrics, skip it. When it earns its place, it defines each KPI in
   plain language and explains each page and its filters, with navigation (home / page tabs).
@@ -90,7 +91,7 @@ he thinks*: where the rules here are more specific than the generic guidance, fo
 - **Sales / portfolio:** light grey field, white rounded cards with a soft shadow, black
   slicer + logo cards, jewel-tone per-rep colours; black bars for aggregates, coloured bars for
   per-entity.
-- **Creator-economy:** dark/near-black theme, one bright brand accent (pink), themed
+- **Creator-economy (WeLearn):** dark/near-black theme, one bright brand accent (pink), themed
   naming, white text.
 - **Logistics:** teal/green brand, coloured top slicer strips, red reserved for leakage /
   negative profit.

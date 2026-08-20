@@ -72,3 +72,17 @@ conditional-format heatmap matrices, gauge-with-target KPIs, "best X for Y" rank
 small multiples, scatter segmentation for the revenue-vs-margin tension, and the design-around-
 decision-questions philosophy — see `house-style.md`. It is the highest-authority reference and
 overrides generic guidance where more specific.
+
+
+## Maps and location visuals — use them, don't skip them
+
+Whenever the data has a **location dimension** (store, venue, region, country, route, territory,
+sender/receiver), a map is often the most immediate visual and is heavily used in real
+dashboards. Do not default to omitting geography. Options:
+- **Bubble map** — a metric (profit, revenue, cost) sized/coloured per location. Great for
+  "which places win/lose" (logistics routes, sales territories, retail estate).
+- **Filled/choropleth map** — a metric shaded by region/country.
+- If a true map isn't feasible in the render, a **location matrix or ranked bar by place** with
+  conditional formatting is the fallback — but prefer the map when a location dimension exists.
+Applies across niches: retail (by store), F&B (by venue), sales (by territory), logistics
+(by route/country), not only logistics.
