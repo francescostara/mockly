@@ -22,6 +22,31 @@ numbers, always.
 
 ## `dims` — the dimensions and the character of their members
 
+**A dimension IS its members.** `members` is required on every dimension and must hold at least
+one element: a dimension without members is not expressible in this grammar (`DimSpec` in
+`engine/spec.d.ts` types it as a non-empty array). Declaring the dimension and populating it are
+the same act, in the same object — there is nowhere else to put the members.
+
+```jsonc
+// WRONG — the dimension is announced and left empty. The build stops here.
+"dims": { "platform": {} },
+"facts": { "dim": "platform", "fields": [ ... ] }
+
+// RIGHT — dim and members co-located, always.
+"dims": {
+  "platform": {
+    "members": [
+      { "id": "ig", "n": "Instagram", "c": "#1F4E79", "base": 41000, "growth": 0.12, "attrs": { "engRate": 0.041 } },
+      { "id": "tt", "n": "TikTok",    "c": "#4A7FA8", "base": 28000, "growth": 0.34, "attrs": { "engRate": 0.058 } },
+      { "id": "li", "n": "LinkedIn",  "c": "#A8926E", "base": 12000, "growth": -0.07, "attrs": { "engRate": 0.022 } }
+    ]
+  }
+},
+"facts": { "dim": "platform", "fields": [ { "id": "reach", "kind": "seasonal" } ] }
+```
+
+Same shape, with the attributes the field formulas read:
+
 ```jsonc
 "dims": {
   "cat": {
@@ -37,9 +62,13 @@ numbers, always.
 }
 ```
 
+- `members` — **required, at least one.** Every dimension named anywhere else (`facts.dim`,
+  `facts.split.dim`, `detail.parentDim`, a `bind.dim`, a toolbar filter) must appear here with
+  its members already inside it.
 - `id` short slug · `n` the label the reader sees · `c` the member's colour, used in EVERY
-  visual (one colour per member, always).
-- `base` — the member's monthly value of the primary measure in the FIRST year.
+  visual (one colour per member, always). `id` and `n` are required on every member.
+- `base` — **required.** The member's monthly value of the primary measure in the FIRST year;
+  every other number of that member derives from it, so a member without `base` produces NaN.
 - `growth` — compound growth per year. **At least one member must be negative** — that is the
   negative storyline.
 - `attrs` — free numeric attributes the field formulas read (`aov`, `margin`, rates…).

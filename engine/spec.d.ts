@@ -180,4 +180,69 @@ export interface Data {
   tieOut?: Record<string, number>;
 }
 
+/* ---------------- dataParams: the declarative generator ---------------- */
+/* Prose reference: engine/data-params.md. Run by engine/data-builder.js into the `Data` above. */
+
+/** At least one element, checked by the compiler rather than at runtime. A dimension with an
+ *  empty `members` array is not expressible in this grammar: declaring a dimension IS
+ *  populating it. */
+export type NonEmpty<T> = [T, ...T[]];
+
+/** The character of one member. `base` is its monthly value of the primary measure in the
+ *  first year; without it every number of that member comes out NaN. */
+export interface MemberSpec {
+  /** short slug, referenced by facts rows and by `detail.members` keys */
+  id: string;
+  /** the label the reader sees */
+  n: string;
+  /** the member's colour, reused in EVERY visual; the builder fills a ramp colour if omitted */
+  c?: string;
+  base: number;
+  /** compound growth per year; at least one member of a dimension must be negative */
+  growth?: number;
+  /** free numeric attributes the field formulas read (aov, margin, rates...) */
+  attrs?: Record<string, number>;
+}
+
+/** A dimension and its members, co-located. There is nowhere else to put them. */
+export interface DimSpec { members: NonEmpty<MemberSpec>; }
+
+export type FieldSpec =
+  | { id: string; kind: 'seasonal'; jitter?: [number, number] }
+  | { id: string; kind: 'share'; of: string; attr: string; attrFrom?: 'split'; complement?: boolean; cap?: number; growthFactor?: number; jitter?: [number, number] }
+  | { id: string; kind: 'divide'; of: string; attr: string; attrFrom?: 'split'; min?: number; jitter?: [number, number] }
+  | { id: string; kind: 'combine'; plus?: string[]; minus?: string[] };
+
+export interface FactsSpec {
+  /** key of `dims` — the dimension the monthly loop runs over */
+  dim: string;
+  /** a second filterable dimension fitted onto the same totals with IPF */
+  split?: { dim: string; shares?: number[] };
+  /** fields[0] must be the primary measure, kind:'seasonal' */
+  fields: NonEmpty<FieldSpec>;
+}
+
+export interface DetailSpec {
+  dim: string;
+  parentDim?: string;
+  /** child names per parent id — one entry per member of the parent dimension */
+  members: Record<string, NonEmpty<string>>;
+  fields?: string[];
+  counts?: { field: string; from?: string };
+}
+
+export interface DataParams {
+  seed?: number;
+  /** exactly two: prior and current */
+  years: [number, number];
+  /** 12 multipliers averaging ~1.0 */
+  seasonality?: number[];
+  /** every dimension the report can filter, slice or drill by */
+  dims: Record<string, DimSpec>;
+  facts: FactsSpec;
+  detail?: DetailSpec;
+}
+
+export declare function build(dataParams: DataParams): Data;
+
 export declare function render(spec: Spec, data: Data): string;
