@@ -40,12 +40,13 @@ function Swatch({ name, role }: { name: string; role: string }) {
         {rows.map(r => (
           <span key={r.t}>
             {r.t === 'light' ? 'chiaro' : 'scuro'}{' '}
-            <span className="num">{r.v}</span>{' · '}
-            <span className="num">{fmt(r.r)}:1</span>
+            <span className="num">{r.v}</span>
+            {bg === name ? null : <>{' · '}<span className="num">{fmt(r.r)}:1</span></>}
           </span>
         ))}
       </div>
-      <span className="rl">su <span className="num">{bg}</span></span>
+      {/* la carta contro se stessa darebbe 1.00:1, un numero che non vuol dire niente */}
+      <span className="rl">{bg === name ? 'e il fondo della pagina' : <>su <span className="num">{bg}</span></>}</span>
     </div>
   );
 }
