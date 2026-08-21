@@ -103,3 +103,49 @@
 @media (prefers-reduced-motion: reduce) {
   .d-btn { transition: none; }
 }
+
+/* ---- pattern composti: si costruiscono coi ruoli, non con hex nuovi ---- */
+
+/* Il selezionato NON usa il bottone invertito: la barra ne porterebbe tre, e l'elemento forte
+   dell'interfaccia deve restare uno per schermata. Uno scalino di superficie dentro una
+   traccia incassata basta a dire "questo". */
+.d-seg {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+.d-seg button {
+  font: inherit; font-size: 12.5px; cursor: pointer;
+  background: transparent; color: var(--ink-muted); border: 0;
+  padding: 3px 11px; border-radius: var(--radius-pill);
+  transition: background-color var(--motion-instant) var(--easing-out), color var(--motion-instant) var(--easing-out);
+}
+.d-seg button[aria-pressed="true"] { background: var(--surface-raised); color: var(--ink); }
+.d-seg button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+/* Il costo in crediti usa ink-secondary, mai ink-muted: credito e prezzo restano molto
+   leggibili, ed è un difetto già visto in revisione. */
+.d-chipbtn {
+  font: inherit; font-size: 12.5px; cursor: pointer;
+  display: inline-flex; align-items: baseline; gap: 7px;
+  background: transparent; color: var(--ink);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  padding: 5px 12px;
+}
+.d-chipbtn .cost { font-family: var(--font-mono-stack); font-variant-numeric: tabular-nums; font-size: 11px; color: var(--ink-secondary); }
+.d-chipbtn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+.d-pattern { padding: var(--space-4); }
+.d-pattern .nm { display: block; font-size: 13px; font-weight: 600; }
+.d-pattern ul { margin: var(--space-2) 0 var(--space-2); padding-left: 18px; font-size: 12.5px; line-height: 1.6; color: var(--ink-secondary); }
+.d-pattern .note { display: block; font-size: 12px; line-height: 1.55; color: var(--ink-muted); }
+
+.d-state { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); }
+.d-state .dot { width: 26px; height: 26px; border-radius: var(--radius-pill); flex: 0 0 26px; }
+.d-state .txt .nm { display: block; font-size: 12.5px; font-weight: 600; }
+.d-state .txt .rl { display: block; font-size: 11.5px; color: var(--ink-muted); line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .d-seg button { transition: opacity var(--motion-instant) linear; }
+}

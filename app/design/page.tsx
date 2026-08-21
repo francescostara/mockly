@@ -7,7 +7,7 @@
 
 import './design.css';
 import ThemeToggle from './theme-toggle';
-import { COLORS, SPACE, RADIUS, MOTION, audit, contrast, valueOf, type Theme } from '../design-tokens';
+import { COLORS, SPACE, LAYOUT, RADIUS, MOTION, PATTERNS, audit, contrastIn, valueOf, sunkenRecedes, type Theme } from '../design-tokens';
 
 export const metadata = { title: 'Mockly — design system' };
 
@@ -19,13 +19,16 @@ function backdropOf(name: string): string {
   if (name === 'surface') return 'surface';
   if (name === 'surface-raised' || name === 'surface-sunken') return 'surface';
   if (name === 'button-inverted-ink') return 'button-inverted-bg';
+  if (name === 'button-inverted-bg') return 'surface';
   return 'surface-raised';
 }
 
 function Swatch({ name, role }: { name: string; role: string }) {
   const bg = backdropOf(name);
+  /* contrastIn risolve ENTRAMBI i colori dalla tavolozza di quel tema: il rapporto mostrato
+     non puo mai essere un confronto fra un token scuro e una superficie chiara. */
   const rows: Array<{ t: Theme; v: string; r: number }> = (['light', 'dark'] as Theme[]).map(t => ({
-    t, v: valueOf(name, t), r: contrast(valueOf(name, t), valueOf(bg, t))
+    t, v: valueOf(name, t), r: contrastIn(t, name, bg)
   }));
 
   return (
@@ -111,18 +114,20 @@ export default function DesignPage() {
           <ThemeToggle />
         </div>
         <p className="d-lede">
-          L&apos;app è una cornice monocroma quieta attorno a contenuto vivido: il mockup nel pannello
-          destro porta i colori del cliente finale, e l&apos;interfaccia non deve competerci. Qui non
-          esiste un accento cromatico, e la profondità è uno scalino di superficie più un bordo di
-          un pixel — nessuna ombra, nessun gradiente, nessun blur.
+          L&apos;app è una cornice quieta attorno a contenuto vivido: il mockup nel pannello destro
+          porta i colori del cliente finale, e l&apos;interfaccia non deve competerci. La carta è calda,
+          non neutra. Non esiste un accento cromatico — il colore appartiene al mockup e agli stati —
+          e la profondità è uno scalino di superficie più un bordo di un pixel: nessuna ombra,
+          nessun gradiente, nessun blur.
         </p>
 
         <section className="d-sec">
           <h2>Contrasto</h2>
           <p>
-            Misurato, non dichiarato. Il testo attenuato — dove vivono credito e prezzo — è il posto
-            in cui un design system monocromo tende a sbagliare: qui è tenuto al minimo AA, non al
-            grigio più elegante.
+            Misurato, non dichiarato — e ogni token è misurato SOLO contro le superfici del proprio
+            tema: confrontare un inchiostro scuro con la carta chiara produce un numero che sembra una
+            bocciatura e non vuole dire niente. Qui i tre livelli di grigio stanno tutti sopra il
+            pavimento AA, su tutte e tre le superfici, in entrambi i temi.
           </p>
           <ContrastTable theme="light" />
           <ContrastTable theme="dark" />
@@ -171,28 +176,99 @@ export default function DesignPage() {
           <div className="d-card d-row">
             <button className="d-btn">Genera il mockup</button>
             <button className="d-btn ghost">Ricomincia</button>
+            <span className="d-seg">
+              <button aria-pressed="true">IT</button>
+              <button aria-pressed="false">EN</button>
+            </span>
+            <span className="d-seg">
+              <button aria-pressed="true">Chiaro</button>
+              <button aria-pressed="false">Scuro</button>
+            </span>
+            <button className="d-chipbtn">Più corporate <span className="cost">1 cr</span></button>
             <input className="d-field" defaultValue="Report mensile per una catena di palestre" aria-label="esempio di campo" />
           </div>
         </section>
 
         <section className="d-sec">
-          <h2>Superficie incassata</h2>
+          <h2>Stati semantici</h2>
           <p>
-            Il palco su cui poggia il mockup. È l&apos;unico posto dell&apos;app dove il colore è ammesso —
-            perché non è colore dell&apos;app: è il contenuto del cliente, dentro un iframe che il tema
-            non tocca mai.
+            Definiti, riservati, e oggi <strong>senza consumatori</strong>. Il colore semantico vale
+            solo per uno stato funzionale: mai decorazione, mai enfasi, mai un grafico. Un errore si
+            dichiara con le parole, con la forma e con l&apos;azione di rimedio; il colore è al massimo
+            il quarto segnale e non è mai l&apos;unico. Non contraddice la regola del nessun accento: un
+            accento è decorazione ricorrente, uno stato è un evento raro e informativo.
           </p>
-          <div className="d-sunken">qui vive l&apos;iframe del mockup — l&apos;app non lo ricolora</div>
+          <div className="d-grid">
+            {COLORS.filter(c => c.kind === 'state').map(c => (
+              <div className="d-card d-state" key={c.name}>
+                <span className="dot" style={{ background: 'var(--' + c.name + ')' }} />
+                <span className="txt">
+                  <span className="nm num">{c.name}</span>
+                  <span className="rl">{c.role}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="d-sec">
+          <h2>Pattern composti</h2>
+          <p>
+            Tre cose che il layout richiede e che nessun ruolo singolo esprime. Si costruiscono
+            componendo i ruoli esistenti: nessuno di questi pattern introduce un valore nuovo.
+          </p>
+          <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
+            {PATTERNS.map(p => (
+              <div className="d-card d-pattern" key={p.name}>
+                <span className="nm">{p.name}</span>
+                <ul>{p.parts.map(([k, v]) => <li key={k}><span className="num">{k}</span> — {v}</li>)}</ul>
+                <span className="note">{p.note}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="d-sec">
+          <h2>Il pozzo rientra</h2>
+          <p>
+            La regola della cornice: <span className="num">surface-sunken</span> sta sotto{' '}
+            <span className="num">surface</span> in <em>entrambi</em> i temi. Se in scuro si invertisse,
+            il pozzo diventerebbe il punto più luminoso dello schermo — un riflettore puntato sulla
+            cornice invece che sul contenuto.
+          </p>
+          <div className="d-card" style={{ padding: '2px 0' }}>
+            <table className="d-table">
+              <tbody>
+                {(['light', 'dark'] as Theme[]).map(t => (
+                  <tr key={t}>
+                    <td>tema {t === 'light' ? 'chiaro' : 'scuro'}</td>
+                    <td className="why">
+                      <span className="num">{valueOf('surface-sunken', t)}</span> sotto{' '}
+                      <span className="num">{valueOf('surface', t)}</span>
+                    </td>
+                    <td className="d-verdict">{sunkenRecedes(t) ? 'rientra' : 'NON RIENTRA'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="d-sunken" style={{ marginTop: 'var(--space-3)' }}>
+            qui vive l&apos;iframe del mockup — l&apos;app non lo ricolora mai
+          </div>
         </section>
 
         <section className="d-sec">
           <h2>Spazio, raggi, movimento</h2>
           <p>
-            Il movimento è solo funzionale: dice che qualcosa è cambiato. L&apos;unica eccezione è
-            l&apos;animazione di generazione, che resta nel suo componente e non si propaga altrove.
+            Il movimento è solo funzionale: dice che qualcosa è cambiato. L&apos;unica eccezione è{' '}
+            <span className="num">--motion-build</span>, la sequenza di generazione, che resta nel suo
+            componente e non si propaga altrove. Le costanti di layout non sono spaziature: l&apos;altezza
+            della barra e la larghezza del pannello sono decisioni di composizione, non passi di ritmo,
+            e stanno in un gruppo separato apposta.
           </p>
           <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
-            <Scale title="Spazio" map={SPACE} unit="space" />
+            <Scale title="Spazio (passi di 4)" map={SPACE} unit="space" />
+            <Scale title="Costanti di layout — NON spaziature" map={LAYOUT} unit="layout" />
             <Scale title="Raggi" map={RADIUS} unit="radius" />
             <Scale title="Movimento" map={MOTION} unit="motion" />
           </div>
