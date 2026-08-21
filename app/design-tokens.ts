@@ -56,7 +56,7 @@ export const COLORS: ColorToken[] = [
   /* ---- linee: due ruoli, deliberatamente diversi ---- */
   { name: 'border-hairline', kind: 'line', light: '#E4E1DA', dark: '#2E2C28',
     role: 'divisori, bordi di pannello e di card, cornice del mockup — separa, non identifica' },
-  { name: 'border-strong', kind: 'line', light: '#948E83', dark: '#6E6860',
+  { name: 'border-strong', kind: 'line', light: '#918A82', dark: '#726C63',
     role: 'SOLO il perimetro dei controlli interattivi (campi, bottoni opzione, traccia del segmented, chip): lì il bordo È il controllo, quindi deve reggere 3:1' },
 
   { name: 'focus-ring', kind: 'focus', light: '#1C1B19', dark: '#F2F0EB',
@@ -148,7 +148,7 @@ export const CONTRACTS: ContrastRule[] = [
   ...INK_FLOOR,
   { fg: 'button-inverted-ink', bg: 'button-inverted-bg', min: 4.5, why: 'l azione primaria' },
   /* border-strong NON compare contro surface-sunken: nel pozzo non vivono controlli, e lì
-     misurerebbe 2.73:1 nel tema chiaro. Vedi la regola in DESIGN.md. */
+     misurerebbe 2.86:1 nel tema chiaro. Vedi la regola in DESIGN.md. */
   { fg: 'border-strong', bg: 'surface', min: 3, why: 'perimetro di un controllo sulla pagina' },
   { fg: 'border-strong', bg: 'surface-raised', min: 3, why: 'perimetro di un controllo su un pannello' },
   { fg: 'focus-ring', bg: 'surface-raised', min: 3, why: 'il focus da tastiera deve vedersi' }

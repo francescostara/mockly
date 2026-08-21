@@ -129,22 +129,29 @@ THEMES.forEach(theme => {
   });
 });
 
-ok('surface-raised sta sopra surface in chiaro e sopra in scuro (uno scalino, non due)', () => {
+/* Il verso NON si inverte in scuro: surface-raised sta piu in ALTO di surface in entrambi i
+   temi, come surface-sunken sta piu in basso in entrambi. E la confusione che la regola del
+   pozzo vuole prevenire — "in scuro e tutto al contrario" e falso, e invertire lo scalino
+   trasforma il pannello in una buca e il pozzo in un riflettore. */
+ok('surface-raised sta sopra surface in entrambi i temi (uno scalino, non due)', () => {
   THEMES.forEach(theme => {
     const p = paletteOf(theme);
     const raised = lum(p['surface-raised']), surface = lum(p['surface']);
-    const sopra = theme === 'light' ? raised > surface : raised > surface;
-    assert.ok(sopra, 'in tema ' + theme + ' surface-raised non si stacca da surface nel verso giusto');
+    assert.ok(raised > surface,
+      'in tema ' + theme + ' surface-raised (' + p['surface-raised'] + ', L=' + raised.toFixed(4) + ') non sta ' +
+      'sopra surface (' + p['surface'] + ', L=' + surface.toFixed(4) + '): lo scalino non si inverte col tema.');
   });
 });
 
 /* ---- la cornice resta sull asse della carta calda ---- */
 
-/* La soglia NON e drift: e tarata sull asse caldo del prototipo. Misurata, la serie tocca 17
-   (border-strong chiaro, #948E83) — non 15. Il tetto sta li: abbastanza largo da accogliere la
-   carta calda, abbastanza stretto da fermare un blu o un verde di passaggio, che partono da 40
-   in su. Gli stati sono esclusi per definizione: sono cromatici perche devono esserlo. */
-const CHROMA_CEILING = 17;
+/* La soglia NON e drift: e tarata sull asse caldo del prototipo. La punta misurata della serie
+   e 15, e il tetto sta a 16 — un margine, non un valore cucito addosso all unico token che lo
+   toccava. 16 non e "il massimo consentito a un colore": e il punto oltre il quale un colore
+   ha smesso di essere carta. Un blu o un verde di passaggio partono da 40 in su, quindi lo
+   spazio fra 15 e 16 non lascia entrare niente. Gli stati sono esclusi per definizione: sono
+   cromatici perche devono esserlo. */
+const CHROMA_CEILING = 16;
 
 ok('nessun token della cornice esce dall asse caldo (dominante <= ' + CHROMA_CEILING + ')', () => {
   const chroma = hex => {

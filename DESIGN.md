@@ -49,18 +49,20 @@ Non esiste un colore "di marca" nell'interfaccia. L'unico elemento forte è il *
 invertito**: fondo inchiostro, testo carta. Serve per l'azione primaria di una schermata — una
 sola per schermata.
 
-`test/design-tokens.test.js` rifiuta un token della cornice con dominante cromatica sopra 17.
-Quel tetto **non è deriva**: è tarato sull'asse della carta calda, la cui punta misurata è
-esattamente 17 (`border-strong` chiaro, `#948E83`). È abbastanza largo da accogliere il caldo,
-abbastanza stretto da fermare un blu o un verde di passaggio, che partono da 40 in su. Gli stati
-semantici sono esclusi per definizione.
+`test/design-tokens.test.js` rifiuta un token della cornice con dominante cromatica sopra 16.
+Quel tetto **non è deriva**: la punta misurata della serie calda è 15, e il tetto sta a 16 —
+un margine, non un numero cucito addosso all'unico token che lo toccava. 16 non è "il massimo
+consentito a un colore": è il punto oltre il quale un colore ha smesso di essere carta. Un blu o
+un verde di passaggio partono da 40 in su, quindi lo spazio fra 15 e 16 non lascia entrare
+niente. Gli stati semantici sono esclusi per definizione.
 
 ### 2. Due ruoli di bordo, deliberatamente diversi
 - **`border-hairline`** (`#E4E1DA` / `#2E2C28`) — divisori, bordi di pannello e di card, cornice
   del mockup. **Separa**, non identifica. Contrasto basso di proposito: 1,21:1.
-- **`border-strong`** (`#948E83` / `#6E6860`, ≥3:1 su `surface` e `surface-raised`) — **solo** il
-  perimetro dei controlli interattivi: campi di testo, bottoni opzione, traccia del segmented
-  control, chip.
+- **`border-strong`** (`#918A82` / `#726C63`) — **solo** il perimetro dei controlli interattivi:
+  campi di testo, bottoni opzione, traccia del segmented control, chip. Misura **3,15:1** su
+  `surface` e **3,32:1** su `surface-raised` nel tema chiaro, **3,48:1** e **3,21:1** nello
+  scuro: sopra il 3 con un margine vero, non con due centesimi.
 
 La ragione della differenza: sul perimetro di un controllo **il bordo È il controllo.** Il
 riempimento di un campo sta appena 1,06:1 sopra la carta, quindi se il bordo scende sotto 3:1
@@ -69,7 +71,7 @@ non c'è più niente che dica dove finisce l'interfaccia e comincia lo sfondo �
 
 **Non usare `border-strong` come decorazione, non usare `border-hairline` su un perimetro
 interattivo.** E `border-strong` non va usato dentro il pozzo (`surface-sunken`): lì misura
-2,73:1 nel tema chiaro. Non è un problema perché nel pozzo non vivono controlli — ma se un
+2,86:1 nel tema chiaro. Non è un problema perché nel pozzo non vivono controlli — ma se un
 giorno ce ne mettessimo uno, quella è la cosa che si rompe.
 
 ### 3. Il pozzo rientra sempre
@@ -100,15 +102,30 @@ consumatori**. La regola:
 Non contraddice la regola 1: **un accento è decorazione ricorrente, uno stato è un evento raro e
 informativo.**
 
-### 6. Tema chiaro di default, scuro come scelta
-Il tema si commuta scrivendo `data-theme="dark"` su `<html>`. Non si eredita da
-`prefers-color-scheme`: il pannello destro mostra il mockup del cliente, e quel contenuto non
-deve cambiare aspetto perché il sistema operativo di chi guarda è in scuro.
+### 6. Il tema si eredita alla prima visita, si sceglie una volta sola
+Alla **prima visita** il tema viene da `prefers-color-scheme`: è quello che l'utente ha già
+detto al sistema operativo, e chiederglielo di nuovo sarebbe far finta di non aver sentito. Una
+**scelta esplicita vince e persiste** (`localStorage`, chiave `mockly-theme`): da quel momento
+il sistema non conta più, nemmeno se cambia.
+
+Il tema vive come `data-theme` su `<html>`. Lo scrive `THEME_BOOT` (`app/theme.tsx`), uno script
+sincrono nel `<head>`: deve girare **prima del primo pixel**, altrimenti la pagina appare chiara
+per un fotogramma e poi diventa scura — ed è il lampo che si nota di più. Per lo stesso motivo il
+markup del server non porta un `data-theme` fisso: sarebbe proprio il valore sbagliato da
+dipingere per primo.
+
+Questa regola non mette a rischio il mockup: a proteggerlo è la 7, che blocca l'iframe a
+prescindere dal tema. Il tema dell'app può quindi seguire chi guarda senza toccare quello che
+si sta guardando.
 
 ### 7. L'iframe del mockup NON si ricolora mai col tema dell'app
 È la regola che protegge il principio. Il mockup è un artefatto autonomo, byte-identico a quello
 che il cliente riceverà: se il tema scuro dell'app lo invertisse, l'app starebbe mentendo su cosa
 sta consegnando. Il tema tocca la cornice e si ferma al bordo dell'iframe.
+
+In pratica: nessun `filter`, nessun `background`, nessun `mix-blend-mode` sull'iframe, e
+`color-scheme: light` esplicito — senza quello il browser può scurire da sé il contenuto quando
+la cornice è in tema scuro, che è lo stesso danno per un'altra strada.
 
 ### 8. Niente ombre, gradienti, blur
 La profondità è **uno scalino di superficie più un bordo hairline da 1px**. Non esiste una scala
@@ -207,7 +224,11 @@ il test ferma.
 
 ## Cosa NON è ancora fatto
 
-`app/page.tsx` e `app/globals.css` usano ancora la palette precedente, con l'accento blu e gli
-hex scritti nei componenti. La migrazione dell'interfaccia a questi token è un passo separato:
-questo file e i token descrivono il sistema, non lo hanno ancora applicato alla schermata
-principale.
+Il raffinamento del mockup (i chip "Più corporate", "Aggiungi il margine", "Più denso") e la
+condivisione via link sono **in interfaccia ma non collegati**: i controlli esistono disattivati,
+con la nota che lo dice. Sono composizione validata del prototipo, e lasciarli fuori avrebbe
+nascosto una parte del disegno; lasciarli attivi avrebbe promesso qualcosa che non c'è.
+
+Il contatore in alto a destra mostra le generazioni fatte in questa sessione e il costo stimato,
+non un saldo di crediti: **un sistema di crediti non esiste ancora**. Il posto nella barra è
+quello giusto, il dato è quello vero che abbiamo oggi.

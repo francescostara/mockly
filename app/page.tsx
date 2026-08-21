@@ -1,23 +1,35 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { INTAKE, type IntakeAnswers } from '@/lib/intake';
+/* La schermata principale, sui ruoli del design system. Nessun hex qui dentro.
+ *
+ * Composizione (quella validata sul prototipo): barra fissa in alto, pannello del brief a
+ * sinistra a larghezza fissa, palco a destra col pozzo del mockup.
+ *
+ * Il pannello ha TRE stati sullo stesso telaio — vuoto, brief in corso, completato — e il
+ * telaio non si muove passando dall'uno all'altro: cambia il contenuto, non la struttura.
+ * È il motivo per cui il riepilogo, la domanda corrente e il blocco delle azioni stanno
+ * sempre nello stesso ordine e nella stessa colonna.
+ */
 
-type Msg = { who: 'bot' | 'me'; text: string; hint?: string };
+import { useEffect, useRef, useState } from 'react';
+import { INTAKE, type IntakeAnswers, type IntakeStep } from '@/lib/intake';
+import { STRINGS, type Lang, LANG_KEY } from './i18n';
+import { useTheme } from './theme';
+
 type GenMeta = {
   valid: boolean; repairs: number; fallback: boolean; model: string;
   tokensIn: number; tokensOut: number; cacheRead: number; cacheWrite: number;
   latencyMs: number; costUsd: number; bytes: number; advisories?: string[];
 };
 
-const GREETING: Msg = {
-  who: 'bot',
-  text: 'Ciao! Ti faccio cinque domande veloci, poi genero il mockup interattivo.',
-  hint: 'Le domande non consumano crediti: si paga solo la generazione.'
-};
+const qOf = (s: IntakeStep, lang: Lang) => (lang === 'en' ? s.questionEn : s.question);
+const hOf = (s: IntakeStep, lang: Lang) => (lang === 'en' ? s.hintEn : s.hint);
 
 export default function Page() {
-  const [msgs, setMsgs] = useState<Msg[]>([GREETING]);
+  const [lang, setLang] = useState<Lang>('it');
+  const [theme, setTheme] = useTheme();
+
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<IntakeAnswers>({});
   const [followUp, setFollowUp] = useState<string | null>(null);
@@ -26,49 +38,45 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [html, setHtml] = useState<string | null>(null);
   const [meta, setMeta] = useState<GenMeta | null>(null);
-  const [session, setSession] = useState({ runs: 0, costUsd: 0 });
-  const logRef = useRef<HTMLDivElement>(null);
+  const [runs, setRuns] = useState({ n: 0, costUsd: 0 });
+  const panelRef = useRef<HTMLDivElement>(null);
 
+  const t = STRINGS[lang];
   const current = step < INTAKE.length ? INTAKE[step] : null;
   const done = step >= INTAKE.length;
 
   useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [msgs, busy]);
+    try {
+      const s = localStorage.getItem(LANG_KEY);
+      if (s === 'it' || s === 'en') setLang(s);
+    } catch { /* modalità privata */ }
+  }, []);
 
-  /* ask the next question as a bot bubble whenever the step advances */
-  useEffect(() => {
-    const q = step < INTAKE.length ? INTAKE[step] : null;
-    setMsgs(m => {
-      const last = m[m.length - 1];
-      const text = q ? q.question : 'Perfetto, ho tutto. Premi «Genera mockup».';
-      const hint = q ? q.hint : 'Ci vuole qualche secondo: modello dati, layout e rendering.';
-      if (last && last.who === 'bot' && last.text === text) return m;
-      return [...m, { who: 'bot', text, hint }];
-    });
-  }, [step]);
-
-  function say(text: string) {
-    setMsgs(m => [...m, { who: 'me', text }]);
+  function pickLang(l: Lang) {
+    setLang(l);
+    try { localStorage.setItem(LANG_KEY, l); } catch { /* modalità privata */ }
   }
 
-  function pick(value: string, label: string) {
+  /* il pannello segue la domanda corrente, non l'ultimo pixel: si scorre solo se serve */
+  useEffect(() => {
+    if (panelRef.current) panelRef.current.scrollTop = panelRef.current.scrollHeight;
+  }, [step, followUp, html]);
+
+  function answered(id: IntakeStep['id']) { return answers[id] !== undefined; }
+
+  function pick(value: string) {
     if (!current) return;
-    say(label);
+    setAnswers(a => ({ ...a, [current.id]: value }));
     if (current.followUp && current.followUp.whenValue === value) {
-      setAnswers(a => ({ ...a, [current.id]: value }));
-      setFollowUp(current.followUp.question);
-      setMsgs(m => [...m, { who: 'bot', text: current.followUp!.question }]);
+      setFollowUp(lang === 'en' ? current.followUp.questionEn : current.followUp.question);
       return;
     }
-    setAnswers(a => ({ ...a, [current.id]: value }));
     setStep(s => s + 1);
   }
 
   function submitText() {
     const text = draft.trim();
     if (!text) return;
-    say(text);
     setDraft('');
     if (followUp) {
       setAnswers(a => ({ ...a, brandColors: text }));
@@ -81,14 +89,17 @@ export default function Page() {
       setStep(s => s + 1);
       return;
     }
-    /* extra detail after the intake — appended to the brief */
     setAnswers(a => ({ ...a, domain: ((a.domain || '') + '\n' + text).trim() }));
   }
 
-  function skipAll() {
-    say('Fai tu, usa i default.');
-    setFollowUp(null);
-    setStep(INTAKE.length);
+  function editStep(i: number) { setFollowUp(null); setStep(i); }
+
+  function skipAll() { setFollowUp(null); setStep(INTAKE.length); }
+
+  /* il percorso libero: si salta il questionario e si scrive il brief a parole proprie */
+  function startFree() {
+    setStarted(true);
+    setStep(INTAKE.findIndex(s => s.id === 'domain'));
   }
 
   async function generate() {
@@ -101,17 +112,10 @@ export default function Page() {
         body: JSON.stringify({ brief: answers.domain || '', intake: answers })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `Errore ${res.status}`);
+      if (!res.ok) throw new Error(data?.error || 'Errore ' + res.status);
       setHtml(data.html);
       setMeta(data.meta);
-      setSession(s => ({ runs: s.runs + 1, costUsd: s.costUsd + (data.meta?.costUsd || 0) }));
-      setMsgs(m => [...m, {
-        who: 'bot',
-        text: data.meta?.fallback
-          ? 'Il modello non ha prodotto una spec valida: ho generato un mockup di riserva. Puoi riprovare.'
-          : 'Fatto. Clicca dentro il mockup: le fette e le righe filtrano, il tasto destro sulla matrice apre il dettaglio.',
-        hint: `${(data.meta.bytes / 1024).toFixed(0)}KB · ${(data.meta.latencyMs / 1000).toFixed(1)}s · ${data.meta.repairs} riparazioni`
-      }]);
+      setRuns(r => ({ n: r.n + 1, costUsd: r.costUsd + (data.meta?.costUsd || 0) }));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -131,120 +135,180 @@ export default function Page() {
   }
 
   function restart() {
-    setMsgs([GREETING]);
-    setStep(0);
-    setAnswers({});
-    setFollowUp(null);
-    setDraft('');
-    setHtml(null);
-    setMeta(null);
-    setError(null);
+    setStarted(false); setStep(0); setAnswers({}); setFollowUp(null);
+    setDraft(''); setHtml(null); setMeta(null); setError(null);
   }
 
+  const answeredSteps = INTAKE.filter((s, i) => i < step && answered(s.id));
   const showOptions = !followUp && current?.kind === 'options';
+  const showText = !!followUp || current?.kind === 'text' || done;
 
   return (
-    <div className="shell">
-      <header className="top">
-        <div className="mark" />
-        <h1>Mockly</h1>
-        <span className="sub">mockup di dashboard BI</span>
+    <div className="app">
+      <header className="topbar">
+        <h1 className="wordmark">Mockly</h1>
+        <span className="tagline">{t.tagline}</span>
         <div className="spacer" />
-        {session.runs > 0 && (
-          <div className="meter">
-            {session.runs} generazion{session.runs === 1 ? 'e' : 'i'} · ${session.costUsd.toFixed(4)} stimati
-          </div>
-        )}
+        <div className="right">
+          <span className="credits">
+            <span className="num">{runs.n}</span>{' '}
+            {lang === 'it' ? (runs.n === 1 ? 'generazione' : 'generazioni') : (runs.n === 1 ? 'generation' : 'generations')}
+            {runs.n > 0 && <> · <span className="num">${runs.costUsd.toFixed(4)}</span></>}
+          </span>
+
+          <span className="seg" role="group" aria-label="Lingua">
+            <button aria-pressed={lang === 'it'} onClick={() => pickLang('it')}>IT</button>
+            <button aria-pressed={lang === 'en'} onClick={() => pickLang('en')}>EN</button>
+          </span>
+
+          <span className="seg" role="group" aria-label={lang === 'it' ? 'Tema' : 'Theme'}>
+            <button aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>{t.themeLight}</button>
+            <button aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>{t.themeDark}</button>
+          </span>
+
+          <span className="avatar" aria-hidden="true">FS</span>
+        </div>
       </header>
 
       <div className="cols">
-        <section className="chat">
-          <div className="log" ref={logRef}>
-            {msgs.map((m, i) => (
-              <div key={i} className={`bubble ${m.who}`}>
-                {m.text}
-                {m.hint && <span className="hint">{m.hint}</span>}
-              </div>
-            ))}
-
-            {showOptions && (
-              <div className="opts">
-                {current!.options!.map(o => (
-                  <button key={o.value} className="opt" onClick={() => pick(o.value, o.label)}>
-                    {o.label}
-                    {o.note && <small>{o.note}</small>}
+        <section className="panel" ref={panelRef}>
+          {/* ---- stato 1: vuoto ---- */}
+          {!started && (
+            <>
+              <p className="lede">{t.emptyHead}</p>
+              <div className="q">
+                <span className="qt">{t.emptyLead}</span>
+                <div className="opts">
+                  <button className="opt" onClick={() => setStarted(true)}>
+                    {t.startGuided}
+                    <span className="note">{t.startGuidedNote}</span>
                   </button>
-                ))}
+                  <button className="opt" onClick={startFree}>
+                    {t.startFree}
+                    <span className="note">{t.startFreeNote}</span>
+                  </button>
+                </div>
               </div>
-            )}
+              <p className="note">{t.localNote}</p>
+            </>
+          )}
 
-            {busy && (
-              <div className="bubble bot">
-                <span className="spinner" /> Genero la spec e renderizzo…
+          {/* ---- stati 2 e 3: brief in corso e completato, sullo stesso telaio ---- */}
+          {started && (
+            <>
+              <div className="panel-head">
+                <span className="t">{t.briefTitle}</span>
+                <div className="spacer" />
+                <span className="step num">{t.briefStep(Math.min(step + (done ? 0 : 1), INTAKE.length), INTAKE.length)}</span>
               </div>
-            )}
-          </div>
 
-          <div className="composer">
-            <textarea
-              value={draft}
-              placeholder={
-                followUp ? 'Scrivi qui…'
-                  : current?.kind === 'text' ? 'Descrivi il report…'
-                    : done ? 'Vuoi aggiungere qualcosa al brief? (opzionale)'
-                      : 'Oppure scrivi liberamente…'
-              }
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitText(); }
-              }}
-            />
-            <div className="row">
-              <button className="btn ghost" onClick={submitText} disabled={!draft.trim()}>Invia</button>
-              <div className="grow" />
-              {!done && <button className="btn ghost" onClick={skipAll}>Salta, decidi tu</button>}
-              <button className="btn" onClick={generate} disabled={busy || (!done && !answers.domain)}>
-                {busy ? 'Genero…' : 'Genera mockup'}
-              </button>
-            </div>
-            {error && <div className="err">{error}</div>}
-            <div className="note">La chat è locale e non consuma crediti. Solo «Genera mockup» chiama il modello.</div>
-          </div>
+              {answeredSteps.length > 0 && (
+                <div className="rows">
+                  {answeredSteps.map((s) => {
+                    const v = answers[s.id] as string;
+                    const opt = s.options?.find(o => o.value === v);
+                    const label = opt ? (lang === 'en' ? opt.labelEn : opt.label) : v;
+                    return (
+                      <div className="row-sum" key={s.id}>
+                        <span className="k">{qOf(s, lang).replace(/[?:]$/, '')}</span>
+                        <span className="v">{label}</span>
+                        <button className="lnk" onClick={() => editStep(INTAKE.indexOf(s))}>{t.edit}</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!done && current && (
+                <div className="q">
+                  <span className="qt">{followUp || qOf(current, lang)}</span>
+                  {!followUp && hOf(current, lang) && <span className="qh">{hOf(current, lang)}</span>}
+                  {showOptions && (
+                    <div className="opts">
+                      {current.options!.map(o => (
+                        <button key={o.value} className="opt" onClick={() => pick(o.value)}>
+                          {lang === 'en' ? o.labelEn : o.label}
+                          {(lang === 'en' ? o.noteEn : o.note) && (
+                            <span className="note">{lang === 'en' ? o.noteEn : o.note}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {showText && (
+                <div className="q">
+                  <textarea
+                    className="field"
+                    value={draft}
+                    placeholder={done ? t.freeTextExtra : t.freeText}
+                    onChange={e => setDraft(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitText(); }
+                    }}
+                  />
+                  <div className="actions">
+                    <button className="btn-ghost btn-sm" onClick={submitText} disabled={!draft.trim()}>{t.send}</button>
+                    <div className="spacer" />
+                    {!done && <button className="btn-ghost btn-sm" onClick={skipAll}>{t.skip}</button>}
+                  </div>
+                </div>
+              )}
+
+              {html && (
+                <div className="q">
+                  <span className="stamp">
+                    {t.generated} {new Date().toLocaleTimeString(lang === 'it' ? 'it-IT' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}
+                    {' · '}{meta && meta.costUsd === 0 ? t.free : '$' + (meta?.costUsd ?? 0).toFixed(4)}
+                  </span>
+                  <span className="qt">{t.ready}</span>
+                  <span className="qh">{meta?.fallback ? t.fallbackNote : t.doneNote}</span>
+                </div>
+              )}
+
+              {html && (
+                <div className="q">
+                  <span className="qt" style={{ fontSize: 13, fontWeight: 600 }}>{t.refine}</span>
+                  <div className="actions">
+                    {[t.refineMoreCorporate, t.refineAddMargin, t.refineDenser].map(label => (
+                      <button className="chip" key={label} disabled title={lang === 'it' ? 'Non ancora attivo' : 'Not wired yet'}>
+                        {label} <span className="cost">{t.oneCredit}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="note">{lang === 'it' ? 'Il raffinamento non è ancora collegato.' : 'Refinement is not wired yet.'}</p>
+                </div>
+              )}
+
+              {error && <div className="alert" role="alert">{error}</div>}
+
+              <div className="actions">
+                <button className="btn" onClick={generate} disabled={busy || !answers.domain}>
+                  {busy ? t.generating : t.generate}
+                </button>
+                <button className="btn-ghost" onClick={restart} disabled={busy}>{t.restart}</button>
+              </div>
+            </>
+          )}
         </section>
 
-        <section className="preview">
-          <div className="bar">
-            <span className="title">Anteprima</span>
-            {meta && (
-              <>
-                <span className={`pill ${meta.fallback ? 'warn' : ''}`}>
-                  {meta.fallback ? 'fallback' : meta.repairs ? `riparata ×${meta.repairs}` : 'spec valida'}
-                </span>
-                <span className="pill">{meta.model}</span>
-                <span className="pill">
-                  {meta.tokensIn.toLocaleString('it-IT')} in / {meta.tokensOut.toLocaleString('it-IT')} out
-                  {meta.cacheRead > 0 ? ` · ${meta.cacheRead.toLocaleString('it-IT')} da cache` : ''}
-                </span>
-                <span className="pill">${meta.costUsd.toFixed(4)}</span>
-              </>
-            )}
+        <section className="stage">
+          <div className="toolbar">
+            <button className="btn-ghost btn-sm" onClick={download} disabled={!html}>{t.download}</button>
+            <button className="btn-ghost btn-sm" disabled={!html} title={lang === 'it' ? 'Non ancora attivo' : 'Not wired yet'}>{t.share}</button>
+            <button className="btn-ghost btn-sm" onClick={generate} disabled={busy || !answers.domain}>{t.regenerate}</button>
             <div className="spacer" />
-            <button className="btn ghost" onClick={restart} disabled={busy}>Ricomincia</button>
-            <button className="btn ghost" onClick={() => alert('Condivisione link: in arrivo.')} disabled={!html}>
-              Condividi link
-            </button>
-            <button className="btn" onClick={download} disabled={!html}>Scarica .html</button>
+            <span className="stamp">{t.size}</span>
           </div>
-          <div className="stage">
-            {html ? (
-              <iframe title="Mockup" srcDoc={html} sandbox="allow-scripts" />
-            ) : (
-              <div className="empty">
-                <b>Nessun mockup ancora</b>
-                Rispondi alle domande a sinistra e premi «Genera mockup».<br />
-                Il report esce qui dentro, interattivo, e si scarica come file singolo.
-              </div>
-            )}
+
+          <div className="well">
+            <div className={'frame' + (html ? '' : ' empty')}>
+              {html
+                ? <iframe title="Mockup" srcDoc={html} sandbox="allow-scripts" />
+                : <><b>{t.stageEmpty}</b>{t.stageEmptyNote}</>}
+            </div>
           </div>
         </section>
       </div>

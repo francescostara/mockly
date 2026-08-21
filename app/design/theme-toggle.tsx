@@ -1,17 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { Theme } from '../design-tokens';
+import { useTheme } from '../theme';
 
-/* Il tema si commuta scrivendo data-theme su <html>: è lo stesso interruttore che userà
- * l'applicazione vera, quindi questa pagina prova il meccanismo, non una sua imitazione. */
+/* Il tema si commuta con lo stesso meccanismo dell'applicazione vera (attributo su <html> +
+ * scelta salvata), quindi questa pagina prova il meccanismo e non una sua imitazione. */
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('light');
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
+  const [theme, setTheme] = useTheme();
   return (
     <button className="d-btn" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
       Tema: <span className="num">{theme === 'light' ? 'chiaro' : 'scuro'}</span>
