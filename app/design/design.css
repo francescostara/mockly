@@ -1,0 +1,105 @@
+/* La pagina dei token si stila con i token: se un ruolo è sbagliato, si vede qui per primo.
+   Nessuna ombra, nessun gradiente, nessun blur — la regola vale anche per la pagina che la
+   documenta. */
+
+.d-page {
+  min-height: 100vh;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-text-stack);
+  padding: var(--space-8) var(--space-6) var(--space-10);
+}
+
+.d-wrap { max-width: 940px; margin: 0 auto; }
+
+.d-head { display: flex; align-items: baseline; gap: var(--space-4); margin-bottom: var(--space-2); }
+.d-head h1 {
+  font-family: var(--font-display-stack);
+  font-weight: 400;            /* Newsreader vive solo a 400 */
+  font-size: 32px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.d-head .spacer { flex: 1; }
+
+.d-lede { color: var(--ink-muted); font-size: 14px; line-height: 1.6; max-width: 62ch; margin: 0 0 var(--space-8); }
+
+.d-sec { margin-top: var(--space-10); }
+.d-sec > h2 {
+  font-family: var(--font-display-stack);
+  font-weight: 400; font-size: 21px; margin: 0 0 var(--space-2);
+}
+.d-sec > p { color: var(--ink-muted); font-size: 13.5px; line-height: 1.6; margin: 0 0 var(--space-5); max-width: 62ch; }
+
+/* la superficie alzata: UNO scalino + un hairline, mai un'ombra */
+.d-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+}
+
+.num { font-family: var(--font-mono-stack); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* ---- swatch ---- */
+.d-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(216px, 1fr)); gap: var(--space-3); }
+.d-swatch { padding: var(--space-3); }
+.d-chip {
+  height: 56px; border-radius: var(--radius-sm); border: 1px solid var(--border-hairline);
+  display: flex; align-items: flex-end; justify-content: flex-end; padding: 6px 8px;
+}
+.d-chip .num { font-size: 11px; }
+.d-swatch .nm { display: block; margin-top: var(--space-2); font-size: 13px; font-weight: 600; }
+.d-swatch .rl { display: block; margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
+.d-swatch .vals { display: flex; gap: var(--space-3); margin-top: var(--space-2); font-size: 11.5px; color: var(--ink-muted); }
+
+/* ---- tabella dei contrasti ---- */
+.d-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.d-table th, .d-table td { text-align: left; padding: 9px var(--space-3); border-bottom: 1px solid var(--border-hairline); }
+.d-table th {
+  font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); font-weight: 600;
+}
+.d-table tr:last-child td { border-bottom: 0; }
+.d-table td.n { text-align: right; }
+.d-table .why { color: var(--ink-muted); }
+.d-verdict { font-weight: 600; }
+.d-verdict.no { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- tipografia ---- */
+.d-spec { padding: var(--space-5); }
+.d-spec .display { font-family: var(--font-display-stack); font-weight: 400; font-size: 30px; line-height: 1.25; margin: 0 0 var(--space-4); }
+.d-spec .body { font-size: 14.5px; line-height: 1.65; margin: 0 0 var(--space-4); max-width: 62ch; }
+.d-spec .figures { display: flex; gap: var(--space-6); flex-wrap: wrap; }
+.d-spec .fig .k { display: block; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.d-spec .fig .v { display: block; font-size: 25px; margin-top: 3px; }
+
+/* ---- controlli ---- */
+.d-row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-5); }
+
+.d-btn {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  background: var(--button-inverted-bg); color: var(--button-inverted-ink);
+  border: 1px solid var(--button-inverted-bg); border-radius: var(--radius-md);
+  padding: 9px 15px;
+  transition: opacity var(--motion-instant) linear;
+}
+.d-btn:hover { opacity: 0.88; }
+.d-btn.ghost {
+  background: transparent; color: var(--ink);
+  border-color: var(--border-strong); font-weight: 500;
+}
+.d-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+.d-field {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--surface-raised);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 9px 11px; min-width: 230px;
+}
+.d-field:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+.d-sunken {
+  background: var(--surface-sunken); border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md); padding: var(--space-6); text-align: center; color: var(--ink-muted); font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d-btn { transition: none; }
+}
