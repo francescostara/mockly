@@ -55,6 +55,11 @@ export async function POST(req: NextRequest) {
   let repairs = 0;
   let fallback = false;
   let lastErrors: string[] = [];
+  /* Il JSON grezzo di ogni tentativo rifiutato. Nel primo eval a pagamento restava solo il
+     messaggio d errore nel log del server: si sapeva CHE una dim era vuota, non come il
+     modello l aveva scritta. Esce dalla risposta solo con MOCKLY_TRACE=1 (l harness lo
+     accende), cosi in produzione la risposta non porta in giro l output grezzo del modello. */
+  const rejected: Array<{ attempt: number; raw: string; errors: string[] }> = [];
 
   /* PUNTO D INNESTO (non attivo) — riconoscimento nicchia come mini-chiamata separata.
      Oggi la nicchia la riconosce questo stesso passo, leggendo la libreria dal prefisso
@@ -85,6 +90,7 @@ export async function POST(req: NextRequest) {
       }
       /* a transport/refusal failure is not repairable by the model — go to fallback */
       lastErrors = [err instanceof Error ? err.message : String(err)];
+      rejected.push({ attempt: attempt + 1, raw: '', errors: lastErrors });
       break;
     }
 
@@ -98,6 +104,7 @@ export async function POST(req: NextRequest) {
     if (result.ok) break;
 
     lastErrors = result.errors;
+    rejected.push({ attempt: attempt + 1, raw: answer, errors: lastErrors });
     console.warn('[mockly:generate] tentativo', attempt + 1, 'rifiutato:', lastErrors.join(' | '));
     if (attempt === 0) {
       repairs = 1;
@@ -130,6 +137,7 @@ export async function POST(req: NextRequest) {
     bytes: Buffer.byteLength(result.html),
     advisories: result.advisories,
     tieOut: (result.data as { tieOut?: unknown }).tieOut,
+    ...(process.env.MOCKLY_TRACE === '1' ? { rejected } : {}),
     ...usage
   };
 

@@ -3,6 +3,7 @@
  *
  *   node test/eval-run.js sonnet          run vero, consuma crediti
  *   node test/eval-run.js sonnet --dry    dry-run con la spec canned, costo zero
+ *   node test/eval-run.js sonnet --broken dry-run guasto: ripara -> fallback, costo zero
  *
  * Non duplica la pipeline: avvia (o riusa) il server Next e chiama /api/generate, cioè
  * esattamente il percorso che gira in produzione — stessa validazione, stessa riparazione,
@@ -59,7 +60,7 @@ const CASES = [
 ];
 
 const COLUMNS = ['id', 'run', 'model', 'valid_first_try', 'repairs', 'fallback',
-  'tokens_in', 'tokens_out', 'cost_usd', 'latency_ms', 'fallback_reason', 'error'];
+  'tokens_in', 'tokens_out', 'cost_usd', 'latency_ms', 'fallback_reason', 'error', 'raw_json'];
 
 /* ---------- utilità ---------- */
 
@@ -68,17 +69,20 @@ const log = (...a) => console.log(...a);
 
 function parseArgs(argv) {
   const args = argv.slice(2);
-  const dry = args.includes('--dry');
+  /* --broken e un dry-run che sbaglia apposta: serve a provare il percorso
+     ripara -> fallback e il salvataggio del JSON grezzo senza spendere un centesimo. */
+  const broken = args.includes('--broken');
+  const dry = broken || args.includes('--dry');
   const model = args.find(a => !a.startsWith('--'));
   if (!model) {
-    console.error('Uso: node test/eval-run.js <' + MODELS.join('|') + '> [--dry]');
+    console.error('Uso: node test/eval-run.js <' + MODELS.join('|') + '> [--dry] [--broken]');
     process.exit(1);
   }
   if (!MODELS.includes(model)) {
     console.error('Modello "' + model + '" non previsto. Valori: ' + MODELS.join(', '));
     process.exit(1);
   }
-  return { model, dry };
+  return { model, dry, broken };
 }
 
 /** Non sovrascrivere mai un giro precedente: se la cartella o il CSV esistono, versiona. */
@@ -118,7 +122,7 @@ async function isUp() {
 
 let serverLogPath = null;
 
-async function startServer(dry, logPath) {
+async function startServer(dry, logPath, broken) {
   serverLogPath = logPath;
   if (await isUp()) {
     log('· server già in ascolto su :' + PORT + ', lo riuso');
@@ -126,7 +130,10 @@ async function startServer(dry, logPath) {
   }
   log('· avvio il server Next su :' + PORT + ' …');
   const env = { ...process.env };
-  if (dry) env.MOCKLY_STUB = '1';
+  /* la risposta deve riportare i tentativi rifiutati, altrimenti del fallimento resta solo
+     la riga di log e il JSON grezzo si perde di nuovo */
+  env.MOCKLY_TRACE = '1';
+  if (dry) env.MOCKLY_STUB = broken ? 'broken' : '1';
   else delete env.MOCKLY_STUB;   /* un run vero non deve poter finire sullo stub */
 
   const child = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx',
@@ -150,6 +157,51 @@ function stopServer(child) {
     if (process.platform === 'win32') spawn('taskkill', ['/pid', String(child.pid), '/f', '/t']);
     else process.kill(-child.pid);
   } catch { /* già chiuso */ }
+}
+
+/* ---------- il JSON grezzo dei tentativi rifiutati ---------- */
+
+/* Nel primo giro a pagamento sono rimasti solo i messaggi d errore: si sapeva che tre
+   generazioni avevano dichiarato una dimensione vuota, non COME l avevano scritta, quindi la
+   verifica offline ha dovuto ricostruire le forme invece di ripescarle. Qui il payload grezzo
+   di ogni tentativo rifiutato finisce su file, parsato quando si parsa e testuale quando no
+   (il caso "testo dopo il JSON" e proprio quello che non si parsa). */
+let traceWarned = false;
+
+function saveRejected(dir, id, run, meta) {
+  const rejected = meta.rejected;
+  const andato_storto = meta.fallback || Number(meta.repairs) > 0;
+
+  if (!Array.isArray(rejected)) {
+    /* il campo esce solo con MOCKLY_TRACE=1: se manca proprio quando servirebbe, il server
+       in ascolto e stato avviato senza. Meglio saperlo subito che scoprirlo a giro finito. */
+    if (andato_storto && !traceWarned) {
+      traceWarned = true;
+      log('');
+      log('  ATTENZIONE: una generazione e fallita ma la risposta non porta i tentativi grezzi.');
+      log('  Il server in ascolto e stato avviato senza MOCKLY_TRACE=1: chiudilo e rilancia,');
+      log('  altrimenti dei fallimenti resta solo il messaggio d errore.');
+      log('');
+    }
+    return '';
+  }
+  if (!rejected.length) return '';
+
+  /* fail- quando si e finiti sul fallback, repair- quando il secondo tentativo ha rimediato:
+     il nome del file non deve far sembrare perso un giro che invece si e ripreso */
+  const name = (meta.fallback ? 'fail-' : 'repair-') + id + '-run' + run + '.json';
+  const payload = {
+    id, run, model: meta.model,
+    fallback: !!meta.fallback,
+    repairs: meta.repairs,
+    attempts: rejected.map(a => {
+      const out = { attempt: a.attempt, errors: a.errors, raw: a.raw };
+      try { out.parsed = JSON.parse(a.raw); } catch { out.parsed = null; }
+      return out;
+    })
+  };
+  fs.writeFileSync(path.join(dir, name), JSON.stringify(payload, null, 2));
+  return name;
 }
 
 /* ---------- una generazione ---------- */
@@ -202,19 +254,20 @@ async function generateWithRetry(testCase, model) {
 /* ---------- giro completo ---------- */
 
 async function main() {
-  const { model, dry } = parseArgs(process.argv);
+  const { model, dry, broken } = parseArgs(process.argv);
   const { dir, csv, label } = reserveOutputs(model);
   const total = CASES.length * RUNS_PER_CASE;
 
   log('');
   log('Mockly — eval  ·  modello: ' + model + '  ·  ' + CASES.length + ' casi × ' + RUNS_PER_CASE + ' run = ' + total + ' generazioni');
-  log(dry ? 'MODALITÀ DRY-RUN: spec canned, nessuna chiamata al modello, costo zero'
-    : 'MODALITÀ REALE: ogni generazione consuma crediti');
+  log(broken ? 'MODALITÀ DRY-RUN GUASTA: spec canned e sbagliata apposta (ripara -> fallback), costo zero'
+    : dry ? 'MODALITÀ DRY-RUN: spec canned, nessuna chiamata al modello, costo zero'
+      : 'MODALITÀ REALE: ogni generazione consuma crediti');
   log('output: eval-out/' + label + '/  ·  csv: eval-out/' + label + '.csv');
   log('');
 
   const serverLog = path.join(path.dirname(csv), label + '-server.log');
-  const child = await startServer(dry, serverLog);
+  const child = await startServer(dry, serverLog, broken);
   const rows = [];
   let modeChecked = false;
 
@@ -252,6 +305,7 @@ async function main() {
           }
 
           fs.writeFileSync(path.join(dir, testCase.id + '-run' + run + '.html'), data.html);
+          const rawFile = saveRejected(dir, testCase.id, run, m);
 
           row = {
             id: testCase.id, run, model: m.model,
@@ -261,7 +315,7 @@ async function main() {
             cost_usd: (m.costUsd || 0).toFixed(6),
             latency_ms: m.latencyMs,
             fallback_reason: (m.errors && m.errors.length) ? String(m.errors[0]).slice(0, 200) : '',
-            error: ''
+            error: '', raw_json: rawFile || ''
           };
           const esito = row.valid_first_try === 'S' ? 'ok primo colpo'
             : row.fallback === 'S' ? 'FALLBACK' : 'ok dopo riparazione';
@@ -271,7 +325,7 @@ async function main() {
           row = {
             id: testCase.id, run, model, valid_first_try: '', repairs: '', fallback: '',
             tokens_in: '', tokens_out: '', cost_usd: '', latency_ms: Date.now() - started, fallback_reason: '',
-            error: err.message
+            error: err.message, raw_json: ''
           };
           log('ERRORE  ' + err.message);
           if (err.fatal) {
@@ -328,6 +382,12 @@ function summarise(rows, csv, dir, label) {
     const hits = fs.readFileSync(serverLogPath, 'utf8').split('[mockly:meter]').length - 1;
     log('  chiamate a /api/generate   ' + hits + '  (attese ' + rows.length + ')' +
       (hits === rows.length ? '  ok' : '  ATTENZIONE: non combaciano'));
+    log('');
+  }
+  const grezzi = rows.filter(r => r.raw_json).map(r => r.raw_json);
+  if (grezzi.length) {
+    log('  json grezzi salvati        ' + grezzi.length + '  (' + grezzi.slice(0, 3).join(', ') +
+      (grezzi.length > 3 ? ', …' : '') + ')');
     log('');
   }
   log('  csv:   ' + path.relative(process.cwd(), csv));
