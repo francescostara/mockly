@@ -50,6 +50,30 @@ ok('lo schema di emit_report richiede members, con almeno un elemento', () => {
   assert.deepStrictEqual(dim.properties.members.items.required, ['id', 'n', 'base']);
 });
 
+/* La regressione da non ripetere: con spec dichiarato come oggetto OPACO, nel primo eval a
+   tool-use il modello ha risposto 8 volte su 8 con una stringa dentro il campo spec, e la
+   percentuale di validita al primo colpo e scesa dal 50% al 20%. Un oggetto senza forma
+   dichiarata invita a trattarlo come testo. */
+ok('lo schema dichiara la FORMA di spec, non solo che e un oggetto', () => {
+  const spec = emitSchema().properties.spec;
+  assert.strictEqual(spec.type, 'object');
+  assert.ok(spec.properties && Object.keys(spec.properties).length >= 6,
+    'spec senza properties e un oggetto opaco: il modello ci scrive dentro una stringa');
+  ['meta', 'aesthetic', 'grid', 'model', 'filters', 'kpiBand', 'pages'].forEach(k => {
+    assert.ok(spec.required.includes(k), 'spec deve richiedere "' + k + '"');
+  });
+});
+
+/* La rete, se il modello ci riprovasse: entrambi gli oggetti dentro la stringa spec. */
+ok('una risposta con spec-stringa viene comunque srotolata', () => {
+  const spec = { meta: { title: 'x' }, pages: [] };
+  const dp = { seed: 1, years: [2024, 2025] };
+  const finto = JSON.stringify({ spec: JSON.stringify(spec) + JSON.stringify(dp) });
+  const out = extractJson(finto);
+  assert.deepStrictEqual(out.spec, spec, 'la spec deve tornare oggetto');
+  assert.deepStrictEqual(out.dataParams, dp, 'il secondo oggetto nella stringa e dataParams');
+});
+
 ok('lo schema richiede years, dims e facts dentro dataParams', () => {
   const dp = emitSchema().properties.dataParams;
   ['years', 'dims', 'facts'].forEach(k => assert.ok(dp.required.includes(k), k + ' deve essere required'));

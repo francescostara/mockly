@@ -191,7 +191,28 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
       input_schema: {
         type: 'object',
         properties: {
-          spec: { type: 'object', description: 'La spec del report, secondo la grammatica di engine/spec.d.ts.' },
+          /* spec NON puo restare un oggetto opaco. Dichiarato come `{type:'object'}` senza
+             properties, nel primo eval con tool-use il modello ha risposto 8 volte su 8
+             scrivendoci dentro una STRINGA con tutta la risposta — spec e dataParams di fila
+             dentro lo stesso campo. Un oggetto senza forma dichiarata invita a trattarlo come
+             testo. Le proprieta qui sotto sono i soli nomi di primo livello: il dettaglio
+             resta nella grammatica, ma la FORMA e dichiarata. */
+          spec: {
+            type: 'object',
+            description: 'La spec del report, secondo la grammatica di engine/spec.d.ts. Oggetto, non una stringa.',
+            properties: {
+              meta: { type: 'object', description: 'titolo, lingua, mesi, watermark' },
+              aesthetic: { type: 'string', enum: ['corporate-sober', 'agency-modern', 'executive-minimal'] },
+              palette: { type: 'object' },
+              grid: { type: 'object', description: 'contentWidth, gutter, columns' },
+              model: { type: 'object', description: 'sums e measures' },
+              filters: { type: 'object', description: 'date e dims' },
+              kpiBand: { type: 'array', items: { type: 'object' } },
+              pages: { type: 'array', minItems: 1, items: { type: 'object' } },
+              drill: { type: 'object' }
+            },
+            required: ['meta', 'aesthetic', 'grid', 'model', 'filters', 'kpiBand', 'pages']
+          },
           /* Lo schema resta largo OVUNQUE tranne che su dims: la grammatica vera la controlla il
              motore. Su dims no, perche li si concentrava l intera classe di fallimento dell eval
              (3 fallback su 4, sempre "dims[X] has no members"). Qui members e obbligatorio con
