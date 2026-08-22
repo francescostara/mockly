@@ -9,6 +9,10 @@ export type IntakeStep = {
      traduzione della sola interfaccia — i valori (`value`) non cambiano mai. */
   question: string;
   questionEn: string;
+  /* L'etichetta della riga di riepilogo: la domanda per esteso, in una colonna da 104px,
+     diventa un paragrafo. Qui serve il nome della cosa, non la domanda. */
+  summary: string;
+  summaryEn: string;
   hint?: string;
   hintEn?: string;
   /* 'text' steps take the free-text box instead of buttons */
@@ -24,6 +28,7 @@ export const INTAKE: IntakeStep[] = [
     kind: 'options',
     question: 'Chi userà il report?',
     questionEn: 'Who will use the report?',
+    summary: 'Lettore', summaryEn: 'Reader',
     hint: "Decide l'estetica e il livello di dettaglio.",
     hintEn: 'It decides the aesthetic and the level of detail.',
     options: [
@@ -38,6 +43,7 @@ export const INTAKE: IntakeStep[] = [
     kind: 'options',
     question: 'Il cliente ha colori di brand?',
     questionEn: 'Does the client have brand colours?',
+    summary: 'Brand', summaryEn: 'Brand',
     hint: 'Se non ci sono, scelgo una palette muta diversa dal solito.',
     hintEn: 'If there are none, I pick a muted palette that is not the usual one.',
     options: [
@@ -54,6 +60,7 @@ export const INTAKE: IntakeStep[] = [
     kind: 'text',
     question: 'Di cosa parla il report? Cosa deve far vedere o decidere?',
     questionEn: 'What is the report about? What should it show, or help decide?',
+    summary: 'Report', summaryEn: 'Report',
     hint: 'Più sei concreto meglio esce: settore, cosa ti chiede il cliente e — se li sai — gli strumenti da cui escono i dati (POS, gestionale, CRM, GA4, Meta, ERP, contabilità).',
     hintEn: 'The more concrete, the better: the sector, what the client is asking for, and — if you know them — the tools the data comes from (POS, ERP, CRM, GA4, Meta, accounting).'
   },
@@ -62,6 +69,7 @@ export const INTAKE: IntakeStep[] = [
     kind: 'options',
     question: 'Quanto è grande il cliente?',
     questionEn: 'How big is the client?',
+    summary: 'Taglia', summaryEn: 'Size',
     hint: 'Serve a capire quali dati è plausibile che abbia già: un negozio singolo non ha lo stesso storico di una catena.',
     options: [
       { value: 'small', label: 'Piccolo', labelEn: 'Small', note: 'una sede, pochi addetti', noteEn: 'one location, few staff' },
@@ -75,6 +83,7 @@ export const INTAKE: IntakeStep[] = [
     kind: 'options',
     question: 'Confronto temporale principale?',
     questionEn: 'Main time comparison?',
+    summary: 'Confronto', summaryEn: 'Comparison',
     hint: 'Va sulle KPI card come YoY o MoM.',
     hintEn: 'It goes on the KPI cards as YoY or MoM.',
     options: [
@@ -88,6 +97,7 @@ export const INTAKE: IntakeStep[] = [
     kind: 'options',
     question: 'Quanto deve essere ampio?',
     questionEn: 'How broad should it be?',
+    summary: 'Ampiezza', summaryEn: 'Scope',
     hint: 'Il drill-through sul dettaglio c\'è comunque.',
     options: [
       { value: 'single', label: 'Una pagina', labelEn: 'One page', note: 'consigliato', noteEn: 'recommended' },

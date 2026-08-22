@@ -34,6 +34,10 @@ export default function Page() {
   const [answers, setAnswers] = useState<IntakeAnswers>({});
   const [followUp, setFollowUp] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  /* Le aggiunte dopo il questionario stanno per conto loro: concatenarle dentro la risposta
+     alla domanda sul report faceva crescere quella riga senza fine, e il riepilogo diventava
+     illeggibile dopo due invii. Al modello arriva comunque un brief solo. */
+  const [extra, setExtra] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [html, setHtml] = useState<string | null>(null);
@@ -89,8 +93,11 @@ export default function Page() {
       setStep(s => s + 1);
       return;
     }
-    setAnswers(a => ({ ...a, domain: ((a.domain || '') + '\n' + text).trim() }));
+    setExtra(x => [...x, text]);
   }
+
+  /* Il brief che parte: la risposta sul report piu le aggiunte, in un testo solo. */
+  const briefText = () => [answers.domain || '', ...extra].filter(Boolean).join('\n');
 
   function editStep(i: number) { setFollowUp(null); setStep(i); }
 
@@ -109,7 +116,7 @@ export default function Page() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ brief: answers.domain || '', intake: answers })
+        body: JSON.stringify({ brief: briefText(), intake: { ...answers, domain: briefText() } })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Errore ' + res.status);
@@ -136,7 +143,7 @@ export default function Page() {
 
   function restart() {
     setStarted(false); setStep(0); setAnswers({}); setFollowUp(null);
-    setDraft(''); setHtml(null); setMeta(null); setError(null);
+    setDraft(''); setHtml(null); setMeta(null); setError(null); setExtra([]);
   }
 
   const answeredSteps = INTAKE.filter((s, i) => i < step && answered(s.id));
@@ -210,12 +217,21 @@ export default function Page() {
                     const label = opt ? (lang === 'en' ? opt.labelEn : opt.label) : v;
                     return (
                       <div className="row-sum" key={s.id}>
-                        <span className="k">{qOf(s, lang).replace(/[?:]$/, '')}</span>
+                        <span className="k">{lang === 'en' ? s.summaryEn : s.summary}</span>
                         <span className="v">{label}</span>
                         <button className="lnk" onClick={() => editStep(INTAKE.indexOf(s))}>{t.edit}</button>
                       </div>
                     );
                   })}
+                  {extra.length > 0 && (
+                    <div className="row-sum">
+                      <span className="k">{lang === 'it' ? 'Aggiunte' : 'Additions'}</span>
+                      <span className="v">{extra.join(' · ')}</span>
+                      <button className="lnk" onClick={() => setExtra([])}>
+                        {lang === 'it' ? 'Togli' : 'Clear'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -285,7 +301,7 @@ export default function Page() {
               {error && <div className="alert" role="alert">{error}</div>}
 
               <div className="actions">
-                <button className="btn" onClick={generate} disabled={busy || !answers.domain}>
+                <button className="btn" onClick={generate} disabled={busy || !briefText().trim()}>
                   {busy ? t.generating : t.generate}
                 </button>
                 <button className="btn-ghost" onClick={restart} disabled={busy}>{t.restart}</button>
@@ -298,7 +314,7 @@ export default function Page() {
           <div className="toolbar">
             <button className="btn-ghost btn-sm" onClick={download} disabled={!html}>{t.download}</button>
             <button className="btn-ghost btn-sm" disabled={!html} title={lang === 'it' ? 'Non ancora attivo' : 'Not wired yet'}>{t.share}</button>
-            <button className="btn-ghost btn-sm" onClick={generate} disabled={busy || !answers.domain}>{t.regenerate}</button>
+            <button className="btn-ghost btn-sm" onClick={generate} disabled={busy || !briefText().trim()}>{t.regenerate}</button>
             <div className="spacer" />
             <span className="stamp">{t.size}</span>
           </div>
