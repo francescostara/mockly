@@ -35,7 +35,7 @@ kpis.forEach(k => console.log('   ' + k.label.padEnd(24) + k.value.padEnd(14) + 
 console.log('\nVISUAL');
 [...document.querySelectorAll('.card')].forEach(c => {
   if (c.classList.contains('kpi')) return;
-  const t = txt(c.querySelector('.ttl')) || '(senza titolo)';
+  const t = txt(c.querySelector('.ch h3')) || '(senza titolo)';
   const svg = c.querySelector('svg');
   console.log('   ' + t.slice(0, 58).padEnd(60) + (svg ? 'svg' : 'no-svg'));
 });
@@ -56,7 +56,7 @@ if (tables.length) {
 console.log('\nCOMPOSIZIONI (stack100 / donut)');
 [...document.querySelectorAll('svg')].forEach(svg => {
   const card = svg.closest('.card');
-  const title = card ? txt(card.querySelector('.ttl')) : '';
+  const title = card ? txt(card.querySelector('.ch h3')) : '';
   const rects = [...svg.querySelectorAll('rect')].filter(r => Number(r.getAttribute('width')) > 0);
   if (rects.length >= 3 && rects.length <= 40) {
     const w = rects.map(r => Math.round(Number(r.getAttribute('width'))));

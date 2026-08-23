@@ -9,6 +9,7 @@
  */
 'use strict';
 const { JSDOM } = require('jsdom');
+const GN = require('./gates-numbers.js');
 const { render, toolbarBudget, lint, measurePage, AESTHETICS } = require('../engine/render.js');
 
 /* contrasto WCAG: serve per la zona filtri, dove un grigio su grigio non si legge (BUG 5) */
@@ -52,6 +53,13 @@ function runCase(id, fixture, evalCase) {
   const B = open(html);
   R.bytes = Buffer.byteLength(html);
   R.lines = html.split('\n').length;
+
+  /* ---------- i numeri: rotti dentro un contenitore giusto ---------- */
+  /* I gate strutturali non li vedono: il documento e ben formato, i totali riconciliano, il
+     file sta sotto i 60KB. Sono la categoria che si e scoperta solo aprendo a mano gli output
+     veri del primo giro a pagamento. Qui girano anche sulle fixture, cosi una regressione del
+     motore si ferma prima di arrivare a un giro a pagamento. */
+  GN.tutti(B.d, spec, null).forEach(p => ok('numeri: ' + p.slice(0, 96), false, p));
 
   /* ---------- the brief's own expectations ---------- */
   if (evalCase) {

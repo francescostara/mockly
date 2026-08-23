@@ -45,7 +45,7 @@ console.log('\nVALORI DENTRO I VISUAL (etichette del grafico)');
   if (!svg) return;
   const labels = [...svg.querySelectorAll('text')].map(t).filter(Boolean);
   if (labels.length && labels.length <= 16) {
-    console.log('   ' + (t(c.querySelector('.ttl')) || '(?)').slice(0, 44).padEnd(46) + labels.join('  '));
+    console.log('   ' + (t(c.querySelector('.ch h3')) || '(?)').slice(0, 44).padEnd(46) + labels.join('  '));
   }
 });
 
