@@ -288,6 +288,34 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       });
     };
 
+    /* Aggrega per secchio PASSANDO dal layer condiviso, e l'unico modo lecito di ottenere il
+       valore di una misura su un sottoinsieme di righe.
+       Sommare la colonna grezza (r[ms]) sembra equivalente e non lo e: funziona per caso
+       quando la misura e una somma il cui id coincide col nome del campo, e restituisce ZERO
+       per ogni ratio, diff o last — perche r['er'] non esiste. E il motivo per cui lo stesso
+       Engagement Rate valeva 0,9% nella matrice e 0,0% nelle barre accanto. */
+    A.byKey = function (rows, keyOf) {
+      var buckets = {}, order = [], i, k;
+      for (i = 0; i < rows.length; i++) {
+        k = keyOf(rows[i]);
+        if (k === undefined || k === null) continue;
+        if (!buckets[k]) { buckets[k] = []; order.push(k); }
+        buckets[k].push(rows[i]);
+      }
+      var out = { keys: order, agg: {}, rows: buckets };
+      for (i = 0; i < order.length; i++) {
+        var b = buckets[order[i]];
+        b.fallback = rows.fallback;      /* il ramo dettaglio resta disponibile al secchio */
+        out.agg[order[i]] = A.agg(b);
+      }
+      return out;
+    };
+    /** Il valore di una misura, per secchio. Restituisce una funzione chiave -> valore. */
+    A.byKeyValue = function (rows, keyOf, ms) {
+      var g = A.byKey(rows, keyOf);
+      return function (k) { return g.agg[k] ? A.mv(ms, g.agg[k]) : 0; };
+    };
+
     /* ---------- KPI card — house signature ---------- */
     A.kpi = function (k) {
       var a = A.kpiState, c = a.cur, p = a.prev;
@@ -490,9 +518,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var f = A.f, S = A.S, b = v.bind || {}, ms = b.measure || (A.SPEC.model.measures[0] || {}).id;
     h = v.h || h || 206;
     var cur = [], prev = [], m;
+    /* per mese, attraverso il layer condiviso: una misura ratio qui sommava la colonna grezza
+       e usciva zero su tutti e dodici i mesi */
     var byM = function (y) {
-      var o = new Array(12).fill(0);
-      A.slice({ y: y, timeline: true }).forEach(r => o[r.m] += r[ms] !== undefined ? r[ms] : 0);
+      var val = A.byKeyValue(A.slice({ y: y, timeline: true }), r => r.m, ms);
+      var o = new Array(12), i;
+      for (i = 0; i < 12; i++) o[i] = val(i);
       return o;
     };
     cur = byM(S.y); prev = byM(S.y - 1);
@@ -576,18 +607,18 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var b = v.bind || {}, S = A.S, dim = b.dim, ms = b.measure;
     h = v.h || h || 190;
     var det = !!b.detail, rows = A.slice({ detail: det });   /* ranked lists respect every filter */
-    var acc = {};
-    rows.forEach(function (r) {
-      var id = r[dim]; if (id === undefined) return;
-      var k = acc[id] || (acc[id] = { id: id, v: 0, sub: 0, parent: b.parent ? r[b.parent] : null });
-      k.v += r[ms] || 0; if (b.subMeasure) k.sub += r[b.subMeasure] || 0;
-    });
-    var data = Object.keys(acc).map(function (id) {
-      var d = acc[id], mb = A.member(dim, id);
+    /* per membro, attraverso il layer condiviso: qui si sommava la colonna grezza, e una misura
+       ratio (Engagement Rate, Unfollow/Nuovi) usciva 0,0% su ogni barra mentre la matrice
+       accanto mostrava il valore giusto */
+    var grp = A.byKey(rows, r => r[dim]);
+    var parentOf = {};
+    if (b.parent) grp.keys.forEach(function (id) { parentOf[id] = (grp.rows[id][0] || {})[b.parent]; });
+    var data = grp.keys.map(function (id) {
+      var a = grp.agg[id], mb = A.member(dim, id), par = b.parent ? parentOf[id] : null;
       return {
-        id: id, l: mb.n, v: d.v, cat: d.parent,
-        c: d.parent ? A.color(b.parent, d.parent) : mb.c,
-        sub: (d.parent ? A.dimLabel(b.parent, d.parent) + ' · ' : '') + (b.subMeasure ? A.mfmt(b.subMeasure, d.sub) + (b.subUnit || '') : '')
+        id: id, l: mb.n, v: A.mv(ms, a), cat: par,
+        c: par ? A.color(b.parent, par) : mb.c,
+        sub: (par ? A.dimLabel(b.parent, par) + ' · ' : '') + (b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : '')
       };
     }).sort((x, y) => y.v - x.v).slice(0, b.top || 8);
     var lw = Math.min(158, w * .42), m = { t: 5, r: 46, b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r;
@@ -655,15 +686,18 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   M.V.colline = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, f = A.f, ms = b.measure, ln = b.line;
     h = v.h || h || 206;
-    var cur = new Array(12).fill(0), pri = new Array(12).fill(0), lnum = new Array(12).fill(0), lden = new Array(12).fill(0);
+    /* colonne, linea e anno precedente: tutti dal layer condiviso. Prima la linea aveva un
+       caso speciale scritto a mano per le ratio — che copriva le ratio e sbagliava diff e last,
+       mentre le colonne sommavano comunque la colonna grezza. */
     var lm = ln ? A.meas(ln) : null;
-    A.slice({ timeline: true }).forEach(function (r) {
-      cur[r.m] += r[ms] || 0;
-      if (lm && lm.agg === 'ratio') { lnum[r.m] += r[lm.num] || 0; lden[r.m] += r[lm.den] || 0; }
-      else if (lm) lnum[r.m] += r[lm.field || ln] || 0;
-    });
-    A.slice({ y: S.y - 1, timeline: true }).forEach(r => pri[r.m] += r[ms] || 0);
-    var line = lnum.map((n, i) => (lm && lm.agg === 'ratio') ? (lden[i] ? n / lden[i] : 0) : n);
+    var gCur = A.byKey(A.slice({ timeline: true }), r => r.m);
+    var gPri = A.byKey(A.slice({ y: S.y - 1, timeline: true }), r => r.m);
+    var cur = new Array(12), pri = new Array(12), line = new Array(12), _i;
+    for (_i = 0; _i < 12; _i++) {
+      cur[_i] = gCur.agg[_i] ? A.mv(ms, gCur.agg[_i]) : 0;
+      pri[_i] = gPri.agg[_i] ? A.mv(ms, gPri.agg[_i]) : 0;
+      line[_i] = (lm && gCur.agg[_i]) ? A.mv(ln, gCur.agg[_i]) : 0;
+    }
     var mgn = { t: 14, r: 40, b: 22, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var max = Math.max.apply(null, cur.concat(pri)) * 1.14 || 1, tk = M.ticks(max), top = tk[tk.length - 1] || 1;
     var lmax = Math.max.apply(null, line) * 1.25 || 1;
@@ -879,8 +913,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 /* Sparkline — tiny 12-month trend, used inside matrix rows or KPI footers. */
 (function (M) {
   M.spark = function (A, w, h, ms, pin) {
-    var vals = new Array(12).fill(0);
-    A.slice({ timeline: true, pin: pin || {} }).forEach(r => vals[r.m] += r[ms] || 0);
+    /* anche qui: dal layer condiviso, o una ratio disegna una linea piatta a zero */
+    var val = A.byKeyValue(A.slice({ timeline: true, pin: pin || {} }), r => r.m, ms);
+    var vals = new Array(12), _s;
+    for (_s = 0; _s < 12; _s++) vals[_s] = val(_s);
     var max = Math.max.apply(null, vals) || 1, p = '';
     vals.forEach((v, i) => p += (i ? 'L' : 'M') + (i * (w / 11)).toFixed(1) + ',' + (h - (v / max) * h).toFixed(1));
     return '<svg width="' + w + '" height="' + h + '" style="vertical-align:middle"><path d="' + p + '" fill="none" stroke="var(--c3)" stroke-width="1.2"/></svg>';
