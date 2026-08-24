@@ -341,6 +341,16 @@ function validate(spec, data) {
            6-category donut. Judgement belongs to the spec author; the engine reports it. */
         if (v.type === 'donut' && b.dim && data.dims[b.dim].length > 5)
           warn.push(`page "${pg.id}": donut on "${b.dim}" has ${data.dims[b.dim].length} slices (chart-selection.md: 2-5; consider hbar/stack100)`);
+        /* Una composizione che spezza una dimensione PER SE STESSA non e una distribuzione:
+           ogni barra ha un solo segmento, o n segmenti identici da 100/n. Nel primo giro a
+           pagamento e uscito cosi un "Nuovi clienti vs clienti di ritorno per canale" con
+           cinque segmenti da 20% esatti — il modello voleva una dimensione che nei dati non
+           esisteva e ha ripiegato sul canale contro se stesso. */
+        if (b.by && b.dim && b.by === b.dim) {
+          e.push(`page "${pg.id}" ${v.type}: bind.by e bind.dim sono la stessa dimensione ` +
+            `("${b.dim}"): spezzare una dimensione per se stessa non produce una composizione, ` +
+            `produce segmenti tutti uguali. Usa una seconda dimensione (facts.split) o cambia visual.`);
+        }
         (b.columns || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" matrix: unknown measure "${c.measure}"`); });
         (b.stages || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" funnel: unknown measure "${c.measure}"`); });
       });

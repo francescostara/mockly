@@ -43,7 +43,16 @@ about; the rules further down only decide how it looks.
 4. **Derive the decision questions before the visuals.** Write down (for yourself) which
    decisions this reader has to make, in that niche. Every visual then exists to answer one of
    them. A visual that answers no decision question does not belong on the page.
-5. **Build the spec with that niche's vocabulary** — its KPI names, its dimensions, its
+5. **Fix the niche's MAGNITUDE ANCHORS before you invent a single count.** Every niche entry
+   has an "ANCORE DI GRANDEZZA" table: the two to four ratios that must hold, with their
+   plausible range. Choose a target inside each range FIRST, then derive the counts from it —
+   \`count = total / target_ratio\`. Never pick a count freely and hope the ratio lands well.
+   That is exactly how a real run produced an average basket of 24 cents, a CAC payback of
+   zero days, a revenue-per-member of 89 cents and a CPM of 45 cents: every one of those is
+   internally consistent, reconciles perfectly, and is absurd.
+   The rule in general form: **if a measure is a ratio, its expected value is decided before
+   its numerator and denominator exist, and the two are built to satisfy it.**
+6. **Build the spec with that niche's vocabulary** — its KPI names, its dimensions, its
    signature charts, and its signature negative storyline in the data.
 
 ONE SHOT, NO QUESTIONS BACK. If something in the intake is missing or vague, use the niche's

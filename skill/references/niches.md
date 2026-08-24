@@ -94,6 +94,21 @@ conflitto con l'identita' di piattaforma). Segnala il problema con freccia v, bo
 dimming del segmento, non col colore di riempimento. Fuori dai visual multi-piattaforma vale la
 regola normale (rosso = problema).
 
+
+## ÀNCORE DI GRANDEZZA — social
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| ER = interazioni / impression | 0,4% – 0,9% (dipende da piattaforma e formato) | `interazioni = impression × ER` |
+| CPM = spesa / impression × 1000 | 3 – 15 € per mille (unità di euro, MAI centesimi) | `impression = spesa / CPM × 1000` |
+| reach / impression | 0,35 – 0,70 — il reach è sempre sensibilmente MINORE | `reach = impression × copertura`, mai ≈ impression |
+| costo per follower acquisito | 0,10 – 2 € — un brand con €2M di paid annuo non arriva a 300M di follower | `nuovi follower = spesa / costo per follower (0,10 – 2 €)` |
+
 ## Estetica
 Agency-modern o brand-colored; composizioni pulite; rosso riservato a ER compresso / declino /
 churn follower.
@@ -151,6 +166,20 @@ Vendite di un negozio o catena. Ricavata da ricerca sui KPI/design retail e vali
 - **Conversione in-store** plausibile ~20-40% (fashion più bassa, convenience più alta); footfall
   solo se ci sono contapersone → altrimenti modellare l'assenza, non inventare.
 - **Tasso di reso** basso per alimentari, più alto per fashion.
+
+
+## ÀNCORE DI GRANDEZZA — retail fisico
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| AOV = fatturato / scontrini | alimentari 10 – 40 € · fashion 60 – 150 € · elettronica 150 – 600 € · arredo 300 – 1500 € | `scontrini = fatturato / AOV` |
+| margine lordo % | alimentari 25 – 30% · fashion 50 – 60% · elettronica 15 – 25% · arredo 40 – 45% | `costo = fatturato × (1 − margine)` |
+| conversione in-store | 20 – 40% (fashion più bassa, convenience più alta) | `footfall = scontrini / conversione` — solo se ci sono contapersone |
 
 ## Estetica
 Corporate-sober di default (palette navy/steel o slate); variante calda-neutra
@@ -210,6 +239,21 @@ con ricerca sui KPI B2B/CRM e i benchmark 2026.
 - Deal size varia molto per segmento; il B2B ha cicli lunghi e più stakeholder (non è B2C).
 - Weighted pipeline = valore pesato per probabilità di stage, sempre < pipeline grezza.
 
+
+## ÀNCORE DI GRANDEZZA — vendite B2B
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| win rate = vinte / chiuse | 20 – 25% mid-market (media ~21%). Mai 60%. | `vinte = chiuse × win rate` |
+| pipeline coverage = pipeline / target | 3× – 5× | `pipeline = target × coverage` |
+| ciclo di vendita | 60 – 90 giorni SMB · 90 – 180 mid-market/enterprise | in GIORNI, mai zero |
+| LTV / CAC | > 3 | `LTV = CAC × rapporto` |
+
 ## Estetica
 Corporate-sober; firme dell'autore (gauge+target+annotazione, ribbon, colore per
 segmento/territorio, small multiples, funnel, toggle Chart/Table). Rosso riservato al problema
@@ -268,6 +312,21 @@ Ristoranti, catene food, bar. Da ricerca sui KPI/benchmark F&B, validata sui dub
   molto più basso della sala (utile per il mix canale).
 - Forte **stagionalità e ciclo settimanale**; le fasce orarie sono "business diversi dalla
   stessa cucina" (pranzo vs cena). Scontrino medio varia molto per concept.
+
+
+## ÀNCORE DI GRANDEZZA — ristorazione / F&B
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| prime cost = (food + labour) / ricavi | 55 – 65% | `food + labour = ricavi × prime cost` |
+| food cost = costo merci / ricavi | 25 – 32% | `costo merci = ricavi × food cost` |
+| scontrino medio | 12 – 45 € a coperto secondo la formula | `coperti = ricavi / scontrino medio` |
+| RevPASH | 10 – 15 € per posto per ora | `posti × ore = ricavi / RevPASH` |
 
 ## Estetica
 Corporate-sober di default; variante calda-neutra per food brand; formattazione condizionale
@@ -333,6 +392,20 @@ CFO, validata sui dubbi.
 - **Colore varianza favorevole/sfavorevole:** per i COSTI sopra-budget = rosso; per i RICAVI
   sotto-budget = rosso. Non è "su=verde" meccanico, dipende dal segno della voce.
 
+
+## ÀNCORE DI GRANDEZZA — finanziario / CFO
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| EBITDA % | 5 – 20% secondo il settore | `EBITDA = ricavi × margine` |
+| DSO (giorni di incasso) | 30 – 90 giorni, mai zero | `crediti = ricavi / 365 × DSO` |
+| scostamento budget | −15% – +10%: un actual che centra il budget al centesimo non è credibile | `actual = budget × (1 + scostamento)` |
+
 ## Estetica
 Corporate-sober (controller) o executive-minimal (board); waterfall e varianza puliti; colore
 varianza per significato (vedi sopra). Rosso riservato al problema (margine eroso, sforamento,
@@ -394,6 +467,20 @@ convivono.
 - **Margine per km** è la metrica equa; rotte lunghe alto ricavo non implica alto margine.
 - Cadenza spesso settimanale; forte componente internazionale.
 
+
+## ÀNCORE DI GRANDEZZA — logistica / trasporti
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| margine netto | ~10% (settore a margine sottile) | `costi = ricavi × (1 − margine)` |
+| costo per spedizione | 3 – 30 € (mai centesimi) | `spedizioni = costi carrier / costo per spedizione` |
+| margine per km | 0,05 – 0,50 €/km | `km = margine totale / margine per km` |
+
 ## Estetica
 Teal/verde (stile autore) o corporate-sober; flag leakage rosso/verde; rosso riservato al
 problema (rotta/cliente in perdita).
@@ -451,6 +538,20 @@ dell'autore è l'autorità.
 - Utilization ~60-80%; inventory value elevato; costi labor guidati dagli slider (se presenti).
 - Margini molto diversi per SKU/servizio → lo scatter mostra la dispersione, non un valore unico.
 - Cadenza mensile con vista MoM; clienti B2B industriali (nomi tipo società oil/gas, resource).
+
+
+## ÀNCORE DI GRANDEZZA — energia / manifattura
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| gross margin % | 45 – 55% | `COGS = ricavi × (1 − GM%)` |
+| utilization impianti | 65 – 90% | `ore usate = capacità × utilization` |
+| prezzo medio per unità | ≥ 1 €, tipicamente 10 – 1000 € secondo il prodotto | `unità vendute = ricavi / prezzo medio` |
 
 ## Estetica
 Corporate-sober chiaro con accento periwinkle/viola (stile autore); heatmap condizionale nella
@@ -510,6 +611,20 @@ Piattaforma/agenzia che gestisce creator (corsi, webinar). Il report WeLearn rea
 - **Mix prodotto sbilanciato** (Course dominante) → treemap/Pareto.
 - Net Achieved < Revenue (solo transazioni completate × quota piattaforma).
 
+
+## ÀNCORE DI GRANDEZZA — creator economy
+
+**Si fissano PRIMA di generare le conte.** Il rapporto è il vincolo, la conta è ciò che ne
+discende: `conta = totale / rapporto_bersaglio`. Scegliere le conte a caso e sperare che il
+rapporto torni produce numeri interni coerenti e assurdi — scontrino medio da 24 centesimi,
+CAC payback di zero giorni, ricavo per socio di 89 centesimi.
+
+| rapporto | intervallo plausibile | la conta si deriva così |
+|---|---|---|
+| operative margin | 60 – 70% | `costi = ricavi × (1 − margine)` |
+| target achievement | 70 – 120%, con trimestri sotto il 100% | `achieved = target × achievement` |
+| prezzo medio del corso/prodotto | 30 – 900 € | `transazioni = ricavi / prezzo medio` |
+
 ## Estetica
 Tema scuro brandizzato (stile WeLearn, accento rosa) o agency-modern; treemap/ribbon/gauge;
 heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine).
@@ -531,6 +646,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 - **Storia negativa:** una sede o una fascia d'abbonamento con churn in salita che erode la
   crescita dei nuovi iscritti; oppure corsi a bassa occupazione che costano quanto quelli pieni.
 - **Estetica:** corporate-sober, accenti puliti; rosso solo su churn/abbandoni.
+- **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** ricavo per socio = quota mensile plausibile, **20 – 90 €/mese** (mai centesimi) → `soci = ricavi / quota`; churn mensile **2 – 6%**; tasso di riempimento corsi **50 – 85%** → `presenze = posti × riempimento`; tasso di rinnovo **60 – 80%**.
 
 ### E-commerce moda
 - **Utente finale:** founder → corporate-sober o agency-modern.
@@ -543,6 +659,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 - **Storia negativa:** un canale con CAC in salita e clienti che non ricomprano; una categoria
   con alto fatturato ma tasso di reso che ne mangia il margine (tensione ricavo-vs-margine).
 - **Estetica:** corporate-sober se founder analitico, agency-modern se brand giovane.
+- **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** AOV **60 – 150 €** per il fashion → `ordini = fatturato / AOV` (mai ordini scelti a caso); tasso di reso **20 – 40%**; CAC **15 – 60 €** → `nuovi clienti = spesa / CAC`; repeat-purchase rate **20 – 35%**.
 
 ### SaaS (per board / leadership)
 - **Utente finale:** board / exec → executive-minimal, con frase narrativa.
@@ -555,6 +672,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 - **Storia negativa:** una coorte che si sfalda dopo N mesi, o CAC payback che si allunga
   mentre l'espansione rallenta — il "secchio bucato".
 - **Estetica:** executive-minimal, monocromo + colore solo sulla varianza.
+- **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** CAC payback **12 – 24 MESI** (mai zero, mai giorni) → `CAC = ARPA mensile × payback`; NRR **95 – 120%**; churn logo mensile **0,5 – 2%**; ARPA coerente col piano, **decine o centinaia di euro al mese**.
 
 ---
 

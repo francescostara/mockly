@@ -73,6 +73,35 @@ Same shape, with the attributes the field formulas read:
   negative storyline.
 - `attrs` — free numeric attributes the field formulas read (`aov`, `margin`, rates…).
 
+## Magnitude anchors: the ratio comes first, the count is derived
+
+A measure declared as `ratio` (average basket, CPM, revenue per member, CAC payback) is not a
+by-product of the counts — it is a **constraint on them**. Decide the ratio inside its
+plausible range for the niche (see the "ANCORE DI GRANDEZZA" table in each entry of
+`niches.md`), then derive the count:
+
+```
+count = total / target_ratio
+```
+
+So an `attrs.aov` is a currency amount (65 for a fashion basket), never a rate. A field
+declared `{"kind":"divide","of":"rev","attr":"aov"}` produces `rev / aov` orders: with `aov`
+written as `0.2` the report shows five million orders on one million euros of revenue,
+reconciles perfectly, and is nonsense.
+
+This is not a style preference. Every wrong number in the first paid run came from this one
+mistake, in five different niches:
+
+| what the report showed | what it means | the anchor that was missing |
+|---|---|---|
+| average basket €0 (really €0,24) | 5,1M orders on €1,2M revenue | `AOV` is money, so `orders = revenue / AOV` |
+| CAC payback 0 days | payback is measured in MONTHS | `payback = CAC / monthly ARPA`, 12–24 |
+| revenue per member €0,89 | a gym membership costs tens of euros | `members = revenue / monthly fee` |
+| CPM €0,45 | cost per thousand impressions, in units of euro | `impressions = spend / CPM × 1000` |
+
+The engine now refuses a currency ratio below one monetary unit, but the refusal costs a repair
+turn on every generation. The cure is upstream: anchor first, derive after.
+
 ## `facts` — the monthly fact table
 
 ```jsonc
