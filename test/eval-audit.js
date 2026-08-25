@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
-const { render } = require('../engine/render.js');
+const { render, measurePage } = require('../engine/render.js');
 const { firstBalancedObject } = require('../lib/json-object.js');
 const G = require('./gates-numbers.js');
 
@@ -40,7 +40,7 @@ function aggregato(win) {
 }
 
 const files = fs.readdirSync(dir).filter(f => f.endsWith('.html')).sort();
-let totali = 0, conProblemi = 0;
+let totali = 0, conProblemi = 0, legacy = 0;
 const perClasse = {};
 
 console.log('\nGATE SUI NUMERI — ' + dir + (RIRENDERIZZA ? '  (ri-renderizzati col motore attuale)' : '  (come generati)'));
@@ -50,6 +50,17 @@ for (const f of files) {
   const src = fs.readFileSync(path.join(dir, f), 'utf8');
   const spec = estrai(src, 'SPEC'), data = estrai(src, 'DATA');
   if (!spec || !data) { console.log('\n' + f + '\n   spec/data non estraibili'); continue; }
+
+  /* I file di un giro precedente non hanno `unit` sulle misure, perche allora non esisteva.
+     Il motore oggi la pretende, e giustamente. Ma qui si sta facendo una DIAGNOSI su artefatti
+     storici, non una validazione: rifiutarli renderebbe impossibile confrontare prima e dopo.
+     L'unita si deduce dal formato, che nel file c'e gia, con la stessa mappa che ha migrato le
+     fixture. Se dedurla cambiasse qualcosa lo si direbbe: non cambia, il formato resta quello. */
+  const FMT2UNIT = { eur: 'money', eurF: 'money', pc: 'pct', sgp: 'pct', bps: 'pct', pp: 'pp', days: 'days', x: 'x', N: 'count', raw: 'count' };
+  let dedotte = 0;
+  ((spec.model || {}).measures || []).forEach(m => {
+    if (!m.unit) { m.unit = FMT2UNIT[m.format || 'N'] || 'count'; dedotte++; }
+  });
 
   let html = src;
   if (RIRENDERIZZA) {
@@ -61,7 +72,23 @@ for (const f of files) {
   const problemi = G.tutti(dom.window.document, spec, aggregato(dom.window) || totaliDaDati(spec, data));
   dom.window.close();
 
+  /* La geometria: il Gate 3 dell'harness esisteva gia e usa il conto del motore, che e quello
+     che decide le altezze emesse. Non aveva mai girato sui file veri — ed e li che la riga di
+     chiusura si taglia. Il taglio non si vede in jsdom, che non fa layout: si legge dal conto. */
+  (spec.pages || []).forEach(pg => {
+    let m; try { m = measurePage(spec, data, pg.id); } catch { return; }
+    if (m.over > 0) {
+      problemi.push('pagina "' + pg.id + '": ' + m.used + 'px in un budget di ' + m.budget +
+        'px — sfora di ' + m.over + 'px anche dopo l adattamento, quindi la riga di chiusura si taglia');
+    }
+    if (m.lastRowH < 120) {
+      problemi.push('pagina "' + pg.id + '": la riga di chiusura ha ' + m.lastRowH +
+        'px, sotto i 120 utili — la matrice ci sta ma non si legge');
+    }
+  });
+
   totali++;
+  if (dedotte) legacy++;
   if (problemi.length) {
     conProblemi++;
     console.log('\n' + f + '   ' + problemi.length + ' problemi');
@@ -72,7 +99,8 @@ for (const f of files) {
         : /numero rotto|ordine di grandezza/.test(p) ? 'numeri impossibili'
           : /fallback/.test(p) ? 'distribuzione uniforme finta'
             : /serie e piatta/.test(p) ? 'serie piatta'
-              : 'KPI indistinguibili';
+              : /sfora di|riga di chiusura/.test(p) ? 'geometria: sfora il canvas'
+                : 'KPI indistinguibili';
       perClasse[c] = (perClasse[c] || 0) + 1;
     });
   } else {
@@ -98,6 +126,7 @@ function totaliDaDati(spec, data) {
 
 console.log('\n' + '='.repeat(78));
 console.log('RIEPILOGO  ·  ' + conProblemi + '/' + totali + ' file con problemi sui numeri');
+if (legacy) console.log('   (' + legacy + ' file di un giro precedente: unita dedotta dal formato per poterli leggere)');
 Object.entries(perClasse).sort((a, b) => b[1] - a[1])
   .forEach(([k, v]) => console.log('   ' + String(v).padStart(3) + '  ' + k));
 console.log('');

@@ -9,6 +9,12 @@ export type Aesthetic = 'corporate-sober' | 'agency-modern' | 'executive-minimal
  *  sgp = signed % · bps = +34bps · N = grouped integer · x = 1,8× · days · raw */
 export type Format = 'eur' | 'eurF' | 'pc' | 'pp' | 'sgp' | 'bps' | 'N' | 'x' | 'days' | 'raw';
 
+/** COSA misura, non come si scrive. Il formato e una conseguenza dell'unita, non una scelta
+ *  indipendente: un modello reale ha scritto `format:"eur"` su reach e impression — due conte —
+ *  pur avendo `N` nella grammatica e usandolo correttamente due righe piu sotto. Con l'unita
+ *  dichiarata, quella combinazione non e piu esprimibile. */
+export type Unit = 'money' | 'count' | 'pct' | 'pp' | 'days' | 'x';
+
 export interface Meta {
   title: string;
   subtitle?: string;
@@ -45,11 +51,11 @@ export interface Palette {
 export interface Grid { contentWidth: number; gutter: number; columns: number; }
 
 export type Measure =
-  | { id: string; label?: string; agg: 'sum'; field?: string; format?: Format; inv?: boolean }
-  | { id: string; label?: string; agg: 'diff'; a: string; b: string; format?: Format; inv?: boolean }
-  | { id: string; label?: string; agg: 'ratio'; num: string; den: string; format?: Format; inv?: boolean }
+  | { id: string; label?: string; agg: 'sum'; field?: string; unit: Unit; format?: Format; inv?: boolean }
+  | { id: string; label?: string; agg: 'diff'; a: string; b: string; unit: Unit; format?: Format; inv?: boolean }
+  | { id: string; label?: string; agg: 'ratio'; num: string; den: string; unit: Unit; format?: Format; inv?: boolean }
   /** point-in-time snapshot: latest (y,m) in the window, never summed */
-  | { id: string; label?: string; agg: 'last'; field: string; format?: Format; inv?: boolean };
+  | { id: string; label?: string; agg: 'last'; field: string; unit: Unit; format?: Format; inv?: boolean };
 
 export interface Model {
   /** additive fact columns */

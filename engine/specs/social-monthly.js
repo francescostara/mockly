@@ -90,16 +90,16 @@ const spec = {
   model: {
     sums: ['reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'folNew'],
     measures: [
-      { id: 'reach', label: 'Reach', agg: 'sum', field: 'reach', format: 'N' },
-      { id: 'impr', label: 'Impression', agg: 'sum', field: 'impr', format: 'N' },
-      { id: 'eng', label: 'Interazioni', agg: 'sum', field: 'eng', format: 'N' },
-      { id: 'spend', label: 'Spesa paid', agg: 'sum', field: 'spend', format: 'eur' },
-      { id: 'folNew', label: 'Nuovi follower', agg: 'sum', field: 'folNew', format: 'N' },
-      { id: 'clicks', label: 'Click', agg: 'sum', field: 'clicks', format: 'N' },
-      { id: 'paidImpr', label: 'Impression paid', agg: 'sum', field: 'paidImpr', format: 'N' },
-      { id: 'er', label: 'Engagement rate', agg: 'ratio', num: 'eng', den: 'impr', format: 'pc' },
-      { id: 'ctr', label: 'CTR', agg: 'ratio', num: 'clicks', den: 'impr', format: 'pc' },
-      { id: 'paidShare', label: 'Quota paid', agg: 'ratio', num: 'paidImpr', den: 'impr', format: 'pc' }
+      { id: 'reach', label: 'Reach', agg: 'sum', field: 'reach', unit: 'count', format: 'N' },
+      { id: 'impr', label: 'Impression', agg: 'sum', field: 'impr', unit: 'count', format: 'N' },
+      { id: 'eng', label: 'Interazioni', agg: 'sum', field: 'eng', unit: 'count', format: 'N' },
+      { id: 'spend', label: 'Spesa paid', agg: 'sum', field: 'spend', unit: 'money', format: 'eur' },
+      { id: 'folNew', label: 'Nuovi follower', agg: 'sum', field: 'folNew', unit: 'count', format: 'N' },
+      { id: 'clicks', label: 'Click', agg: 'sum', field: 'clicks', unit: 'count', format: 'N' },
+      { id: 'paidImpr', label: 'Impression paid', agg: 'sum', field: 'paidImpr', unit: 'count', format: 'N' },
+      { id: 'er', label: 'Engagement rate', agg: 'ratio', num: 'eng', den: 'impr', unit: 'pct', format: 'pc' },
+      { id: 'ctr', label: 'CTR', agg: 'ratio', num: 'clicks', den: 'impr', unit: 'pct', format: 'pc' },
+      { id: 'paidShare', label: 'Quota paid', agg: 'ratio', num: 'paidImpr', den: 'impr', unit: 'pct', format: 'pc' }
     ]
   },
   filters: {

@@ -14,7 +14,7 @@ export const STUB_BROKEN = JSON.stringify({
     grid: { contentWidth: 1044, gutter: 12, columns: 4 },
     model: {
       sums: ['rev', 'inesistente'],
-      measures: [{ id: 'rev', label: 'Ricavi', agg: 'sum', field: 'rev', format: 'eur' }]
+      measures: [{ id: 'rev', label: 'Ricavi', agg: 'sum', field: 'rev', unit: 'money', format: 'eur' }]
     },
     filters: { date: { default: { y: 2025 } }, dims: [{ id: 'nonEsiste', label: 'Boh', control: 'list' }] },
     kpiBand: [
@@ -61,14 +61,14 @@ export const STUB_RESPONSE = JSON.stringify({
     model: {
       sums: ['rev', 'cost', 'pieces', 'waste'],
       measures: [
-        { id: 'rev', label: 'Fatturato', agg: 'sum', field: 'rev', format: 'eur' },
-        { id: 'cost', label: 'Costo', agg: 'sum', field: 'cost', format: 'eur' },
-        { id: 'pieces', label: 'Scontrini', agg: 'sum', field: 'pieces', format: 'N' },
-        { id: 'waste', label: 'Invenduto', agg: 'sum', field: 'waste', format: 'eur', inv: true },
-        { id: 'gp', label: 'Margine lordo', agg: 'diff', a: 'rev', b: 'cost', format: 'eur' },
-        { id: 'mg', label: 'Margine %', agg: 'ratio', num: 'gp', den: 'rev', format: 'pc' },
-        { id: 'aov', label: 'Scontrino medio', agg: 'ratio', num: 'rev', den: 'pieces', format: 'eurF' },
-        { id: 'wasteRate', label: 'Quota invenduto', agg: 'ratio', num: 'waste', den: 'rev', format: 'pc', inv: true }
+        { id: 'rev', label: 'Fatturato', agg: 'sum', field: 'rev', unit: 'money', format: 'eur' },
+        { id: 'cost', label: 'Costo', agg: 'sum', field: 'cost', unit: 'money', format: 'eur' },
+        { id: 'pieces', label: 'Scontrini', agg: 'sum', field: 'pieces', unit: 'count', format: 'N' },
+        { id: 'waste', label: 'Invenduto', agg: 'sum', field: 'waste', unit: 'money', format: 'eur', inv: true },
+        { id: 'gp', label: 'Margine lordo', agg: 'diff', a: 'rev', b: 'cost', unit: 'money', format: 'eur' },
+        { id: 'mg', label: 'Margine %', agg: 'ratio', num: 'gp', den: 'rev', unit: 'pct', format: 'pc' },
+        { id: 'aov', label: 'Scontrino medio', agg: 'ratio', num: 'rev', den: 'pieces', unit: 'money', format: 'eurF' },
+        { id: 'wasteRate', label: 'Quota invenduto', agg: 'ratio', num: 'waste', den: 'rev', unit: 'pct', format: 'pc', inv: true }
       ]
     },
     filters: {

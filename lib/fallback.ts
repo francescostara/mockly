@@ -53,12 +53,12 @@ export function buildFallback(intake: IntakeAnswers) {
     model: {
       sums: ['rev', 'cost', 'units'],
       measures: [
-        { id: 'rev', label: 'Ricavi', agg: 'sum', field: 'rev', format: 'eur' },
-        { id: 'cost', label: 'Costo', agg: 'sum', field: 'cost', format: 'eur' },
-        { id: 'units', label: 'Volumi', agg: 'sum', field: 'units', format: 'N' },
-        { id: 'gp', label: 'Margine lordo', agg: 'diff', a: 'rev', b: 'cost', format: 'eur' },
-        { id: 'mg', label: 'Margine %', agg: 'ratio', num: 'gp', den: 'rev', format: 'pc' },
-        { id: 'aov', label: 'Valore medio', agg: 'ratio', num: 'rev', den: 'units', format: 'eurF' }
+        { id: 'rev', label: 'Ricavi', agg: 'sum', field: 'rev', unit: 'money', format: 'eur' },
+        { id: 'cost', label: 'Costo', agg: 'sum', field: 'cost', unit: 'money', format: 'eur' },
+        { id: 'units', label: 'Volumi', agg: 'sum', field: 'units', unit: 'count', format: 'N' },
+        { id: 'gp', label: 'Margine lordo', agg: 'diff', a: 'rev', b: 'cost', unit: 'money', format: 'eur' },
+        { id: 'mg', label: 'Margine %', agg: 'ratio', num: 'gp', den: 'rev', unit: 'pct', format: 'pc' },
+        { id: 'aov', label: 'Valore medio', agg: 'ratio', num: 'rev', den: 'units', unit: 'money', format: 'eurF' }
       ]
     },
     filters: {

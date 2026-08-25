@@ -37,14 +37,14 @@ module.exports = {
   model: {
     sums: ['rev', 'cost', 'pieces', 'online'],
     measures: [
-      { id: 'rev', label: 'Fatturato', agg: 'sum', field: 'rev', format: 'eur' },
-      { id: 'cost', label: 'Costo', agg: 'sum', field: 'cost', format: 'eur' },
-      { id: 'pieces', label: 'Numero vendite', agg: 'sum', field: 'pieces', format: 'N' },
-      { id: 'online', label: 'Online', agg: 'sum', field: 'online', format: 'eur' },
-      { id: 'gp', label: 'Margine lordo', agg: 'diff', a: 'rev', b: 'cost', format: 'eur' },
-      { id: 'mg', label: 'Margine %', agg: 'ratio', num: 'gp', den: 'rev', format: 'pc' },
-      { id: 'aov', label: 'Scontrino medio', agg: 'ratio', num: 'rev', den: 'pieces', format: 'eurF' },
-      { id: 'onlShare', label: 'Vendite online', agg: 'ratio', num: 'online', den: 'rev', format: 'pc' }
+      { id: 'rev', label: 'Fatturato', agg: 'sum', field: 'rev', unit: 'money', format: 'eur' },
+      { id: 'cost', label: 'Costo', agg: 'sum', field: 'cost', unit: 'money', format: 'eur' },
+      { id: 'pieces', label: 'Numero vendite', agg: 'sum', field: 'pieces', unit: 'count', format: 'N' },
+      { id: 'online', label: 'Online', agg: 'sum', field: 'online', unit: 'money', format: 'eur' },
+      { id: 'gp', label: 'Margine lordo', agg: 'diff', a: 'rev', b: 'cost', unit: 'money', format: 'eur' },
+      { id: 'mg', label: 'Margine %', agg: 'ratio', num: 'gp', den: 'rev', unit: 'pct', format: 'pc' },
+      { id: 'aov', label: 'Scontrino medio', agg: 'ratio', num: 'rev', den: 'pieces', unit: 'money', format: 'eurF' },
+      { id: 'onlShare', label: 'Vendite online', agg: 'ratio', num: 'online', den: 'rev', unit: 'pct', format: 'pc' }
     ]
   },
 

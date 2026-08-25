@@ -113,17 +113,17 @@ const spec = {
   model: {
     sums: ['gross', 'ret', 'orders', 'repOrders', 'spend', 'newCust'],
     measures: [
-      { id: 'gross', label: 'Gross sales', agg: 'sum', field: 'gross', format: 'eur' },
-      { id: 'ret', label: 'Returns', agg: 'sum', field: 'ret', format: 'eur' },
-      { id: 'orders', label: 'Orders', agg: 'sum', field: 'orders', format: 'N' },
-      { id: 'spend', label: 'Acquisition spend', agg: 'sum', field: 'spend', format: 'eur' },
-      { id: 'newCust', label: 'New customers', agg: 'sum', field: 'newCust', format: 'N' },
-      { id: 'repOrders', label: 'Repeat orders', agg: 'sum', field: 'repOrders', format: 'N' },
-      { id: 'net', label: 'Net sales', agg: 'diff', a: 'gross', b: 'ret', format: 'eur' },
-      { id: 'retRate', label: 'Return rate', agg: 'ratio', num: 'ret', den: 'gross', format: 'pc', inv: true },
-      { id: 'aov', label: 'AOV', agg: 'ratio', num: 'net', den: 'orders', format: 'eurF' },
-      { id: 'repRate', label: 'Repeat rate', agg: 'ratio', num: 'repOrders', den: 'orders', format: 'pc' },
-      { id: 'cac', label: 'CAC', agg: 'ratio', num: 'spend', den: 'newCust', format: 'eurF', inv: true }
+      { id: 'gross', label: 'Gross sales', agg: 'sum', field: 'gross', unit: 'money', format: 'eur' },
+      { id: 'ret', label: 'Returns', agg: 'sum', field: 'ret', unit: 'money', format: 'eur' },
+      { id: 'orders', label: 'Orders', agg: 'sum', field: 'orders', unit: 'count', format: 'N' },
+      { id: 'spend', label: 'Acquisition spend', agg: 'sum', field: 'spend', unit: 'money', format: 'eur' },
+      { id: 'newCust', label: 'New customers', agg: 'sum', field: 'newCust', unit: 'count', format: 'N' },
+      { id: 'repOrders', label: 'Repeat orders', agg: 'sum', field: 'repOrders', unit: 'count', format: 'N' },
+      { id: 'net', label: 'Net sales', agg: 'diff', a: 'gross', b: 'ret', unit: 'money', format: 'eur' },
+      { id: 'retRate', label: 'Return rate', agg: 'ratio', num: 'ret', den: 'gross', unit: 'pct', format: 'pc', inv: true },
+      { id: 'aov', label: 'AOV', agg: 'ratio', num: 'net', den: 'orders', unit: 'money', format: 'eurF' },
+      { id: 'repRate', label: 'Repeat rate', agg: 'ratio', num: 'repOrders', den: 'orders', unit: 'pct', format: 'pc' },
+      { id: 'cac', label: 'CAC', agg: 'ratio', num: 'spend', den: 'newCust', unit: 'money', format: 'eurF', inv: true }
     ]
   },
   filters: {

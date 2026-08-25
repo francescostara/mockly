@@ -205,7 +205,33 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
               aesthetic: { type: 'string', enum: ['corporate-sober', 'agency-modern', 'executive-minimal'] },
               palette: { type: 'object' },
               grid: { type: 'object', description: 'contentWidth, gutter, columns' },
-              model: { type: 'object', description: 'sums e measures' },
+              model: {
+                type: 'object',
+                description: 'sums e measures',
+                properties: {
+                  sums: { type: 'array', items: { type: 'string' } },
+                  measures: {
+                    type: 'array', minItems: 1,
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        label: { type: 'string' },
+                        agg: { type: 'string', enum: ['sum', 'diff', 'ratio', 'last'] },
+                        /* L'unita e obbligatoria e il formato ne discende. Lasciata implicita,
+                           un modello reale ha scritto format:"eur" su reach e impression - due
+                           conte - pur avendo N nella grammatica e usandolo correttamente due
+                           righe piu sotto. Con l'unita dichiarata la combinazione non passa. */
+                        unit: { type: 'string', enum: ['money', 'count', 'pct', 'pp', 'days', 'x'],
+                          description: 'cosa misura: money -> eur/eurF, count -> N/raw, pct -> pc/sgp/bps, pp -> pp, days -> days, x -> x' },
+                        format: { type: 'string', enum: ['eur', 'eurF', 'pc', 'pp', 'sgp', 'bps', 'N', 'x', 'days', 'raw'] }
+                      },
+                      required: ['id', 'agg', 'unit']
+                    }
+                  }
+                },
+                required: ['sums', 'measures']
+              },
               filters: { type: 'object', description: 'date e dims' },
               kpiBand: { type: 'array', items: { type: 'object' } },
               pages: { type: 'array', minItems: 1, items: { type: 'object' } },

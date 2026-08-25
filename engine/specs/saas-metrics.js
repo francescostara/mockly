@@ -79,20 +79,20 @@ const spec = {
   model: {
     sums: ['mrrStart', 'newMrr', 'expMrr', 'churnMrr', 'netNew', 'nrrNum', 'newLogos', 'cacSpend', 'customers'],
     measures: [
-      { id: 'newMrr', label: 'New MRR', agg: 'sum', field: 'newMrr', format: 'eur' },
-      { id: 'expMrr', label: 'Expansion', agg: 'sum', field: 'expMrr', format: 'eur' },
-      { id: 'churnMrr', label: 'Churned MRR', agg: 'sum', field: 'churnMrr', format: 'eur', inv: true },
-      { id: 'netNew', label: 'Net new MRR', agg: 'sum', field: 'netNew', format: 'eur' },
-      { id: 'newLogos', label: 'New customers', agg: 'sum', field: 'newLogos', format: 'N' },
-      { id: 'cacSpend', label: 'S&M spend', agg: 'sum', field: 'cacSpend', format: 'eur', inv: true },
-      { id: 'mrrStart', label: 'Opening MRR', agg: 'sum', field: 'mrrStart', format: 'eur' },
-      { id: 'nrrNum', label: 'Retained MRR', agg: 'sum', field: 'nrrNum', format: 'eur' },
-      { id: 'mrr', label: 'MRR', agg: 'last', field: 'mrr', format: 'eur' },
-      { id: 'nrr', label: 'Net revenue retention', agg: 'ratio', num: 'nrrNum', den: 'mrrStart', format: 'pc' },
-      { id: 'churnRate', label: 'Gross churn', agg: 'ratio', num: 'churnMrr', den: 'mrrStart', format: 'pc', inv: true },
-      { id: 'cac', label: 'CAC', agg: 'ratio', num: 'cacSpend', den: 'newLogos', format: 'eurF', inv: true },
-      { id: 'arpaNew', label: 'New ARPA', agg: 'ratio', num: 'newMrr', den: 'newLogos', format: 'eurF' },
-      { id: 'payback', label: 'CAC payback', agg: 'ratio', num: 'cac', den: 'arpaNew', format: 'x', inv: true }
+      { id: 'newMrr', label: 'New MRR', agg: 'sum', field: 'newMrr', unit: 'money', format: 'eur' },
+      { id: 'expMrr', label: 'Expansion', agg: 'sum', field: 'expMrr', unit: 'money', format: 'eur' },
+      { id: 'churnMrr', label: 'Churned MRR', agg: 'sum', field: 'churnMrr', unit: 'money', format: 'eur', inv: true },
+      { id: 'netNew', label: 'Net new MRR', agg: 'sum', field: 'netNew', unit: 'money', format: 'eur' },
+      { id: 'newLogos', label: 'New customers', agg: 'sum', field: 'newLogos', unit: 'count', format: 'N' },
+      { id: 'cacSpend', label: 'S&M spend', agg: 'sum', field: 'cacSpend', unit: 'money', format: 'eur', inv: true },
+      { id: 'mrrStart', label: 'Opening MRR', agg: 'sum', field: 'mrrStart', unit: 'money', format: 'eur' },
+      { id: 'nrrNum', label: 'Retained MRR', agg: 'sum', field: 'nrrNum', unit: 'money', format: 'eur' },
+      { id: 'mrr', label: 'MRR', agg: 'last', field: 'mrr', unit: 'money', format: 'eur' },
+      { id: 'nrr', label: 'Net revenue retention', agg: 'ratio', num: 'nrrNum', den: 'mrrStart', unit: 'pct', format: 'pc' },
+      { id: 'churnRate', label: 'Gross churn', agg: 'ratio', num: 'churnMrr', den: 'mrrStart', unit: 'pct', format: 'pc', inv: true },
+      { id: 'cac', label: 'CAC', agg: 'ratio', num: 'cacSpend', den: 'newLogos', unit: 'money', format: 'eurF', inv: true },
+      { id: 'arpaNew', label: 'New ARPA', agg: 'ratio', num: 'newMrr', den: 'newLogos', unit: 'money', format: 'eurF' },
+      { id: 'payback', label: 'CAC payback', agg: 'ratio', num: 'cac', den: 'arpaNew', unit: 'x', format: 'x', inv: true }
     ]
   },
   filters: {

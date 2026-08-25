@@ -356,6 +356,37 @@ function validate(spec, data) {
       });
     });
   });
+  /* L'unita dice COSA si misura; il formato e come si scrive. Tenerli separati e permettere
+     ogni combinazione ha prodotto reach e impression - due conte - scritte "€6,8M". Qui il
+     formato deve appartenere all'unita dichiarata, e una conta col simbolo di valuta non e
+     piu esprimibile. */
+  const UNITA_FORMATI = {
+    money: ['eur', 'eurF'],
+    count: ['N', 'raw'],
+    pct: ['pc', 'sgp', 'bps'],
+    pp: ['pp'],
+    days: ['days'],
+    x: ['x']
+  };
+  ((spec.model || {}).measures || []).forEach(m => {
+    if (!m.unit) {
+      e.push(`measure "${m.id}": manca "unit". Dichiara cosa misura — money, count, pct, pp, ` +
+        `days o x — e il formato ne discende. Senza unita niente impedisce di scrivere una ` +
+        `conta col simbolo di valuta.`);
+      return;
+    }
+    const ammessi = UNITA_FORMATI[m.unit];
+    if (!ammessi) {
+      e.push(`measure "${m.id}": unit "${m.unit}" sconosciuta (money, count, pct, pp, days, x).`);
+      return;
+    }
+    if (m.format && ammessi.indexOf(m.format) < 0) {
+      e.push(`measure "${m.id}": unit "${m.unit}" e format "${m.format}" non vanno insieme. ` +
+        `Per "${m.unit}" i formati ammessi sono ${ammessi.join(' o ')}` +
+        (m.unit === 'count' ? ' — una conta non porta mai il simbolo di valuta.' : '.'));
+    }
+  });
+
   if (!spec.meta || !spec.meta.watermark) e.push('meta.watermark is required (synthetic-data watermark)');
 
   const tb = toolbarBudget(spec, data);
