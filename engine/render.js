@@ -398,6 +398,24 @@ function validate(spec, data) {
     }
   });
 
+  /* grid.contentWidth deve combaciare con la SHELL dell'estetica scelta. Con un rail da 200px
+     l'area utile e 1044, senza rail e 1254: scrivere 1254 su un'estetica col rail rende ogni
+     card 210px piu larga dello spazio che ha, e ogni grafico esce dal proprio riquadro.
+     Non e un difetto che si vede in jsdom, che non fa layout, ne nel conto delle altezze: e
+     puramente dichiarativo, e finora nessun gate lo guardava. La grammatica documenta
+     entrambi i numeri, quindi sceglierne uno a caso e un testa o croce. */
+  {
+    const est = AESTHETICS[spec.aesthetic];
+    const atteso = est && est.shell === 'rail' ? 1044 : 1254;
+    const dichiarato = (spec.grid || {}).contentWidth;
+    if (est && dichiarato !== atteso) {
+      e.push(`grid.contentWidth e ${dichiarato} ma l'estetica "${spec.aesthetic}" ha una shell ` +
+        `"${est.shell}": l'area utile e ${atteso}px. Con il valore sbagliato ogni card viene ` +
+        `calcolata ${Math.abs(dichiarato - atteso)}px oltre lo spazio disponibile e i grafici ` +
+        `escono dal riquadro.`);
+    }
+  }
+
   /* meta.currency e il SIMBOLO che finisce davanti a ogni cifra, non il codice ISO: con "EUR"
      il report scrive "EUR2,1M" invece di "€2,1M". E' il genere di dettaglio che nessun test
      strutturale vede e che chi riceve il mockup nota subito. */

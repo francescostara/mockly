@@ -109,7 +109,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici · non rappresenta vendite reali'
   },
   aesthetic: 'corporate-sober',
-  grid: { contentWidth: 1254, gutter: 12, columns: 5 },
+  grid: { contentWidth: 1044, gutter: 12, columns: 5 },
   model: {
     sums: ['prov', 'gmv', 'rogiti', 'visite', 'quotaAg', 'listino'],
     measures: [

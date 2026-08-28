@@ -50,7 +50,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici · banco di prova'
   },
   aesthetic: 'corporate-sober',
-  grid: { contentWidth: 1254, gutter: 12, columns: 3 },
+  grid: { contentWidth: 1044, gutter: 12, columns: 3 },
   model: {
     sums: ['rev', 'deals'],
     measures: [
