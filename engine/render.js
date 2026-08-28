@@ -636,6 +636,23 @@ function render(specIn, data) {
      effettivamente renderizzata, cosi cio che si vede e cio che si e validato */
   const { spec, report } = fitSpec(specIn, data);
   const compact = report.some(r => r.dense);   /* pagina sovraccarica: si stringe tutto il possibile */
+
+  /* La pagina che non ci sta nemmeno cosi. Il piano scala le altezze, ma sotto la soglia di
+     leggibilita si ferma: da li in poi il motore emetteva comunque, e la riga di chiusura
+     usciva tagliata. Nel primo giro a pagamento e successo su tre pagine su nove.
+     Un report con la matrice mozzata non vale niente, quindi si rifiuta con un'istruzione
+     invece di consegnarlo. La cura e quella che il prodotto gia prescrive: non dare per
+     scontata una pagina sola.
+     Il conto e quello del fit APPENA fatto: rifarlo su una spec gia adattata darebbe un
+     budget diverso e un verdetto falso. */
+  const sfora = report.filter(r => r.over > 0);
+  if (sfora.length) {
+    const righe = sfora.map(r =>
+      `page "${r.page}": non ci sta nel canvas — sfora di ${r.over}px anche dopo l'adattamento, ` +
+      `e la riga di chiusura verrebbe tagliata. Togli un visual da questa pagina o spostane una ` +
+      `parte su una SECONDA pagina (pages[]): non dare per scontata una pagina sola.`);
+    throw new Error('spec validation failed:' + String.fromCharCode(10) + '  - ' + righe.join(String.fromCharCode(10) + '  - '));
+  }
   const { types } = validate(spec, data);
   const lang = (spec.meta.locale || 'it-IT').slice(0, 2);
   return `<!DOCTYPE html>
