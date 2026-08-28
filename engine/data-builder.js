@@ -62,7 +62,11 @@ function evalField(f, row, own, split, ctx) {
   switch (f.kind) {
     case 'seasonal': {
       const jit = f.jitter || [.93, 1.07];
-      return own.base * Math.pow(1 + (own.growth || 0), yi) * ctx.seas[row.m] * j(jit[0], jit[1]);
+      /* La stagionalita del membro vince su quella globale. Senza, dentro un anno i ranghi fra
+         i membri non cambiano mai — la crescita agisce FRA gli anni — e un ribbon, che esiste
+         per mostrare i sorpassi, degenera in un area chart con le fasce parallele. */
+      const seas = (own.seasonality && own.seasonality.length === 12) ? own.seasonality : ctx.seas;
+      return own.base * Math.pow(1 + (own.growth || 0), yi) * seas[row.m] * j(jit[0], jit[1]);
     }
     case 'share': {
       const base = row[f.of];

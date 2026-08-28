@@ -71,6 +71,11 @@ Same shape, with the attributes the field formulas read:
   every other number of that member derives from it, so a member without `base` produces NaN.
 - `growth` — compound growth per year. **At least one member must be negative** — that is the
   negative storyline.
+- `seasonality` — optional, 12 multipliers, **overrides the global one for this member only**.
+  Needed whenever the story is a rank change INSIDE a year: `growth` acts between years, so
+  without a per-member shape the members keep the same order across every month of a year. A
+  `ribbon` exists to show overtakes, and with a shared seasonality its bands run parallel and it
+  degenerates into an area chart. Give the two entities that cross opposite shapes.
 - `attrs` — free numeric attributes the field formulas read (`aov`, `margin`, rates…).
 
 ## Magnitude anchors: the ratio comes first, the count is derived
