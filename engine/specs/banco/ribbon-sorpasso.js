@@ -44,7 +44,7 @@ const spec = {
   meta: {
     title: 'Banco — sorpasso fra aree',
     subtitle: 'Il ribbon deve far vedere lo scambio di posizione, non solo la crescita',
-    locale: 'it-IT', currency: 'EUR',
+    locale: 'it-IT', currency: '€',
     months: ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],
     updated: 'aggiornato il 2 set 2026',
     watermark: 'Mockup dimostrativo · dati sintetici · banco di prova'

@@ -66,6 +66,43 @@ Rigenerato con <code>npm run banco</code>.</p>
 ${voci.map(card).join('')}
 </body></html>`);
 
+/* ---- il file unico, da aprire col doppio clic ----
+   L'indice qui sopra usa <iframe src>, quindi ha bisogno dei file accanto e di essere servito
+   da una cartella. Questo invece incorpora ogni mockup dentro srcdoc: un file solo, che si
+   apre ovunque senza npm, senza node e senza server. E' la differenza fra "puoi guardarlo se
+   sai far girare il progetto" e "puoi guardarlo". */
+const esc = h => h.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const cardBundle = v => {
+  if (v.errore) return `<section><h2>${v.nome} <small>${v.gruppo}</small></h2>
+    <p class="err">Il motore rifiuta questa spec:<br>${v.errore.replace(/</g, '&lt;')}</p></section>`;
+  const html = fs.readFileSync(path.join(out, v.id + '.html'), 'utf8');
+  return `<section><h2>${v.nome} <small>${v.gruppo}</small></h2>
+    <p>${v.kb}KB${v.note.length ? ' · ' + v.note.length + ' note del motore' : ''}</p>
+    <iframe width="1280" height="720" srcdoc="${esc(html)}"></iframe></section>`;
+};
+
+const bundle = path.join(out, 'banco-standalone.html');
+fs.writeFileSync(bundle, `<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><title>Mockly — banco di prova</title>
+<style>
+  body{margin:0;padding:28px 32px;background:#F7F6F3;color:#1C1B19;
+       font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+  h1{font-size:22px;margin:0 0 4px} .lede{color:#5A5751;margin:0 0 28px;max-width:70ch}
+  section{margin:0 0 40px} h2{font-size:15px;margin:0 0 6px}
+  h2 small{font-weight:400;color:#6A665F;font-size:12px;margin-left:6px}
+  p{margin:0 0 10px;color:#5A5751;font-size:12.5px}
+  .err{color:#9B3A2E;border:1px solid #D3CFC6;padding:10px 12px;border-radius:6px;background:#FFF}
+  iframe{border:1px solid #D3CFC6;border-radius:8px;background:#FFF;display:block}
+</style></head><body>
+<h1>Banco di prova — Mockly</h1>
+<p class="lede">Un file solo: si apre col doppio clic, senza npm e senza server. I mockup sono
+quelli veri e sono interattivi — clicca dentro, le fette e le righe filtrano, il tasto destro
+sulla matrice apre il dettaglio. Spec scritte a mano, nessun modello, nessun credito.</p>
+${voci.map(cardBundle).join('')}
+</body></html>`);
+console.log('file unico: out/banco/banco-standalone.html   ' +
+  Math.round(fs.statSync(bundle).size / 1024) + 'KB');
+
 const rotti = voci.filter(v => v.errore).length;
 console.log('\nindice: out/banco/index.html' + (rotti ? '   (' + rotti + ' spec rifiutate)' : ''));
 console.log('');

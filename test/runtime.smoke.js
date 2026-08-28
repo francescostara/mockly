@@ -23,7 +23,11 @@ ok('formatters match the canonical output (it-IT)', () => {
   assert.strictEqual(f.eur(41000), '€41K');
   assert.strictEqual(f.eur(-820), '−€820');
   // it-IT groups from 5 digits up (CLDR minimumGroupingDigits=2) — same as the canonical in a browser
-  assert.strictEqual(f.eurF(1234.6), '€1235');
+  /* eurF significa "full grouped": raggruppa sempre. La regola "auto" dell'ICU ometteva il
+     separatore sotto le cinquemila, e questo test ne congelava l'effetto — accanto alla riga
+     sotto, che a cinque cifre lo pretende. Un report che scrive €1235 e €41.235 nella stessa
+     colonna e incoerente, ed e il lettore a pagarne il prezzo. */
+  assert.strictEqual(f.eurF(1234.6), '€1.235');
   assert.strictEqual(f.eurF(41235), '€41.235');
   assert.strictEqual(f.pc(0.4213), '42,1%');
   assert.strictEqual(f.sgp(-0.086), '−8,6%');

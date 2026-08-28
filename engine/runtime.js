@@ -33,7 +33,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var lang = o.locale || 'it-IT', cur = o.currency || '€';
     var comma = (o.decimal || (lang.slice(0, 2) === 'it' ? ',' : '.')) === ',';
     var d = s => comma ? String(s).replace('.', ',') : String(s);
-    var num = v => Math.round(v).toLocaleString(lang);
+    /* useGrouping esplicito: la regola "auto" dell'ICU omette il separatore sotto le cinquemila,
+       quindi in una colonna di importi "9.870" finisce accanto a "3351" e la colonna si legge
+       male. In un report il raggruppamento e sempre desiderato. */
+    var num = v => Math.round(v).toLocaleString(lang, { useGrouping: true });
     var f = {};
     /* compact currency, K/M — canonical eur() */
     f.eur = function (v, k) {

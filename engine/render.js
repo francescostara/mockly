@@ -387,6 +387,14 @@ function validate(spec, data) {
     }
   });
 
+  /* meta.currency e il SIMBOLO che finisce davanti a ogni cifra, non il codice ISO: con "EUR"
+     il report scrive "EUR2,1M" invece di "€2,1M". E' il genere di dettaglio che nessun test
+     strutturale vede e che chi riceve il mockup nota subito. */
+  if (spec.meta && spec.meta.currency && /^[A-Z]{3}$/.test(spec.meta.currency)) {
+    e.push(`meta.currency e "${spec.meta.currency}", che e il codice ISO: qui va il SIMBOLO ` +
+      `(€, $, £). Con il codice ogni importo esce come "${spec.meta.currency}2,1M".`);
+  }
+
   if (!spec.meta || !spec.meta.watermark) e.push('meta.watermark is required (synthetic-data watermark)');
 
   const tb = toolbarBudget(spec, data);
