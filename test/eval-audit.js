@@ -26,7 +26,9 @@ function estrai(src, nome) {
   const at = src.indexOf('var ' + nome + '=');
   if (at < 0) return null;
   const obj = firstBalancedObject(src.slice(at));
-  return obj ? JSON.parse(obj) : null;
+  /* la cartella puo contenere anche pagine di servizio (un indice, un bundle): non sono
+     mockup, e devono essere saltate invece di far cadere l'intero audit */
+  try { return obj ? JSON.parse(obj) : null; } catch { return null; }
 }
 
 /* L'aggregato totale sul periodo di default: serve ai gate che confrontano un valore col suo

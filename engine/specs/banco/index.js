@@ -10,7 +10,8 @@
 'use strict';
 
 module.exports = {
-  'ribbon-sorpasso': require('./ribbon-sorpasso.js')
+  'ribbon-sorpasso': require('./ribbon-sorpasso.js'),
+  'immobiliare': require('./immobiliare.js')
   /* in arrivo, uno per visual nuovo:
      'gauge-target':    quota attainment con marcatore target e annotazione
      'heatmap-fascia':  fascia oraria x giorno, la heatmap vera con `by`

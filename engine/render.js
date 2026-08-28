@@ -242,13 +242,24 @@ function fitPage(spec, page, data) {
   if (plan.scaled) page.rows.filter(r => !r.flex).forEach(r => r.visuals.forEach(v => {
     v.h = Math.max(plan.minChart || MIN_CHART_H, Math.round((v.h || 200) * plan.k));
   }));
+  /* La modalita densa e una decisione del fit, non una proprieta della spec d'autore: senza
+     registrarla, chi rilegge il file emesso misura la pagina con il budget sbagliato e la vede
+     sforare quando invece ci sta. L'artefatto deve portarsi dietro cio che serve per rileggerlo. */
+  if (plan.dense) page.__dense = true;
   return plan;
 }
 
 /** Applica il fit a ogni pagina, su una copia: la spec del chiamante non viene toccata. */
 function fitSpec(spec, data) {
+  /* Il file emesso porta dentro la spec GIA adattata, perche il runtime ha bisogno delle
+     altezze che sono state davvero disegnate. Ri-renderizzare quel file la adatterebbe una
+     seconda volta, con un budget diverso e un verdetto diverso: il round-trip non sarebbe
+     idempotente, e uno strumento che rilegge un mockup gia generato vedrebbe difetti che non
+     esistono. Il marchio rende il secondo passaggio un'operazione nulla. */
+  if (spec.__fit) return { spec, report: [] };
   const copy = JSON.parse(JSON.stringify(spec));
   const report = [];
+  copy.__fit = true;
   copy.pages.forEach(p => { const r = fitPage(copy, p, data); if (r && r.scaled) report.push({ page: p.id, ...r }); });
   if (copy.drill && copy.drill.page) {
     const r = fitPage(copy, copy.drill.page, data);
@@ -264,7 +275,7 @@ function measurePage(spec, data, pageId) {
   const fitted = fitSpec(spec, data);
   const page = fitted.spec.pages.find(p => p.id === pageId) || fitted.spec.pages[0];
   const rep = fitted.report.filter(r => r.page === page.id)[0] || {};
-  const dense = !!rep.dense;
+  const dense = !!rep.dense || !!page.__dense;
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   let budget = pageBudget(fitted.spec, page, dense ? DENSE_GUTTER : spec.grid.gutter)
     + (dense ? PAGE_PAD - DENSE_PAD : 0);
