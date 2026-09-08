@@ -353,8 +353,35 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     };
 
     /* ---------- page assembly ---------- */
+    /* Una misura che vale zero su TUTTO il periodo filtrato non e un grafico piatto: e una
+       misura che sotto questo filtro non esiste. La spesa paid con "Organico" selezionato ne e
+       il caso tipico. Disegnare un grafico vuoto lascia il lettore a chiedersi se sia un dato
+       o un difetto; dirlo lo toglie dal dubbio. Vale per ogni visual perche sta in A.card:
+       nessun tipo di grafico puo dimenticarsene. */
+    A.vuoto = function (v) {
+      /* Solo i visual con UNA misura. Una matrice va lasciata stare: azzerare la sua prima
+         colonna non la rende inapplicabile, e far sparire la tabella nasconderebbe tutte le
+         altre colonne, che restano vere. Una tabella di zeri informa; una tabella assente no. */
+      var b = v.bind || {}, ms = b.measure;
+      if (!ms || v.type === 'narrative') return null;
+      var m = A.meas(ms);
+      if (m.agg === 'ratio' || m.agg === 'diff') return null;   /* zero puo essere un valore vero */
+      /* l'aggregato del periodo filtrato e gia stato calcolato per la banda KPI */
+      if (A.mv(ms, (A.kpiState || {}).cur || A.agg(A.slice({}))) !== 0) return null;
+      /* zero adesso ma non sempre: e il filtro a spegnerla, non il dato che non c'e mai */
+      var tutto = A.agg(A.slice({ ignore: Object.keys(A.S.f || {}) }));
+      if (A.mv(ms, tutto) === 0) return null;
+      return (m.label || ms) + ': non applicabile con i filtri attivi';
+    };
+
     A.card = function (v, body, opts) {
       opts = opts || {};
+      var na = A.vuoto(v);
+      /* Lo stile sta nell'attributo e non in una regola CSS: la regola pesava su ogni mockup
+         anche quando nessun visual si azzera mai, mentre cosi il costo lo paga solo il caso
+         raro che lo usa davvero. */
+      if (na) body = '<div style="flex:1;display:flex;align-items:center;justify-content:center;' +
+        'text-align:center;padding:14px;font-size:11px;color:var(--muted)">' + M.esc(na) + '</div>';
       var head = v.title ? '<div class="ch"><h3>' + M.esc(A.tpl(v.title)) + '</h3>' +
         (v.subtitle ? '<span class="hs">' + M.esc(A.tpl(v.subtitle)) + '</span>' : '') +
         (v.note ? '<span class="hr">' + M.esc(A.tpl(v.note)) + '</span>' : '') + '</div>' : '';

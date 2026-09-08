@@ -135,6 +135,21 @@ Every field is rounded to an integer, so the totals a reader adds up actually ad
 `share` and `divide` read the member's `attrs`; add `"attrFrom": "split"` to read the split
 dimension's attrs instead (see below).
 
+### A field that only exists for some members (`only`)
+
+Paid spend does not exist on organic traffic; a shipping cost does not exist on click-and-collect.
+Declare it, and the generator writes zero outside those members:
+
+```jsonc
+{ "id": "spend", "kind": "share", "of": "impressions", "attr": "cpm",
+  "only": { "dim": "paidOrg", "members": ["paid"] } }
+```
+
+Without it the generator spreads the field everywhere, and selecting "Organic" leaves paid spend
+unchanged — a filter that does nothing, dressed as a filter that works. **The cure belongs in the
+data, not downstream:** with `only`, the filter zeroes the measure because zero is the truth. The
+engine then renders the visual as explicitly not applicable instead of drawing an empty chart.
+
 ### Two filterable dimensions (`facts.split`)
 
 When two dimensions both roll up to the same total and the user can slice by either, do NOT

@@ -165,6 +165,16 @@ function build(dp) {
       for (let i = 1; i < fields.length; i++) {
         const f = fields[i];
         r[f.id] = Math.round(evalField(f, r, r.__own, r.__split, ctx));
+        /* Un campo puo esistere SOLO per certi membri di una dimensione: la spesa paid non
+           esiste sull'organico, il costo di spedizione non esiste sul ritiro in negozio.
+           Senza dirlo, il generatore lo distribuisce ovunque e il filtro "Organico" lascia la
+           spesa paid invariata — un filtro che non fa niente, travestito da filtro che funziona.
+           La cura sta nel DATO, non a valle: fuori dai membri dichiarati il campo vale zero, e
+           il filtro lo azzera da solo perche e vero. */
+        if (f.only && f.only.dim && Array.isArray(f.only.members)) {
+          const mio = r[f.only.dim];
+          if (mio !== undefined && f.only.members.indexOf(mio) < 0) r[f.id] = 0;
+        }
       }
     });
   });
