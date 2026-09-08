@@ -766,6 +766,80 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 })(MK);
 /*#endregion*/
 
+/*#region chart:gauge*/
+/* Gauge — un valore contro il suo bersaglio. Firma dell'autore in B2B sales (quota attainment,
+   win rate) e creator-economy (target achievement).
+   Tre parti, e nessuna e decorativa:
+     · l'arco, che dice quanto si e fatto rispetto al massimo;
+     · il MARCATORE del bersaglio, una tacca sull'arco: senza, il numero non ha un metro;
+     · l'ANNOTAZIONE, una frase costruita dalle misure, non un testo fisso.
+   Niente ombre e niente gradienti: la profondita di un report Power BI sta nelle superfici,
+   non negli effetti. Il colore segue la regola di casa — rosso solo quando c'e un problema,
+   cioe solo quando si sta sotto il bersaglio. */
+(function (M) {
+  M.V.gauge = function (A, v, w, h) {
+    var b = v.bind || {}, ms = b.measure, tg = b.target;
+    h = v.h || h || 180;
+    var a = A.agg(A.slice({}));
+    var val = A.mv(ms, a);
+    /* il bersaglio puo essere un'altra misura (budget, quota) o un numero fisso nella spec */
+    var target = (typeof tg === 'number') ? tg : (tg ? A.mv(tg, a) : 0);
+    /* il fondo scala: per una percentuale si ferma a 1, altrimenti al piu grande fra valore e
+       bersaglio con un margine, cosi la lancetta non tocca mai il bordo */
+    var pct = (A.meas(ms).unit === 'pct');
+    var max = b.max !== undefined ? b.max : (pct ? 1 : Math.max(val, target) * 1.15 || 1);
+    var q = max ? Math.min(1, Math.max(0, val / max)) : 0;
+    var qt = max ? Math.min(1, Math.max(0, target / max)) : 0;
+
+    var cx = w / 2, r = Math.min(w * .40, h * .78), cy = h * .80, sw = Math.max(9, r * .16);
+    /* semicerchio da sinistra a destra: 180 gradi e la forma che si legge senza istruzioni */
+    var P = function (t) { var an = Math.PI * (1 - t); return [cx + r * Math.cos(an), cy - r * Math.sin(an)]; };
+    var arc = function (t0, t1) {
+      var s0 = P(t0), s1 = P(t1);
+      return 'M' + s0[0].toFixed(1) + ',' + s0[1].toFixed(1) + ' A' + r + ',' + r + ' 0 0 1 ' + s1[0].toFixed(1) + ',' + s1[1].toFixed(1);
+    };
+    var sotto = target > 0 && val < target;
+    var colore = target > 0 ? (sotto ? 'var(--bad)' : 'var(--good)') : 'var(--c2)';
+
+    var s = '<svg width="' + w + '" height="' + h + '">';
+    s += '<path d="' + arc(0, 1) + '" fill="none" stroke="var(--line)" stroke-width="' + sw + '" stroke-linecap="round"/>';
+    if (q > 0) s += '<path d="' + arc(0, q) + '" fill="none" stroke="' + colore + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
+
+    /* il marcatore del bersaglio: una tacca che attraversa l'arco, non una seconda lancetta */
+    if (target > 0) {
+      var an = Math.PI * (1 - qt), c = Math.cos(an), sn = Math.sin(an);
+      var r0 = r - sw * .8, r1 = r + sw * .8;
+      s += '<line x1="' + (cx + r0 * c).toFixed(1) + '" y1="' + (cy - r0 * sn).toFixed(1) +
+        '" x2="' + (cx + r1 * c).toFixed(1) + '" y2="' + (cy - r1 * sn).toFixed(1) +
+        '" stroke="var(--ink)" stroke-width="2"/>' +
+        '<text x="' + (cx + (r1 + 4) * c).toFixed(1) + '" y="' + (cy - (r1 + 4) * sn - 2).toFixed(1) +
+        '" text-anchor="' + (qt > .5 ? 'end' : 'start') + '" font-size="8.5" fill="var(--muted)">' +
+        M.esc(A.tpl(b.targetLabel || 'target')) + ' ' + A.mfmt(ms, target) + '</text>';
+    }
+
+    s += '<text x="' + cx + '" y="' + (cy - 6) + '" text-anchor="middle" font-size="' +
+      Math.round(r * .38) + '" font-weight="600" fill="var(--ink)" class="tnum">' + A.mfmt(ms, val) + '</text>';
+    s += '</svg>';
+
+    /* L'annotazione e costruita dalle misure: dice di quanto si e sopra o sotto, non "buono".
+       E' la regola degli insight measure-driven applicata a un visual singolo. */
+    var nota = '';
+    if (target > 0) {
+      /* Lo scarto si scrive UNA volta e in valore assoluto: il segno lo porta gia la parola
+         "sopra" o "sotto", e i formati percentuali ne mettono uno per conto loro. Sommarli
+         produceva "−−22,6 pp sotto". E niente articolo davanti all'etichetta: "il quota" e
+         sbagliato, e l'articolo giusto dipende da un'etichetta che sceglie la spec. */
+      var scarto = val - target, ass = Math.abs(scarto);
+      var testo = pct ? A.f.pp(ass).replace(/^[+−-]\s*/, '') : A.mfmt(ms, ass);
+      nota = '<div class="gnote">' + M.esc(A.meas(ms).label || ms) + ' ' + A.mfmt(ms, val) + ', ' +
+        testo + ' ' + (scarto >= 0 ? 'sopra' : 'sotto') + ' ' +
+        M.esc(A.tpl(b.targetLabel || 'target')) + '</div>';
+    }
+    return A.card(v, s + nota);
+  };
+})(MK);
+/*#endregion*/
+
 /*#region chart:ribbon*/
 /* Ribbon — rank flow across periods; shows the crossings a grouped bar buries. */
 (function (M) {

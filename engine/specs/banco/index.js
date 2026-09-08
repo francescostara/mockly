@@ -11,9 +11,9 @@
 
 module.exports = {
   'ribbon-sorpasso': require('./ribbon-sorpasso.js'),
-  'immobiliare': require('./immobiliare.js')
+  'immobiliare': require('./immobiliare.js'),
+  'gauge-quota': require('./gauge-quota.js')
   /* in arrivo, uno per visual nuovo:
-     'gauge-target':    quota attainment con marcatore target e annotazione
      'heatmap-fascia':  fascia oraria x giorno, la heatmap vera con `by`
      'delta-card':      apertura con la variazione come numero grande     */
 };
