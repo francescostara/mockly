@@ -13,8 +13,8 @@ module.exports = {
   'ribbon-sorpasso': require('./ribbon-sorpasso.js'),
   'immobiliare': require('./immobiliare.js'),
   'gauge-quota': require('./gauge-quota.js'),
-  'filtro-organico': require('./filtro-organico.js')
+  'filtro-organico': require('./filtro-organico.js'),
+  'heatmap-fascia': require('./heatmap-fascia.js')
   /* in arrivo, uno per visual nuovo:
-     'heatmap-fascia':  fascia oraria x giorno, la heatmap vera con `by`
      'delta-card':      apertura con la variazione come numero grande     */
 };

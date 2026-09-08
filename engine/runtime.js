@@ -867,6 +867,73 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 })(MK);
 /*#endregion*/
 
+/*#region chart:heatmap*/
+/* Heatmap — densita su DUE dimensioni. Righe = membri di `dim`, colonne = membri di `by`
+   oppure i dodici mesi (`by: "m"`) o i quattro trimestri (`by: "q"`).
+   E' il visual che mancava: la matrice ha le misure sulle colonne, quindi non puo ruotare una
+   seconda dimensione. Fascia oraria x giorno, cliente x SKU, coorte x mese dall'ingresso sono
+   tutte la stessa forma, e nessuna era esprimibile.
+   Ogni cella passa dal layer condiviso (A.byKey + A.mv), non dalla somma della colonna grezza:
+   una misura ratio qui deve valere quello che vale nella matrice. */
+(function (M) {
+  M.V.heatmap = function (A, v, w, h) {
+    var b = v.bind || {}, dim = b.dim, ms = b.measure, S = A.S;
+    h = v.h || h || 200;
+    var righe = A.dims[dim] || [];
+    /* le colonne: una seconda dimensione, i mesi o i trimestri */
+    var cols = b.by === 'm' ? A.MON.map(function (l, i) { return { id: 'm' + i, n: l, months: [i] }; })
+      : b.by === 'q' ? [0, 1, 2, 3].map(function (q) { return { id: 'q' + q, n: 'Q' + (q + 1), months: A.QMON(q) }; })
+        : (A.dims[b.by] || []).map(function (m) { return { id: m.id, n: m.n, pin: m.id }; });
+
+    /* il valore di una cella: sempre attraverso l'aggregatore, mai r[ms] */
+    var val = function (r, c) {
+      var o = { pin: {} };
+      o.pin[dim] = r.id;
+      if (c.pin !== undefined) o.pin[b.by] = c.pin;
+      if (c.months) { o.months = c.months; o.timeline = true; }
+      return A.mv(ms, A.agg(A.slice(o)));
+    };
+
+    var celle = [], min = Infinity, max = -Infinity;
+    righe.forEach(function (r) {
+      var fila = cols.map(function (c) { var x = val(r, c); if (x < min) min = x; if (x > max) max = x; return x; });
+      celle.push(fila);
+    });
+    if (!isFinite(min)) { min = 0; max = 1; }
+    var lim = b.scale || [min, max], span = (lim[1] - lim[0]) || 1;
+
+    var lw = Math.min(96, w * .22), m = { t: 16, r: 6, b: 4 };
+    var iw = w - lw - m.r, ih = h - m.t - m.b;
+    var cw = iw / (cols.length || 1), ch = ih / (righe.length || 1), gap = 1.5;
+    var s = '<svg width="' + w + '" height="' + h + '">';
+
+    cols.forEach(function (c, ci) {
+      s += '<text x="' + (lw + cw * ci + cw / 2).toFixed(1) + '" y="10" text-anchor="middle" ' +
+        'font-size="8.5" fill="var(--muted)">' + M.esc(c.n).slice(0, 6) + '</text>';
+    });
+
+    righe.forEach(function (r, ri) {
+      var y = m.t + ch * ri;
+      s += '<text x="' + (lw - 6) + '" y="' + (y + ch / 2 + 3).toFixed(1) + '" text-anchor="end" ' +
+        'font-size="9" fill="var(--ink2)">' + M.esc(r.n) + '</text>';
+      celle[ri].forEach(function (x, ci) {
+        /* tre gradini invece di una rampa continua: sono gli stessi della matrice heat, cosi
+           una cella qui e una cella li si leggono allo stesso modo */
+        var t = Math.max(0, Math.min(1, (x - lim[0]) / span));
+        var col = t > .66 ? 'var(--heatHi)' : t > .33 ? 'var(--heatMid)' : 'var(--heatLo)';
+        var dimd = S.f[dim] && S.f[dim] !== r.id;
+        s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (lw + cw * ci + gap / 2).toFixed(1) +
+          '" y="' + (y + gap / 2).toFixed(1) + '" width="' + Math.max(1, cw - gap).toFixed(1) +
+          '" height="' + Math.max(1, ch - gap).toFixed(1) + '" rx="1" fill="' + col +
+          '" data-f="' + dim + ':' + r.id + '" data-tip="<b>' + M.esc(r.n + ' · ' + cols[ci].n) +
+          '</b><br>' + A.mfmt(ms, x) + '"/>';
+      });
+    });
+    return A.card(v, s + '</svg>');
+  };
+})(MK);
+/*#endregion*/
+
 /*#region chart:ribbon*/
 /* Ribbon — rank flow across periods; shows the crossings a grouped bar buries. */
 (function (M) {

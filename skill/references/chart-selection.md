@@ -86,3 +86,37 @@ dashboards. Do not default to omitting geography. Options:
   conditional formatting is the fallback — but prefer the map when a location dimension exists.
 Applies across niches: retail (by store), F&B (by venue), sales (by territory), logistics
 (by route/country), not only logistics.
+
+
+## gauge — un valore contro il suo bersaglio
+
+Quando la domanda e "siamo arrivati dove dovevamo?". Firma in B2B sales (quota attainment, win
+rate contro target) e creator-economy (target achievement).
+
+**Solo misure di tipo tasso** (`unit: 'pct'` o `'x'`), e il motore rifiuta le altre. Il motivo:
+il gauge si affetta coi filtri, il suo bersaglio no. Con "fatturato contro target 2M", filtrare
+una regione mostra la quota di quella regione contro il target di tutta l'azienda — un numero
+falso che sembra un disastro. Un tasso non ha il problema: il bersaglio di un win rate e lo
+stesso per ogni segmento. Se serve un valore assoluto, la misura giusta e il rapporto: non
+"fatturato contro target" ma "quota raggiunta", cioe fatturato / target.
+
+Tre parti obbligatorie: l'arco, il **marcatore del bersaglio** (senza, il numero non ha metro) e
+l'**annotazione** costruita dalle misure — "Win rate 20,6%, 0,4 pp sotto benchmark", mai un
+testo fisso.
+
+## heatmap — densita su due dimensioni
+
+Quando la domanda e "dove si concentra, incrociando due assi?". Righe = membri di `dim`, colonne
+= membri di `by` (oppure i mesi con `by:"m"`, i trimestri con `by:"q"`).
+
+E' l'unico visual che ruota una seconda dimensione sulle colonne: la `matrix` ci mette le
+MISURE. Quindi fascia oraria x giorno, cliente x SKU e coorte x mese dall'ingresso si fanno solo
+qui. Firma nell'archetipo operativo (F&B daypart, palestre, manifattura) e in energia /
+manifattura (matrice cliente x prodotto).
+
+**Il ripiego da non prendere:** dichiarare sette campi lun...dom e metterli come colonne di una
+matrice. A schermo somiglia, ma congela la seconda dimensione dentro i campi — niente filtro,
+niente cross-filter, niente drill. E' un filtro decorativo travestito da heatmap.
+
+Perche la mappa dica qualcosa serve una **stagionalita per membro** nei dataParams: con quella
+globale tutte le righe hanno lo stesso profilo e la heatmap diventa un muro di un colore solo.

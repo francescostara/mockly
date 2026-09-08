@@ -110,6 +110,12 @@ export type Bind =
   | { dim: string; measure: string }                                          // donut
   | { dim: string; measure: string; top?: number; parent?: string; detail?: boolean; subMeasure?: string; subUnit?: string } // hbar
   | { dim: string; measure: string; by?: 'q' | 'm' | string }                 // stack100, ribbon
+  /** heatmap — densita su due dimensioni: righe = membri di `dim`, colonne = membri di `by`
+   *  (oppure i mesi con `by:"m"`, i trimestri con `by:"q"`). E' l'unico visual che ruota una
+   *  seconda dimensione sulle colonne: la `matrix` ci mette le MISURE, quindi fascia-oraria x
+   *  giorno, cliente x SKU e coorte x mese non erano esprimibili. `scale` fissa i due estremi
+   *  della rampa; senza, si usano il minimo e il massimo osservati. */
+  | { dim: string; measure: string; by: string; scale?: [number, number] }     // heatmap
   | { stages: Array<{ measure: string; label: string; c?: string }> }         // funnel
   | { dim: string; measure: string; startLabel?: string; endLabel?: string }  // waterfall
   | { dim: string; x: string; y: string; size?: string }                      // scatter
@@ -129,7 +135,8 @@ export type Bind =
 
 export type VisualType =
   | 'trend' | 'colline' | 'donut' | 'hbar' | 'stack100' | 'ribbon'
-  | 'funnel' | 'waterfall' | 'scatter' | 'matrix' | 'sparkline' | 'narrative' | 'gauge';
+  | 'funnel' | 'waterfall' | 'scatter' | 'matrix' | 'sparkline' | 'narrative' | 'gauge'
+  | 'heatmap';
 
 export interface Visual {
   type: VisualType;
