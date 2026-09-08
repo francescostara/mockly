@@ -357,6 +357,30 @@ function validate(spec, data) {
            pagamento e uscito cosi un "Nuovi clienti vs clienti di ritorno per canale" con
            cinque segmenti da 20% esatti — il modello voleva una dimensione che nei dati non
            esisteva e ha ripiegato sul canale contro se stesso. */
+        /* Il gauge accetta SOLO misure di tipo tasso. Con una misura assoluta il valore si
+           affetta coi filtri e il bersaglio no: "fatturato contro target 2M" filtrato su una
+           regione mostra la quota della regione contro il target dell'azienda, cioe un 12% che
+           sembra un disastro ed e un errore di lettura. E' la stessa forma del ratio che si
+           sommava e funzionava finche l'id coincideva col campo: corretto per caso.
+           Affettare anche il bersaglio si potrebbe fare, ma un gauge dice "quanto sei arrivato
+           rispetto a dove dovevi" — e per natura un rapporto. Vietarlo rende l'errore
+           inesprimibile invece di lasciarlo passare validato. */
+        if (v.type === 'gauge') {
+          const mis = (spec.model.measures || []).find(m => m.id === b.measure);
+          const u = mis && mis.unit;
+          if (mis && u !== 'pct' && u !== 'x') {
+            e.push(`page "${pg.id}" gauge: la misura "${b.measure}" ha unit "${u}", ma il gauge ` +
+              `accetta solo tassi (pct o x). Con una misura assoluta il valore si affetta coi ` +
+              `filtri e il bersaglio no, quindi filtrando su un membro il gauge mostra la sua ` +
+              `quota contro il target di tutti. Usa il rapporto: non "fatturato contro target" ` +
+              `ma "quota raggiunta", cioe fatturato / target.`);
+          }
+          if (b.targets) {
+            e.push(`page "${pg.id}" gauge: "targets" (bersagli per membro) e dichiarato nella ` +
+              `grammatica ma il motore non lo legge ancora. Toglilo, o usa un target unico.`);
+          }
+        }
+
         if (b.by && b.dim && b.by === b.dim) {
           e.push(`page "${pg.id}" ${v.type}: bind.by e bind.dim sono la stessa dimensione ` +
             `("${b.dim}"): spezzare una dimensione per se stessa non produce una composizione, ` +

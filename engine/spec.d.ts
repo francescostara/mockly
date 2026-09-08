@@ -113,7 +113,17 @@ export type Bind =
   | { stages: Array<{ measure: string; label: string; c?: string }> }         // funnel
   | { dim: string; measure: string; startLabel?: string; endLabel?: string }  // waterfall
   | { dim: string; x: string; y: string; size?: string }                      // scatter
-  | { measure: string; target?: string | number; targetLabel?: string; max?: number }          // gauge
+  /** gauge — SOLO misure di tipo tasso (`unit: 'pct' | 'x'`).
+   *  Un gauge dice "quanto sei arrivato rispetto a dove dovevi", che e per natura un rapporto.
+   *  Con una misura assoluta il bersaglio non si affetta insieme al valore: filtrando su una
+   *  regione il valore scende alla sua quota e il target resta quello di tutta l'azienda, e il
+   *  gauge dichiara un disastro che non esiste. Un tasso non ha questo problema: il bersaglio
+   *  di un win rate e lo stesso per ogni segmento.
+   *  `targets` e la forma prevista per i bersagli PER MEMBRO — un mercato nuovo puo avere un
+   *  obiettivo al 70% invece che al 100%. Dichiarata qui perche non serva una migrazione
+   *  dopo; il motore la rifiuta esplicitamente finche non e implementata. */
+  | { measure: string; target?: string | number; targetLabel?: string; max?: number;
+      dim?: string; targets?: Record<string, number> }                                      // gauge
   | { dim: string; label?: string; sort?: string; drill?: boolean; totals?: boolean; totalsLabel?: string; columns: MatrixColumn[] } // matrix
   | { template: string; dim?: string; primary?: string };                     // narrative
 
