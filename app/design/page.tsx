@@ -9,7 +9,7 @@ import './design.css';
 import ThemeToggle from './theme-toggle';
 import { COLORS, SPACE, LAYOUT, RADIUS, MOTION, PATTERNS, audit, contrastIn, valueOf, sunkenRecedes, type Theme } from '../design-tokens';
 
-export const metadata = { title: 'Mockly — design system' };
+export const metadata = { title: 'Pruva — design system' };
 
 const fmt = (n: number) => n.toFixed(2);
 

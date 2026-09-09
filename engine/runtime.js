@@ -1,4 +1,4 @@
-/* Mockly runtime — the deterministic rendering engine.
+/* Pruva runtime — the deterministic rendering engine.
  *
  * Extracted from skill/assets/canonical-retail-fullspec.html as close to verbatim as the
  * generalisation allows. This file is BOTH:

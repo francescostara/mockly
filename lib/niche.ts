@@ -16,12 +16,13 @@
  *    la generazione non avrebbe piu modo di correggersi leggendo il brief;
  *  - non e misurata. Si accende quando l eval, con le stesse soglie, dice che conviene.
  *
- * Per accenderla: MOCKLY_NICHE_CALL=1 e chiamare recogniseNiche() prima di buildUserMessage,
+ * Per accenderla: PRUVA_NICHE_CALL=1 e chiamare recogniseNiche() prima di buildUserMessage,
  * passando l etichetta al messaggio utente. Il punto d innesto e in app/api/generate/route.ts,
  * segnato da un commento che rimanda qui.
  */
 
 import { callModel, MODEL, type Usage } from './model';
+import { flag } from './env';
 
 /** Le 11 voci di skill/references/niches.md. `generica` non e una nicchia: e l ammissione che
  *  nessuna combacia, e manda la generazione sulla house-style (mai una dashboard vendite
@@ -35,7 +36,7 @@ export const NICHE_LABELS = [
 export type NicheLabel = (typeof NICHE_LABELS)[number];
 
 /** Spenta finche non lo decide una misura, non un'intuizione. */
-export const NICHE_CALL_ENABLED = process.env.MOCKLY_NICHE_CALL === '1';
+export const NICHE_CALL_ENABLED = flag('NICHE_CALL');
 
 const CLASSIFIER_SYSTEM =
   'Classifichi un brief di report BI in una sola categoria. ' +

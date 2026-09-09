@@ -1,4 +1,4 @@
-# Mockly
+# Pruva
 
 Generatore di mockup di dashboard BI: descrivi il report a voce tua, ottieni un file HTML
 singolo, interattivo, 1280x720, con dati sintetici plausibili, cross-filter, drill-through e
@@ -48,10 +48,10 @@ Apri <http://localhost:3000>, rispondi alle cinque domande, premi **Genera mocku
 | variabile | obbligatoria | default | a cosa serve |
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | sì (in produzione) | — | la chiave. Vive **solo server-side**, non arriva mai al browser |
-| `MOCKLY_MODEL` | no | `claude-sonnet-5` | il modello che scrive la spec |
-| `MOCKLY_STUB` | no | — | `1` usa una spec canned (nessuna chiamata, nessun credito); `broken` forza il percorso riparazione → fallback. Per lavorare sulla UI senza spendere |
+| `PRUVA_MODEL` | no | `claude-sonnet-5` | il modello che scrive la spec |
+| `PRUVA_STUB` | no | — | `1` usa una spec canned (nessuna chiamata, nessun credito); `broken` forza il percorso riparazione → fallback. Per lavorare sulla UI senza spendere |
 
-Con `MOCKLY_STUB=1` l'app gira **senza chiave**: utile per sviluppare l'interfaccia.
+Con `PRUVA_STUB=1` l'app gira **senza chiave**: utile per sviluppare l'interfaccia.
 
 ## Come funziona una generazione
 
@@ -73,7 +73,7 @@ Con `MOCKLY_STUB=1` l'app gira **senza chiave**: utile per sviluppare l'interfac
 Ogni generazione emette una riga strutturata su stdout:
 
 ```
-[mockly:meter] {"model":"claude-sonnet-5","valid":true,"repairs":0,"fallback":false,
+[pruva:meter] {"model":"claude-sonnet-5","valid":true,"repairs":0,"fallback":false,
 "tokensIn":812,"tokensOut":4210,"cacheRead":12088,"costUsd":0.0672,"cacheHitRate":0.937,
 "latencyMs":31840,"run":7,"avgCostUsd":0.0689,"fallbackRate":0.0}
 ```

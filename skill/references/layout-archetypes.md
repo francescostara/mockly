@@ -43,7 +43,7 @@ giornalistica: prima la conclusione, poi il contesto, infine il dettaglio.
 | **analitica** | cosa sta andando storto e perche | data-centrica, sempre confrontata col periodo precedente, molte viste correlate |
 | **strategica** | siamo sulla rotta verso l'obiettivo | poche metriche, molto spazio, confronto col traguardo |
 
-Mockly produce quasi sempre l'analitica. Le altre due sono legittime e vanno usate quando il
+Pruva produce quasi sempre l'analitica. Le altre due sono legittime e vanno usate quando il
 brief le chiede.
 
 ### D. Pattern osservati in dashboard reali — vocabolario, non lista da esaurire

@@ -1,7 +1,7 @@
 /* Verifica offline del cablaggio nicchia.
  *
  *   npx tsx test/niche-check.ts            gratis: controlla il prompt e la libreria
- *   MOCKLY_MODEL=... npx tsx test/niche-check.ts --live   a pagamento: chiama il modello
+ *   PRUVA_MODEL=... npx tsx test/niche-check.ts --live   a pagamento: chiama il modello
  *
  * ATTENZIONE, per onesta: in stub il modello NON viene chiamato, quindi lo stub non puo
  * dimostrare che il riconoscimento funziona — restituisce sempre la stessa spec. Senza

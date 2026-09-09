@@ -2,12 +2,12 @@
  *
  *   npx tsx test/generate-offline.ts
  *
- * MOCKLY_STUB=1 e impostato qui dentro: il modello non viene chiamato. Serve a dimostrare
+ * PRUVA_STUB=1 e impostato qui dentro: il modello non viene chiamato. Serve a dimostrare
  * che il percorso regge (parse -> dati -> validazione -> render), che non torna una domanda
  * e che un errore degrada invece di far crashare. NON dimostra il riconoscimento nicchia:
  * lo stub risponde sempre la stessa spec, per quello serve una chiamata vera.
  */
-process.env.MOCKLY_STUB = process.env.MOCKLY_STUB || '1';
+process.env.PRUVA_STUB = process.env.PRUVA_STUB || process.env.MOCKLY_STUB || '1';
 
 const BRIEFS = [
   'Report per una palestra con tre sedi a Milano.',

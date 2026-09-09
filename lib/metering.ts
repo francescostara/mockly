@@ -51,7 +51,7 @@ export function record(r: GenerationRecord) {
   totals.latencyMs += r.latencyMs;
 
   /* one structured line per generation — this is what a log drain would ingest */
-  console.log('[mockly:meter] ' + JSON.stringify({
+  console.log('[pruva:meter] ' + JSON.stringify({
     ...r,
     costUsd: round(r.costUsd, 6),
     cacheHitRate: r.tokensIn + r.cacheRead > 0 ? round(r.cacheRead / (r.tokensIn + r.cacheRead), 3) : 0,

@@ -33,7 +33,7 @@ export function buildFallback(intake: IntakeAnswers) {
     meta: {
       title: 'Performance commerciale',
       subtitle: 'Ricavi per mese e per segmento',
-      brand: { name: 'Report dimostrativo', tagline: 'Mockup generato da Mockly' },
+      brand: { name: 'Report dimostrativo', tagline: 'Mockup generato da Pruva' },
       locale: 'it-IT',
       currency: '€',
       months: ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],

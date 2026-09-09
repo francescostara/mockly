@@ -1,4 +1,4 @@
-# MOCKLY — Stato del progetto (memoria per Claude Code)
+# PRUVA — Stato del progetto (memoria per Claude Code)
 
 Documento-memoria compatto. Tienilo come fonte di verità del repo. Regola d'oro: **una regola
 cambia PRIMA in /skill, POI nel motore. Mai il contrario.**
@@ -22,8 +22,12 @@ giudizio è umano, l'esecuzione è automatica).
   determinismo). Il renderer fa escape delle stringhe (M.esc) → XSS chiuso.
 
 ## 3. Dove sta tutto
-- Repo: github.com/francescostara/mockly (PRIVATO, account francescostara). App:
-  mockly-black.vercel.app. Vercel: account francescostara (login GitHub).
+- Repo: github.com/francescostara/**mockly** (PRIVATO, account francescostara). App:
+  **mockly-black.vercel.app**. Vercel: account francescostara (login GitHub).
+  NOME: il prodotto e Pruva; repo e progetto Vercel portano ancora il nome vecchio finche non
+  li rinomina l'autore a mano — questi due sono URL veri, non occorrenze da sostituire.
+  Destinazione dichiarata: francescostara.com/pruva. La consulenza resta francescostara.com:
+  sono due livelli separati, come l'app e i mockup che produce.
 - Branch: main (skill) · engine-extraction · mvp-webapp (deployato) · + branch di lavoro
   (eval-harness, fix-visual-bugs, fix-data-contract, wire-niches).
 - **/engine** (~3000 righe): runtime.js, render.js, data-model.js (rescale + IPF/RAS),
@@ -32,7 +36,7 @@ giudizio è umano, l'esecuzione è automatica).
 - **/app** (Next.js, deployato): questionario intake client-side (GRATIS), unica azione a
   pagamento /api/generate (chiave server-side, system prompt ~12k token cacheato, 1 retry di
   riparazione, fallback deterministico che non mostra mai errore, iframe sandbox, download,
-  metering stub). MOCKLY_STUB=1 gira senza crediti (spec canned); MOCKLY_STUB=broken esercita
+  metering stub). PRUVA_STUB=1 gira senza crediti (spec canned); PRUVA_STUB=broken esercita
   riparazione→fallback.
 - **/skill** = specifica autorevole. SKILL.md + references/ (pattern-library, chart-selection,
   domain-knowledge, data-realism, qa-checklist, house-style, data-availability, **niches**) +
@@ -105,7 +109,7 @@ molti segmenti. Model floor: Sonnet (Haiku da testare sulla sola spec).
 Script test/eval-run.js chiama la stessa pipeline di /api/generate, salva HTML + una riga CSV per
 gen (valid_first_try, repairs, fallback, tokens, cost, latency) dal metering. La macchina genera
 e misura; l'UMANO vota (1-5, "lo manderei a un cliente?"). Soglie: valida 1° colpo ≥75%,
-dopo ≤1 riparazione ≥95%, voto umano medio ≥4. SEMPRE dry-run con MOCKLY_STUB=1 prima di spendere.
+dopo ≤1 riparazione ≥95%, voto umano medio ≥4. SEMPRE dry-run con PRUVA_STUB=1 prima di spendere.
 
 ## 9. Costi / crediti
 Tutto è codice gratis (motore, dati, QA, webapp, intake, TUTTO il listone). L'unico passo a

@@ -5,7 +5,7 @@ import { tokensCss } from './design-tokens';
 import { THEME_BOOT } from './theme';
 
 export const metadata: Metadata = {
-  title: 'Mockly — generatore di mockup BI',
+  title: 'Pruva — generatore di mockup BI',
   description: 'Descrivi il report, ottieni un mockup interattivo.'
 };
 

@@ -5,8 +5,9 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { SYSTEM_PROMPT } from './prompt';
+import { env } from './env';
 
-/** Short names a caller may ask for, resolved before MODEL so MOCKLY_MODEL=haiku works too. */
+/** Short names a caller may ask for, resolved before MODEL so PRUVA_MODEL=haiku works too. */
 const MODEL_ALIASES_RAW: Record<string, string> = {
   sonnet: 'claude-sonnet-5',
   haiku: 'claude-haiku-4-5',
@@ -18,9 +19,11 @@ const MODEL_ALIASES_RAW: Record<string, string> = {
    sta gia scritto nel prompt cachato. Quindi il default e il modello piu economico, e Sonnet
    resta a un cambio di variabile per il confronto nell eval. Le soglie dell eval NON cambiano:
    qualunque modello si usi deve passare lo stesso test. */
-/** Haiku by default. Override with MOCKLY_MODEL (alias o id completo). */
-export const MODEL = process.env.MOCKLY_MODEL
-  ? (MODEL_ALIASES_RAW[process.env.MOCKLY_MODEL] || process.env.MOCKLY_MODEL)
+/** Haiku by default. Override with PRUVA_MODEL (alias o id completo; PRUVA_MODEL resta
+ *  letto come ripiego, vedi lib/env.ts). */
+const MODEL_ENV = env('MODEL');
+export const MODEL = MODEL_ENV
+  ? (MODEL_ALIASES_RAW[MODEL_ENV] || MODEL_ENV)
   : 'claude-haiku-4-5';
 
 /** Anything outside this list is refused: the model id reaches the API and bills the account,

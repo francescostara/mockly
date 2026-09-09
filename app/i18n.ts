@@ -10,7 +10,7 @@
 
 export type Lang = 'it' | 'en';
 
-export const LANG_KEY = 'mockly-lang';
+export const LANG_KEY = 'pruva-lang';
 
 export type Strings = {
   tagline: string;

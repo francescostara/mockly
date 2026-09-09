@@ -136,7 +136,7 @@ export default function Page() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'mockly-report.html';
+    a.download = 'pruva-report.html';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -153,7 +153,7 @@ export default function Page() {
   return (
     <div className="app">
       <header className="topbar">
-        <h1 className="wordmark">Mockly</h1>
+        <h1 className="wordmark">Pruva</h1>
         <span className="tagline">{t.tagline}</span>
         <div className="spacer" />
         <div className="right">

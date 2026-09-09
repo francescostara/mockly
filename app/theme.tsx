@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Theme } from './design-tokens';
 
-export const THEME_KEY = 'mockly-theme';
+export const THEME_KEY = 'pruva-theme';
 
 /* Gira nel <head>, PRIMA che il corpo venga dipinto: senza questo la pagina apparirebbe chiara
    per un fotogramma e poi diventerebbe scura, che è il lampo che si nota di più. Deve restare

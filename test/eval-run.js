@@ -132,9 +132,12 @@ async function startServer(dry, logPath, broken) {
   const env = { ...process.env };
   /* la risposta deve riportare i tentativi rifiutati, altrimenti del fallimento resta solo
      la riga di log e il JSON grezzo si perde di nuovo */
-  env.MOCKLY_TRACE = '1';
-  if (dry) env.MOCKLY_STUB = broken ? 'broken' : '1';
-  else delete env.MOCKLY_STUB;   /* un run vero non deve poter finire sullo stub */
+  env.PRUVA_TRACE = '1';
+  if (dry) env.PRUVA_STUB = broken ? 'broken' : '1';
+  /* un run vero non deve poter finire sullo stub, e vanno tolti ENTRAMBI i prefissi:
+     il vecchio nome e ancora letto come ripiego, quindi lasciarlo li basterebbe a
+     far passare per vero un giro che non ha chiamato nessun modello. */
+  else { delete env.PRUVA_STUB; delete env.MOCKLY_STUB; }
 
   const child = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx',
     ['next', 'dev', '-p', String(PORT)],
@@ -173,13 +176,13 @@ function saveRejected(dir, id, run, meta) {
   const andato_storto = meta.fallback || Number(meta.repairs) > 0;
 
   if (!Array.isArray(rejected)) {
-    /* il campo esce solo con MOCKLY_TRACE=1: se manca proprio quando servirebbe, il server
+    /* il campo esce solo con PRUVA_TRACE=1: se manca proprio quando servirebbe, il server
        in ascolto e stato avviato senza. Meglio saperlo subito che scoprirlo a giro finito. */
     if (andato_storto && !traceWarned) {
       traceWarned = true;
       log('');
       log('  ATTENZIONE: una generazione e fallita ma la risposta non porta i tentativi grezzi.');
-      log('  Il server in ascolto e stato avviato senza MOCKLY_TRACE=1: chiudilo e rilancia,');
+      log('  Il server in ascolto e stato avviato senza PRUVA_TRACE=1: chiudilo e rilancia,');
       log('  altrimenti dei fallimenti resta solo il messaggio d errore.');
       log('');
     }
@@ -259,7 +262,7 @@ async function main() {
   const total = CASES.length * RUNS_PER_CASE;
 
   log('');
-  log('Mockly — eval  ·  modello: ' + model + '  ·  ' + CASES.length + ' casi × ' + RUNS_PER_CASE + ' run = ' + total + ' generazioni');
+  log('Pruva — eval  ·  modello: ' + model + '  ·  ' + CASES.length + ' casi × ' + RUNS_PER_CASE + ' run = ' + total + ' generazioni');
   log(broken ? 'MODALITÀ DRY-RUN GUASTA: spec canned e sbagliata apposta (ripara -> fallback), costo zero'
     : dry ? 'MODALITÀ DRY-RUN: spec canned, nessuna chiamata al modello, costo zero'
       : 'MODALITÀ REALE: ogni generazione consuma crediti');
@@ -286,14 +289,14 @@ async function main() {
           const m = data.meta || {};
 
           /* la modalità dichiarata deve combaciare con quella effettiva: senza questo
-             controllo un MOCKLY_STUB dimenticato in .env.local farebbe passare per vero
+             controllo uno STUB dimenticato in .env.local farebbe passare per vero
              un giro che non ha mai chiamato il modello */
           if (!modeChecked) {
             const isStub = String(m.model || '').startsWith('stub');
             if (isStub && !dry) {
               throw Object.assign(new Error(
-                'Il server risponde con la spec canned (MOCKLY_STUB attivo, probabilmente in ' +
-                '.env.local): il giro non chiamerebbe mai il modello. Togli MOCKLY_STUB e rilancia.'
+                'Il server risponde con la spec canned (PRUVA_STUB o MOCKLY_STUB attivo, probabilmente ' +
+                'in .env.local): il giro non chiamerebbe mai il modello. Toglilo e rilancia.'
               ), { fatal: true });
             }
             if (!isStub && dry) {
@@ -379,7 +382,7 @@ function summarise(rows, csv, dir, label) {
   /* controprova: l'endpoint a pagamento va chiamato una volta per generazione, non una di
      piu. E' esattamente il difetto che la sonda di prontezza aveva introdotto. */
   if (serverLogPath && fs.existsSync(serverLogPath)) {
-    const hits = fs.readFileSync(serverLogPath, 'utf8').split('[mockly:meter]').length - 1;
+    const hits = fs.readFileSync(serverLogPath, 'utf8').split('[pruva:meter]').length - 1;
     log('  chiamate a /api/generate   ' + hits + '  (attese ' + rows.length + ')' +
       (hits === rows.length ? '  ok' : '  ATTENZIONE: non combaciano'));
     log('');

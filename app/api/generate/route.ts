@@ -16,17 +16,18 @@ import { checkAndRender } from '@/lib/validate';
 import { buildFallback } from '@/lib/fallback';
 import { record } from '@/lib/metering';
 import { STUB_RESPONSE, STUB_BROKEN } from '@/lib/stub';
+import { env, flag } from '@/lib/env';
 import type { IntakeAnswers } from '@/lib/intake';
 
 export const runtime = 'nodejs';
 /* generation runs 20-60s; Vercel Hobby caps at 60, Pro at 300 */
 export const maxDuration = 300;
 
-const stubbed = () => process.env.MOCKLY_STUB === '1' || process.env.MOCKLY_STUB === 'broken';
+const stubbed = () => env('STUB') === '1' || env('STUB') === 'broken';
 
 async function ask(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
-  if (process.env.MOCKLY_STUB === 'broken') return { text: STUB_BROKEN, usage: emptyUsage() };
-  if (process.env.MOCKLY_STUB === '1') return { text: STUB_RESPONSE, usage: emptyUsage() };
+  if (env('STUB') === 'broken') return { text: STUB_BROKEN, usage: emptyUsage() };
+  if (env('STUB') === '1') return { text: STUB_RESPONSE, usage: emptyUsage() };
   return callModel(turns, model);
 }
 
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
   let lastErrors: string[] = [];
   /* Il JSON grezzo di ogni tentativo rifiutato. Nel primo eval a pagamento restava solo il
      messaggio d errore nel log del server: si sapeva CHE una dim era vuota, non come il
-     modello l aveva scritta. Esce dalla risposta solo con MOCKLY_TRACE=1 (l harness lo
+     modello l aveva scritta. Esce dalla risposta solo con PRUVA_TRACE=1 (l harness lo
      accende), cosi in produzione la risposta non porta in giro l output grezzo del modello. */
   const rejected: Array<{ attempt: number; raw: string; errors: string[] }> = [];
 
@@ -81,11 +82,11 @@ export async function POST(req: NextRequest) {
          generation failures: say so loudly instead of serving a fallback mockup forever and
          looking like the model is broken */
       if (err instanceof ConfigError) {
-        console.error('[mockly:generate] configurazione:', err.message);
+        console.error('[pruva:generate] configurazione:', err.message);
         return NextResponse.json({ error: err.message, config: true }, { status: 503 });
       }
       if (err instanceof TransientError) {
-        console.warn('[mockly:generate] temporaneo:', err.message);
+        console.warn('[pruva:generate] temporaneo:', err.message);
         return NextResponse.json({ error: err.message, retry: true }, { status: 503 });
       }
       /* a transport/refusal failure is not repairable by the model — go to fallback */
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     lastErrors = result.errors;
     rejected.push({ attempt: attempt + 1, raw: answer, errors: lastErrors });
-    console.warn('[mockly:generate] tentativo', attempt + 1, 'rifiutato:', lastErrors.join(' | '));
+    console.warn('[pruva:generate] tentativo', attempt + 1, 'rifiutato:', lastErrors.join(' | '));
     if (attempt === 0) {
       repairs = 1;
       turns.push({ role: 'assistant', content: answer });
@@ -121,13 +122,13 @@ export async function POST(req: NextRequest) {
     result = checkAndRender(fb.spec, fb.dataParams);
     if (!result.ok) {
       /* the fallback itself is broken: that is a bug in our own code, not in the generation */
-      console.error('[mockly:generate] FALLBACK NON VALIDO', result.errors.join(' | '));
+      console.error('[pruva:generate] FALLBACK NON VALIDO', result.errors.join(' | '));
       return NextResponse.json({ error: 'Errore interno del generatore.', detail: result.errors }, { status: 500 });
     }
   }
 
   const meta = {
-    model: stubbed() ? `stub:${process.env.MOCKLY_STUB}` : model,
+    model: stubbed() ? `stub:${env('STUB')}` : model,
     valid: !fallback,
     repairs,
     fallback,
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
     bytes: Buffer.byteLength(result.html),
     advisories: result.advisories,
     tieOut: (result.data as { tieOut?: unknown }).tieOut,
-    ...(process.env.MOCKLY_TRACE === '1' ? { rejected } : {}),
+    ...(flag('TRACE') ? { rejected } : {}),
     ...usage
   };
 

@@ -21,7 +21,7 @@ const DATA_REALISM = read('skill/references/data-realism.md');
 const NICHES = read('skill/references/niches.md');
 const DATA_AVAILABILITY = read('skill/references/data-availability.md');
 
-const ROLE = `You are the report designer behind Mockly. You do NOT write HTML, CSS or
+const ROLE = `You are the report designer behind Pruva. You do NOT write HTML, CSS or
 JavaScript: a deterministic engine renders the report. Your job is the judgement — which
 visual answers which question, the aesthetic, the palette, the storyline, the labels, and the
 character of the synthetic data.

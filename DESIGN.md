@@ -1,4 +1,4 @@
-# Mockly — regole visive della web app
+# Pruva — regole visive della web app
 
 Questo file copre ciò che i token non sanno dire. I valori stanno in
 [`app/design-tokens.ts`](app/design-tokens.ts) — unica fonte di verità, da cui vengono generate
@@ -105,7 +105,7 @@ informativo.**
 ### 6. Il tema si eredita alla prima visita, si sceglie una volta sola
 Alla **prima visita** il tema viene da `prefers-color-scheme`: è quello che l'utente ha già
 detto al sistema operativo, e chiederglielo di nuovo sarebbe far finta di non aver sentito. Una
-**scelta esplicita vince e persiste** (`localStorage`, chiave `mockly-theme`): da quel momento
+**scelta esplicita vince e persiste** (`localStorage`, chiave `pruva-theme`): da quel momento
 il sistema non conta più, nemmeno se cambia.
 
 Il tema vive come `data-theme` su `<html>`. Lo scrive `THEME_BOOT` (`app/theme.tsx`), uno script

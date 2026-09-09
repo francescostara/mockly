@@ -1,8 +1,8 @@
-/* Development stub — set MOCKLY_STUB=1 to exercise the whole pipeline (parse -> build data ->
+/* Development stub — set PRUVA_STUB=1 to exercise the whole pipeline (parse -> build data ->
  * validate -> render -> preview) without an API key and without spending credits.
  * It returns exactly what the model is asked to return: a bare JSON string.
  *
- * MOCKLY_STUB=broken returns a spec that fails validation every time, to exercise the
+ * PRUVA_STUB=broken returns a spec that fails validation every time, to exercise the
  * repair-then-fallback path. */
 
 /** Deliberately invalid: 5 KPI cards on a 4-column grid, a row whose spans sum to 4, a

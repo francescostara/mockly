@@ -1,5 +1,5 @@
 /**
- * Mockly report SPEC — the grammar an LLM writes.
+ * Pruva report SPEC — the grammar an LLM writes.
  * Prose reference: engine/spec-schema.md. Consumed by engine/render.js + engine/runtime.js.
  */
 

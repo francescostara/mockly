@@ -54,7 +54,7 @@ const card = v => `
   </section>`;
 
 fs.writeFileSync(path.join(out, 'index.html'), `<!DOCTYPE html>
-<html lang="it"><head><meta charset="utf-8"><title>Mockly — banco di prova</title>
+<html lang="it"><head><meta charset="utf-8"><title>Pruva — banco di prova</title>
 <style>
   body{margin:0;padding:28px 32px;background:#F7F6F3;color:#1C1B19;
        font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -89,7 +89,7 @@ const cardBundle = v => {
 
 const bundle = path.join(out, 'banco-standalone.html');
 fs.writeFileSync(bundle, `<!DOCTYPE html>
-<html lang="it"><head><meta charset="utf-8"><title>Mockly — banco di prova</title>
+<html lang="it"><head><meta charset="utf-8"><title>Pruva — banco di prova</title>
 <style>
   body{margin:0;padding:28px 32px;background:#F7F6F3;color:#1C1B19;
        font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -100,7 +100,7 @@ fs.writeFileSync(bundle, `<!DOCTYPE html>
   .err{color:#9B3A2E;border:1px solid #D3CFC6;padding:10px 12px;border-radius:6px;background:#FFF}
   iframe{border:1px solid #D3CFC6;border-radius:8px;background:#FFF;display:block}
 </style></head><body>
-<h1>Banco di prova — Mockly</h1>
+<h1>Banco di prova — Pruva</h1>
 <p class="lede">Un file solo: si apre col doppio clic, senza npm e senza server. I mockup sono
 quelli veri e sono interattivi — clicca dentro, le fette e le righe filtrano, il tasto destro
 sulla matrice apre il dettaglio. Spec scritte a mano, nessun modello, nessun credito.</p>
