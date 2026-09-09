@@ -11,6 +11,7 @@ export const STUB_BROKEN = JSON.stringify({
   spec: {
     meta: { title: 'Rotto', locale: 'it-IT', currency: '€' },
     aesthetic: 'corporate-sober',
+    archetype: 'scorecard',
     grid: { contentWidth: 1044, gutter: 12, columns: 4 },
     model: {
       sums: ['rev', 'inesistente'],
@@ -56,6 +57,7 @@ export const STUB_RESPONSE = JSON.stringify({
       watermark: 'Mockup dimostrativo · dati sintetici · non rappresenta vendite reali'
     },
     aesthetic: 'corporate-sober',
+    archetype: 'scorecard',
     palette: { series: ['#4A4038', '#7A6A52', '#A8926E', '#D8C7A6', '#C6B79B', '#E3D9C4'] },
     grid: { contentWidth: 1044, gutter: 12, columns: 5 },
     model: {

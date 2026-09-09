@@ -31,6 +31,8 @@ module.exports = {
   },
 
   aesthetic: 'corporate-sober',
+
+  archetype: 'scorecard',
   palette: { series: ['#12304F', '#1F4E79', '#4A7FA8', '#7FA8C6', '#8FB3CC', '#C6D7E4'] },
   grid: { contentWidth: 1044, gutter: 12, columns: 5 },
 

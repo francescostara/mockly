@@ -74,6 +74,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici · banco di prova'
   },
   aesthetic: 'agency-modern',
+  archetype: 'scorecard',
   grid: { contentWidth: 1254, gutter: 12, columns: 4 },
   model: {
     sums: ['impressions', 'reach', 'interazioni', 'spesa'],

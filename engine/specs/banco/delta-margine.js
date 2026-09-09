@@ -71,6 +71,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici · banco di prova'
   },
   aesthetic: 'corporate-sober',
+  archetype: 'scorecard',
   grid: { contentWidth: 1044, gutter: 12, columns: 4 },
   model: {
     sums: ['ricavi', 'costoVenduto', 'opex', 'margine', 'ebitda'],

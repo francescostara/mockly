@@ -85,6 +85,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici · non rappresenta performance reali'
   },
   aesthetic: 'agency-modern',
+  archetype: 'scorecard',
   palette: { series: ['#4C6FE0', '#22B5A6', '#3D4A6B', '#7A5AF8', '#2E9BD6', '#F0A63C'] },
   grid: { contentWidth: 1254, gutter: 12, columns: 5 },
   model: {

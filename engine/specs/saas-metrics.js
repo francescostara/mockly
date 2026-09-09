@@ -74,6 +74,7 @@ const spec = {
     watermark: 'Demonstration mockup · synthetic data · not actual company performance'
   },
   aesthetic: 'executive-minimal',
+  archetype: 'scorecard',
   palette: { series: ['#14171A', '#4E555D', '#868D95', '#BEC3C9', '#DDE0E3', '#3E5C86'] },
   grid: { contentWidth: 1254, gutter: 12, columns: 5 },
   model: {

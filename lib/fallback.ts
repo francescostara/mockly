@@ -48,6 +48,7 @@ export function buildFallback(intake: IntakeAnswers) {
       watermark: 'Mockup dimostrativo · dati sintetici · non rappresenta dati reali'
     },
     aesthetic: 'corporate-sober',
+    archetype: 'scorecard',
     palette: { series },
     grid: { contentWidth: 1044, gutter: 12, columns: 5 },
     model: {

@@ -295,6 +295,130 @@ function measurePage(spec, data, pageId) {
 const MAX_PER_ROW = 3;
 const LIST_MAX_MEMBERS = 5;
 
+/* ---------- l'archetipo dichiarato deve corrispondere alla composizione ----------
+ * Perche esiste: ogni report apriva con banda KPI -> trend -> donut e chiudeva con la matrice
+ * a piena larghezza. E' la formula per principianti di Power BI, e un consulente BI la
+ * riconosce a colpo d'occhio come template. La cura non e altra prosa — il modello copia gli
+ * esempi piu di quanto legga le regole — ma sono gli esempi canonici PIU un gate che impedisca
+ * di dichiarare un archetipo e comporne un altro. Definizioni in layout-archetypes.md. */
+const ARCHETIPI = {
+  /* Lo scorecard e l'archetipo generico, quindi la sua apertura e permissiva: cio che lo
+     definisce e la forma stratificata e la chiusura tabellare, non quale hero sceglie. La
+     forza del gate sta negli altri, che pretendono il LORO visual in apertura — e nel divieto
+     della formula da principiante, che vale ovunque tranne qui. */
+  'scorecard': { apre: ['trend', 'colline', 'delta-card', 'ribbon', 'hbar', 'stack100'], chiudeMatrice: true },
+  'executive-summary': { apre: ['trend', 'waterfall', 'scatter', 'delta-card', 'ribbon'], chiudeMatrice: false, max: 7 },
+  'funnel': { apre: ['funnel'], chiudeMatrice: true },
+  'quadrants': { apre: ['scatter'], chiudeMatrice: true },
+  'bridge': { apre: ['waterfall'], chiudeMatrice: false },
+  'cohorts': { apre: ['heatmap'], chiudeMatrice: true },
+  'operational': { apre: ['heatmap'], chiudeMatrice: true, min: 8 }
+};
+
+function gateArchetipo(spec, e) {
+  const a = spec.archetype;
+  if (!a) {
+    e.push('spec.archetype mancante: dichiara l\'archetipo di layout (layout-archetypes.md). ' +
+      'Senza dichiarazione l\'unica composizione che esce e la formula da principiante ' +
+      'KPI -> trend -> donut -> tabella, che un consulente BI riconosce come template.');
+    return;
+  }
+  if (a === 'geo') {
+    e.push('archetype "geo": il motore non ha un visual mappa, quindi l\'archetipo geografico ' +
+      'non e componibile. Usa "quadrants", oppure "scorecard" con la localita come dimensione ' +
+      'primaria della matrice.');
+    return;
+  }
+  const A0 = ARCHETIPI[a];
+  if (!A0) { e.push(`archetype "${a}" sconosciuto (vedi layout-archetypes.md)`); return; }
+  const NC = spec.grid.columns;
+
+  /* Si verifica la pagina che porta l'archetipo: la PRIMA — e la faccia del report, quella su
+     cui si giudica "e l'ennesimo template?" — piu ogni pagina che ne dichiari uno suo. Le
+     pagine di approfondimento non devono forzare un archetipo che non hanno: la regola "una
+     pagina per archetipo" e un'opzione, non un obbligo. */
+  const daVerificare = spec.pages.filter((pg, i) => i === 0 || pg.archetype);
+  daVerificare.forEach(pg => {
+    const A = ARCHETIPI[pg.archetype || a] || A0;
+    const rows = pg.rows || [];
+    if (!rows.length) return;
+    /* Una riga di sola narrativa a piena larghezza e una fascia d'intestazione, non l'apertura:
+       come la banda KPI, dice il contesto e lascia il mestiere al visual che viene dopo. */
+    const iApre = rows.findIndex(r => !(r.visuals.length === 1 && r.visuals[0].type === 'narrative' && r.visuals[0].span === NC));
+    const prima = rows[iApre < 0 ? 0 : iApre].visuals || [];
+    const ultima = rows[rows.length - 1].visuals || [];
+
+    /* L'APERTURA. Il visual dell'archetipo deve esserci E deve essere dominante — meta griglia
+       o piu. Un funnel in un riquadro da una colonna non e un'apertura, e una decorazione. */
+    if (!prima.some(v => A.apre.includes(v.type) && v.span * 2 >= NC)) {
+      e.push(`page "${pg.id}": archetype "${a}" apre con ${A.apre.map(x => `"${x}"`).join(' o ')} ` +
+        `in posizione dominante (span >= meta della griglia). La prima riga e invece ` +
+        `[${prima.map(v => `${v.type}:${v.span}`).join(', ')}]. L'apertura e cio che distingue ` +
+        `un archetipo dall'altro: se e sempre la stessa, il report resta un template.`);
+    }
+
+    /* LA CHIUSURA. */
+    const chiudeMatrice = ultima.some(v => v.type === 'matrix');
+    if (A.chiudeMatrice && !chiudeMatrice) {
+      e.push(`page "${pg.id}": archetype "${pg.archetype || a}" chiude con la matrice, con ` +
+        `totali e drill-through. L'ultima riga e [${ultima.map(v => v.type).join(', ')}].`);
+    }
+    if (!A.chiudeMatrice && chiudeMatrice) {
+      e.push(`page "${pg.id}": archetype "${a}" NON chiude con una matrice densa: chiuderla ` +
+        `cosi lo trasforma in uno scorecard, cioe nella formula che stiamo evitando. Il ` +
+        `dettaglio tabellare va nella pagina di drill-through o in una seconda pagina.`);
+    }
+
+    /* LA FORMULA DA PRINCIPIANTE, vietata fuori dallo scorecard. */
+    const tipi = prima.map(v => v.type);
+    if ((pg.archetype || a) !== 'scorecard' && tipi.includes('trend') && tipi.includes('donut')) {
+      e.push(`page "${pg.id}": la prima riga e trend + donut sotto la banda KPI. E' la formula ` +
+        `da principiante (KPI -> trend -> donut -> tabella): ammessa solo in "scorecard", e ` +
+        `solo quando il brief chiede davvero una panoramica generale.`);
+    }
+
+    /* LA DENSITA. Il conteggio include la banda KPI, che occupa una riga intera. */
+    const conta = spec.kpiBand.length + rows.reduce((n, r) => n + r.visuals.length, 0);
+    if (A.max && conta > A.max) {
+      e.push(`page "${pg.id}": archetype "${a}" e a densita BASSA (al massimo ${A.max} fra card ` +
+        `e visual), la pagina ne conta ${conta}. Un board legge un numero e un grafico, non ` +
+        `dodici riquadri.`);
+    }
+    if (A.min && conta < A.min) {
+      e.push(`page "${pg.id}": archetype "${a}" e a densita ALTA (almeno ${A.min} fra card e ` +
+        `visual), la pagina ne conta ${conta}. Con meno, la domanda "stiamo usando bene cio che ` +
+        `abbiamo" non trova risposta e l'archetipo giusto e un altro.`);
+    }
+  });
+
+  /* La formula da principiante e vietata ovunque, non solo nella pagina che porta
+     l'archetipo: e proprio nelle pagine secondarie che rispuntava. */
+  if (a !== 'scorecard') {
+    spec.pages.forEach(pg => {
+      if (pg.archetype === 'scorecard') return;
+      const r0 = (pg.rows || [])[0];
+      if (!r0) return;
+      const t = r0.visuals.map(v => v.type);
+      if (t.includes('trend') && t.includes('donut')) {
+        e.push(`page "${pg.id}": prima riga trend + donut sotto la banda KPI — la formula da ` +
+          `principiante, ammessa solo nell'archetipo "scorecard".`);
+      }
+    });
+  }
+
+  /* Il dettaglio tabellare deve esistere DA QUALCHE PARTE anche quando la pagina chiude
+     diversamente: e la regola storica, applicata al report invece che alla singola pagina. */
+  if (!A0.chiudeMatrice) {
+    const pagine = spec.pages.concat(spec.drill ? [spec.drill.page] : []);
+    const trovata = pagine.some(pg => (pg.rows || []).some(r => r.visuals.some(v => v.type === 'matrix')));
+    if (!trovata) {
+      e.push(`archetype "${a}": in tutto il report non c'e una matrice. La pagina puo chiudere ` +
+        `diversamente, ma il dettaglio deve stare da qualche parte — una seconda pagina, o la ` +
+        `pagina di drill-through.`);
+    }
+  }
+}
+
 function validate(spec, data) {
   const e = [], warn = [];
   const NC = spec.grid.columns;
@@ -481,6 +605,8 @@ function validate(spec, data) {
   }
 
   if (!spec.meta || !spec.meta.watermark) e.push('meta.watermark is required (synthetic-data watermark)');
+
+  gateArchetipo(spec, e);
 
   const tb = toolbarBudget(spec, data);
   if (tb.overflow) e.push(`toolbar controls sum to ${tb.used}px > content width ${tb.available}px (QA Gate 6)`);

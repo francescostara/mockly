@@ -77,6 +77,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici · banco di prova'
   },
   aesthetic: 'corporate-sober',
+  archetype: 'operational',
   grid: { contentWidth: 1044, gutter: 12, columns: 4 },
   model: {
     sums: ['ricavi', 'coperti', 'primeCost', 'foodCost'],
@@ -109,12 +110,22 @@ const spec = {
     subtitle: 'La banda fredda del pranzo infrasettimanale non si vede in nessun totale',
     rows: [
       { visuals: [
-        { type: 'heatmap', span: 3, h: 150, title: 'Ricavi per fascia e giorno — {y}',
+        { type: 'heatmap', span: 3, h: 138, title: 'Ricavi per fascia e giorno — {y}',
           subtitle: 'piu scuro = piu ricavi; clicca una cella per filtrare la fascia',
           bind: { dim: 'fascia', measure: 'ricavi', by: 'giorno' } },
-        { type: 'gauge', span: 1, h: 150, title: 'Prime cost',
+        { type: 'gauge', span: 1, h: 138, title: 'Prime cost',
           subtitle: 'soglia di sostenibilita 60%',
           bind: { measure: 'primePc', target: 0.60, targetLabel: 'soglia', max: 0.8 } }
+      ] },
+      /* La seconda riga e cio che rende la pagina OPERATIVA e non una panoramica: dopo aver
+         visto DOVE il locale rende, si guarda con quante persone e a che costo. Un archetipo
+         operativo con tre riquadri non e denso, e uno scorecard che si e dato un altro nome. */
+      { visuals: [
+        { type: 'colline', span: 2, h: 118, title: 'Coperti per mese — {y} vs {py}',
+          bind: { measure: 'coperti' } },
+        { type: 'hbar', span: 2, h: 118, title: 'Food cost % per fascia',
+          subtitle: 'la fascia piu debole non e sempre la piu cara',
+          bind: { dim: 'fascia', measure: 'foodPc' } }
       ] },
       { flex: true, visuals: [{
         type: 'matrix', span: 4, title: 'Dettaglio per fascia — {period}',

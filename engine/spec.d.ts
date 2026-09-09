@@ -168,6 +168,10 @@ export interface Page {
   nav?: string;
   /** false = no KPI band on this page */
   kpiBand?: boolean;
+  /** Archetipo proprio della pagina: e la regola "domande di forma diversa -> pagine diverse,
+   *  una per archetipo". Senza, la PRIMA pagina porta quello del report e le altre non
+   *  vengono verificate: sono approfondimenti, non la faccia del report. */
+  archetype?: Archetype;
   rows: Row[];
   /** drill page only */
   drillHeader?: string;
@@ -176,9 +180,32 @@ export interface Page {
 
 export interface Drill { dim: string; page: Page; }
 
+/** L'ARCHETIPO DI LAYOUT, dichiarato dalla spec e verificato dal motore.
+ *  Definizioni complete in skill/references/layout-archetypes.md. Ogni archetipo ha
+ *  un'APERTURA e una CHIUSURA proprie: e li che stava il difetto del template, non nel centro
+ *  della pagina, che gia variava.
+ *
+ *  - 'scorecard'          panoramica generale: banda KPI + trend -> matrice. NON e il default:
+ *                         va scelto solo se il brief chiede davvero una panoramica.
+ *  - 'executive-summary'  un visual dominante + poche card; densita bassa (<= 6 conteggi),
+ *                         chiude con una riga di supporto, non con una tabella densa.
+ *  - 'funnel'             funnel dominante -> tabella delle fonti con la conversione.
+ *  - 'quadrants'          scatter grande con le mediane -> heatmap o matrice per entita.
+ *  - 'bridge'             waterfall dominante -> trend di cassa, non una matrice.
+ *  - 'geo'                mappa a bolle dominante. NON ANCORA RENDERIZZABILE: manca il visual.
+ *  - 'cohorts'            heatmap coorti dominante -> tabella per coorte.
+ *  - 'operational'        heatmap fascia x giorno + gauge; densita alta (>= 8 conteggi).
+ *
+ *  Il conteggio di densita e kpiBand.length + i visual di contenuto. */
+export type Archetype = 'scorecard' | 'executive-summary' | 'funnel' | 'quadrants'
+  | 'bridge' | 'geo' | 'cohorts' | 'operational';
+
 export interface Spec {
   meta: Meta;
   aesthetic: Aesthetic;
+  /** obbligatorio: una dichiarazione che nessuno verifica vale meno di nessuna dichiarazione,
+   *  quindi il motore controlla che la composizione corrisponda. */
+  archetype: Archetype;
   palette?: Palette;
   grid: Grid;
   model: Model;
