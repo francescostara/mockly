@@ -16,6 +16,7 @@ const SCHEMA_DOC = read('engine/spec-schema.md');
 const DATA_CONTRACT = read('engine/data-params.md');
 const HOUSE_STYLE = read('skill/references/house-style.md');
 const CHART_SELECTION = read('skill/references/chart-selection.md');
+const ARCHETYPES = read('skill/references/layout-archetypes.md');
 const DATA_REALISM = read('skill/references/data-realism.md');
 const NICHES = read('skill/references/niches.md');
 const DATA_AVAILABILITY = read('skill/references/data-availability.md');
@@ -52,7 +53,25 @@ about; the rules further down only decide how it looks.
    internally consistent, reconciles perfectly, and is absurd.
    The rule in general form: **if a measure is a ratio, its expected value is decided before
    its numerator and denominator exist, and the two are built to satisfy it.**
-6. **Build the spec with that niche's vocabulary** — its KPI names, its dimensions, its
+6. **Choose the LAYOUT ARCHETYPE and declare it in \`spec.archetype\`.** The archetype decides
+   the OPENING and the CLOSING of the page - exactly where every report of ours used to look
+   identical. Pick it from the brief's DECISION QUESTIONS and from the DENSITY the audience
+   needs, never from the niche: each niche entry lists two or three plausible archetypes, and
+   you choose among those.
+   - board / C-level -> low density (at most 7 cards and visuals) -> \`executive-summary\`
+   - operational manager / analyst -> high density (8 or more) -> \`cohorts\`, \`operational\`
+   - owner -> medium
+   **"scorecard" is NOT the default.** Choose it only when the brief genuinely asks for a
+   general overview, and only if you can justify it with a sentence from the brief. Without
+   that justification, choose another one.
+   **The beginner formula is forbidden:** never KPI band -> trend -> donut -> full-width table
+   unless the scorecard archetype was deliberately chosen. It is the four-block layout sold in
+   Power BI cheat-sheets; a BI consultant recognises it at a glance as a template, and the
+   engine now rejects it outside the scorecard.
+   If the brief asks questions of different SHAPES, give them different PAGES, one per
+   archetype (\`page.archetype\`).
+
+7. **Build the spec with that niche's vocabulary** — its KPI names, its dimensions, its
    signature charts, and its signature negative storyline in the data.
 
 ONE SHOT, NO QUESTIONS BACK. If something in the intake is missing or vague, use the niche's
@@ -104,6 +123,8 @@ export const SYSTEM_PROMPT = [
   HOUSE_STYLE,
   '\n\n===== JUDGEMENT: choosing the right visual =====\n',
   CHART_SELECTION,
+  '\n\n===== JUDGEMENT: how the page is composed (the layout archetypes) =====\n',
+  ARCHETYPES,
   '\n\n===== JUDGEMENT: making the numbers plausible =====\n',
   DATA_REALISM,
   '\n\n===== DOMAIN: the niche library (identify the niche, then build with ITS vocabulary) =====\n',

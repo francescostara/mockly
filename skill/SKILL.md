@@ -228,6 +228,12 @@ Italian clients and in English otherwise — match that. Never mix two languages
   defaults on the floor; include higher tiers when the brief implies enough scale; gate the rest.
   Never ask for missing data mid-flow. Includes the pre-chat text that makes the user state
   their size and data sources up front.
+- `references/layout-archetypes.md` — **how the page is COMPOSED, and why not always the same
+  way.** The eight archetypes, each with its own opening and closing, the selection rules, and
+  the exchange classes. Read it before laying anything out: the old failure was not that the
+  charts were wrong, it was that every report opened with KPI+trend+donut and closed with the
+  full-width matrix — the beginner formula from the Power BI cheat-sheets. `spec.archetype` is
+  mandatory and the engine checks the composition against it.
 - `references/chart-selection.md` — how to CHOOSE the right visual for each analytical question
   (ribbon, 100% stacked, Pareto, when pie is and isn't allowed) and how to vary the mix and
   palette. Read this to avoid shipping the same bars-and-donut every time.
@@ -240,6 +246,21 @@ Italian clients and in English otherwise — match that. Never mix two languages
   test harness.
 
 ## Gold-standard examples
+
+**Four archetype skeletons** live in `assets/` as spec + dataParams JSON — different shapes on
+purpose, because one example produces one layout forever, and that is exactly how we ended up
+with ten identical reports:
+
+- `assets/canonical-executive-summary.json` — delta-card + dominant trend, closes on a support
+  row (never a dense table), detail on a second page.
+- `assets/canonical-funnel.json` — dominant funnel + win rate by source, closes on the sources
+  table with the conversion rate.
+- `assets/canonical-quadrants.json` — large scatter with medians, closes on the heatmap.
+- `assets/canonical-operational.json` — heatmap + fill rate + gauge, closes on the dense table.
+
+They are generated from `engine/templates/` with `npm run templates` — the same artefact that
+feeds the credit-free menu path, so an example and a template can never drift apart. Do not
+edit the JSON by hand.
 
 Three complete, verified mockups live in `assets/`. When in doubt about structure, density,
 interaction wiring or data realism, open the closest one and follow it:

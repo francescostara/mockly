@@ -203,6 +203,14 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
             properties: {
               meta: { type: 'object', description: 'titolo, lingua, mesi, watermark' },
               aesthetic: { type: 'string', enum: ['corporate-sober', 'agency-modern', 'executive-minimal'] },
+              archetype: {
+                type: 'string',
+                enum: ['scorecard', 'executive-summary', 'funnel', 'quadrants', 'bridge', 'cohorts', 'operational'],
+                description: 'Layout archetype. It decides the OPENING and the CLOSING of the page, ' +
+                  'and the engine rejects a spec whose composition does not match what it declares. ' +
+                  '"scorecard" is NOT the default: pick it only when the brief really asks for a general ' +
+                  'overview. See the layout archetypes section of the system prompt.'
+              },
               palette: { type: 'object' },
               grid: { type: 'object', description: 'contentWidth, gutter, columns' },
               model: {
@@ -237,7 +245,7 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
               pages: { type: 'array', minItems: 1, items: { type: 'object' } },
               drill: { type: 'object' }
             },
-            required: ['meta', 'aesthetic', 'grid', 'model', 'filters', 'kpiBand', 'pages']
+            required: ['meta', 'aesthetic', 'archetype', 'grid', 'model', 'filters', 'kpiBand', 'pages']
           },
           /* Lo schema resta largo OVUNQUE tranne che su dims: la grammatica vera la controlla il
              motore. Su dims no, perche li si concentrava l intera classe di fallimento dell eval

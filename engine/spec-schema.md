@@ -24,6 +24,11 @@ The types are in [`spec.d.ts`](spec.d.ts); this file is the prose reference.
 {
   "meta":      { ... },   // titles, language, strings, watermark
   "aesthetic": "corporate-sober",     // | "agency-modern" | "executive-minimal"
+  "archetype": "quadrants",           // OBBLIGATORIO — decide apertura e chiusura della
+                                      // pagina, e il motore verifica che la composizione
+                                      // corrisponda. scorecard | executive-summary | funnel |
+                                      // quadrants | bridge | cohorts | operational.
+                                      // Vedi layout-archetypes.md: "scorecard" NON e il default.
   "palette":   { ... },   // token overrides on top of the aesthetic
   "grid":      { "contentWidth": 1044, "gutter": 12, "columns": 5 },
   "model":     { ... },   // the measure layer
