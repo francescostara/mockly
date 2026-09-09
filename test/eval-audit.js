@@ -17,6 +17,7 @@ const { JSDOM } = require('jsdom');
 const { render, measurePage } = require('../engine/render.js');
 const { firstBalancedObject } = require('../lib/json-object.js');
 const G = require('./gates-numbers.js');
+const GG = require('./gates-generic.js');
 
 const dir = process.argv[2] || 'eval-out/sonnet-2';
 const RIRENDERIZZA = !process.argv.includes('--come-generato');
@@ -43,6 +44,7 @@ function aggregato(win) {
 
 const files = fs.readdirSync(dir).filter(f => f.endsWith('.html')).sort();
 let totali = 0, conProblemi = 0, legacy = 0;
+const schede = [];   /* per i gate anti-generico, che si giudicano sull'insieme */
 const perClasse = {};
 
 console.log('\nGATE SUI NUMERI — ' + dir + (RIRENDERIZZA ? '  (ri-renderizzati col motore attuale)' : '  (come generati)'));
@@ -58,11 +60,20 @@ for (const f of files) {
      storici, non una validazione: rifiutarli renderebbe impossibile confrontare prima e dopo.
      L'unita si deduce dal formato, che nel file c'e gia, con la stessa mappa che ha migrato le
      fixture. Se dedurla cambiasse qualcosa lo si direbbe: non cambia, il formato resta quello. */
+  /* La scheda si prende PRIMA di qualunque riparazione: se questo file non dichiarava
+     l'archetipo, il gate anti-generico deve poterlo dire. */
+  schede.push(GG.scheda(spec, f));
+
   const FMT2UNIT = { eur: 'money', eurF: 'money', pc: 'pct', sgp: 'pct', bps: 'pct', pp: 'pp', days: 'days', x: 'x', N: 'count', raw: 'count' };
   let dedotte = 0;
   ((spec.model || {}).measures || []).forEach(m => {
     if (!m.unit) { m.unit = FMT2UNIT[m.format || 'N'] || 'count'; dedotte++; }
   });
+
+  /* Stessa logica dell'unita dedotta: un file di un giro precedente non dichiarava
+     l'archetipo perche la regola non c'era. Per la DIAGNOSI si assume lo scorecard — che e
+     quello che erano tutti, ed e il punto — invece di rifiutare il file e non guardarlo. */
+  if (!spec.archetype) { spec.archetype = 'scorecard'; dedotte++; }
 
   let html = src;
   if (RIRENDERIZZA) {
@@ -126,10 +137,24 @@ function totaliDaDati(spec, data) {
   return a;
 }
 
+/* ---- i gate anti-generico: non guardano un file, guardano la collezione ----
+   E' il difetto che nessun altro gate puo vedere, perche ogni singolo file lo passa: dieci
+   report per dieci brief diversi con la stessa identica forma. */
+let generici = 0;
+if (schede.length > 1) {
+  console.log('\n' + '='.repeat(78));
+  console.log('GATE ANTI-GENERICO  ·  si giudica la collezione, non il singolo file');
+  GG.insieme(schede).forEach(e => {
+    if (!e.passa) generici++;
+    console.log('   ' + (e.passa ? 'ok   ' : 'FAIL ') + e.id.padEnd(22) + e.testo);
+  });
+}
+
 console.log('\n' + '='.repeat(78));
 console.log('RIEPILOGO  ·  ' + conProblemi + '/' + totali + ' file con problemi sui numeri');
 if (legacy) console.log('   (' + legacy + ' file di un giro precedente: unita dedotta dal formato per poterli leggere)');
 Object.entries(perClasse).sort((a, b) => b[1] - a[1])
   .forEach(([k, v]) => console.log('   ' + String(v).padStart(3) + '  ' + k));
 console.log('');
-process.exit(conProblemi ? 1 : 0);
+if (generici) console.log('   ' + generici + ' gate anti-generico falliti: il giro produce sempre la stessa forma');
+process.exit(conProblemi || generici ? 1 : 0);

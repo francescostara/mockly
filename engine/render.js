@@ -309,7 +309,9 @@ const ARCHETIPI = {
   'scorecard': { apre: ['trend', 'colline', 'delta-card', 'ribbon', 'hbar', 'stack100'], chiudeMatrice: true },
   'executive-summary': { apre: ['trend', 'waterfall', 'scatter', 'delta-card', 'ribbon'], chiudeMatrice: false, max: 7 },
   'funnel': { apre: ['funnel'], chiudeMatrice: true },
-  'quadrants': { apre: ['scatter'], chiudeMatrice: true },
+  /* la heatmap MoM e una chiusura legittima quanto la matrice per l'archetipo a quadranti:
+     entrambe rispondono a "e adesso chi guardo", una per entita e una per periodo */
+  'quadrants': { apre: ['scatter'], chiudeMatrice: true, chiudeAnche: ['heatmap'] },
   'bridge': { apre: ['waterfall'], chiudeMatrice: false },
   'cohorts': { apre: ['heatmap'], chiudeMatrice: true },
   'operational': { apre: ['heatmap'], chiudeMatrice: true, min: 8 }
@@ -358,7 +360,7 @@ function gateArchetipo(spec, e) {
     }
 
     /* LA CHIUSURA. */
-    const chiudeMatrice = ultima.some(v => v.type === 'matrix');
+    const chiudeMatrice = ultima.some(v => v.type === 'matrix' || (A.chiudeAnche || []).includes(v.type));
     if (A.chiudeMatrice && !chiudeMatrice) {
       e.push(`page "${pg.id}": archetype "${pg.archetype || a}" chiude con la matrice, con ` +
         `totali e drill-through. L'ultima riga e [${ultima.map(v => v.type).join(', ')}].`);

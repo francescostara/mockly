@@ -100,17 +100,37 @@ const spec = {
   pages: [{
     id: 'main',
     title: 'Segmentazione clienti',
+    nav: 'Segmentazione',
     subtitle: 'Il cliente piu grande sta sotto la mediana del margine: in basso a destra',
     rows: [
       { visuals: [
         /* L'APERTURA. Le due linee tratteggiate sono le mediane: dividono i clienti in quattro
            quadranti, e quello in basso a destra — tanto ricavo, poco margine — e la domanda. */
-        { type: 'scatter', span: 3, h: 190, title: 'Margine % contro ricavo, per cliente — {period}',
+        { type: 'scatter', span: 3, h: 224, title: 'Margine % contro ricavo, per cliente — {period}',
           subtitle: 'le tratteggiate sono le mediane; la dimensione della bolla e il margine in euro',
           bind: { dim: 'cliente', x: 'ricavi', y: 'gm', size: 'margine' } },
-        { type: 'delta-card', span: 1, h: 190, title: 'Margine lordo %', bind: { measure: 'gm' } }
+        { type: 'delta-card', span: 1, h: 224, title: 'Margine lordo %', bind: { measure: 'gm' } }
       ] },
-      /* LA CHIUSURA: la matrice per entita ordinata per margine, con la heat sul GM%. */
+      /* LA CHIUSURA. L'archetipo a quadranti puo chiudere con la heatmap invece che con la
+         tabella, e qui e la scelta giusta: la matrice sopra dice CHI, la heatmap dice QUANDO —
+         in quale trimestre il margine di ciascun cliente si e mosso. Chiudere anche questo
+         report con una tabella a piena larghezza sarebbe la terza chiusura identica su quattro
+         esempi, ed e esattamente il conto che il gate anti-generico tiene. */
+      { visuals: [
+        { type: 'heatmap', span: 4, h: 152, title: 'Margine % per cliente e trimestre',
+          subtitle: 'piu chiaro = margine piu basso; clicca una cella per filtrare il cliente',
+          bind: { dim: 'cliente', measure: 'gm', by: 'q', scale: [0.3, 0.6] } }
+      ] }
+    ]
+  }, {
+    /* Il dettaglio per entita non sparisce: cambia posto. Tre righe di contenuto piu una
+       tabella di sei clienti non stanno in 720px — il motore lo rifiuta invece di lasciarla
+       tagliata — e la seconda pagina e proprio la via d'uscita che l'errore suggerisce. */
+    id: 'clienti',
+    title: 'Dettaglio clienti',
+    nav: 'Clienti',
+    subtitle: 'Ordinati per margine, con la formattazione condizionale sul GM%',
+    rows: [
       { flex: true, visuals: [{
         type: 'matrix', span: 4, title: 'Clienti — ricavo, margine e prezzo medio · {period}',
         bind: {
@@ -123,7 +143,7 @@ const spec = {
             { measure: 'prezzo', label: 'Prezzo medio' }
           ]
         }
-      }] }
+      }] },
     ]
   }],
   drill: {
@@ -139,14 +159,6 @@ const spec = {
             bind: { measure: 'ricavi', line: 'gm' } },
           { type: 'hbar', span: 2, h: 190, title: 'Margine per linea di prodotto',
             bind: { dim: 'linea', measure: 'margine' } }
-        ] },
-        /* La heatmap sta qui e non in apertura per una ragione di canvas, non di gusto: tre
-           righe di contenuto piu la matrice non stanno in 720px senza schiacciare la chiusura,
-           e il motore lo rifiuta invece di lasciarla tagliata. */
-        { visuals: [
-          { type: 'heatmap', span: 4, h: 150, title: 'Margine % per cliente e trimestre',
-            subtitle: 'piu chiaro = margine piu basso',
-            bind: { dim: 'cliente', measure: 'gm', by: 'q', scale: [0.3, 0.6] } }
         ] }
       ]
     }

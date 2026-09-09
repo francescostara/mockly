@@ -2,7 +2,7 @@
   "_leggimi": [
     "Archetipo 4 — quadranti (ricavo contro margine)",
     "Archetipo \"quadrants\" — vedi skill/references/layout-archetypes.md.",
-    "Firma strutturale: scatter:3+delta-card:1 | matrix:4",
+    "Firma strutturale: scatter:3+delta-card:1 | heatmap:4  ||  matrix:4",
     "Generato da engine/templates/quadrants.js con `npm run templates`.",
     "NON modificare questo file a mano: la sorgente e lo scheletro, e questo ne e la copia."
   ],
@@ -156,6 +156,7 @@
       {
         "id": "main",
         "title": "Segmentazione clienti",
+        "nav": "Segmentazione",
         "subtitle": "Il cliente piu grande sta sotto la mediana del margine: in basso a destra",
         "rows": [
           {
@@ -163,7 +164,7 @@
               {
                 "type": "scatter",
                 "span": 3,
-                "h": 190,
+                "h": 224,
                 "title": "Margine % contro ricavo, per cliente — {period}",
                 "subtitle": "le tratteggiate sono le mediane; la dimensione della bolla e il margine in euro",
                 "bind": {
@@ -176,7 +177,7 @@
               {
                 "type": "delta-card",
                 "span": 1,
-                "h": 190,
+                "h": 224,
                 "title": "Margine lordo %",
                 "bind": {
                   "measure": "gm"
@@ -184,6 +185,34 @@
               }
             ]
           },
+          {
+            "visuals": [
+              {
+                "type": "heatmap",
+                "span": 4,
+                "h": 152,
+                "title": "Margine % per cliente e trimestre",
+                "subtitle": "piu chiaro = margine piu basso; clicca una cella per filtrare il cliente",
+                "bind": {
+                  "dim": "cliente",
+                  "measure": "gm",
+                  "by": "q",
+                  "scale": [
+                    0.3,
+                    0.6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "clienti",
+        "title": "Dettaglio clienti",
+        "nav": "Clienti",
+        "subtitle": "Ordinati per margine, con la formattazione condizionale sul GM%",
+        "rows": [
           {
             "flex": true,
             "visuals": [
@@ -260,26 +289,6 @@
                 "bind": {
                   "dim": "linea",
                   "measure": "margine"
-                }
-              }
-            ]
-          },
-          {
-            "visuals": [
-              {
-                "type": "heatmap",
-                "span": 4,
-                "h": 150,
-                "title": "Margine % per cliente e trimestre",
-                "subtitle": "piu chiaro = margine piu basso",
-                "bind": {
-                  "dim": "cliente",
-                  "measure": "gm",
-                  "by": "q",
-                  "scale": [
-                    0.3,
-                    0.6
-                  ]
                 }
               }
             ]
