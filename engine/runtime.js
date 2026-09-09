@@ -323,13 +323,23 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     A.kpi = function (k) {
       var a = A.kpiState, c = a.cur, p = a.prev;
       var cv = A.mv(k.measure, c), pv = A.mv(k.measure, p);
+      var m = A.meas(k.measure);
       var d = A.delta(cv, pv);
-      var cls = Math.abs(d) < .002 ? 'fl' : (d > 0 ? (k.inv ? 'dn' : 'up') : (k.inv ? 'up' : 'dn'));
-      var ar = Math.abs(d) < .002 ? '—' : (d > 0 ? '▲' : '▼');
+      /* Una percentuale non varia "del 10%": varia di punti. Un margine sceso dal 35,9% al
+         32,3% e sceso di 3,6 punti; dire "▼ 10,0%" e aritmeticamente vero e si legge come
+         un calo del dieci per cento del fatturato. La riga di dettaglio sotto lo diceva gia
+         in punti, quindi la card contraddiceva se stessa a due centimetri di distanza. */
+      var punti = m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc';
+      var dif = cv - pv;
+      var piatto = punti ? Math.abs(dif) < 5e-4 : Math.abs(d) < .002;
+      var su = punti ? dif > 0 : d > 0;
+      var cls = piatto ? 'fl' : (su ? (k.inv ? 'dn' : 'up') : (k.inv ? 'up' : 'dn'));
+      var ar = piatto ? '—' : (su ? '▲' : '▼');
+      var ent = punti ? f.pp(Math.abs(dif)).slice(1) : f.pc(Math.abs(d));
       return '<div class="card kpi" style="width:' + g.span(k.span || 1) + 'px">' +
         '<div><div class="k">' + M.esc(k.label) + '</div><div class="vr">' +
         '<div class="v tnum">' + A.mfmt(k.measure, cv) + '</div>' +
-        '<div class="d ' + cls + ' tnum">' + ar + ' ' + f.pc(Math.abs(d)) + ' ' + A.basis() + '</div></div></div>' +
+        '<div class="d ' + cls + ' tnum">' + ar + ' ' + ent + ' ' + A.basis() + '</div></div></div>' +
         '<div class="det tnum">' + A.detail(k, cv, pv) + '</div></div>';
     };
     /* Riga descrittore: nomina i due periodi confrontati invece di abbreviarli.
@@ -537,6 +547,95 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   };
 
   M.boot = function (SPEC, DATA, doc) { return M.app(SPEC, DATA, doc).mount(); };
+})(MK);
+/*#endregion*/
+
+/*#region chart:delta-card*/
+/* DELTA-CARD — l'apertura di un report la cui domanda e "come sta cambiando".
+   Anatomia, nell'ordine in cui si legge:
+     1. il titolo, che dice cosa si sta misurando            (intestazione della card)
+     2. LA VARIAZIONE come numero grande — mai il valore assoluto: se la domanda e il
+        cambiamento, il cambiamento e il protagonista, e il livello e contesto
+     3. la riga di dettaglio che NOMINA i due periodi e porta la variazione assoluta,
+        perche "+18%" senza sapere +18% su cosa non e un'informazione
+     4. un'area monocromatica ancorata al fondo della card: la traiettoria che ha prodotto
+        quel numero, senza assi, senza griglia, senza secondo colore.
+   Non e un'alternativa alla banda KPI: la banda dice DOVE SIAMO su quattro fronti, la
+   delta-card dice DI QUANTO E CAMBIATO l'unico fronte che apre il discorso. Per questo e
+   ammessa come apertura in ogni archetipo la cui domanda sia il cambiamento, non solo
+   nell'executive summary. */
+(function (M) {
+  M.V['delta-card'] = function (A, v, w, h) {
+    var f = A.f, S = A.S, b = v.bind || {}, ms = b.measure;
+    h = v.h || h || 132;
+    var m = A.meas(ms);
+    var st = A.kpiState || { cur: A.cur(), prev: A.prev() };
+    var cv = A.mv(ms, st.cur), pv = A.mv(ms, st.prev);
+    var per = A.periodPair();
+    /* Una percentuale non varia "del 18%": varia di punti. Il numero grande cambia natura
+       con l'unita della misura, o si finisce col dire che un margine del 12% cresciuto al
+       14% e cresciuto "del 16,7%" — vero e illeggibile. */
+    var punti = m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc';
+    var conf = isFinite(pv) && Math.abs(pv) > 1e-9;
+    var dif = cv - pv, rel = A.delta(cv, pv);
+    var piatto = punti ? Math.abs(dif) < 5e-4 : Math.abs(rel) < .002;
+    var cls = (!conf || piatto) ? 'fl' : ((dif > 0) === !v.inv ? 'up' : 'dn');
+    var grande = !conf ? '—' : punti ? f.pp(dif) : f.sgp(rel);
+    /* Senza un periodo precedente confrontabile la variazione non esiste. Stampare "+0,0%"
+       sarebbe un numero inventato: si dice che il confronto manca e si mostra il livello. */
+    var det = conf
+      ? per.prev + ' ' + A.mfmt(ms, pv) + ' → ' + per.cur + ' ' + A.mfmt(ms, cv) +
+        (punti ? '' : ' · ' + (dif >= 0 ? '+' : '−') + A.mfmt(ms, Math.abs(dif)))
+      : per.cur + ' ' + A.mfmt(ms, cv) + ' · ' + (A.T.noPrev || 'nessun periodo precedente confrontabile');
+
+    /* La traiettoria: i mesi dell'anno precedente e di quello corrente, quando ci sono
+       entrambi. Passa dal layer condiviso, quindi una ratio qui vale quello che vale nella
+       banda KPI e non una linea piatta a zero. */
+    var anni = (A.DATA.years || [S.y]).filter(function (y) { return y === S.y || y === S.y - 1; }).sort();
+    var vals = [], i, y, k;
+    for (i = 0; i < anni.length; i++) {
+      y = anni[i];
+      var val = A.byKeyValue(A.slice({ y: y, timeline: true }), function (r) { return r.m; }, ms);
+      for (k = 0; k < 12; k++) vals.push(val(k));
+    }
+    var ah = Math.max(26, h - 56), hi = Math.max.apply(null, vals), lo = Math.min.apply(null, vals);
+    if (!isFinite(hi)) { hi = 1; lo = 0; }
+    /* Base a zero per le misure che si sommano — una quantita disegnata da una base
+       arbitraria esagera la sua stessa variazione. Per un tasso lo zero appiattisce tutto,
+       quindi li si respira attorno al minimo osservato: e una traiettoria, non un asse. */
+    var base = punti ? lo - (hi - lo || 1) * .35 : 0;
+    var top = hi + (hi - base || 1) * .12, sp = (top - base) || 1;
+    var step = w / Math.max(1, vals.length - 1);
+    var X = function (i) { return i * step; };
+    var Y = function (val) { return ah - ((val - base) / sp) * ah; };
+    var s = '<svg width="' + w + '" height="' + ah + '" style="display:block">';
+    /* il periodo selezionato, evidenziato come nel trend: il numero grande viene da li */
+    if (S.q !== null || S.mo !== null) {
+      var off = (anni.length - 1) * 12;
+      for (i = 0; i < 12; i++) if (A.inSel(i))
+        s += '<rect x="' + Math.max(0, X(off + i) - step / 2).toFixed(1) + '" y="0" width="' +
+          step.toFixed(1) + '" height="' + ah + '" fill="var(--c2)" opacity=".06"/>';
+    }
+    var p = '';
+    for (i = 0; i < vals.length; i++) p += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(vals[i]).toFixed(1);
+    s += '<path d="' + p + 'L' + X(vals.length - 1).toFixed(1) + ',' + ah + 'L0,' + ah + 'Z" fill="var(--c2)" opacity=".13"/>';
+    s += '<path d="' + p + '" fill="none" stroke="var(--c2)" stroke-width="1.6"/>';
+    if (anni.length > 1)
+      s += '<line x1="' + X(11.5).toFixed(1) + '" y1="0" x2="' + X(11.5).toFixed(1) + '" y2="' + ah +
+        '" stroke="var(--line)" stroke-dasharray="3 3"/>';
+    s += '<circle cx="' + X(vals.length - 1).toFixed(1) + '" cy="' + Y(vals[vals.length - 1]).toFixed(1) +
+      '" r="2.6" fill="var(--c2)"/></svg>';
+
+    /* La card si allunga fino all'altezza della riga — se accanto c'e un grafico con la
+       legenda, la riga e piu alta di h. Con un'altezza fissa l'area restava a mezz'aria a
+       venti pixel dal bordo, che e esattamente il difetto che "ancorata al fondo" evita:
+       la colonna elastica la tiene incollata al bordo qualunque cosa ci sia accanto. */
+    return A.card(v, '<div style="flex:1;min-height:0;display:flex;flex-direction:column;' +
+      'overflow:hidden;border-radius:0 0 var(--radius) var(--radius)">' +
+      '<div style="padding:1px 14px 0"><div class="dcv ' + cls + ' tnum">' + grande + '</div>' +
+      '<div class="dcd tnum">' + M.esc(det) + '</div></div>' +
+      '<div style="margin-top:auto">' + s + '</div></div>', { flex: true });
+  };
 })(MK);
 /*#endregion*/
 

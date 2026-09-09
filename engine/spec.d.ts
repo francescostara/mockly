@@ -116,6 +116,9 @@ export type Bind =
    *  giorno, cliente x SKU e coorte x mese non erano esprimibili. `scale` fissa i due estremi
    *  della rampa; senza, si usano il minimo e il massimo osservati. */
   | { dim: string; measure: string; by: string; scale?: [number, number] }     // heatmap
+  /** delta-card - una sola misura, nessuna dimensione: mostra DI QUANTO e cambiata fra i due
+   *  periodi confrontati. Con `unit: "pct"` la variazione esce in punti percentuali. */
+  | { measure: string }                                                       // delta-card
   | { stages: Array<{ measure: string; label: string; c?: string }> }         // funnel
   | { dim: string; measure: string; startLabel?: string; endLabel?: string }  // waterfall
   | { dim: string; x: string; y: string; size?: string }                      // scatter
@@ -136,7 +139,7 @@ export type Bind =
 export type VisualType =
   | 'trend' | 'colline' | 'donut' | 'hbar' | 'stack100' | 'ribbon'
   | 'funnel' | 'waterfall' | 'scatter' | 'matrix' | 'sparkline' | 'narrative' | 'gauge'
-  | 'heatmap';
+  | 'heatmap' | 'delta-card';
 
 export interface Visual {
   type: VisualType;

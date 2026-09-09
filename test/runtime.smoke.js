@@ -80,7 +80,7 @@ ok('every chart region registered a visual builder', () => {
 
 ok('region markers are balanced and each chart type has one', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'engine', 'runtime.js'), 'utf8');
-  const open = src.match(/\/\*#region [a-z:0-9]+\*\//g) || [];
+  const open = src.match(/\/\*#region [a-z:0-9-]+\*\//g) || [];
   const close = src.match(/\/\*#endregion\*\//g) || [];
   assert.strictEqual(open.length, close.length, 'unbalanced region markers');
   Object.keys(MK.V).forEach(t => assert.ok(src.includes('/*#region chart:' + t + '*/'), 'no region for ' + t));

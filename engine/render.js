@@ -12,7 +12,7 @@ const RUNTIME_PATH = path.join(__dirname, 'runtime.js');
 /* ---------- region bundler: core + only the chart helpers this spec uses ---------- */
 function regions(src) {
   const out = {};
-  const re = /\/\*#region ([a-z:0-9]+)\*\/\r?\n([\s\S]*?)\r?\n\/\*#endregion\*\//g;
+  const re = /\/\*#region ([a-z:0-9-]+)\*\/\r?\n([\s\S]*?)\r?\n\/\*#endregion\*\//g;
   let m;
   while ((m = re.exec(src))) out[m[1]] = m[2];
   return out;
@@ -376,6 +376,27 @@ function validate(spec, data) {
             `un hbar ordinato se la domanda e solo "chi e primo".`);
         }
 
+        /* La delta-card ha una sola misura e una sola cosa da dire. Con una dimensione nel
+           bind si sta chiedendo un confronto fra membri: quello e un hbar o una matrice, e
+           un numero grande solo non puo rappresentarlo. */
+        if (v.type === 'delta-card') {
+          if (b.dim) {
+            e.push(`page "${pg.id}" delta-card: ha "dim": "${b.dim}", ma la delta-card mostra la ` +
+              `variazione di UNA misura sul totale filtrato. Per la variazione membro per membro ` +
+              `usa una matrix con una colonna kind:"var", o un hbar sulla misura di scarto.`);
+          }
+          if (!b.measure) e.push(`page "${pg.id}" delta-card: manca bind.measure`);
+          if (v.span > 2) {
+            e.push(`page "${pg.id}" delta-card: span ${v.span}. E' una card, non un grafico: oltre ` +
+              `due colonne il numero grande resta grande e il resto e vuoto. Usa span 1 o 2 e metti ` +
+              `accanto il visual che spiega la variazione.`);
+          }
+          if (v.h && v.h < 100) {
+            e.push(`page "${pg.id}" delta-card: h ${v.h}. Sotto i 100px l'area in fondo si schiaccia ` +
+              `a una striscia e la card perde la traiettoria, che e meta di cio che dice.`);
+          }
+        }
+
         if (v.type === 'gauge') {
           const mis = (spec.model.measures || []).find(m => m.id === b.measure);
           const u = mis && mis.unit;
@@ -593,6 +614,8 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .kpi .d{font-size:10px;font-weight:600;padding-bottom:2px;white-space:nowrap}
 .kpi .det{font-size:9px;color:var(--muted);margin-top:7px}
 .up{color:var(--good)}.dn{color:var(--bad)}.fl{color:var(--muted)}
+.dcv{font-size:31px;font-weight:600;line-height:1;letter-spacing:-1.2px}
+.dcd{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.45}
 .narr{padding:12px 14px;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.55;color:var(--ink)}
 .mx{padding:2px 8px 8px;overflow:hidden}
 ${compact ? String.raw`th,td{padding:2px 6px}.card>.ch{padding:7px 13px 3px}#page{padding:10px 16px;gap:8px}.row{gap:8px}.kpi{padding:8px 14px 7px}` : ``}

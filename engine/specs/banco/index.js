@@ -14,7 +14,6 @@ module.exports = {
   'immobiliare': require('./immobiliare.js'),
   'gauge-quota': require('./gauge-quota.js'),
   'filtro-organico': require('./filtro-organico.js'),
-  'heatmap-fascia': require('./heatmap-fascia.js')
-  /* in arrivo, uno per visual nuovo:
-     'delta-card':      apertura con la variazione come numero grande     */
+  'heatmap-fascia': require('./heatmap-fascia.js'),
+  'delta-margine': require('./delta-margine.js')
 };
