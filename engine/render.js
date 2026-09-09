@@ -466,6 +466,20 @@ function validate(spec, data) {
       if (row.visuals.length > MAX_PER_ROW) e.push(`page "${pg.id}" row ${ri}: ${row.visuals.length} visuals (max ${MAX_PER_ROW})`);
       const sum = row.visuals.reduce((a, v) => a + v.span, 0);
       if (sum !== NC) e.push(`page "${pg.id}" row ${ri}: spans sum to ${sum}, expected ${NC} (shared grid)`);
+      /* Una riga `flex` e pensata per la MATRICE, che si allunga con le sue righe: il motore
+         le riserva lo spazio residuo e la matrice lo occupa. Senza matrice, la riga vale il
+         pavimento (150px) mentre i visual dentro disegnano alla loro altezza di default —
+         190, 200 — e il fondo pagina si sfonda. Il conto del fit torna lo stesso, perche il
+         fit ha misurato il pavimento: il taglio non lo vede nessun test strutturale, si vede
+         solo aprendo il file. E' successo al primo scheletro executive-summary. */
+      if (row.flex && !row.visuals.some(v => v.type === 'matrix')) {
+        row.visuals.filter(v => !v.h).forEach(v => {
+          e.push(`page "${pg.id}" riga ${ri}: "${v.type}" sta in una riga flex senza "h". La ` +
+            `riga flex riserva lo spazio residuo alla matrice; un altro visual li dentro ` +
+            `disegna alla sua altezza di default e sfora il fondo pagina senza che nessun ` +
+            `conto se ne accorga. Dichiara "h", oppure togli "flex" alla riga.`);
+        });
+      }
       row.visuals.forEach(v => {
         if (!Number.isInteger(v.span)) e.push(`page "${pg.id}": non-integer span ${v.span} (off-grid width)`);
         types.add(v.type);
@@ -557,18 +571,19 @@ function validate(spec, data) {
     pct: ['pc', 'sgp', 'bps'],
     pp: ['pp'],
     days: ['days'],
-    x: ['x']
+    x: ['x'],
+    months: ['months']
   };
   ((spec.model || {}).measures || []).forEach(m => {
     if (!m.unit) {
       e.push(`measure "${m.id}": manca "unit". Dichiara cosa misura — money, count, pct, pp, ` +
-        `days o x — e il formato ne discende. Senza unita niente impedisce di scrivere una ` +
+        `days, months o x — e il formato ne discende. Senza unita niente impedisce di scrivere una ` +
         `conta col simbolo di valuta.`);
       return;
     }
     const ammessi = UNITA_FORMATI[m.unit];
     if (!ammessi) {
-      e.push(`measure "${m.id}": unit "${m.unit}" sconosciuta (money, count, pct, pp, days, x).`);
+      e.push(`measure "${m.id}": unit "${m.unit}" sconosciuta (money, count, pct, pp, days, months, x).`);
       return;
     }
     if (m.format && ammessi.indexOf(m.format) < 0) {

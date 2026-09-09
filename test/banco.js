@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { render, lint } = require('../engine/render.js');
 const banco = require('../engine/specs/banco/index.js');
+const templates = require('../engine/templates/index.js');
 const fixtures = require('../engine/specs/index.js');
 
 const out = path.join(__dirname, '..', 'out', 'banco');
@@ -30,6 +31,11 @@ const rendi = (id, entry, gruppo) => {
     (errore ? errore.slice(0, 90) : voci[voci.length - 1].kb + 'KB'));
   note.forEach(n => console.log('          nota: ' + n));
 };
+
+/* Gli scheletri degli archetipi vengono per primi: sono la cosa da guardare quando si
+   controlla se il prodotto sta ancora producendo lo stesso layout di sempre. */
+console.log('\nARCHETIPI (esempi canonici, e template del menu senza crediti)');
+Object.keys(templates).forEach(id => rendi(id, templates[id], 'archetipo'));
 
 console.log('\nBANCO DI PROVA');
 Object.keys(banco).forEach(id => rendi(id, banco[id], 'banco'));

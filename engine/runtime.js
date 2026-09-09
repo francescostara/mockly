@@ -55,6 +55,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     f.N = v => (isFinite(v) ? num(v) : '0');
     f.x = function (v, k) { k = k === undefined ? 1 : k; return d((isFinite(v) ? v : 0).toFixed(k)) + '×'; };
     f.days = v => M.fmtNum(v, 0) + (o.locale && o.locale.slice(0, 2) === 'it' ? ' gg' : ' d');
+    /* I mesi hanno un formato loro perche il payback di un SaaS si dice in mesi e in nient'altro:
+       con 'x' usciva "18,3x", che si legge come un moltiplicatore, e con 'days' "18 gg", che e
+       il difetto opposto — il CAC payback di zero giorni che l'ancora della nicchia vieta. */
+    f.months = function (v) {
+      v = isFinite(v) ? v : 0;
+      return d(v.toFixed(1)) + (o.locale && o.locale.slice(0, 2) === 'it' ? ' mesi' : ' mo');
+    };
     f.raw = v => String(isFinite(v) ? Math.round(v) : 0);
     f.apply = (id, v) => (f[id] || f.N)(v);
     return f;
@@ -999,7 +1006,25 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       celle.push(fila);
     });
     if (!isFinite(min)) { min = 0; max = 1; }
-    var lim = b.scale || [min, max], span = (lim[1] - lim[0]) || 1;
+    /* I gradini: con una `scale` dichiarata sono i terzi di quell'intervallo — l'autore ha
+        detto lui dove passa il confine e va rispettato. Senza, sono i TERZILI dei valori
+        osservati, non i terzi fra minimo e massimo: una distribuzione storta (una fascia oraria
+        che vale il quadruplo delle altre) schiaccia tutte le altre celle nel gradino piu basso
+        e la mappa diventa un muro di un colore solo — che e esattamente cio che una heatmap non
+        deve essere. Coi terzili un terzo delle celle sta in ogni gradino e la struttura si
+        vede, che e la ragione per cui si disegna una mappa invece di una tabella. */
+    var soglie;
+    if (b.scale) {
+      var sp0 = (b.scale[1] - b.scale[0]) || 1;
+      soglie = [b.scale[0] + sp0 / 3, b.scale[0] + sp0 * 2 / 3];
+    } else {
+      var ord = [];
+      for (var _q = 0; _q < celle.length; _q++) ord = ord.concat(celle[_q]);
+      ord.sort(function (p, q) { return p - q; });
+      soglie = ord.length
+        ? [ord[Math.floor(ord.length / 3)], ord[Math.floor(ord.length * 2 / 3)]]
+        : [0, 1];
+    }
 
     var lw = Math.min(96, w * .22), m = { t: 16, r: 6, b: 4 };
     var iw = w - lw - m.r, ih = h - m.t - m.b;
@@ -1018,8 +1043,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       celle[ri].forEach(function (x, ci) {
         /* tre gradini invece di una rampa continua: sono gli stessi della matrice heat, cosi
            una cella qui e una cella li si leggono allo stesso modo */
-        var t = Math.max(0, Math.min(1, (x - lim[0]) / span));
-        var col = t > .66 ? 'var(--heatHi)' : t > .33 ? 'var(--heatMid)' : 'var(--heatLo)';
+        var col = x >= soglie[1] ? 'var(--heatHi)' : x >= soglie[0] ? 'var(--heatMid)' : 'var(--heatLo)';
         var dimd = S.f[dim] && S.f[dim] !== r.id;
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (lw + cw * ci + gap / 2).toFixed(1) +
           '" y="' + (y + gap / 2).toFixed(1) + '" width="' + Math.max(1, cw - gap).toFixed(1) +

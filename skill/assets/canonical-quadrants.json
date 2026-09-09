@@ -1,0 +1,463 @@
+{
+  "_leggimi": [
+    "Archetipo 4 — quadranti (ricavo contro margine)",
+    "Archetipo \"quadrants\" — vedi skill/references/layout-archetypes.md.",
+    "Firma strutturale: scatter:3+delta-card:1 | matrix:4",
+    "Generato da engine/templates/quadrants.js con `npm run templates`.",
+    "NON modificare questo file a mano: la sorgente e lo scheletro, e questo ne e la copia."
+  ],
+  "spec": {
+    "meta": {
+      "title": "Clienti — ricavo contro margine",
+      "subtitle": "Chi fattura non e sempre chi rende · {y}",
+      "locale": "it-IT",
+      "currency": "€",
+      "months": [
+        "Gen",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mag",
+        "Giu",
+        "Lug",
+        "Ago",
+        "Set",
+        "Ott",
+        "Nov",
+        "Dic"
+      ],
+      "updated": "aggiornato il 2 set 2026",
+      "watermark": "Mockup dimostrativo · dati sintetici"
+    },
+    "aesthetic": "corporate-sober",
+    "archetype": "quadrants",
+    "grid": {
+      "contentWidth": 1044,
+      "gutter": 12,
+      "columns": 4
+    },
+    "model": {
+      "sums": [
+        "ricavi",
+        "cogs",
+        "margine",
+        "unita"
+      ],
+      "measures": [
+        {
+          "id": "ricavi",
+          "label": "Ricavi",
+          "agg": "sum",
+          "field": "ricavi",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "cogs",
+          "label": "Costo del venduto",
+          "agg": "sum",
+          "field": "cogs",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "margine",
+          "label": "Margine lordo",
+          "agg": "sum",
+          "field": "margine",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "unita",
+          "label": "Unita vendute",
+          "agg": "sum",
+          "field": "unita",
+          "unit": "count",
+          "format": "N"
+        },
+        {
+          "id": "gm",
+          "label": "Margine lordo %",
+          "agg": "ratio",
+          "num": "margine",
+          "den": "ricavi",
+          "unit": "pct",
+          "format": "pc"
+        },
+        {
+          "id": "prezzo",
+          "label": "Prezzo medio",
+          "agg": "ratio",
+          "num": "ricavi",
+          "den": "unita",
+          "unit": "money",
+          "format": "eurF"
+        }
+      ]
+    },
+    "filters": {
+      "date": {
+        "levels": [
+          "year",
+          "quarter",
+          "month"
+        ],
+        "default": {
+          "y": 2025,
+          "q": null,
+          "m": null
+        }
+      },
+      "dims": [
+        {
+          "id": "cliente",
+          "label": "Cliente",
+          "control": "dropdown",
+          "allLabel": "Tutti",
+          "pill": "Cliente"
+        },
+        {
+          "id": "linea",
+          "label": "Linea",
+          "control": "list",
+          "allLabel": "Tutte",
+          "pill": "Linea"
+        }
+      ]
+    },
+    "kpiBand": [
+      {
+        "id": "ricavi",
+        "label": "Ricavi",
+        "measure": "ricavi",
+        "span": 1
+      },
+      {
+        "id": "margine",
+        "label": "Margine lordo",
+        "measure": "margine",
+        "span": 1
+      },
+      {
+        "id": "gm",
+        "label": "Margine lordo %",
+        "measure": "gm",
+        "span": 1
+      },
+      {
+        "id": "prezzo",
+        "label": "Prezzo medio",
+        "measure": "prezzo",
+        "span": 1
+      }
+    ],
+    "pages": [
+      {
+        "id": "main",
+        "title": "Segmentazione clienti",
+        "subtitle": "Il cliente piu grande sta sotto la mediana del margine: in basso a destra",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "type": "scatter",
+                "span": 3,
+                "h": 190,
+                "title": "Margine % contro ricavo, per cliente — {period}",
+                "subtitle": "le tratteggiate sono le mediane; la dimensione della bolla e il margine in euro",
+                "bind": {
+                  "dim": "cliente",
+                  "x": "ricavi",
+                  "y": "gm",
+                  "size": "margine"
+                }
+              },
+              {
+                "type": "delta-card",
+                "span": 1,
+                "h": 190,
+                "title": "Margine lordo %",
+                "bind": {
+                  "measure": "gm"
+                }
+              }
+            ]
+          },
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "matrix",
+                "span": 4,
+                "title": "Clienti — ricavo, margine e prezzo medio · {period}",
+                "bind": {
+                  "dim": "cliente",
+                  "label": "Cliente",
+                  "sort": "margine",
+                  "drill": true,
+                  "totalsLabel": "Totale portafoglio",
+                  "columns": [
+                    {
+                      "measure": "ricavi",
+                      "label": "Ricavi"
+                    },
+                    {
+                      "measure": "ricavi",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "margine",
+                      "label": "Margine"
+                    },
+                    {
+                      "measure": "gm",
+                      "label": "Margine %",
+                      "kind": "heat",
+                      "scale": [
+                        0.32,
+                        0.6
+                      ]
+                    },
+                    {
+                      "measure": "prezzo",
+                      "label": "Prezzo medio"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "drill": {
+      "dim": "cliente",
+      "page": {
+        "id": "__drill__",
+        "title": "{drill}",
+        "drillHeader": "Dettaglio del cliente — {period}",
+        "backLabel": "Torna alla segmentazione",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "type": "colline",
+                "span": 2,
+                "h": 190,
+                "title": "Ricavi per mese, con il margine % come linea",
+                "bind": {
+                  "measure": "ricavi",
+                  "line": "gm"
+                }
+              },
+              {
+                "type": "hbar",
+                "span": 2,
+                "h": 190,
+                "title": "Margine per linea di prodotto",
+                "bind": {
+                  "dim": "linea",
+                  "measure": "margine"
+                }
+              }
+            ]
+          },
+          {
+            "visuals": [
+              {
+                "type": "heatmap",
+                "span": 4,
+                "h": 150,
+                "title": "Margine % per cliente e trimestre",
+                "subtitle": "piu chiaro = margine piu basso",
+                "bind": {
+                  "dim": "cliente",
+                  "measure": "gm",
+                  "by": "q",
+                  "scale": [
+                    0.3,
+                    0.6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "dataParams": {
+    "seed": 61205,
+    "years": [
+      2024,
+      2025
+    ],
+    "seasonality": [
+      0.96,
+      1.02,
+      1.08,
+      1.06,
+      1.1,
+      1.04,
+      0.92,
+      0.52,
+      1.08,
+      1.14,
+      1.1,
+      0.98
+    ],
+    "dims": {
+      "cliente": {
+        "members": [
+          {
+            "id": "vf",
+            "n": "ValFrigo",
+            "c": "#12304F",
+            "base": 410000,
+            "growth": 0.18,
+            "attrs": {
+              "gm": 0.36,
+              "prezzo": 320
+            }
+          },
+          {
+            "id": "mt",
+            "n": "Meccanica Turati",
+            "c": "#1F4E79",
+            "base": 268000,
+            "growth": 0.07,
+            "attrs": {
+              "gm": 0.47,
+              "prezzo": 285
+            }
+          },
+          {
+            "id": "ic",
+            "n": "Idro Costruzioni",
+            "c": "#4A7FA8",
+            "base": 196000,
+            "growth": 0.11,
+            "attrs": {
+              "gm": 0.52,
+              "prezzo": 410
+            }
+          },
+          {
+            "id": "ne",
+            "n": "Nord Energia",
+            "c": "#7FA8C6",
+            "base": 152000,
+            "growth": 0.24,
+            "attrs": {
+              "gm": 0.55,
+              "prezzo": 620
+            }
+          },
+          {
+            "id": "sg",
+            "n": "SudGas",
+            "c": "#8FB3CC",
+            "base": 118000,
+            "growth": -0.09,
+            "attrs": {
+              "gm": 0.41,
+              "prezzo": 240
+            }
+          },
+          {
+            "id": "ap",
+            "n": "Alpi Pompe",
+            "c": "#C6D7E4",
+            "base": 86000,
+            "growth": 0.05,
+            "attrs": {
+              "gm": 0.58,
+              "prezzo": 780
+            }
+          }
+        ]
+      },
+      "linea": {
+        "members": [
+          {
+            "id": "std",
+            "n": "Standard",
+            "c": "#1F4E79",
+            "base": 1,
+            "attrs": {}
+          },
+          {
+            "id": "cust",
+            "n": "Su misura",
+            "c": "#4A7FA8",
+            "base": 1,
+            "attrs": {}
+          },
+          {
+            "id": "serv",
+            "n": "Ricambi e servizi",
+            "c": "#A8926E",
+            "base": 1,
+            "attrs": {}
+          }
+        ]
+      }
+    },
+    "facts": {
+      "dim": "cliente",
+      "split": {
+        "dim": "linea",
+        "shares": [
+          0.48,
+          0.31,
+          0.21
+        ]
+      },
+      "fields": [
+        {
+          "id": "ricavi",
+          "kind": "seasonal",
+          "jitter": [
+            0.93,
+            1.07
+          ]
+        },
+        {
+          "id": "cogs",
+          "kind": "share",
+          "of": "ricavi",
+          "attr": "gm",
+          "complement": true,
+          "jitter": [
+            0.97,
+            1.04
+          ],
+          "growthFactor": 0.97
+        },
+        {
+          "id": "margine",
+          "kind": "combine",
+          "plus": [
+            "ricavi"
+          ],
+          "minus": [
+            "cogs"
+          ]
+        },
+        {
+          "id": "unita",
+          "kind": "divide",
+          "of": "ricavi",
+          "attr": "prezzo",
+          "jitter": [
+            0.9,
+            1.1
+          ],
+          "min": 1
+        }
+      ]
+    }
+  }
+}

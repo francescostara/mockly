@@ -6,14 +6,14 @@
 export type Aesthetic = 'corporate-sober' | 'agency-modern' | 'executive-minimal';
 
 /** eur = compact €1,2M/€41K · eurF = full grouped · pc = 42,1% · pp = +1,2 pp
- *  sgp = signed % · bps = +34bps · N = grouped integer · x = 1,8× · days · raw */
-export type Format = 'eur' | 'eurF' | 'pc' | 'pp' | 'sgp' | 'bps' | 'N' | 'x' | 'days' | 'raw';
+ *  sgp = signed % · bps = +34bps · N = grouped integer · x = 1,8× · days · months = 18,3 mesi · raw */
+export type Format = 'eur' | 'eurF' | 'pc' | 'pp' | 'sgp' | 'bps' | 'N' | 'x' | 'days' | 'months' | 'raw';
 
 /** COSA misura, non come si scrive. Il formato e una conseguenza dell'unita, non una scelta
  *  indipendente: un modello reale ha scritto `format:"eur"` su reach e impression — due conte —
  *  pur avendo `N` nella grammatica e usandolo correttamente due righe piu sotto. Con l'unita
  *  dichiarata, quella combinazione non e piu esprimibile. */
-export type Unit = 'money' | 'count' | 'pct' | 'pp' | 'days' | 'x';
+export type Unit = 'money' | 'count' | 'pct' | 'pp' | 'days' | 'months' | 'x';
 
 export interface Meta {
   title: string;

@@ -10,7 +10,8 @@
     "smoke": "node test/runtime.smoke.js",
     "build:mockups": "node engine/build-all.js",
     "test": "node test/run.js",
-    "banco": "node test/banco.js"
+    "banco": "node test/banco.js",
+    "templates": "node test/templates.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

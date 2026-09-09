@@ -222,9 +222,9 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
                            un modello reale ha scritto format:"eur" su reach e impression - due
                            conte - pur avendo N nella grammatica e usandolo correttamente due
                            righe piu sotto. Con l'unita dichiarata la combinazione non passa. */
-                        unit: { type: 'string', enum: ['money', 'count', 'pct', 'pp', 'days', 'x'],
+                        unit: { type: 'string', enum: ['money', 'count', 'pct', 'pp', 'days', 'months', 'x'],
                           description: 'cosa misura: money -> eur/eurF, count -> N/raw, pct -> pc/sgp/bps, pp -> pp, days -> days, x -> x' },
-                        format: { type: 'string', enum: ['eur', 'eurF', 'pc', 'pp', 'sgp', 'bps', 'N', 'x', 'days', 'raw'] }
+                        format: { type: 'string', enum: ['eur', 'eurF', 'pc', 'pp', 'sgp', 'bps', 'N', 'x', 'days', 'months', 'raw'] }
                       },
                       required: ['id', 'agg', 'unit']
                     }
