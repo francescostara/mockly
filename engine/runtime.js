@@ -963,9 +963,18 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           ' L' + x2 + ',' + z.y1.toFixed(1) + ' C' + cx + ',' + z.y1.toFixed(1) + ' ' + cx + ',' + a.y1.toFixed(1) + ' ' + x1 + ',' + a.y1.toFixed(1) + ' Z" fill="' + c.c + '" opacity=".85"/>';
       }
       periods.forEach(function (pd, p) {
-        var o = cols[p][c.id];
-        s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (X(p) - 5).toFixed(1) + '" y="' + o.y0.toFixed(1) + '" width="10" height="' + Math.max(1, o.y1 - o.y0).toFixed(1) +
+        var o = cols[p][c.id], alt = o.y1 - o.y0;
+        s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (X(p) - 5).toFixed(1) + '" y="' + o.y0.toFixed(1) + '" width="10" height="' + Math.max(1, alt).toFixed(1) +
           '" fill="' + c.c + '" data-f="' + dim + ':' + c.id + '" data-tip="<b>' + M.esc(c.n + ' · ' + pd.l) + '</b><br>' + A.mfmt(ms, o.v) + '"/>';
+        /* Il valore DENTRO il nastro, non solo nel tooltip: un ribbon si legge stampato, e un
+           numero che esiste solo al passaggio del mouse non esiste su una slide. Se la banda e
+           troppo bassa per contenerlo si omette quel segmento — meglio un'etichetta in meno che
+           una che deborda sul nastro accanto. */
+        if (alt >= 13 && !dimd) {
+          s += '<text x="' + X(p).toFixed(1) + '" y="' + (o.y0 + alt / 2 + 3).toFixed(1) +
+            '" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff" class="tnum" ' +
+            'style="pointer-events:none">' + M.esc(A.mfmt(ms, o.v)) + '</text>';
+        }
       });
     });
     var lgx = m.l;

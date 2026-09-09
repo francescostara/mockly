@@ -365,6 +365,17 @@ function validate(spec, data) {
            Affettare anche il bersaglio si potrebbe fare, ma un gauge dice "quanto sei arrivato
            rispetto a dove dovevi" — e per natura un rapporto. Vietarlo rende l'errore
            inesprimibile invece di lasciarlo passare validato. */
+        /* Oltre sette entita i nastri diventano fettucce e i sorpassi spariscono nel groviglio:
+           il ribbon smette di fare la cosa per cui esiste. La cura non e stringere il disegno,
+           e ridurre le entita — accorpare la coda in "Altri" o passare a barre ordinate, che a
+           quel punto rispondono meglio alla stessa domanda. */
+        if (v.type === 'ribbon' && b.dim && (data.dims[b.dim] || []).length > 7) {
+          e.push(`page "${pg.id}" ribbon: "${b.dim}" ha ${data.dims[b.dim].length} membri, oltre i ` +
+            `sette leggibili. I nastri diventano fettucce e il sorpasso — l'unica ragione per cui ` +
+            `si usa un ribbon — non si vede piu. Accorpa la coda in un membro "Altri", oppure usa ` +
+            `un hbar ordinato se la domanda e solo "chi e primo".`);
+        }
+
         if (v.type === 'gauge') {
           const mis = (spec.model.measures || []).find(m => m.id === b.measure);
           const u = mis && mis.unit;
