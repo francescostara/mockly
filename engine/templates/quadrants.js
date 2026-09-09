@@ -119,7 +119,11 @@ const spec = {
       { visuals: [
         { type: 'heatmap', span: 4, h: 152, title: 'Margine % per cliente e trimestre',
           subtitle: 'piu chiaro = margine piu basso; clicca una cella per filtrare il cliente',
-          bind: { dim: 'cliente', measure: 'gm', by: 'q', scale: [0.3, 0.6] } }
+          /* Niente `scale` dichiarata di proposito: i margini per cliente stanno tutti fra il
+             35 e il 58 per cento, e su una scala fissa 0,30-0,60 tre quarti delle celle
+             cadrebbero nello stesso gradino — una mappa di un colore solo. Senza scala il
+             motore usa i terzili osservati e la struttura si vede. */
+          bind: { dim: 'cliente', measure: 'gm', by: 'q' } }
       ] }
     ]
   }, {
