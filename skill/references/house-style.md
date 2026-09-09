@@ -101,3 +101,30 @@ he thinks*: where the rules here are more specific than the generic guidance, fo
 The through-line: he matches the palette tightly to the client's brand, keeps everything else
 restrained, and always reserves red for the problem. When no brand is given, stay muted
 (see `domain-knowledge.md`) but keep the red-for-problem convention.
+
+## La card di sintesi: quando il numero grande e la VARIAZIONE
+
+Nella dashboard reale dell'autore (Sales/MoM) la card non porta il valore assoluto in grande:
+porta **di quanto e cambiato**. Il titolo e discreto ("Revenue"), il numero grande e `+75%`, e
+sotto, in piccolo, la riga con tutti e tre i termini — periodo precedente, periodo corrente,
+variazione assoluta, coi periodi **nominati** (il mese, non "AP/AC"). In fondo alla card, un'area
+monocroma ancorata al bordo inferiore da la forma dell'andamento senza assi e senza etichette.
+
+E' la scelta distintiva: il lettore ha in testa "come sta andando", non "quanto vale". Nel motore
+e la variante `type: "delta-card"`, e la gerarchia non si inverte mai.
+
+**Quando l'una e quando l'altra:** delta-card quando la domanda e "come sta cambiando" e dietro
+la misura c'e una serie temporale; KPI card classica quando conta il livello — un totale, uno
+stock, una giacenza. Le due sono uno **scambio dentro la stessa classe** (`sintesi`): stessa
+misura, gerarchia diversa.
+
+Regole che non si negoziano: l'area in fondo e sempre monocroma — mai colorata per categoria, e
+contesto, non un visual; il colore della freccia segue la semantica (rosso solo al problema); una
+percentuale varia in **punti**, non in percentuale di se stessa.
+
+## Profondita: i mockup non ereditano i vincoli della web app
+
+Le card dell'autore hanno angoli arrotondati e un'ombra leggera. La regola "niente ombre,
+gradienti, blur" di `DESIGN.md` vale per la **cornice** — la UI della web app — non per i mockup
+generati, che possono avere la profondita tipica di un report Power BI. Non propagare i vincoli
+dell'una dentro l'altro, in nessuna delle due direzioni.

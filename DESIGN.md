@@ -132,6 +132,11 @@ La profondità è **uno scalino di superficie più un bordo hairline da 1px**. N
 di elevazione: è assente per scelta, non dimenticata. Un pannello sta un gradino sopra la pagina,
 mai due. Se una gerarchia ha bisogno di un terzo livello, il problema è la gerarchia.
 
+**Vale per la CORNICE, non per i mockup.** Un report Power BI ha card con angoli arrotondati e
+un'ombra leggera, ed e giusto che ce l'abbia: e la profondita tipica del suo mondo. Il design
+system della web app non si propaga dentro i mockup generati, ne i mockup dentro l'app. E' la
+stessa distinzione fra brand dell'app e brand del mockup, applicata alla profondita.
+
 ### 9. Tutti i numeri in mono, con cifre tabellari
 JetBrains Mono con `font-variant-numeric: tabular-nums` per ogni cifra dell'interfaccia. Non è un
 vezzo: con le cifre proporzionali un credito che scende da 10 a 9 sposta l'etichetta accanto, e

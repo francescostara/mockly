@@ -18,6 +18,10 @@ e-commerce, SaaS, palestre.
 
 # Nicchia: SOCIAL / report agenzia (voce ricca, da lavoro reale — v2)
 
+**ARCHETIPI PLAUSIBILI:** 1 `scorecard` · 3 `funnel` · 2 `executive-summary`
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
+
 Estratta da un report social mensile reale e corretta col feedback dell'autore. La nicchia core.
 Ciò che è AUTOREVOLE qui è la LOGICA degli split e dei KPI; i grafici del report originale erano
 scelte del cliente, non vincoli — la scelta del visual segue chart-selection.md.
@@ -117,6 +121,10 @@ churn follower.
 
 # Nicchia: RETAIL FISICO / negozio (voce validata dall'autore)
 
+**ARCHETIPI PLAUSIBILI:** 1 `scorecard` · 4 `quadrants` · 8 `operational`
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
+
 Vendite di un negozio o catena. Ricavata da ricerca sui KPI/design retail e validata sui dubbi.
 
 ## Inquadramento
@@ -189,6 +197,10 @@ riservato al problema (la sede/categoria in calo).
 ---
 
 # Nicchia: VENDITE B2B / pipeline CRM (voce validata dall'autore)
+
+**ARCHETIPI PLAUSIBILI:** 3 `funnel` · 4 `quadrants` · 2 `executive-summary`
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
 Costruita dal lavoro reale dell'autore (funnel, scoreboard, gauge-target, ribbon) e arricchita
 con ricerca sui KPI B2B/CRM e i benchmark 2026.
@@ -263,6 +275,10 @@ segmento/territorio, small multiples, funnel, toggle Chart/Table). Rosso riserva
 
 # Nicchia: RISTORAZIONE / F&B (voce validata dall'autore)
 
+**ARCHETIPI PLAUSIBILI:** 8 `operational` · 4 `quadrants` · 1 `scorecard`
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
+
 Ristoranti, catene food, bar. Da ricerca sui KPI/benchmark F&B, validata sui dubbi.
 
 ## Inquadramento
@@ -336,6 +352,10 @@ in perdita).
 ---
 
 # Nicchia: FINANZIARIO / controllo di gestione (CFO) (voce validata dall'autore)
+
+**ARCHETIPI PLAUSIBILI:** 5 `bridge` · 2 `executive-summary` · 4 `quadrants`
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
 P&L, margini, cassa, budget-vs-actual, per business unit / centro di costo. Da ricerca sui KPI
 CFO, validata sui dubbi.
@@ -415,6 +435,10 @@ scaduto in crescita).
 
 # Nicchia: LOGISTICA / trasporti (voce validata dall'autore, dal suo report reale)
 
+**ARCHETIPI PLAUSIBILI:** 4 `quadrants` · 8 `operational` · (6 `geo` quando il motore avra la mappa)
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
+
 Costruita dal report trasporti reale dell'autore e dalla sua filosofia scritta. Il suo lavoro
 è l'autorità qui.
 
@@ -489,6 +513,10 @@ problema (rotta/cliente in perdita).
 
 # Nicchia: ENERGIA / MANIFATTURA (gross margin) — voce validata dall'autore, dal suo report reale
 
+**ARCHETIPI PLAUSIBILI:** 4 `quadrants` · 8 `operational` · 5 `bridge`
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
+
 Produttore di pezzi / servizi industriali con focus su gross margin. Il Gross Margin Report reale
 dell'autore è l'autorità.
 
@@ -560,6 +588,10 @@ matrice; scatter con mediane; rosso riservato al problema (cliente/SKU a margine
 ---
 
 # Nicchia: CREATOR ECONOMY / education (voce validata dall'autore, dal report WeLearn)
+
+**ARCHETIPI PLAUSIBILI:** 3 `funnel` · 7 `cohorts` · 1 `scorecard`
+L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
+plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
 Piattaforma/agenzia che gestisce creator (corsi, webinar). Il report WeLearn reale è l'autorità.
 
@@ -636,6 +668,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 ## 3 voci compilate come MODELLO (correggile: sei tu l'esperto)
 
 ### Palestre / catena fitness
+- **ARCHETIPI PLAUSIBILI:** 7 `cohorts` · 8 `operational` · 3 `funnel`
 - **Utente finale:** titolare / direttore club → corporate-sober, tono energico ma pulito.
 - **Domande:** stiamo trattenendo i soci o li perdiamo? quali corsi riempiono e quali no?
   i nuovi iscritti coprono gli abbandoni? quali sedi rendono?
@@ -649,6 +682,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 - **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** ricavo per socio = quota mensile plausibile, **20 – 90 €/mese** (mai centesimi) → `soci = ricavi / quota`; churn mensile **2 – 6%**; tasso di riempimento corsi **50 – 85%** → `presenze = posti × riempimento`; tasso di rinnovo **60 – 80%**.
 
 ### E-commerce moda
+- **ARCHETIPI PLAUSIBILI:** 3 `funnel` · 4 `quadrants` · 7 `cohorts`
 - **Utente finale:** founder → corporate-sober o agency-modern.
 - **Domande:** quali canali portano clienti che poi RESTANO? quali categorie hanno troppi resi?
   il costo di acquisizione sta salendo? chi ricompra?
@@ -662,6 +696,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 - **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** AOV **60 – 150 €** per il fashion → `ordini = fatturato / AOV` (mai ordini scelti a caso); tasso di reso **20 – 40%**; CAC **15 – 60 €** → `nuovi clienti = spesa / CAC`; repeat-purchase rate **20 – 35%**.
 
 ### SaaS (per board / leadership)
+- **ARCHETIPI PLAUSIBILI:** 2 `executive-summary` · 7 `cohorts` · 5 `bridge`
 - **Utente finale:** board / exec → executive-minimal, con frase narrativa.
 - **Domande:** cresciamo in modo sano o riempiamo un secchio bucato? l'espansione batte il
   churn? quanto ci mettiamo a ripagare l'acquisizione?

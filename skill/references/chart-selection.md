@@ -120,3 +120,24 @@ niente cross-filter, niente drill. E' un filtro decorativo travestito da heatmap
 
 Perche la mappa dica qualcosa serve una **stagionalita per membro** nei dataParams: con quella
 globale tutte le righe hanno lo stesso profilo e la heatmap diventa un muro di un colore solo.
+
+## delta-card — quando il numero grande e la variazione
+
+Quando la domanda e **"come sta cambiando?"** e dietro la misura c'e una serie temporale. La card
+porta in grande la VARIAZIONE, non il livello: `+14,2%`, oppure `-3,6 pp` se la misura e una
+percentuale — una percentuale varia in punti, e dire che un margine dal 35,9% al 32,3% e sceso
+"del 10%" e vero e si legge come un crollo del fatturato.
+
+Quando invece conta il livello assoluto — un totale, uno stock, una giacenza — resta la KPI card
+classica. Sono uno scambio dentro la stessa classe (`sintesi`), non due visual diversi.
+
+E' anche l'apertura che rompe la formula da principiante: e ammessa in **ogni** archetipo la cui
+domanda sia il cambiamento, non solo nell'executive summary. Vedi `layout-archetypes.md`.
+
+## ribbon — la soglia
+
+Oltre **sette** entita i nastri diventano fettucce, i sorpassi spariscono nel groviglio e il
+motore rifiuta la spec. Le due uscite vere: accorpare la coda in un membro "Altri", oppure usare
+un hbar ordinato se la domanda e solo "chi e primo". Il criterio per riconoscere un ribbon che
+non fa il suo mestiere: se due entita si scambiano di posizione fra due periodi e i loro nastri
+non si incrociano, sta impilando per valore ed e un area chart travestito.
