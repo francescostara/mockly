@@ -700,7 +700,10 @@ function css(spec, compact) {
      `fontDisp` i titoli, `fontNum` le cifre — che sono SEMPRE mono e tabellari, in ogni
      abbinamento, perche una colonna di importi con cifre proporzionali balla. */
   t.font = P.tipo.ui; t.fontDisp = P.tipo.display; t.fontNum = P.tipo.num;
-  const vars = Object.keys(t).filter(k => k !== 'series').map(k => `--${k}:${t[k]}`).join(';');
+  /* `serie` e `series` sono elenchi, non token: finirebbero nel CSS come "--serie:#A,#B,#C" e
+     nessuno li userebbe mai. I singoli colori viaggiano gia come --c1..--c6. */
+  const vars = Object.keys(t).filter(k => k !== 'series' && k !== 'serie')
+    .map(k => `--${k}:${t[k]}`).join(';');
   const sh = P.shell, D = P.densita;
   const rail = sh.rail > 0;              /* c'e una colonna scura a sinistra */
   const tools = sh.tools;                /* i filtri stanno su una riga sopra la pagina */
@@ -960,6 +963,23 @@ function render(specIn, data) {
      un blocco unico o quattro riquadri, e non puo ricalcolarla — skin.js sta nel motore, non
      nel file. Sono tre stringhe, ed evitano di duplicare la tabella dei preset nel runtime. */
   spec.__pelle = { banda: pelle(spec).banda.id, densita: pelle(spec).densita.id, shell: pelle(spec).shell.id };
+
+  /* I COLORI DEI MEMBRI VENGONO DALLA PALETTE, non dalla spec.
+     Fino a qui il lavoro sull'accessibilita non toccava i grafici: le fette, le barre e i
+     nastri prendono il colore dal MEMBRO (`data.dims[dim][i].c`), che finora era un esadecimale
+     scritto a mano in dataParams e verificato da nessuno. Una scala categoriale misurata che
+     non arriva ai dati e un esercizio.
+     Ora la assegna il motore, per indice, dalla serie verificata della famiglia: costante per
+     categoria su tutti i visual, e distinguibile sotto le tre dicromazie e in stampa.
+     L'eccezione e dichiarata dal dato, non dedotta: `brand: true` su un membro tiene il suo
+     colore — Instagram e rosa e TikTok e nero, e li la tinta E' l'identita. */
+  const tk = pelle(spec).tokens;
+  const serieOk = tk.serie || [];
+  data = Object.assign({}, data, { dims: Object.assign({}, data.dims) });
+  Object.keys(data.dims).forEach(d => {
+    data.dims[d] = data.dims[d].map((m, i) => (m.brand || (spec.meta || {}).brandColors)
+      ? m : Object.assign({}, m, { c: serieOk[i % serieOk.length] || m.c }));
+  });
   const compact = report.some(r => r.dense);   /* pagina sovraccarica: si stringe tutto il possibile */
 
   /* La pagina che non ci sta nemmeno cosi. Il piano scala le altezze, ma sotto la soglia di

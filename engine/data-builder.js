@@ -180,8 +180,12 @@ function build(dp) {
   });
 
   /* ---- 4. optional detail grain as a share model ---- */
-  const dims = { [dimId]: own.map(m => ({ id: m.id, n: m.n, c: m.c })) };
-  if (splitCfg) dims[splitCfg.dim] = splitMembers.map(m => ({ id: m.id, n: m.n, c: m.c }));
+  /* `brand` viaggia fino al render: e il flag che dice "questa tinta e l'identita, non una
+     scelta estetica" — Instagram rosa, TikTok nero — e senza di lui il motore sostituirebbe
+     quei colori con la scala verificata della palette, che qui sarebbe la cosa sbagliata. */
+  const cm = m => Object.assign({ id: m.id, n: m.n, c: m.c }, m.brand ? { brand: true } : {});
+  const dims = { [dimId]: own.map(cm) };
+  if (splitCfg) dims[splitCfg.dim] = splitMembers.map(cm);
 
   let detailModel = null;
   if (dp.detail && dp.detail.dim) {

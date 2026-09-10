@@ -78,98 +78,91 @@ const SHELLS = {
 
 /* ---------------------------------------------------------------- 2. PALETTE */
 
-/* Ogni famiglia dichiara otto valori; il resto della scala si DERIVA mescolando. Scrivere a
-   mano ventisei token per tredici famiglie significa scriverne trecentotrentotto e sbagliarne
-   qualcuno: le sfumature intermedie sono esattamente il genere di cosa che una funzione fa
-   meglio di una persona, e restano coerenti dentro la famiglia per costruzione.
-   `serie` e la scala categoriale: 6 colori che devono restare distinguibili fra loro e leggibili
-   sulla superficie. Sono l'unica parte davvero autoriale. */
+/* Le famiglie dichiarano la CORNICE — superficie, inchiostro, rail, raggio — e la BASE
+   categoriale da cui derivano la loro scala. La scala non si scrive a mano: si sceglie da una
+   base misurata (Okabe-Ito, Tol, i due qualitativi di ColorBrewer marcati colorblind-safe) e
+   poi si verifica. `engine/colore.js` fa la scelta e `test/palette.test.js` la mette alla prova
+   su tutte e tredici: 3:1 contro la superficie, DeltaE76 >= 10 fra le voci sotto le tre
+   dicromazie, e >= 8 di chiarezza in scala di grigi, perche un report si stampa.
+   Il numero di voci non e una quota: e quante ne reggono la verifica, fra tre e sei.
+
+   Cio che DAVVERO distingue una famiglia dall'altra e la cornice, non la scala. E' il prezzo
+   dell'accessibilita, ed e onesto pagarlo: i categoriali sicuri sono pochi, e improvvisarne di
+   nuovi per avere tredici tavolozze diverse significherebbe avere tredici tavolozze illeggibili. */
+const COL = require('./colore.js');
+
+const BASI = {
+  okabe: Object.values(COL.OKABE_ITO),
+  tolBright: COL.TOL_BRIGHT,
+  tolMuted: COL.TOL_MUTED,
+  tolLight: COL.TOL_LIGHT,
+  dark2: COL.BREWER_DARK2,
+  paired: COL.BREWER_PAIRED
+};
+
 const FAMIGLIE = {
   'navy-corporate': {
-    etichetta: 'navy corporate', scuro: false, radius: '2px',
-    canvas: '#EDF0F4', card: '#FFFFFF', ink: '#16202E', rail: '#0E2439',
-    serie: ['#12304F', '#1F4E79', '#4A7FA8', '#7FA8C6', '#8FB3CC', '#C6D7E4'],
-    good: '#2E7D5B', bad: '#B3453B', amber: '#C08A2E'
+    etichetta: 'navy corporate', scuro: false, radius: '2px', base: 'okabe', sequenziale: 'cividis',
+    canvas: '#EDF0F4', card: '#FFFFFF', ink: '#16202E', rail: '#0E2439'
   },
   'slate-freddo': {
-    etichetta: 'slate freddo', scuro: false, radius: '3px',
-    canvas: '#EEF1F3', card: '#FFFFFF', ink: '#1B2429', rail: '#243239',
-    serie: ['#27414C', '#38606F', '#4F8194', '#74A3B4', '#9CC0CC', '#C8DCE3'],
-    good: '#2F7360', bad: '#A9483E', amber: '#B3862F'
+    etichetta: 'slate freddo', scuro: false, radius: '3px', base: 'tolMuted', sequenziale: 'cividis',
+    canvas: '#EEF1F3', card: '#FFFFFF', ink: '#1B2429', rail: '#243239'
   },
   'warm-taupe': {
-    etichetta: 'warm neutral / taupe', scuro: false, radius: '4px',
-    canvas: '#F3F0EB', card: '#FFFDFA', ink: '#241F1A', rail: '#2E2721',
-    serie: ['#4A3F35', '#6E5C4A', '#947E64', '#B49C80', '#CDBAA1', '#E2D6C4'],
-    good: '#4F6B45', bad: '#9E4A38', amber: '#B5872F'
+    etichetta: 'warm neutral / taupe', scuro: false, radius: '4px', base: 'paired', sequenziale: 'viridis',
+    canvas: '#F3F0EB', card: '#FFFDFA', ink: '#241F1A', rail: '#2E2721'
   },
   'carta-inchiostro': {
-    etichetta: 'editoriale carta e inchiostro', scuro: false, radius: '0px',
-    canvas: '#FBFAF7', card: '#FFFFFF', ink: '#14171A', rail: '#14171A',
-    serie: ['#14171A', '#3E5C86', '#4E555D', '#868D95', '#BEC3C9', '#DDE0E3'],
-    good: '#1F6B4F', bad: '#A03328', amber: '#8A7433'
+    etichetta: 'editoriale carta e inchiostro', scuro: false, radius: '0px', base: 'okabe', sequenziale: 'viridis',
+    canvas: '#FBFAF7', card: '#FFFFFF', ink: '#14171A', rail: '#14171A'
   },
   'dark-agency': {
-    etichetta: 'dark agency', scuro: true, radius: '6px',
-    canvas: '#111420', card: '#191D2B', ink: '#EDF0F7', rail: '#151A28',
-    /* il primo della scala era #3D4A6B: 1,91 di contrasto sulla card scura, cioe una forma
-       che si intuisce piu che vedersi. Schiarito quanto basta a superare il 2, che e la
-       soglia sotto la quale un riempimento non si distingue dal fondo. */
-    serie: ['#4A5A82', '#4C6FE0', '#2E9BD6', '#22B5A6', '#5C6BC0', '#7A5AF8'],
-    good: '#35C48A', bad: '#E0576B', amber: '#F0A63C'
+    etichetta: 'dark agency', scuro: true, radius: '6px', base: 'tolLight', sequenziale: 'viridis',
+    canvas: '#111420', card: '#191D2B', ink: '#EDF0F7', rail: '#151A28'
   },
   'dark-tecnico': {
-    etichetta: 'dark tecnico, blu profondo', scuro: true, radius: '3px',
-    canvas: '#0B1220', card: '#131C2E', ink: '#DCE6F5', rail: '#0A1220',
-    serie: ['#4E8CC4', '#3E86C4', '#5FA8D8', '#7FC4E4', '#A6D6EC', '#CDE8F5'],
-    good: '#3BA97F', bad: '#D2564F', amber: '#D69A3A'
+    etichetta: 'dark tecnico, blu profondo', scuro: true, radius: '3px', base: 'okabe', sequenziale: 'cividis',
+    canvas: '#0B1220', card: '#131C2E', ink: '#DCE6F5', rail: '#0A1220'
   },
   terroso: {
-    etichetta: 'terroso, ocra e ruggine', scuro: false, radius: '3px',
-    canvas: '#F5EFE6', card: '#FFFCF7', ink: '#2A1F16', rail: '#3A2A1C',
-    serie: ['#6B3A22', '#93542C', '#B87A3C', '#CE9C5E', '#DFBB8A', '#EDD6B4'],
-    good: '#5A6E3A', bad: '#9C3B27', amber: '#C08A2E'
+    etichetta: 'terroso, ocra e ruggine', scuro: false, radius: '3px', base: 'paired', sequenziale: 'viridis',
+    canvas: '#F5EFE6', card: '#FFFCF7', ink: '#2A1F16', rail: '#3A2A1C'
   },
   salvia: {
-    etichetta: 'verde salvia', scuro: false, radius: '4px',
-    canvas: '#EFF2ED', card: '#FCFDFB', ink: '#1C241C', rail: '#263324',
-    serie: ['#2F4A34', '#456B4A', '#5F8B63', '#87AC88', '#AFC9AE', '#D3E1D2'],
-    good: '#3C7A4E', bad: '#A34438', amber: '#B0862D'
+    /* base tolMuted e non dark2: su una carta quasi bianca dark2 regge solo quattro voci
+       verificate, e un report con cinque categorie si ritroverebbe due colori uguali — che e
+       peggio di un colore meno "salvia". La cornice resta verde, i dati restano leggibili. */
+    etichetta: 'verde salvia', scuro: false, radius: '4px', base: 'tolMuted', sequenziale: 'viridis',
+    canvas: '#EFF2ED', card: '#FCFDFB', ink: '#1C241C', rail: '#263324'
   },
   'jewel-desaturati': {
-    etichetta: 'jewel tones desaturati', scuro: false, radius: '3px',
-    canvas: '#F1EFF2', card: '#FFFFFF', ink: '#211D26', rail: '#2B2333',
-    serie: ['#4A2F53', '#6B4A78', '#3F5E74', '#4F7D6C', '#8A6A4E', '#9A5560'],
-    good: '#3F7A5E', bad: '#A2454B', amber: '#B08334'
+    etichetta: 'jewel tones desaturati', scuro: false, radius: '3px', base: 'tolMuted', sequenziale: 'viridis',
+    canvas: '#F1EFF2', card: '#FFFFFF', ink: '#211D26', rail: '#2B2333'
   },
   'monocromo-accento': {
-    etichetta: 'monocromo con un accento', scuro: false, radius: '2px',
-    canvas: '#F4F4F4', card: '#FFFFFF', ink: '#1A1A1A', rail: '#1A1A1A',
-    serie: ['#1A1A1A', '#B4552D', '#4A4A4A', '#767676', '#A3A3A3', '#CFCFCF'],
-    good: '#2F6B4F', bad: '#A63A2A', amber: '#9A7A2C'
+    etichetta: 'monocromo con un accento', scuro: false, radius: '2px', base: 'okabe', sequenziale: 'cividis',
+    canvas: '#F4F4F4', card: '#FFFFFF', ink: '#1A1A1A', rail: '#1A1A1A'
   },
   'alto-contrasto': {
-    etichetta: 'alto contrasto', scuro: false, radius: '0px',
-    canvas: '#FFFFFF', card: '#FFFFFF', ink: '#000000', rail: '#000000',
-    serie: ['#000000', '#1F4EB0', '#B02A1F', '#0F6E4C', '#7A3FA8', '#8A6A00'],
-    good: '#0F6E4C', bad: '#B02A1F', amber: '#8A6A00'
+    etichetta: 'alto contrasto', scuro: false, radius: '0px', base: 'paired', sequenziale: 'cividis',
+    canvas: '#FFFFFF', card: '#FFFFFF', ink: '#000000', rail: '#000000', minimo: 4.5
   },
   'pastello-sobrio': {
-    etichetta: 'pastello sobrio', scuro: false, radius: '6px',
-    canvas: '#F6F4F8', card: '#FFFFFF', ink: '#2A2733', rail: '#3A3547',
-    serie: ['#5C6485', '#7C8AAF', '#9C8AA8', '#8FA9A0', '#B7A38C', '#A9B4C6'],
-    good: '#4A7A61', bad: '#A8544F', amber: '#B08A45'
+    /* Il caso piu a rischio sul 3:1, e per questo NON parte da una base pastello: parte da Tol
+       Light e la fa scurire quanto serve dalla verifica. Il pastello resta nella cornice —
+       superficie, rail, sfumature — dove non deve reggere nessun dato. */
+    etichetta: 'pastello sobrio', scuro: false, radius: '6px', base: 'tolLight', sequenziale: 'viridis',
+    canvas: '#F6F4F8', card: '#FFFFFF', ink: '#2A2733', rail: '#3A3547'
   },
   'blu-ghiaccio': {
-    etichetta: 'blu ghiaccio, chiaro e freddo', scuro: false, radius: '3px',
-    canvas: '#F2F6FA', card: '#FFFFFF', ink: '#152430', rail: '#1B3243',
-    serie: ['#1B3243', '#2F5F7D', '#4A88A8', '#77AEC6', '#A6CDDD', '#D2E6EF'],
-    good: '#2C7460', bad: '#AA463C', amber: '#B3872E'
+    etichetta: 'blu ghiaccio, chiaro e freddo', scuro: false, radius: '3px', base: 'tolBright', sequenziale: 'cividis',
+    canvas: '#F2F6FA', card: '#FFFFFF', ink: '#152430', rail: '#1B3243'
   }
 };
 
 /** Da otto valori dichiarati alla scala completa dei token. */
-function palette(id) {
+function palette(id, opz) {
   const f = FAMIGLIE[id];
   if (!f) throw new Error('palette sconosciuta: "' + id + '"');
   const { card, ink, canvas, rail, scuro } = f;
@@ -180,31 +173,57 @@ function palette(id) {
     line2: mix(card, ink, scuro ? 0.08 : 0.06),
     ink2: mix(ink, card, 0.22),
     /* Le tre gradazioni di grigio non sono decorative: muted e testo secondario e deve
-        restare leggibile, muted2 sono le etichette degli assi, muted3 e cio che si vede solo
-        se lo si cerca. I coefficienti sono calibrati sui rapporti che la palette storica
-        aveva gia — non scelti a occhio — e il test li verifica su tutte e tredici. */
+       restare leggibile, muted2 sono le etichette degli assi, muted3 e cio che si vede solo
+       se lo si cerca. I coefficienti sono calibrati sui rapporti che la palette storica
+       aveva gia — non scelti a occhio — e il test li verifica su tutte e tredici. */
     muted: mix(ink, card, 0.46),
     muted2: mix(ink, card, 0.56),
     muted3: mix(ink, card, 0.68),
     /* flab e l'etichetta dei filtri: 8,5px, maiuscoletto, spaziata — la dimensione piu
-        piccola dell'intera cornice. Un grigio da "testo secondario" li non basta, e il gate
-        dell'harness lo misura: sotto 4,5:1 la riga dei filtri diventa decorazione. */
+       piccola dell'intera cornice. Un grigio da "testo secondario" li non basta, e il gate
+       dell'harness lo misura: sotto 4,5:1 la riga dei filtri diventa decorazione. */
     flab: mix(ink, card, 0.34),
     rail, railInk: mix(rail, '#FFFFFF', 0.80),
     /* La stessa etichetta minuscola vive in due posti con fondi opposti: sulla riga dei filtri
        (superficie chiara) e dentro la rail (superficie scura). Un token solo non puo servirli
-       entrambi — provarci significa sceglierne uno e lasciare l'altro illeggibile, che e
-       esattamente il difetto che il gate ha trovato. */
+       entrambi — provarci significa sceglierne uno e lasciare l'altro illeggibile. */
     flabRail: mix(rail, '#FFFFFF', 0.66),
-    good: f.good, bad: f.bad, amber: f.amber,
-    /* i tre gradini della heat: la stessa idea in tutte le famiglie — un velo del colore
-       semantico sulla superficie, mai una tinta piena che copra il numero sopra */
-    heatLo: mix(card, f.bad, scuro ? 0.22 : 0.12),
-    heatMid: mix(card, f.amber, scuro ? 0.20 : 0.11),
-    heatHi: mix(card, f.good, scuro ? 0.20 : 0.11),
     radius: f.radius
   };
-  f.serie.forEach((c, i) => { t['c' + (i + 1)] = c; });
+
+  /* GLI STATI OPPOSTI NON SONO ROSSO E VERDE. E' la coppia che sparisce per prima, ed e ancora
+     la piu diffusa nei report: qui il positivo e blu e il negativo e arancio-rosso, che restano
+     separati sotto tutte e tre le dicromazie e anche in stampa. Il rosso pieno resta, ma per
+     SEGNALARE UN PROBLEMA — non per fare coppia col verde. */
+  const minimo = f.minimo || 3;
+  t.good = COL.aggiusta(COL.STATI.positivo, card, 4.5);
+  t.bad = COL.aggiusta(COL.STATI.negativo, card, 4.5);
+  t.alert = COL.aggiusta(COL.STATI.allarme, card, 4.5);
+  t.amber = COL.aggiusta(COL.STATI.attenzione, card, 4.5);
+
+  /* La scala categoriale: scelta da una base misurata e verificata, mai inventata. */
+  const serie = COL.serieCVD(BASI[f.base], card, 6, { minimo });
+  serie.forEach((c, i) => { t['c' + (i + 1)] = c; });
+  /* i visual chiedono fino a sei colori: la coda si ripete invece di inventare tinte nuove che
+     nessuno ha verificato */
+  for (let k = serie.length; k < 6; k++) t['c' + (k + 1)] = serie[k % serie.length];
+  t.serie = serie;
+
+  /* SEQUENZIALE: Viridis o Cividis, percettivamente uniformi. Sostituiscono qualunque rampa
+     arcobaleno e valgono per la heatmap e per le celle heat della matrice — dove il messaggio
+     e "piu o meno", non "questo o quello". */
+  const seq = f.sequenziale === 'cividis' ? COL.CIVIDIS : COL.VIRIDIS;
+  t.seq1 = seq[0]; t.seq2 = seq[1]; t.seq3 = seq[2]; t.seq4 = seq[3]; t.seq5 = seq[4];
+  /* i tre gradini della heat restano velature sulla superficie: la cella deve lasciar leggere
+     il numero che ci sta sopra, quindi si prende la rampa e la si stende sul fondo */
+  t.heatLo = mix(card, seq[1], scuro ? 0.30 : 0.14);
+  t.heatMid = mix(card, seq[2], scuro ? 0.34 : 0.20);
+  t.heatHi = mix(card, seq[3], scuro ? 0.40 : 0.28);
+
+  /* DIVERGENTE: due tinte con punto medio neutro, per varianza e scostamenti dal bersaglio. */
+  const div = COL.DIV_BLU_ARANCIO;
+  t.div1 = div[0]; t.div2 = div[1]; t.div3 = scuro ? mix(card, '#FFFFFF', 0.10) : div[2];
+  t.div4 = div[3]; t.div5 = div[4];
   return t;
 }
 
