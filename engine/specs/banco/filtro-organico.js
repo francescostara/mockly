@@ -75,7 +75,7 @@ const spec = {
   },
   aesthetic: 'agency-modern',
   archetype: 'scorecard',
-  grid: { contentWidth: 1254, gutter: 12, columns: 4 },
+  grid: { contentWidth: 1248, gutter: 12, columns: 4 },
   model: {
     sums: ['impressions', 'reach', 'interazioni', 'spesa'],
     measures: [

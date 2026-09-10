@@ -103,45 +103,21 @@ function squeeze(src) {
 }
 const prevSig = s => { for (let k = s.length - 1; k >= 0; k--) if (!/\s/.test(s[k])) return s[k]; return ''; };
 
-/* ---------- palettes ---------- */
-const AESTHETICS = {
-  'corporate-sober': {
-    shell: 'rail',
-    tokens: {
-      canvas: '#EDF0F4', card: '#FFFFFF', line: '#E2E7EE', line2: '#F0F3F7', ink: '#16202E', ink2: '#3A4759',
-      muted: '#7A879B', muted2: '#9AA6B8', muted3: '#B7C0CC', flab: '#9AA6B8', rail: '#0E2439', railInk: '#C8D6E4',
-      c1: '#12304F', c2: '#1F4E79', c3: '#4A7FA8', c4: '#7FA8C6', c5: '#8FB3CC', c6: '#C6D7E4',
-      good: '#2E7D5B', bad: '#B3453B', amber: '#C08A2E', page: '#D8DEE6',
-      heatLo: '#FBEDEC', heatMid: '#FDF6E7', heatHi: '#EDF5F1',
-      font: '"Segoe UI","Segoe UI Web (West European)",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif',
-      radius: '2px'
-    }
-  },
-  'agency-modern': {
-    shell: 'top',
-    tokens: {
-      canvas: '#111420', card: '#191D2B', line: '#2A3143', line2: '#222839', ink: '#EDF0F7', ink2: '#C3CBDA',
-      muted: '#7C879E', muted2: '#6A748A', muted3: '#4C5568', flab: '#9AA3B8', rail: '#151A28', railInk: '#C3CBDA',
-      c1: '#3D4A6B', c2: '#4C6FE0', c3: '#2E9BD6', c4: '#22B5A6', c5: '#5C6BC0', c6: '#7A5AF8',
-      good: '#35C48A', bad: '#E0576B', amber: '#F0A63C', page: '#0B0D16',
-      heatLo: '#2A1E24', heatMid: '#2B2620', heatHi: '#16281F',
-      font: '"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif',
-      radius: '6px'
-    }
-  },
-  'executive-minimal': {
-    shell: 'top',
-    tokens: {
-      canvas: '#FFFFFF', card: '#FFFFFF', line: '#E4E4E0', line2: '#F1F1EE', ink: '#14171A', ink2: '#42484F',
-      muted: '#6D747C', muted2: '#9BA1A9', muted3: '#BEC3C9', flab: '#5C6268', rail: '#14171A', railInk: '#E4E4E0',
-      c1: '#14171A', c2: '#3E5C86', c3: '#4E555D', c4: '#868D95', c5: '#BEC3C9', c6: '#DDE0E3',
-      good: '#1F6B4F', bad: '#A03328', amber: '#8A7433', page: '#F4F4F1',
-      heatLo: '#F7EEEC', heatMid: '#F6F3EA', heatHi: '#EDF2EF',
-      font: '"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif',
-      radius: '0px'
-    }
-  }
-};
+/* ---------- la pelle: cinque assi, non tre bundle ---------- */
+/* Le tre estetiche storiche restano come PRESET (engine/skin.js), e una spec che dichiara solo
+   `aesthetic` renderizza come sempre. Chi vuole di piu sovrascrive un asse alla volta con
+   `spec.skin`: shell, palette, tipografia, densita. */
+const SKIN = require('./skin.js');
+
+/** La pelle risolta di una spec: shell + token + caratteri + ritmo. */
+const pelle = spec => SKIN.pelleDi(spec);
+
+/* Vista di compatibilita per chi importava AESTHETICS (test e strumenti): i preset, espansi. */
+const AESTHETICS = {};
+Object.keys(SKIN.PRESET).forEach(k => {
+  const s = SKIN.PRESET[k];
+  AESTHETICS[k] = { shell: s.shell, palette: s.palette, tokens: SKIN.palette(s.palette) };
+});
 
 /* ---------- fit-to-canvas ----------
  * Il canvas e 1280x720 e #page ha overflow:hidden: se le altezze dichiarate nella spec
@@ -150,10 +126,14 @@ const AESTHETICS = {
  * layout e responsabilita del motore, quindi le altezze vengono riscalate per stare dentro.
  */
 const H_HDR = 58, H_TOPBAR = 46, H_TOOLS = 40;
-const hasTopbar = spec => AESTHETICS[spec.aesthetic].shell === "top" && spec.pages.filter(p => p.nav).length >= 2;
-const shellPx = spec => AESTHETICS[spec.aesthetic].shell === "rail" ? H_HDR
-  : H_HDR + H_TOOLS + (hasTopbar(spec) ? H_TOPBAR : 0);
-const PAGE_PAD = 28;        /* padding verticale di #page */
+const hasTopbar = spec => pelle(spec).shell.topbar && spec.pages.filter(p => p.nav).length >= 2;
+/* Quanto mangia la cornice in verticale: l'intestazione sempre, la riga filtri se la shell ce
+   l'ha, la barra del marchio solo quando ci sono davvero piu pagine da navigare. */
+const shellPx = spec => H_HDR + (pelle(spec).shell.tools ? H_TOOLS : 0) + (hasTopbar(spec) ? H_TOPBAR : 0);
+const PAGE_PAD_DEF = 28;    /* padding verticale di #page, valore di riferimento */
+/* Il padding verticale vero lo decide la densita: e uno dei tre assi del ritmo, e il fit deve
+   conoscerlo o calcola il budget di una pagina che non e quella che disegna. */
+const padDi = spec => pelle(spec).densita.pad * 2;
 const KPI_H = 90;           /* banda KPI: altezza reale della card */
 const CHROME_H = 34;        /* intestazione della card (.ch) */
 const LEGEND_H = 18;        /* riga legenda, quando c'e */
@@ -186,7 +166,7 @@ function pageBudget(spec, page, gutter) {
   const shell = shellPx(spec);
   const rows = (page.rows || []).length + (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length ? 1 : 0)
     + (page.drillHeader ? 1 : 0);
-  return 720 - shell - PAGE_PAD - (gutter || spec.grid.gutter) * Math.max(0, rows - 1);
+  return 720 - shell - padDi(spec) - (gutter || spec.grid.gutter) * Math.max(0, rows - 1);
 }
 
 /** Quanto chiede una riga cosi com'e scritta nella spec. */
@@ -201,7 +181,7 @@ function planFit(spec, page, data, dense) {
   const gutter = dense ? DENSE_GUTTER : spec.grid.gutter;
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   const minChart = dense ? DENSE_MIN_CHART_H : MIN_CHART_H;
-  let budget = pageBudget(spec, page, gutter) + (dense ? (PAGE_PAD - DENSE_PAD) : 0);
+  let budget = pageBudget(spec, page, gutter) + (dense ? (padDi(spec) - DENSE_PAD) : 0);
   if (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H - 6 : KPI_H;
   if (page.drillHeader) budget -= 46;
 
@@ -278,7 +258,7 @@ function measurePage(spec, data, pageId) {
   const dense = !!rep.dense || !!page.__dense;
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   let budget = pageBudget(fitted.spec, page, dense ? DENSE_GUTTER : spec.grid.gutter)
-    + (dense ? PAGE_PAD - DENSE_PAD : 0);
+    + (dense ? padDi(spec) - DENSE_PAD : 0);
   if (spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H - 6 : KPI_H;
   const h = r => r.flex ? flexNeed(r, data, rowH) : rowHeight(r);
   const rows = page.rows.map(h);
@@ -595,21 +575,35 @@ function validate(spec, data) {
     }
   });
 
-  /* grid.contentWidth deve combaciare con la SHELL dell'estetica scelta. Con un rail da 200px
-     l'area utile e 1044, senza rail e 1254: scrivere 1254 su un'estetica col rail rende ogni
-     card 210px piu larga dello spazio che ha, e ogni grafico esce dal proprio riquadro.
+  /* grid.contentWidth deve combaciare con la SHELL. Con un rail da 200px l'area utile e 1044,
+     con la rail stretta 1116, senza rail 1248: scriverne un'altra rende ogni card piu larga
+     dello spazio che ha, e ogni grafico esce dal proprio riquadro.
      Non e un difetto che si vede in jsdom, che non fa layout, ne nel conto delle altezze: e
      puramente dichiarativo, e finora nessun gate lo guardava. La grammatica documenta
      entrambi i numeri, quindi sceglierne uno a caso e un testa o croce. */
   {
-    const est = AESTHETICS[spec.aesthetic];
-    const atteso = est && est.shell === 'rail' ? 1044 : 1254;
+    const sh = pelle(spec).shell;
+    const atteso = sh.contentWidth;
     const dichiarato = (spec.grid || {}).contentWidth;
-    if (est && dichiarato !== atteso) {
-      e.push(`grid.contentWidth e ${dichiarato} ma l'estetica "${spec.aesthetic}" ha una shell ` +
-        `"${est.shell}": l'area utile e ${atteso}px. Con il valore sbagliato ogni card viene ` +
-        `calcolata ${Math.abs(dichiarato - atteso)}px oltre lo spazio disponibile e i grafici ` +
-        `escono dal riquadro.`);
+    if (dichiarato !== atteso) {
+      e.push(`grid.contentWidth e ${dichiarato} ma la shell "${sh.id}" (${sh.nome}) lascia ` +
+        `${atteso}px di area utile: 1280 meno la rail, meno il padding della pagina. Con il ` +
+        `valore sbagliato la flexbox strizza le card mentre gli SVG restano larghi quanto la ` +
+        `spec crede, e il disegno esce dal riquadro di ` +
+        `${Math.abs(dichiarato - atteso)}px senza che nessun conto se ne accorga.`);
+    }
+  }
+
+  /* Il gutter non e una preferenza piu di quanto lo sia la contentWidth: lo decide la
+     DENSITA, ed e un numero che il fit usa per calcolare quanto spazio resta alle righe. Una
+     spec che ne dichiara un altro fa fare al motore un conto su una pagina diversa da quella
+     che disegna. */
+  {
+    const D = pelle(spec).densita;
+    if ((spec.grid || {}).gutter !== D.gutter) {
+      e.push(`grid.gutter e ${(spec.grid || {}).gutter} ma la densita "${D.id}" vuole ` +
+        `${D.gutter}px. Il gutter entra nel conto delle altezze: dichiararne un altro fa ` +
+        `pianificare il fit su una pagina che non e quella che viene disegnata.`);
     }
   }
 
@@ -643,8 +637,9 @@ const lint = (spec, data) => {
 /* ---------- Gate 6: toolbar width budget (jsdom computes no layout, so budget it here) ---------- */
 const W_DATE = 190, W_DROPDOWN = 168, W_CHIP = 92, W_GAP = 8, W_RESET = 96;
 function toolbarBudget(spec, data) {
-  const onTop = AESTHETICS[spec.aesthetic].shell === 'top';
-  const available = onTop ? spec.grid.contentWidth - W_RESET : 200 - 32;   /* rail: 200px minus padding */
+  const sh = pelle(spec).shell;
+  const onTop = sh.tools;                      /* i filtri stanno sulla riga, non nella rail */
+  const available = onTop ? spec.grid.contentWidth - W_RESET : sh.rail - 32;
   let used = onTop ? W_DATE : 0;
   const items = [];
   (spec.filters.dims || []).forEach(fd => {
@@ -661,26 +656,38 @@ function toolbarBudget(spec, data) {
 
 /* ---------- CSS ---------- */
 function css(spec, compact) {
-  const A = AESTHETICS[spec.aesthetic];
-  const t = Object.assign({}, A.tokens, spec.palette || {});
+  const P = pelle(spec);
+  const t = Object.assign({}, P.tokens, spec.palette || {});
   const ser = (spec.palette && spec.palette.series) || null;
   if (ser) ser.slice(0, 6).forEach((c, i) => t['c' + (i + 1)] = c);
+  /* La tipografia entra come token, non come stringa sparsa nel foglio: `font` e l'interfaccia,
+     `fontDisp` i titoli, `fontNum` le cifre — che sono SEMPRE mono e tabellari, in ogni
+     abbinamento, perche una colonna di importi con cifre proporzionali balla. */
+  t.font = P.tipo.ui; t.fontDisp = P.tipo.display; t.fontNum = P.tipo.num;
   const vars = Object.keys(t).filter(k => k !== 'series').map(k => `--${k}:${t[k]}`).join(';');
-  const rail = A.shell === 'rail';
+  const sh = P.shell, D = P.densita;
+  const rail = sh.rail > 0;              /* c'e una colonna scura a sinistra */
+  const tools = sh.tools;                /* i filtri stanno su una riga sopra la pagina */
+  const gut = D.gutter;
+  /* Densita "densa": le card perdono il riquadro e si appoggiano al fondo continuo. E' l'altra
+     faccia del ritmo, e cambia l'aspetto piu di qualunque spaziatura. */
+  const bordo = D.piatto ? '0' : D.bordo + 'px';
   return `:root{${vars}}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;background:var(--page);font-family:var(--font);-webkit-font-smoothing:antialiased}
 #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 #canvas{width:1280px;height:720px;transform-origin:center center;background:var(--canvas);display:flex;${rail ? '' : 'flex-direction:column;'}
   box-shadow:0 8px 40px rgba(12,25,45,.28);position:relative}
-.tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
-${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--railInk);display:flex;flex-direction:column;padding:16px 0}
+.tnum{font-family:var(--fontNum);font-variant-numeric:tabular-nums;font-feature-settings:"tnum";letter-spacing:-.2px}
+text.tnum{letter-spacing:0}
+${rail ? `#rail{width:${sh.rail}px;flex:0 0 ${sh.rail}px;background:var(--rail);color:var(--railInk);display:flex;flex-direction:column;padding:16px 0}
 .brand{padding:0 16px 14px;border-bottom:1px solid rgba(255,255,255,.09)}
 .brand .mk{display:flex;align-items:center;gap:9px}
 .brand .sq{width:22px;height:22px;background:var(--c3);position:relative;flex:0 0 22px;border-radius:2px}
 .brand .sq:before,.brand .sq:after{content:"";position:absolute;background:var(--rail)}
 .brand .sq:before{left:5px;right:5px;top:9px;height:2px}.brand .sq:after{top:5px;bottom:5px;left:9px;width:2px}
-.brand .nm{font-size:13px;font-weight:600;letter-spacing:.4px;color:#fff}
+.brand .nm{font-family:var(--fontDisp);font-size:${sh.rail < 160 ? '10.5' : '13'}px;font-weight:600;letter-spacing:.4px;color:#fff;
+  line-height:1.25;overflow-wrap:anywhere}
 .brand .sub{font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:4px}
 .navgrp{padding:14px 10px 4px}
 .navbtn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;border:0;background:transparent;color:var(--railInk);
@@ -690,14 +697,14 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .slgrp{padding:14px 16px 0;position:relative}
 .catgrp{padding:16px 16px 0}
 .railfoot{margin-top:auto;padding:0 16px;font-size:8.5px;color:var(--muted2);line-height:1.5}
-#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}`
-      : `#topbar{height:46px;flex:0 0 46px;background:var(--rail);display:flex;align-items:center;gap:10px;padding:0 16px}
+#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}` : ``}
+${sh.topbar ? `#topbar{height:46px;flex:0 0 46px;background:var(--rail);display:flex;align-items:center;gap:10px;padding:0 16px}
 #topbar .nm{font-size:13px;font-weight:600;color:#fff;letter-spacing:.4px}
-#topbar .spacer{flex:1}
-.navbtn{border:0;background:transparent;color:var(--railInk);font-family:var(--font);font-size:11.5px;font-weight:600;
+#topbar .spacer{flex:1}` : ``}
+${!rail ? `.navbtn{border:0;background:transparent;color:${sh.topbar ? 'var(--railInk)' : 'var(--ink2)'};font-family:var(--font);font-size:11.5px;font-weight:600;
   padding:7px 11px;border-radius:var(--radius);cursor:pointer}
-.navbtn.on{background:rgba(255,255,255,.14);color:#fff}
-#tools{height:40px;flex:0 0 40px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 16px;position:relative}
+.navbtn.on{background:${sh.topbar ? 'rgba(255,255,255,.14)' : 'var(--line2)'};color:${sh.topbar ? '#fff' : 'var(--ink)'}}` : ``}
+${tools ? `#tools{height:40px;flex:0 0 40px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 16px;position:relative}
 .slgrp{position:relative;width:${W_DATE}px}
 .fgrp{display:flex;align-items:center;gap:7px}
 .fgrp .flab{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flab);white-space:nowrap}
@@ -705,12 +712,13 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .fgrp.dd .fitems{width:${W_DROPDOWN}px}
 /* una lista sulla toolbar orizzontale: chip in riga, altrimenti impila righe da rail dentro 40px */
 .fgrp.chips .fitems{display:flex;align-items:center;gap:${W_GAP}px}
-.fgrp.chips .fitems>.catitem{border:1px solid var(--line);border-radius:${AESTHETICS[spec.aesthetic].tokens.radius === "0px" ? "0" : "999px"};
+.fgrp.chips .fitems>.catitem{border:1px solid var(--line);border-radius:${t.radius === "0px" ? "0" : "999px"};
   padding:4px 10px;font-size:11px;max-width:${W_CHIP}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fgrp.chips .fitems>.catitem.on{background:var(--c2);border-color:var(--c2);color:#fff}
 .fgrp.chips .fitems>.catitem.on .dot{background:#fff!important}
-#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}`}
-.rlbl{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flab);padding:0 0 7px}
+` : ``}
+${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}` : ``}
+.rlbl{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flabRail);padding:0 0 7px}
 .slbtn{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;background:${rail ? 'rgba(255,255,255,.05)' : 'transparent'};
   border:1px solid ${rail ? 'rgba(255,255,255,.16)' : 'var(--line)'};border-radius:3px;color:${rail ? 'var(--railInk)' : 'var(--ink2)'};
   font-family:var(--font);font-size:11.5px;cursor:pointer}
@@ -721,7 +729,7 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
   background:${rail ? '#12283F' : 'var(--card)'};border:1px solid ${rail ? 'rgba(255,255,255,.18)' : 'var(--line)'};
   border-radius:4px;padding:11px;z-index:30;box-shadow:0 12px 30px rgba(0,0,0,.35);display:none;color:${rail ? 'var(--railInk)' : 'var(--ink2)'}}
 .slpanel.open{display:block}
-.slsec{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--flab);margin:2px 0 6px}
+.slsec{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:${rail ? 'var(--flabRail)' : 'var(--flab)'};margin:2px 0 6px}
 .slrow{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:9px}
 .slchip{flex:1 0 auto;min-width:26px;padding:5px 6px;text-align:center;font-size:10.5px;border:1px solid ${rail ? 'rgba(255,255,255,.16)' : 'var(--line)'};
   background:transparent;color:${rail ? 'var(--railInk)' : 'var(--ink2)'};cursor:pointer;font-family:var(--font);border-radius:2px}
@@ -734,7 +742,7 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .catitem.on{color:${rail ? '#fff' : 'var(--ink)'};font-weight:600;background:rgba(127,127,127,.14)}
 .hbrand{font-size:11px;font-weight:700;letter-spacing:1.4px;color:var(--ink);padding-right:14px;border-right:1px solid var(--line);white-space:nowrap}
 #hdr{height:58px;flex:0 0 58px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:14px}
-#hdr .ttl{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
+#hdr .ttl{font-family:var(--fontDisp);font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
 #hdr .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
 #hdr .spacer{flex:1}
 .ctxwrap{display:flex;gap:6px}
@@ -743,11 +751,12 @@ ${rail ? `#rail{width:200px;flex:0 0 200px;background:var(--rail);color:var(--ra
 .resetb{font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:5px 9px;border-radius:2px;cursor:pointer;font-family:var(--font)}
 .resetb:hover{color:var(--bad);border-color:var(--bad)}
 .updated{font-size:9.5px;color:var(--muted2);text-align:right;line-height:1.5}
-#page{flex:1;min-height:0;padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;gap:${spec.grid.gutter}px}
-.row{display:flex;flex:0 0 auto;gap:${spec.grid.gutter}px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);position:relative;box-shadow:0 1px 1px rgba(20,35,60,.04)}
-.card>.ch{padding:10px 13px 5px;display:flex;align-items:baseline;gap:8px}
-.card .ch h3{margin:0;font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
+#page{flex:1;min-height:0;padding:${D.pad}px 16px;overflow:hidden;display:flex;flex-direction:column;gap:${gut}px}
+.row{display:flex;flex:0 0 auto;gap:${gut}px}
+.card{background:${D.piatto ? 'transparent' : 'var(--card)'};border:${bordo} solid var(--line);border-radius:var(--radius);position:relative;
+  box-shadow:${D.piatto ? 'none' : '0 1px 1px rgba(20,35,60,.04)'}}
+.card>.ch{padding:${D.cardPad}px 13px 5px;display:flex;align-items:baseline;gap:8px}
+.card .ch h3{margin:0;font-family:var(--fontDisp);font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
 .card .ch .hs{font-size:9.5px;color:var(--muted)}
 .card .ch .hr{margin-left:auto;font-size:9px;color:var(--muted2)}
 .kpi{padding:11px 14px 10px;display:flex;flex-direction:column;justify-content:space-between}
@@ -796,7 +805,8 @@ const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g,
 
 function dateSlicer(spec) {
   const T = spec.meta.strings || {};
-  return `<div class="slgrp">${AESTHETICS[spec.aesthetic].shell === 'rail' ? `<div class="rlbl">${esc(T.period || 'Periodo')}</div>` : ''}
+  const dentroRail = pelle(spec).shell.rail > 0 && !pelle(spec).shell.tools;
+  return `<div class="slgrp">${dentroRail ? `<div class="rlbl">${esc(T.period || 'Periodo')}</div>` : ''}
       <button class="slbtn" id="slBtn">${CAL_ICON}<span class="cur" id="slCur"></span><span class="car">▼</span></button>
       <div class="slpanel" id="slPanel">
         <div class="slsec">${esc(T.year || 'Anno')}</div><div class="slrow" id="slYear"></div>
@@ -805,18 +815,23 @@ function dateSlicer(spec) {
       </div></div>`;
 }
 function navButtons(spec) {
-  const pages = spec.pages.filter(p => p.nav);
-  if (pages.length < 2 && AESTHETICS[spec.aesthetic].shell === 'top') return '';
-  return pages.map(p => `<button class="navbtn" data-page="${esc(p.id)}">${AESTHETICS[spec.aesthetic].shell === 'rail' ? BAR_ICON : ''}${esc(p.nav)}</button>`).join('');
+  const sh = pelle(spec).shell, pages = spec.pages.filter(p => p.nav);
+  /* Una sola pagina non ha navigazione da mostrare, e senza rail non c'e nemmeno un posto dove
+     metterla: il bottone unico sarebbe un ornamento che occupa la riga piu preziosa. */
+  if (pages.length < 2 && sh.rail === 0) return '';
+  return pages.map(p => `<button class="navbtn" data-page="${esc(p.id)}">${sh.rail > 0 ? BAR_ICON : ''}${esc(p.nav)}</button>`).join('');
 }
 function dimFilters(spec, rail) {
   return (spec.filters.dims || []).map(fd => rail
     ? `<div class="catgrp"><div class="rlbl">${esc(fd.label)}</div><div id="fl_${esc(fd.id)}"></div></div>`
     : `<div class="fgrp ${fd.control === 'dropdown' ? 'dd' : 'chips'}"><span class="flab">${esc(fd.label)}</span><div class="fitems" id="fl_${esc(fd.id)}"></div></div>`).join('');
 }
-function header(spec, rail) {
+/* @param ctxQui   le pill del contesto e il tasto azzera stanno qui, quando non c'e la riga filtri
+   @param marchioQui  il nome del cliente non ha altro posto dove stare: niente rail, niente barra */
+function header(spec, ctxQui, marchioQui) {
   const m = spec.meta, T = m.strings || {}, b = m.brand || {};
-  const inlineBrand = !rail && !hasTopbar(spec);
+  const inlineBrand = marchioQui;
+  const rail = ctxQui;
   return `<div id="hdr">
       ${inlineBrand ? `<div class="hbrand">${esc((b.name || m.title).toUpperCase())}</div>` : ''}
       <div><div class="ttl" id="hTtl"></div><div class="sub" id="hSub"></div></div>
@@ -826,33 +841,41 @@ function header(spec, rail) {
       ${m.updated ? `<div class="updated">${esc(T.updatedLabel || 'Ultimo aggiornamento')}<br><b>${esc(m.updated)}</b></div>` : ''}
     </div>`;
 }
+/* Le quattro shell. Non sono quattro fogli di stile diversi: sono le stesse tre zone —
+   marchio+navigazione, filtri, contenuto — sistemate in posti diversi. La rail piena tiene
+   tutto a sinistra; la rail stretta tiene solo la navigazione e manda i filtri sulla riga; la
+   barra superiore mette il marchio sopra; "bare" toglie del tutto la cornice scura e lascia
+   una pagina che sembra un documento invece di un'applicazione. */
 function shell(spec) {
-  const A = AESTHETICS[spec.aesthetic], m = spec.meta, b = m.brand || {}, T2 = m.strings || {};
-  if (A.shell === 'rail') {
-    return `<div id="rail">
-    <div class="brand"><div class="mk"><div class="sq"></div><div class="nm">${esc((b.name || m.title).toUpperCase())}</div></div>
-      ${b.tagline ? `<div class="sub">${esc(b.tagline)}</div>` : ''}</div>
-    <div class="navgrp"><div class="rlbl">Report</div>${navButtons(spec)}</div>
-    ${dateSlicer(spec)}
-    ${dimFilters(spec, true)}
-    ${m.source ? `<div class="railfoot">${esc(m.source)}</div>` : ''}
-  </div>
-  <div id="main">
-    ${header(spec, true)}
-    <div id="page"></div>
-    <div class="wm">${esc(m.watermark)}</div>
-  </div>`;
-  }
-  return `${hasTopbar(spec) ? `<div id="topbar"><div class="nm">${esc((b.name || m.title).toUpperCase())}</div>${navButtons(spec)}<div class="spacer"></div>
-    ${b.tagline ? `<div class="updated">${esc(b.tagline)}</div>` : ''}</div>` : ''}
-  <div id="tools">${dateSlicer(spec)}${dimFilters(spec, false)}<div class="spacer"></div>
+  const P = pelle(spec), sh = P.shell, m = spec.meta, b = m.brand || {}, T2 = m.strings || {};
+  const marchio = esc((b.name || m.title).toUpperCase());
+  const filtriInRail = sh.rail > 0 && !sh.tools;
+
+  const barraFiltri = sh.tools ? `<div id="tools">${dateSlicer(spec)}${dimFilters(spec, false)}<div class="spacer"></div>
     <div class="ctxwrap" id="hCtx"></div>
-    <button class="resetb" id="btnReset">${esc(T2.reset || 'Azzera filtri')}</button></div>
-  <div id="main">
-    ${header(spec, false)}
+    <button class="resetb" id="btnReset">${esc(T2.reset || 'Azzera filtri')}</button></div>` : '';
+
+  const corpo = `<div id="main">
+    ${barraFiltri}
+    ${header(spec, !sh.tools, sh.rail === 0 && !sh.topbar)}
     <div id="page"></div>
     <div class="wm">${esc(m.watermark)}</div>
   </div>`;
+
+  if (sh.rail > 0) {
+    return `<div id="rail">
+    <div class="brand"><div class="mk"><div class="sq"></div><div class="nm">${marchio}</div></div>
+      ${b.tagline && !sh.tools ? `<div class="sub">${esc(b.tagline)}</div>` : ''}</div>
+    ${navButtons(spec) ? `<div class="navgrp"><div class="rlbl">${esc(T2.report || 'Report')}</div>${navButtons(spec)}</div>` : ''}
+    ${filtriInRail ? dateSlicer(spec) + dimFilters(spec, true) : ''}
+    ${m.source && !sh.tools ? `<div class="railfoot">${esc(m.source)}</div>` : ''}
+  </div>
+  ${corpo}`;
+  }
+
+  return `${hasTopbar(spec) ? `<div id="topbar"><div class="nm">${marchio}</div>${navButtons(spec)}<div class="spacer"></div>
+    ${b.tagline ? `<div class="updated">${esc(b.tagline)}</div>` : ''}</div>` : ''}
+  ${corpo}`;
 }
 
 /* ---------- deterministic, compact JSON ---------- */

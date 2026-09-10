@@ -127,11 +127,11 @@ cards, usually 4-5). Compute one column width once, then size every visual as a 
 of columns plus the gutters it swallows:
 
 ```js
-const CW = 1254, G = 11, NCOL = 5;        // content width, gutter, number of KPI columns
+const CW = 1248, G = 11, NCOL = 5;        // content width (shell senza rail), gutter, colonne KPI
 const colW = (CW - (NCOL-1)*G) / NCOL;    // one grid column  (= 242 here)
 const span = k => k*colW + (k-1)*G;       // width of a k-column visual (absorbs inner gutters)
 // with NCOL=5, a 3-visual row that fills the width: span(2), span(2), span(1)
-//   → 495 + 495 + 242, plus two 11px gutters = 1254 = CW exactly, edges aligned
+//   → 492 + 492 + 242, plus two 11px gutters = 1248 = CW exactly, edges aligned
 ```
 
 So on a 5-KPI report a three-visual row is **2 + 2 + 1** columns (or 2+1+2, 1+2+2 — any integer

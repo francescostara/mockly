@@ -87,7 +87,7 @@ const spec = {
   aesthetic: 'agency-modern',
   archetype: 'scorecard',
   palette: { series: ['#4C6FE0', '#22B5A6', '#3D4A6B', '#7A5AF8', '#2E9BD6', '#F0A63C'] },
-  grid: { contentWidth: 1254, gutter: 12, columns: 5 },
+  grid: { contentWidth: 1248, gutter: 12, columns: 5 },
   model: {
     sums: ['reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'folNew'],
     measures: [

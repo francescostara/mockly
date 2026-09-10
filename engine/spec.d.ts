@@ -5,6 +5,36 @@
 
 export type Aesthetic = 'corporate-sober' | 'agency-modern' | 'executive-minimal';
 
+/** Dove stanno navigazione e filtri. Decide anche grid.contentWidth, che NON e una scelta:
+ *  rail 1044 · rail-slim 1116 · top 1248 · bare 1248. */
+export type Shell = 'rail' | 'rail-slim' | 'top' | 'bare';
+
+/** Le famiglie di colore. Ognuna porta la sua scala categoriale da sei e il suo raggio. */
+export type PaletteFamily =
+  | 'navy-corporate' | 'slate-freddo' | 'warm-taupe' | 'carta-inchiostro' | 'dark-agency'
+  | 'dark-tecnico' | 'terroso' | 'salvia' | 'jewel-desaturati' | 'monocromo-accento'
+  | 'alto-contrasto' | 'pastello-sobrio' | 'blu-ghiaccio';
+
+/** Coppie display + interfaccia. I numeri sono mono e tabellari in tutte, sempre. */
+export type Typeface =
+  | 'sans-sistema' | 'serif-display' | 'condensato' | 'humanist'
+  | 'geometrico' | 'slab' | 'editoriale' | 'tecnico';
+
+/** Il ritmo: spaziature, raggi, e se le card sono riquadrate o appoggiate al fondo continuo.
+ *  "denso" toglie il riquadro alle card: e la variazione che si vede di piu. */
+export type Density = 'arioso' | 'medio' | 'denso';
+
+/** LA PELLE — i quattro assi visivi, indipendenti fra loro e dall'archetipo.
+ *  `aesthetic` resta il preset con un nome; `skin` sovrascrive un asse alla volta.
+ *  8 archetipi x 4 shell x 13 palette x 8 tipografie x 3 densita = quasi diecimila facce, senza
+ *  mantenere diecimila file. Vincoli e rotazione: skill/references/layout-archetypes.md. */
+export interface Skin {
+  shell?: Shell;
+  palette?: PaletteFamily;
+  tipografia?: Typeface;
+  densita?: Density;
+}
+
 /** eur = compact €1,2M/€41K · eurF = full grouped · pc = 42,1% · pp = +1,2 pp
  *  sgp = signed % · bps = +34bps · N = grouped integer · x = 1,8× · days · months = 18,3 mesi · raw */
 export type Format = 'eur' | 'eurF' | 'pc' | 'pp' | 'sgp' | 'bps' | 'N' | 'x' | 'days' | 'months' | 'raw';
@@ -46,7 +76,8 @@ export interface Palette {
   heatLo?: string; heatMid?: string; heatHi?: string;
 }
 
-/** contentWidth = page area inside the canvas (1044 with a 200px rail, 1254 without).
+/** contentWidth = page area inside the canvas. NON si sceglie: lo decide la shell (1280 meno
+ *  la rail, meno il padding) — rail 1044, rail-slim 1116, top e bare 1248.
  *  columns MUST equal kpiBand.length. */
 export interface Grid { contentWidth: number; gutter: number; columns: number; }
 
@@ -203,6 +234,8 @@ export type Archetype = 'scorecard' | 'executive-summary' | 'funnel' | 'quadrant
 export interface Spec {
   meta: Meta;
   aesthetic: Aesthetic;
+  /** Sovrascrive uno o piu assi del preset. Omettila per la faccia storica dell'estetica. */
+  skin?: Skin;
   /** obbligatorio: una dichiarazione che nessuno verifica vale meno di nessuna dichiarazione,
    *  quindi il motore controlla che la composizione corrisponda. */
   archetype: Archetype;

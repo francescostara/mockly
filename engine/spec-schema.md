@@ -44,7 +44,7 @@ The types are in [`spec.d.ts`](spec.d.ts); this file is the prose reference.
 `columns` **must** equal `kpiBand.length`; every visual's `span` is an integer number of those
 columns. This is the shared-grid rule from SKILL.md §1: pick one page split (e.g. 3|2) and reuse
 it in every row so vertical edges line up top to bottom. `contentWidth` is the page area inside
-the canvas — 1044 with a 200px left rail, 1254 with no rail (1280 − margins).
+the canvas. La decide la SHELL, non il gusto: rail 1044, rail-slim 1116, top e bare 1248.
 
 `render()` rejects a spec where `columns !== kpiBand.length`, where a row's spans do not sum to
 `columns`, or where a row holds more than 3 visuals.

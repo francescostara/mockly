@@ -11,6 +11,7 @@
 const { JSDOM } = require('jsdom');
 const GN = require('./gates-numbers.js');
 const { render, toolbarBudget, lint, measurePage, AESTHETICS } = require('../engine/render.js');
+const SKIN = require('../engine/skin.js');
 
 /* contrasto WCAG: serve per la zona filtri, dove un grigio su grigio non si legge (BUG 5) */
 const lum = hex => {
@@ -178,10 +179,16 @@ function runCase(id, fixture, evalCase) {
   ok('nessuna sigla non spiegata nel descrittore KPI',
     dets.every(t => !/(AP|AC|PY|CY|PM|CM)/.test(t)), dets.find(t => /(AP|AC|PY|CY|PM|CM)/.test(t)) || '');
 
-  /* la zona filtri deve essere leggibile in tutte e tre le estetiche (domain-knowledge) */
-  const AE = AESTHETICS[spec.aesthetic];
-  const zone = AE.shell === 'rail' ? AE.tokens.rail : AE.tokens.card;
-  [['etichetta filtro', AE.tokens.flab], ['testo dei controlli', AE.shell === 'rail' ? AE.tokens.railInk : AE.tokens.ink2]]
+  /* La zona filtri deve essere leggibile in OGNI pelle, non solo nelle tre storiche. E il
+     colore da misurare dipende da dove sta la zona: dentro la rail scura l'etichetta e chiara
+     (flabRail), sulla riga dei filtri e scura (flab). Misurare il token sbagliato contro il
+     fondo sbagliato e lo stesso errore che avevamo gia fatto una volta col contrasto fra temi
+     della web app: il rapporto va calcolato dove il testo sta davvero. */
+  const PL = SKIN.pelleDi(spec);
+  const dentroRail = PL.shell.rail > 0 && !PL.shell.tools;
+  const zone = dentroRail ? PL.tokens.rail : PL.tokens.card;
+  [['etichetta filtro', dentroRail ? PL.tokens.flabRail : PL.tokens.flab],
+   ['testo dei controlli', dentroRail ? PL.tokens.railInk : PL.tokens.ink2]]
     .forEach(([what, col]) => ok('zona filtri: ' + what + ' leggibile', contrast(col, zone) >= 4.5,
       col + ' su ' + zone + ' = ' + contrast(col, zone).toFixed(2) + ':1'));
 
@@ -213,7 +220,7 @@ function runCase(id, fixture, evalCase) {
 
   /* la zona filtri sta in una banda sola, e i controlli hanno la forma dell'asse
      su cui vivono (pattern-library, filter placement) */
-  if (AE.shell !== 'rail') {
+  if (PL.shell.tools) {
     const band = B.q('#tools');
     ok('toolbar: filtri, pill attive e reset nella stessa banda',
       !!band && !!band.querySelector('#btnReset') && !!band.querySelector('#hCtx'),
@@ -224,8 +231,8 @@ function runCase(id, fixture, evalCase) {
   (spec.filters.dims || []).filter(fd => (fd.control || 'list') !== 'dropdown').forEach(fd => {
     const grp = B.q('#fl_' + fd.id).parentElement;
     ok(`filtro "${fd.id}": etichetta visibile accanto ai controlli`,
-      AE.shell === 'rail' ? !!grp.querySelector('.rlbl') : !!grp.querySelector('.flab'));
-    if (AE.shell !== 'rail') {
+      dentroRail ? !!grp.querySelector('.rlbl') : !!grp.querySelector('.flab'));
+    if (PL.shell.tools) {
       const items = [...B.q('#fl_' + fd.id).children];
       const style = B.w.getComputedStyle(B.q('#fl_' + fd.id));
       ok(`filtro "${fd.id}": chip in riga sulla toolbar, non una pila da rail`,

@@ -78,7 +78,7 @@ const spec = {
   },
   aesthetic: 'executive-minimal',
   archetype: 'executive-summary',
-  grid: { contentWidth: 1254, gutter: 12, columns: 3 },
+  grid: { contentWidth: 1248, gutter: 12, columns: 3 },
   model: {
     sums: ['mrr', 'clienti', 'mrrNuovo', 'mrrEspansione', 'mrrChurn', 'spesaAcq', 'mrrNetto'],
     measures: [
