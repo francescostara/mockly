@@ -30,10 +30,15 @@
       "watermark": "Mockup dimostrativo · dati sintetici"
     },
     "aesthetic": "corporate-sober",
+    "skin": {
+      "palette": "salvia",
+      "tipografia": "humanist",
+      "densita": "denso"
+    },
     "archetype": "operational",
     "grid": {
       "contentWidth": 1044,
-      "gutter": 12,
+      "gutter": 8,
       "columns": 4
     },
     "model": {

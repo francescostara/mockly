@@ -30,6 +30,10 @@
       "watermark": "Mockup dimostrativo · dati sintetici"
     },
     "aesthetic": "corporate-sober",
+    "skin": {
+      "palette": "dark-tecnico",
+      "tipografia": "tecnico"
+    },
     "archetype": "quadrants",
     "grid": {
       "contentWidth": 1044,

@@ -77,6 +77,9 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici'
   },
   aesthetic: 'executive-minimal',
+  /* SaaS per il board: carta e inchiostro, serif editoriale, nessuna cornice scura. La pagina
+     deve sembrare un documento del consiglio, non un'applicazione. */
+  skin: { shell: 'bare', tipografia: 'editoriale' },
   archetype: 'executive-summary',
   grid: { contentWidth: 1248, gutter: 12, columns: 3 },
   model: {

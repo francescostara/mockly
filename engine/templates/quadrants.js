@@ -71,6 +71,9 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici'
   },
   aesthetic: 'corporate-sober',
+  /* Manifattura: dark tecnico e caratteri mono. E' la pelle che la nicchia dichiara, ed e la
+     piu lontana possibile dalle altre tre canoniche — che e il punto degli esempi. */
+  skin: { palette: 'dark-tecnico', tipografia: 'tecnico' },
   archetype: 'quadrants',
   grid: { contentWidth: 1044, gutter: 12, columns: 4 },
   model: {

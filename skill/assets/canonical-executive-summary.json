@@ -30,9 +30,13 @@
       "watermark": "Mockup dimostrativo · dati sintetici"
     },
     "aesthetic": "executive-minimal",
+    "skin": {
+      "shell": "bare",
+      "tipografia": "editoriale"
+    },
     "archetype": "executive-summary",
     "grid": {
-      "contentWidth": 1254,
+      "contentWidth": 1248,
       "gutter": 12,
       "columns": 3
     },

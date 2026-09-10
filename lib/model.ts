@@ -206,6 +206,23 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
             properties: {
               meta: { type: 'object', description: 'titolo, lingua, mesi, watermark' },
               aesthetic: { type: 'string', enum: ['corporate-sober', 'agency-modern', 'executive-minimal'] },
+              skin: {
+                type: 'object',
+                description: 'Optional visual skin. Each axis is independent; omit an axis to keep ' +
+                  'the aesthetic preset. Pick inside the PELLE PLAUSIBILE the niche declares, and ' +
+                  'ROTATE: two reports of the same niche must differ in at least two axes.',
+                properties: {
+                  shell: { type: 'string', enum: ['rail', 'rail-slim', 'top', 'bare'],
+                    description: 'Decides grid.contentWidth too: rail 1044, rail-slim 1116, top and bare 1248.' },
+                  palette: { type: 'string', enum: ['navy-corporate', 'slate-freddo', 'warm-taupe',
+                    'carta-inchiostro', 'dark-agency', 'dark-tecnico', 'terroso', 'salvia',
+                    'jewel-desaturati', 'monocromo-accento', 'alto-contrasto', 'pastello-sobrio', 'blu-ghiaccio'] },
+                  tipografia: { type: 'string', enum: ['sans-sistema', 'serif-display', 'condensato',
+                    'humanist', 'geometrico', 'slab', 'editoriale', 'tecnico'] },
+                  densita: { type: 'string', enum: ['arioso', 'medio', 'denso'],
+                    description: 'Decides grid.gutter too: arioso 16, medio 12, denso 8.' }
+                }
+              },
               archetype: {
                 type: 'string',
                 enum: ['scorecard', 'executive-summary', 'funnel', 'quadrants', 'bridge', 'cohorts', 'operational'],

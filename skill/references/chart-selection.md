@@ -121,6 +121,30 @@ niente cross-filter, niente drill. E' un filtro decorativo travestito da heatmap
 Perche la mappa dica qualcosa serve una **stagionalita per membro** nei dataParams: con quella
 globale tutte le righe hanno lo stesso profilo e la heatmap diventa un muro di un colore solo.
 
+## donut — il visual della CONCENTRAZIONE, non la torta
+
+Quando la domanda e "quanto dipendo da pochi?". In quasi ogni impresa vale una versione della
+legge di Pareto: pochi clienti fanno il grosso del fatturato, pochi prodotti il grosso del
+margine, poche piattaforme il grosso della spesa. E la concentrazione e **fragilita**: "il 68%
+del fatturato viene da tre clienti" non e una statistica, e un rischio di dipendenza — ed e il
+gancio di pre-vendita piu forte che un mockup possa avere. Stessa cosa per "l'82% delle views e
+paid" (crescita drogata) o "il 91% dei costi e sui vettori terzi" (nessun controllo).
+
+Il donut dice due cose in un colpo: **al centro** il numero che riassume, **nell'anello** come
+quel totale si spacca fra poche categorie.
+
+**Le tre forme ammesse:**
+- **Due categorie** — la piu forte. X contro il resto: paid/organico, nuovo/di ritorno,
+  ricorrente/progetti. Centro sul totale.
+- **Top-N + "Altri"** — `topN: 3` (o 4, o 5) aggrega la coda. Mai piu di cinque spicchi piu Altri.
+- **Centro sulla QUOTA** — `centre: "share"` scrive "69%" invece del totale, quando il messaggio
+  E la concentrazione.
+
+**Regole:** il numero centrale e sempre calcolato da una misura, mai un testo fisso; sopra i sei
+spicchi senza `topN` il motore rifiuta; colore costante per categoria e `alert` per lo spicchio
+problema, secondo la regola del rosso; le etichette sugli spicchi portano la QUOTA, non il
+valore — la lettura di un donut e "quanta parte", e il valore sta nel tooltip e in legenda.
+
 ## delta-card — quando il numero grande e la variazione
 
 Quando la domanda e **"come sta cambiando?"** e dietro la misura c'e una serie temporale. La card

@@ -28,7 +28,7 @@ ok('i quattro esempi canonici hanno quattro forme diverse', () => {
 
 ok('i canonici passano diversita, apertura e chiusura', () => {
   const esiti = insieme(canonici);
-  ['diversita', 'apertura', 'chiusura', 'archetipo-dichiarato'].forEach(id => {
+  ['diversita', 'apertura', 'chiusura', 'archetipo-dichiarato', 'varieta-pelle'].forEach(id => {
     const e = esito(esiti, id);
     assert.ok(e && e.passa, id + ': ' + (e ? e.testo : 'gate assente'));
   });
@@ -72,6 +72,34 @@ ok('un board con dodici riquadri viene bocciato sulla densita', () => {
   const s = scheda(fixtures['ecommerce-retail'].spec, 'boardino');
   const e = esito(insieme([s], { boardino: 'board' }), 'densita-pubblico');
   assert.ok(e && !e.passa, 'densita ' + s.densita + ' accettata per un board: ' + (e && e.testo));
+});
+
+ok('i quattro canonici hanno quattro pelli diverse', () => {
+  const combo = new Set(canonici.map(s => s.combinazione));
+  assert.strictEqual(combo.size, canonici.length,
+    'gli esempi sono cio che il modello copia: se tre su quattro hanno la stessa palette, lo ' +
+    'stesso carattere e la stessa cornice, la varieta resta una promessa nella prosa. ' +
+    [...combo].join(' / '));
+});
+
+ok('due report della stessa nicchia con la stessa faccia vengono bocciati', () => {
+  /* stesso archetipo, stessa pelle, stessa nicchia: e il caso che il gate esiste per fermare */
+  const a = scheda(templates['canonical-funnel'].spec, 'b2b-1', 'b2b-sales');
+  const b = Object.assign({}, a, { nome: 'b2b-2' });
+  const e = esito(insieme([a, b]), 'varieta-stessa-nicchia');
+  assert.ok(e && !e.passa, 'due gemelli della stessa nicchia sono passati: ' + (e && e.testo));
+  assert.match(e.testo, /0 asse diverso/, e.testo);
+});
+
+ok('due report della stessa nicchia che differiscono in due assi passano', () => {
+  const a = scheda(templates['canonical-funnel'].spec, 'b2b-1', 'b2b-sales');
+  const b = Object.assign({}, a, {
+    nome: 'b2b-2',
+    pelle: Object.assign({}, a.pelle, { palette: 'blu-ghiaccio', tipografia: 'sans-sistema' })
+  });
+  b.combinazione = [b.pelle.palette, b.pelle.tipografia, b.pelle.shell].join(' + ');
+  const e = esito(insieme([a, b]), 'varieta-stessa-nicchia');
+  assert.ok(e && e.passa, e && e.testo);
 });
 
 ok('un giro senza archetipo dichiarato viene segnalato', () => {

@@ -71,7 +71,22 @@ about; the rules further down only decide how it looks.
    If the brief asks questions of different SHAPES, give them different PAGES, one per
    archetype (\`page.archetype\`).
 
-7. **Build the spec with that niche's vocabulary** — its KPI names, its dimensions, its
+7. **Choose the SKIN — the visual axes — and declare what you change in \`spec.skin\`.** The
+   archetype decides the COMPOSITION; the skin decides the FACE, and they are independent.
+   Four axes: \`shell\` (where nav and filters live), \`palette\` (13 families), \`tipografia\`
+   (8 display+UI pairings; numbers are always monospaced), \`densita\` (spacing, radii, and
+   whether cards are boxed or sit on a continuous ground).
+   - Each niche entry declares a PELLE PLAUSIBILE: choose inside it.
+   - **The client's brand wins over everything.** If the brief names colours or a logo, the
+     palette comes from there.
+   - **ROTATE.** Two reports of the same niche must differ in at least TWO axes out of five
+     (archetype, shell, palette, typeface, density) — a gate measures it on a collection.
+     Deriving the choice from something in the brief keeps it deliberate rather than random.
+   - Two numbers follow from the axes and are NOT free: \`grid.contentWidth\` from the shell
+     (rail 1044, rail-slim 1116, top and bare 1248) and \`grid.gutter\` from the density
+     (arioso 16, medio 12, denso 8). The engine rejects any other value.
+
+8. **Build the spec with that niche's vocabulary** — its KPI names, its dimensions, its
    signature charts, and its signature negative storyline in the data.
 
 ONE SHOT, NO QUESTIONS BACK. If something in the intake is missing or vague, use the niche's

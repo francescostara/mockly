@@ -10,6 +10,7 @@
  * modo, quante chiudono allo stesso modo. Sono queste tre.
  */
 'use strict';
+const SKIN = require('../engine/skin.js');
 
 /** La firma strutturale di una pagina: i tipi di visual, riga per riga, con gli span. */
 const firmaPagina = pg => (pg.rows || [])
@@ -44,11 +45,20 @@ function chiusuraDi(spec) {
 const densita = spec => (spec.kpiBand || []).length +
   (((spec.pages || [])[0] || {}).rows || []).reduce((n, r) => n + r.visuals.length, 0);
 
-/** La scheda di una singola spec — serve sia ai gate d'insieme sia al referto per file. */
-function scheda(spec, nome) {
+/** La scheda di una singola spec — serve sia ai gate d'insieme sia al referto per file.
+ *  `nicchia` e opzionale: chi chiama la sa (l'eval dal nome del caso), un test sui canonici no. */
+function scheda(spec, nome, nicchia) {
   const ap = aperturaDi(spec), ch = chiusuraDi(spec);
+  /* La pelle e mezza risposta alla domanda "si somigliano?": due report con la stessa
+     composizione ma palette, caratteri e cornice diversi non si riconoscono come gemelli. */
+  let pelle = null;
+  try {
+    const P = SKIN.pelleDi(spec);
+    pelle = { shell: P.shell.id, palette: P.id.palette, tipografia: P.id.tipografia, densita: P.id.densita };
+  } catch { /* spec di un giro precedente, senza estetica valida: si resta senza pelle */ }
   return {
-    nome,
+    nome, nicchia: nicchia || null, pelle,
+    combinazione: pelle ? [pelle.palette, pelle.tipografia, pelle.shell].join(' + ') : null,
     archetipo: spec.archetype || null,
     firma: firma(spec),
     apertura: ap,
@@ -60,7 +70,7 @@ function scheda(spec, nome) {
 
 /* Le soglie sono quelle del task, e sono soglie di INSIEME: un report che chiude con la
    matrice non ha sbagliato niente — nove su dieci si. */
-const SOGLIE = { firmaUguale: 0.40, apertura: 0.40, chiusura: 0.60 };
+const SOGLIE = { firmaUguale: 0.40, apertura: 0.40, chiusura: 0.60, pelleUguale: 0.30 };
 
 /** I gate sull'insieme. `pubblici` e opzionale: id -> 'board' | 'operativo' | altro, preso
  *  dal brief quando chi chiama ce l'ha (l'eval si, un test sui canonici no). */
@@ -103,6 +113,48 @@ function insieme(schede, pubblici) {
       sbagliati.length
         ? sbagliati.map(s => `${s.nome}: pubblico ${pubblici[s.nome]}, ${s.densita} fra card e visual`).join('; ')
         : `${conPubblico.length} file con pubblico dichiarato, densita coerente`);
+  }
+
+  /* 4b. VARIETA DELLA PELLE. La composizione puo essere legittimamente la stessa — due
+         scorecard sono due scorecard — ma se anche colore, caratteri e cornice coincidono, i
+         due file si riconoscono come lo stesso template a colpo d'occhio, che e la cosa che
+         perde il progetto. */
+  const conPelle = schede.filter(s => s.combinazione);
+  if (conPelle.length > 1) {
+    const combo = {};
+    conPelle.forEach(s => { combo[s.combinazione] = (combo[s.combinazione] || 0) + 1; });
+    const [comboTop, quanteC] = Object.entries(combo).sort((a, b) => b[1] - a[1])[0];
+    ok('varieta-pelle', quanteC / conPelle.length <= SOGLIE.pelleUguale,
+      `${quanteC} file su ${conPelle.length} hanno la stessa combinazione palette+tipografia+shell ` +
+      `(${(quanteC / conPelle.length * 100).toFixed(0)}%, soglia ${SOGLIE.pelleUguale * 100}%)` +
+      (quanteC > 1 ? ` — "${comboTop}"` : ''));
+
+    /* 4c. STESSA NICCHIA, FACCE DIVERSE. E' il caso peggiore e il piu probabile: due brief di
+           ristorazione che escono identici. Devono differire in almeno DUE assi su cinque. */
+    const perNicchia = {};
+    conPelle.filter(s => s.nicchia).forEach(s => {
+      (perNicchia[s.nicchia] = perNicchia[s.nicchia] || []).push(s);
+    });
+    const troppoSimili = [];
+    Object.keys(perNicchia).forEach(n => {
+      const g = perNicchia[n];
+      for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) {
+        const a = g[i], b = g[j];
+        const assi = [
+          a.archetipo !== b.archetipo,
+          a.pelle.shell !== b.pelle.shell,
+          a.pelle.palette !== b.pelle.palette,
+          a.pelle.tipografia !== b.pelle.tipografia,
+          a.pelle.densita !== b.pelle.densita
+        ].filter(Boolean).length;
+        if (assi < 2) troppoSimili.push(`${a.nome} e ${b.nome} (nicchia ${n}): ${assi} asse diverso su 5`);
+      }
+    });
+    if (Object.keys(perNicchia).some(n => perNicchia[n].length > 1)) {
+      ok('varieta-stessa-nicchia', !troppoSimili.length,
+        troppoSimili.length ? troppoSimili.join('; ')
+          : 'ogni coppia della stessa nicchia differisce in almeno due assi');
+    }
   }
 
   /* 5. ARCHETIPO DICHIARATO. Il motore lo pretende gia; qui si conta, perche un giro fatto

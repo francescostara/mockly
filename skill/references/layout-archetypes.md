@@ -177,6 +177,30 @@ trasforma in uno scorecard). La regola diventa quindi, senza perdere niente:
 
 ---
 
+## 3-bis. La PELLE: quattro assi in piu, indipendenti dall'archetipo
+
+L'archetipo decide la COMPOSIZIONE. La faccia la decidono altri quattro assi, che si combinano
+liberamente con esso (`engine/skin.js`, `spec.skin`):
+
+| asse | valori | cosa cambia |
+|---|---|---|
+| `shell` | rail · rail-slim · top · bare | dove stanno navigazione e filtri, e quanta larghezza resta |
+| `palette` | 13 famiglie | il colore, compresa la scala categoriale da sei |
+| `tipografia` | 8 coppie | display + interfaccia; i numeri sono mono tabellari in tutte |
+| `densita` | arioso · medio · denso | spaziature, raggi, card riquadrate o su fondo continuo |
+
+8 x 4 x 13 x 8 x 3 = quasi diecimila combinazioni, senza mantenere diecimila file.
+
+**Due valori non sono liberi e discendono dagli assi:** `grid.contentWidth` dalla shell (rail
+1044, rail-slim 1116, top e bare 1248) e `grid.gutter` dalla densita (16, 12, 8). Il motore
+rifiuta gli altri, perche sono i numeri con cui calcola il layout: sbagliarli fa strizzare le
+card mentre gli SVG restano larghi quanto la spec crede.
+
+**Come si sceglie:** la nicchia dichiara la sua PELLE PLAUSIBILE (`niches.md`), il brand del
+cliente vince su tutto, e dentro il recinto la scelta RUOTA col brief. Il gate di varieta lo
+verifica su una collezione: mai la stessa combinazione oltre il 30% dei file, e due report della
+stessa nicchia devono differire in almeno **due assi su cinque**.
+
 ## 4. Le classi di scambio — la personalizzazione, progettata ora e costruita dopo
 
 Cambiare `type: "donut"` in `type: "hbar"` e ri-renderizzare non chiama nessun modello: e
