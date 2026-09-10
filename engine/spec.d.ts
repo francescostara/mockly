@@ -24,6 +24,10 @@ export type Typeface =
  *  "denso" toglie il riquadro alle card: e la variazione che si vede di piu. */
 export type Density = 'arioso' | 'medio' | 'denso';
 
+/** La forma della banda KPI. Quattro riquadri separati, oppure una superficie sola divisa da
+ *  separatori interni. Entrambe legittime; la scelta vale per l'intera pagina, mai meta e meta. */
+export type BandStyle = 'box' | 'blocco';
+
 /** LA PELLE — i quattro assi visivi, indipendenti fra loro e dall'archetipo.
  *  `aesthetic` resta il preset con un nome; `skin` sovrascrive un asse alla volta.
  *  8 archetipi x 4 shell x 13 palette x 8 tipografie x 3 densita = quasi diecimila facce, senza
@@ -33,6 +37,7 @@ export interface Skin {
   palette?: PaletteFamily;
   tipografia?: Typeface;
   densita?: Density;
+  banda?: BandStyle;
 }
 
 /** eur = compact €1,2M/€41K · eurF = full grouped · pc = 42,1% · pp = +1,2 pp

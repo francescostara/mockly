@@ -232,12 +232,23 @@ const TIPOGRAFIE = {
 /* ---------------------------------------------------------------- 4. DENSITA */
 
 /* Il ritmo: quanto respira la pagina. Tocca le spaziature — che il fit deve conoscere, perche
-   il gutter entra nel conto delle altezze — e la natura della card: riquadrata su fondo, o
-   appoggiata a un fondo continuo senza bordo, che e un'altra faccia ancora. */
+   il gutter entra nel conto delle altezze — e il peso dell'ombra.
+   NON tocca piu il BORDO. La densita "densa" toglieva il riquadro alle card e le appoggiava a
+   un fondo continuo: era una faccia in piu, ed era anche un lettore lasciato a indovinare dove
+   finisce un grafico e comincia quello accanto. La regola ora e senza eccezioni — ogni card ha
+   un confine visibile — quindi il denso stringe le spaziature e perde l'ombra, non il bordo. */
 const DENSITA = {
-  arioso: { etichetta: 'arioso', gutter: 16, pad: 18, bordo: 1, piatto: false, cardPad: 12 },
-  medio: { etichetta: 'medio', gutter: 12, pad: 14, bordo: 1, piatto: false, cardPad: 10 },
-  denso: { etichetta: 'denso', gutter: 8, pad: 10, bordo: 1, piatto: true, cardPad: 7 }
+  arioso: { etichetta: 'arioso', gutter: 16, pad: 18, bordo: 1, ombra: true, cardPad: 12 },
+  medio: { etichetta: 'medio', gutter: 12, pad: 14, bordo: 1, ombra: true, cardPad: 10 },
+  denso: { etichetta: 'denso', gutter: 8, pad: 10, bordo: 1, ombra: false, cardPad: 7 }
+};
+
+/* La banda KPI ammette DUE forme, e sono l'asse che il denso non porta piu: quattro riquadri
+   separati, oppure una superficie sola divisa da separatori interni. Entrambe legittime; la
+   scelta vale per l'intera pagina — mai meta e meta, che e l'unico modo di sbagliarla. */
+const BANDE = {
+  box: { etichetta: 'riquadri separati' },
+  blocco: { etichetta: 'blocco unico con separatori' }
 };
 
 /* ---------------------------------------------------------------- i preset storici */
@@ -245,9 +256,9 @@ const DENSITA = {
 /* Le tre estetiche di prima, espresse come combinazioni. Restano il modo piu breve di dire
    "quella faccia li", e una spec che dichiara solo `aesthetic` renderizza come sempre. */
 const PRESET = {
-  'corporate-sober': { shell: 'rail', palette: 'navy-corporate', tipografia: 'sans-sistema', densita: 'medio' },
-  'agency-modern': { shell: 'top', palette: 'dark-agency', tipografia: 'sans-sistema', densita: 'medio' },
-  'executive-minimal': { shell: 'top', palette: 'carta-inchiostro', tipografia: 'sans-sistema', densita: 'medio' }
+  'corporate-sober': { shell: 'rail', palette: 'navy-corporate', tipografia: 'sans-sistema', densita: 'medio', banda: 'box' },
+  'agency-modern': { shell: 'top', palette: 'dark-agency', tipografia: 'sans-sistema', densita: 'medio', banda: 'box' },
+  'executive-minimal': { shell: 'top', palette: 'carta-inchiostro', tipografia: 'sans-sistema', densita: 'medio', banda: 'box' }
 };
 
 /** La pelle effettiva di una spec: il preset, piu gli assi che la spec sovrascrive. */
@@ -259,12 +270,14 @@ function pelleDi(spec) {
   if (!FAMIGLIE[s.palette]) throw new Error('palette sconosciuta: "' + s.palette + '"');
   if (!TIPOGRAFIE[s.tipografia]) throw new Error('tipografia sconosciuta: "' + s.tipografia + '"');
   if (!DENSITA[s.densita]) throw new Error('densita sconosciuta: "' + s.densita + '"');
+  if (!BANDE[s.banda || 'box']) throw new Error('banda KPI sconosciuta: "' + s.banda + '"');
   return {
     id: s,
     shell: Object.assign({ id: s.shell }, SHELLS[s.shell]),
     tokens: palette(s.palette),
     tipo: Object.assign({ id: s.tipografia }, TIPOGRAFIE[s.tipografia]),
-    densita: Object.assign({ id: s.densita }, DENSITA[s.densita])
+    densita: Object.assign({ id: s.densita }, DENSITA[s.densita]),
+    banda: Object.assign({ id: s.banda || 'box' }, BANDE[s.banda || 'box'])
   };
 }
 
@@ -300,12 +313,13 @@ function scegliPelle(v) {
     palette: scegli(palettes, 0),
     tipografia: scegli(tipi, 7),
     shell: scegli(shells, 13),
-    densita: scegli(dens, 19)
+    densita: scegli(dens, 19),
+    banda: scegli(v.banda && v.banda.length ? v.banda : Object.keys(BANDE), 23)
   };
 }
 
 module.exports = {
-  SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, PRESET,
+  SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, BANDE, PRESET,
   palette, pelleDi, scegliPelle, seme,
   mix, contrasto
 };

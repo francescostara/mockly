@@ -179,6 +179,18 @@ function runCase(id, fixture, evalCase) {
   ok('nessuna sigla non spiegata nel descrittore KPI',
     dets.every(t => !/(AP|AC|PY|CY|PM|CM)/.test(t)), dets.find(t => /(AP|AC|PY|CY|PM|CM)/.test(t)) || '');
 
+  /* IL CONFINE, sul file vero: ogni card porta la regola del bordo, e la banda KPI ha UNA
+     forma sola. Meta riquadri e meta blocco e l'unico modo di sbagliare questa scelta. */
+  {
+    const css = B.q('style').textContent;
+    ok('ogni card ha un bordo nel foglio di stile',
+      /\.card\{[^}]*border:1px solid var\(--line\)/.test(css),
+      (css.match(/\.card\{[^}]*/) || [''])[0].slice(0, 90));
+    const bande = [...B.d.querySelectorAll('#page .row')].filter(r => r.querySelector('.kpi'));
+    const forme = new Set(bande.map(r => r.classList.contains('kb') ? 'blocco' : 'box'));
+    ok('la banda KPI ha una forma sola in tutta la pagina', forme.size <= 1, [...forme].join(' + '));
+  }
+
   /* La zona filtri deve essere leggibile in OGNI pelle, non solo nelle tre storiche. E il
      colore da misurare dipende da dove sta la zona: dentro la rail scura l'etichetta e chiara
      (flabRail), sulla riga dei filtri e scura (flab). Misurare il token sbagliato contro il

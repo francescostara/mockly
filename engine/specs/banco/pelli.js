@@ -21,12 +21,12 @@ const PELLI = [
     nome: 'senza cornice · carta e inchiostro · editoriale · arioso' },
   { id: 'slim-terroso', skin: { shell: 'rail-slim', palette: 'terroso', tipografia: 'slab', densita: 'medio' },
     nome: 'rail stretta · terroso · slab · medio' },
-  { id: 'top-tecnico', skin: { shell: 'top', palette: 'dark-tecnico', tipografia: 'tecnico', densita: 'denso' },
-    nome: 'barra superiore · dark tecnico · mono · denso (card senza riquadro)' },
+  { id: 'top-tecnico', skin: { shell: 'top', palette: 'dark-tecnico', tipografia: 'tecnico', densita: 'denso', banda: 'blocco' },
+    nome: 'barra superiore · dark tecnico · mono · denso · banda a blocco unico' },
   { id: 'slim-salvia', skin: { shell: 'rail-slim', palette: 'salvia', tipografia: 'humanist', densita: 'arioso' },
     nome: 'rail stretta · salvia · humanist · arioso' },
-  { id: 'bare-mono', skin: { shell: 'bare', palette: 'monocromo-accento', tipografia: 'condensato', densita: 'denso' },
-    nome: 'senza cornice · monocromo con accento · condensato · denso' }
+  { id: 'bare-mono', skin: { shell: 'bare', palette: 'monocromo-accento', tipografia: 'condensato', densita: 'denso', banda: 'blocco' },
+    nome: 'senza cornice · monocromo con accento · condensato · denso · banda a blocco' }
 ];
 
 /* La contentWidth e il gutter non si scrivono a mano: discendono da shell e densita, ed e

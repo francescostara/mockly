@@ -343,7 +343,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var cls = piatto ? 'fl' : (su ? (k.inv ? 'dn' : 'up') : (k.inv ? 'up' : 'dn'));
       var ar = piatto ? '—' : (su ? '▲' : '▼');
       var ent = punti ? f.pp(Math.abs(dif)).slice(1) : f.pc(Math.abs(d));
-      return '<div class="card kpi" style="width:' + g.span(k.span || 1) + 'px">' +
+      /* Nel blocco unico le card non hanno una larghezza propria: crescono in proporzione
+         allo span dentro l'unica superficie, cosi i separatori cadono dove cade la griglia. */
+      var kb = (SPEC.__pelle || {}).banda === 'blocco';
+      var geo = kb ? 'flex:' + (k.span || 1) + ' 1 0;min-width:0' : 'width:' + g.span(k.span || 1) + 'px';
+      return '<div class="card kpi" style="' + geo + '">' +
         '<div><div class="k">' + M.esc(k.label) + '</div><div class="vr">' +
         '<div class="v tnum">' + A.mfmt(k.measure, cv) + '</div>' +
         '<div class="d ' + cls + ' tnum">' + ar + ' ' + ent + ' ' + A.basis() + '</div></div></div>' +
@@ -427,7 +431,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       }
       if (pg.kpiBand !== false && SPEC.kpiBand && SPEC.kpiBand.length) {
         A.kpiState = { cur: A.cur(), prev: A.prev() };
-        out += '<div class="row">' + SPEC.kpiBand.map(A.kpi).join('') + '</div>';
+        var kb = (SPEC.__pelle || {}).banda === 'blocco';
+        out += '<div class="row' + (kb ? ' kb' : '') + '">' + SPEC.kpiBand.map(A.kpi).join('') + '</div>';
       }
       (pg.rows || []).forEach(function (row) {
         out += '<div class="row"' + (row.flex ? ' style="flex:1;min-height:0"' : '') + '>' +

@@ -220,7 +220,10 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
                   tipografia: { type: 'string', enum: ['sans-sistema', 'serif-display', 'condensato',
                     'humanist', 'geometrico', 'slab', 'editoriale', 'tecnico'] },
                   densita: { type: 'string', enum: ['arioso', 'medio', 'denso'],
-                    description: 'Decides grid.gutter too: arioso 16, medio 12, denso 8.' }
+                    description: 'Decides grid.gutter too: arioso 16, medio 12, denso 8.' },
+                  banda: { type: 'string', enum: ['box', 'blocco'],
+                    description: 'KPI band shape: separate boxes, or one surface split by dividers. ' +
+                      'Never half and half — the engine applies it to the whole page.' }
                 }
               },
               archetype: {

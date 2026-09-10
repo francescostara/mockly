@@ -621,6 +621,27 @@ function validate(spec, data) {
     }
   }
 
+  /* IL CONFINE. Ogni card ha un bordo, e il bordo deve essere PERCEPIBILE: un hairline dello
+     stesso colore della superficie non separa niente, e il lettore resta a indovinare dove
+     finisce un grafico e comincia quello accanto. La soglia e bassa di proposito — il bordo
+     non porta significato, quindi non gli si chiede il 3:1 — ma sotto 1,2:1 semplicemente non
+     si vede. Il caso vero che questo gate intercetta e una palette scritta male, o un
+     `spec.palette` che sovrascrive `line` col colore della card. */
+  {
+    const P = pelle(spec), t = Object.assign({}, P.tokens, spec.palette || {});
+    const r = SKIN.contrasto(t.line, t.card);
+    if (P.densita.bordo < 1) {
+      e.push(`la densita "${P.densita.id}" ha un bordo di ${P.densita.bordo}px: ogni card deve ` +
+        `avere un confine visibile, mai zero.`);
+    }
+    if (r < 1.2) {
+      e.push(`il bordo delle card (--line ${t.line}) non si distingue dalla superficie ` +
+        `(--card ${t.card}): ${r.toFixed(2)}:1, sotto il minimo di 1,2:1. Senza un confine ` +
+        `percepibile i visual galleggiano sul fondo e il lettore non vede dove finisce uno e ` +
+        `comincia l'altro.`);
+    }
+  }
+
   /* meta.currency e il SIMBOLO che finisce davanti a ogni cifra, non il codice ISO: con "EUR"
      il report scrive "EUR2,1M" invece di "€2,1M". E' il genere di dettaglio che nessun test
      strutturale vede e che chi riceve il mockup nota subito. */
@@ -683,9 +704,11 @@ function css(spec, compact) {
   const rail = sh.rail > 0;              /* c'e una colonna scura a sinistra */
   const tools = sh.tools;                /* i filtri stanno su una riga sopra la pagina */
   const gut = D.gutter;
-  /* Densita "densa": le card perdono il riquadro e si appoggiano al fondo continuo. E' l'altra
-     faccia del ritmo, e cambia l'aspetto piu di qualunque spaziatura. */
-  const bordo = D.piatto ? '0' : D.bordo + 'px';
+  /* IL CONFINE C'E' SEMPRE. Un grafico che galleggia sul fondo senza separazione lascia il
+     lettore a indovinare dove finisce e dove comincia quello accanto; il bordo puo essere
+     tenue, mai assente. */
+  const bordo = D.bordo + 'px';
+  const banda = P.banda.id;
   return `:root{${vars}}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;background:var(--page);font-family:var(--font);-webkit-font-smoothing:antialiased}
@@ -767,8 +790,12 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
 .updated{font-size:9.5px;color:var(--muted2);text-align:right;line-height:1.5}
 #page{flex:1;min-height:0;padding:${D.pad}px 16px;overflow:hidden;display:flex;flex-direction:column;gap:${gut}px}
 .row{display:flex;flex:0 0 auto;gap:${gut}px}
-.card{background:${D.piatto ? 'transparent' : 'var(--card)'};border:${bordo} solid var(--line);border-radius:var(--radius);position:relative;
-  box-shadow:${D.piatto ? 'none' : '0 1px 1px rgba(20,35,60,.04)'}}
+.card{background:var(--card);border:${bordo} solid var(--line);border-radius:var(--radius);position:relative;
+  box-shadow:${D.ombra ? '0 1px 1px rgba(20,35,60,.04)' : 'none'}}
+${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri spariscono, restano i separatori */
+.row.kb{gap:0;background:var(--card);border:${bordo} solid var(--line);border-radius:var(--radius);overflow:hidden}
+.row.kb>.card{border:0;border-right:${bordo} solid var(--line);border-radius:0;box-shadow:none;background:transparent}
+.row.kb>.card:last-child{border-right:0}` : ``}
 .card>.ch{padding:${D.cardPad}px 13px 5px;display:flex;align-items:baseline;gap:8px}
 .card .ch h3{margin:0;font-family:var(--fontDisp);font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
 .card .ch .hs{font-size:9.5px;color:var(--muted)}
@@ -910,6 +937,10 @@ function render(specIn, data) {
   /* il fit avviene qui, prima della validazione: la spec emessa nel file e quella
      effettivamente renderizzata, cosi cio che si vede e cio che si e validato */
   const { spec, report } = fitSpec(specIn, data);
+  /* La pelle risolta viaggia dentro la spec emessa: il runtime deve sapere se la banda KPI e
+     un blocco unico o quattro riquadri, e non puo ricalcolarla — skin.js sta nel motore, non
+     nel file. Sono tre stringhe, ed evitano di duplicare la tabella dei preset nel runtime. */
+  spec.__pelle = { banda: pelle(spec).banda.id, densita: pelle(spec).densita.id, shell: pelle(spec).shell.id };
   const compact = report.some(r => r.dense);   /* pagina sovraccarica: si stringe tutto il possibile */
 
   /* La pagina che non ci sta nemmeno cosi. Il piano scala le altezze, ma sotto la soglia di
