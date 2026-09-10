@@ -188,6 +188,14 @@ function palette(id, opz) {
        (superficie chiara) e dentro la rail (superficie scura). Un token solo non puo servirli
        entrambi — provarci significa sceglierne uno e lasciare l'altro illeggibile. */
     flabRail: mix(rail, '#FFFFFF', 0.66),
+    /* L'ACCENTO DELLA CORNICE non viene dai dati. Finche la scala categoriale era scritta a
+       mano succedeva di rubarle un colore per la voce di menu attiva, e il risultato era
+       accettabile per caso; con le scale verificate quel colore puo essere un magenta pieno, e
+       la navigazione si accende come un'insegna. La cornice si tinge di se stessa: un gradino
+       piu chiaro della rail, che appartiene alla stessa famiglia e non compete con nessun
+       grafico. */
+    chrome: mix(rail, '#FFFFFF', 0.30),
+    chromeInk: '#FFFFFF',
     radius: f.radius
   };
 

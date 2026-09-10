@@ -82,6 +82,9 @@ about; the rules further down only decide how it looks.
    - **ROTATE.** Two reports of the same niche must differ in at least TWO axes out of five
      (archetype, shell, palette, typeface, density) — a gate measures it on a collection.
      Deriving the choice from something in the brief keeps it deliberate rather than random.
+   - Do NOT write colours into dataParams members: the engine assigns the verified categorical
+     scale from the chosen palette. Set \`brand: true\` on a member only when the hue IS the
+     identity (Instagram pink, TikTok black).
    - Two numbers follow from the axes and are NOT free: \`grid.contentWidth\` from the shell
      (rail 1044, rail-slim 1116, top and bare 1248) and \`grid.gutter\` from the density
      (arioso 16, medio 12, denso 8). The engine rejects any other value.

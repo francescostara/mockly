@@ -191,9 +191,20 @@ liberamente con esso (`engine/skin.js`, `spec.skin`):
 | asse | valori | cosa cambia |
 |---|---|---|
 | `shell` | rail · rail-slim · top · bare | dove stanno navigazione e filtri, e quanta larghezza resta |
-| `palette` | 13 famiglie | il colore, compresa la scala categoriale da sei |
-| `tipografia` | 8 coppie | display + interfaccia; i numeri sono mono tabellari in tutte |
-| `densita` | arioso · medio · denso | spaziature, raggi, card riquadrate o su fondo continuo |
+| `palette` | 13 famiglie | il colore: scala categoriale, sequenziale e divergente |
+| `tipografia` | 8 abbinamenti | display + interfaccia; le cifre sono sempre tabulari e lining |
+| `densita` | arioso · medio · denso | spaziature, raggi, peso dell'ombra |
+| `banda` | box · blocco | la banda KPI: quattro riquadri separati, o una superficie sola con separatori |
+
+**Ogni card ha un bordo, sempre.** Non esiste una densita che lo tolga: un grafico che
+galleggia sul fondo senza separazione lascia il lettore a indovinare dove finisce e dove
+comincia quello accanto. La scelta fra riquadri e blocco unico vale per l'INTERA pagina — meta
+e meta e l'unico modo di sbagliarla.
+
+**I colori dei dati non si scrivono nella spec.** La scala categoriale la assegna il motore
+dalla famiglia scelta, verificata su contrasto, DeltaE76, le tre dicromazie e la scala di
+grigi. L'unica eccezione e dichiarata dal dato: `brand: true` su un membro tiene il colore di
+piattaforma, perche li la tinta E' l'identita.
 
 8 x 4 x 13 x 8 x 3 = quasi diecimila combinazioni, senza mantenere diecimila file.
 
