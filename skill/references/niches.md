@@ -477,7 +477,11 @@ Costruita dal report trasporti reale dell'autore e dalla sua filosofia scritta. 
 - Ricavo, Costi, **Profitto**, **Margine %**, % ricavo internazionale, costo medio per
   spedizione, split **carrier vs flotta propria**.
 - **Unità di verità (scelta autore): margine per km come metrica principale, margine per
-  spedizione a supporto.** Perché il ricavo per rotta favorisce le rotte lunghe e il costo per
+  spedizione a supporto.** ATTENZIONE, e il conflitto piu facile da non vedere: il margine per
+  km ha bisogno delle DISTANZE, che `data-availability.md` mette nella colonna "raro — solo se
+  citato". Se il brief non nomina telematica, distanze o chilometraggi, **la metrica principale
+  diventa il margine per spedizione**, che sta nel floor. Costruire il report sul margine per km
+  quando il cliente non ha i km significa consegnargli un mockup che non potra mai riempire. Perché il ricavo per rotta favorisce le rotte lunghe e il costo per
   rotta favorisce le corte: normalizzare a per-km rende rotte, veicoli, clienti confrontabili.
 - **Ogni KPI mostra la variazione** (MoM/WoW) con freccia, valore, colore.
 

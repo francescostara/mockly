@@ -74,28 +74,41 @@ const SOGLIE = { firmaUguale: 0.40, apertura: 0.40, chiusura: 0.60, pelleUguale:
 
 /** I gate sull'insieme. `pubblici` e opzionale: id -> 'board' | 'operativo' | altro, preso
  *  dal brief quando chi chiama ce l'ha (l'eval si, un test sui canonici no). */
+/* Sotto questa soglia le percentuali non sono un giudizio: con due file, il gruppo piu
+   numeroso vale meccanicamente il 50% e il gate "fallisce" anche quando i due file sono
+   diversissimi. Un gate che grida al lupo su un campione di due viene ignorato proprio quando
+   conta, quindi sotto i quattro file i tre gate proporzionali riferiscono e non bocciano.
+   Quelli per-file — archetipo dichiarato, densita contro pubblico — valgono sempre. */
+const CAMPIONE_MINIMO = 4;
+
 function insieme(schede, pubblici) {
   const n = schede.length, esiti = [];
   if (!n) return esiti;
+  const piccolo = n < CAMPIONE_MINIMO;
   const ok = (id, passa, testo) => esiti.push({ id, passa, testo });
+  /* i gate proporzionali: sotto il campione minimo riferiscono soltanto */
+  const okProp = (id, passa, testo) => esiti.push({
+    id, passa: piccolo ? true : passa,
+    testo: (piccolo ? `[campione di ${n}, sotto i ${CAMPIONE_MINIMO} non e un verdetto] ` : '') + testo
+  });
 
   /* 1. DIVERSITA. Il gruppo piu numeroso con la stessa firma non puo superare il 40%. */
   const conteggio = {};
   schede.forEach(s => { conteggio[s.firma] = (conteggio[s.firma] || 0) + 1; });
   const [firmaTop, quante] = Object.entries(conteggio).sort((a, b) => b[1] - a[1])[0];
-  ok('diversita', quante / n <= SOGLIE.firmaUguale,
+  okProp('diversita', quante / n <= SOGLIE.firmaUguale,
     `${quante} file su ${n} hanno la stessa firma strutturale (${(quante / n * 100).toFixed(0)}%, ` +
     `soglia ${SOGLIE.firmaUguale * 100}%)` + (quante > 1 ? ` — "${firmaTop.slice(0, 70)}"` : ''));
 
   /* 2. APERTURA. La formula da principiante non puo essere l'apertura di piu del 40%. */
   const formula = schede.filter(s => s.formulaPrincipiante).length;
-  ok('apertura', formula / n <= SOGLIE.apertura,
+  okProp('apertura', formula / n <= SOGLIE.apertura,
     `${formula} su ${n} aprono con trend + donut sotto la banda KPI ` +
     `(${(formula / n * 100).toFixed(0)}%, soglia ${SOGLIE.apertura * 100}%)`);
 
   /* 3. CHIUSURA. */
   const chiude = schede.filter(s => s.chiudeMatricePiena).length;
-  ok('chiusura', chiude / n <= SOGLIE.chiusura,
+  okProp('chiusura', chiude / n <= SOGLIE.chiusura,
     `${chiude} su ${n} chiudono con la matrice a piena larghezza ` +
     `(${(chiude / n * 100).toFixed(0)}%, soglia ${SOGLIE.chiusura * 100}%)`);
 
@@ -124,7 +137,7 @@ function insieme(schede, pubblici) {
     const combo = {};
     conPelle.forEach(s => { combo[s.combinazione] = (combo[s.combinazione] || 0) + 1; });
     const [comboTop, quanteC] = Object.entries(combo).sort((a, b) => b[1] - a[1])[0];
-    ok('varieta-pelle', quanteC / conPelle.length <= SOGLIE.pelleUguale,
+    okProp('varieta-pelle', quanteC / conPelle.length <= SOGLIE.pelleUguale,
       `${quanteC} file su ${conPelle.length} hanno la stessa combinazione palette+tipografia+shell ` +
       `(${(quanteC / conPelle.length * 100).toFixed(0)}%, soglia ${SOGLIE.pelleUguale * 100}%)` +
       (quanteC > 1 ? ` — "${comboTop}"` : ''));

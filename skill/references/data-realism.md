@@ -1,5 +1,29 @@
 # Data Realism
 
+## Regola zero: i numeri che il brief DICHIARA sono ancore, non contesto
+
+Se il brief dice "4.000 iscritti attivi", "18 mezzi", "600 case vendute all'anno", "sei
+docenti", quelli non sono colore: sono il **livello** del cliente, ed e il vincolo piu forte che
+esista, perche e l'unico che il lettore puo verificare a memoria mentre guarda il report.
+
+Le ancore di grandezza delle nicchie fissano i RAPPORTI; la volumetria del brief fissa la
+SCALA. Servono tutte e due, e si applicano in quest'ordine:
+
+1. prendi il volume dichiarato dal brief (o stimalo dalla taglia, se non c'e);
+2. prendi il rapporto plausibile dalla tabella delle ancore della nicchia;
+3. **deriva il totale da questi due**, e da li tutte le altre conte.
+
+Esempio reale, sbagliato al primo tentativo dal ciclo locale: una scuola online con "circa
+4.000 iscritti attivi e 6 docenti". I rapporti erano tutti corretti — prezzo medio 336 EUR
+dentro l'intervallo, margine operativo 64% dentro l'intervallo — ma le basi erano state scelte
+a occhio, e uscivano **28.000 iscrizioni e 9,5 milioni di ricavi**. Internamente coerente, e
+assurdo per una scuola con sei insegnanti. Con la scala presa dal brief: 4.000 iscrizioni,
+1,3 milioni, gli stessi rapporti.
+
+E' lo stesso errore dello scontrino medio da 24 centesimi visto dall'altro lato: li si sceglieva
+la conta sperando nel rapporto, qui si rispettava il rapporto ignorando la scala che il cliente
+aveva gia scritto nel brief.
+
 This is the step that separates a convincing mockup from an obvious fake. The numbers are
 synthetic, but the audience is a domain expert. One implausible figure — a win rate no sales
 team achieves, every subsidiary in covenant breach, an open pipeline twelve times closed-won —

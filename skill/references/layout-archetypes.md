@@ -156,6 +156,12 @@ le nicchie tipiche.
   (quante entita, quante metriche, quale pubblico), **non dalla nicchia**.
 - Pubblico board/C-level → densita bassa → archetipo 2. Pubblico operativo o analista →
   densita alta → archetipi 7-8. Titolare → media.
+- **Quando domanda e pubblico indicano archetipi diversi, VINCE LA DOMANDA**, e la densita si
+  adatta scendendo. Un consiglio che chiede "perdiamo studenti dopo il primo corso" riceve
+  l'archetipo a coorti, non l'executive summary: l'executive summary sarebbe la forma giusta
+  per il pubblico e la risposta sbagliata alla domanda, e un report che non risponde alla
+  domanda non serve a nessuno per quanto sia elegante. Si tiene il conteggio basso — poche
+  righe, nessun riquadro di contorno — ma la heatmap delle coorti resta.
 - Ogni voce di `niches.md` elenca 2-3 **ARCHETIPI PLAUSIBILI**: si sceglie fra quelli.
 - Se il brief pone domande di forma diversa → **pagine diverse, una per archetipo**.
 - **Vietato lo scorecard come default automatico.**

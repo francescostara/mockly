@@ -11,7 +11,8 @@
     "build:mockups": "node engine/build-all.js",
     "test": "node test/run.js",
     "banco": "node test/banco.js",
-    "templates": "node test/templates.js"
+    "templates": "node test/templates.js",
+    "locale": "node test/locale.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
