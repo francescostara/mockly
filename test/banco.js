@@ -14,6 +14,7 @@ const { render, lint } = require('../engine/render.js');
 const banco = require('../engine/specs/banco/index.js');
 const templates = require('../engine/templates/index.js');
 const pelli = require('../engine/specs/banco/pelli.js');
+const SCHEDA = require('../engine/scheda.js');
 const fixtures = require('../engine/specs/index.js');
 
 const out = path.join(__dirname, '..', 'out', 'banco');

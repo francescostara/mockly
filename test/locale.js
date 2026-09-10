@@ -19,6 +19,8 @@ const { JSDOM } = require('jsdom');
 const { render, lint, measurePage } = require('../engine/render.js');
 const GN = require('./gates-numbers.js');
 const GG = require('./gates-generic.js');
+const SCHEDA = require('../engine/scheda.js');
+const INTER = require('./interazione.js');
 
 const dir = path.join(__dirname, '..', 'engine', 'specs', 'locale');
 const out = path.join(__dirname, '..', 'out', 'locale');
@@ -34,7 +36,7 @@ for (const f of giri) {
   const id = f.replace(/\.js$/, '');
   const caso = require(path.join(dir, f));
   const data = caso.build();
-  let html, problemi = [], note = [];
+  let html, problemi = [], note = [], interazioni = 0;
 
   try { html = render(caso.spec, data); }
   catch (e) {
@@ -43,6 +45,9 @@ for (const f of giri) {
     continue;
   }
   fs.writeFileSync(path.join(out, id + '.html'), html);
+  /* La scheda accanto al file: dentro l'HTML ce l'ha gia il cliente, qui serve all'autore per
+     leggerla senza aprire il mockup — ed e la stessa, generata una volta sola. */
+  fs.writeFileSync(path.join(out, id + '.scheda.md'), SCHEDA.testo(caso.spec, data));
   note = lint(caso.spec, data);
 
   /* i gate sui numeri, sul DOM vivo: e cio che vede chi apre il file */
@@ -50,6 +55,20 @@ for (const f of giri) {
   let agg = null;
   try { const A = dom.window.MK && dom.window.MK.__A; if (A) agg = A.agg(A.slice({})); } catch { /* niente */ }
   problemi = GN.tutti(dom.window.document, caso.spec, agg);
+
+  /* LA VERIFICA ESAUSTIVA: ogni promessa della scheda, eseguita davvero. */
+  {
+    const w = dom.window, d = w.document;
+    const fire = (el, ty) => el && el.dispatchEvent(new w.MouseEvent(ty, { bubbles: true, cancelable: true }));
+    const B = {
+      q: s => d.querySelector(s), qa: s => [...d.querySelectorAll(s)],
+      clk: s => fire(typeof s === 'string' ? d.querySelector(s) : s, 'click'),
+      rmb: s => fire(typeof s === 'string' ? d.querySelector(s) : s, 'contextmenu')
+    };
+    const es = INTER.esegui(B, caso.spec, data, SCHEDA.piano(caso.spec, data));
+    interazioni = es.prove;
+    problemi = problemi.concat(es.problemi);
+  }
   dom.window.close();
 
   /* la geometria: la riga di chiusura tagliata non si vede in jsdom, si legge dal conto */
@@ -64,7 +83,7 @@ for (const f of giri) {
   esiti.push({ id, nome: caso.name, spedibile, problemi, note, kb: Math.round(html.length / 1024) });
 
   console.log('\n' + id + '   ' + (spedibile ? 'SPEDIBILE' : 'DA RIVEDERE') + '   ' +
-    Math.round(html.length / 1024) + 'KB');
+    Math.round(html.length / 1024) + 'KB   ' + interazioni + ' interazioni provate');
   console.log('   ' + caso.name);
   problemi.forEach(p => console.log('   · ' + p));
   note.forEach(nn => console.log('   nota: ' + nn));

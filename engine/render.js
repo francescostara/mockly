@@ -108,6 +108,7 @@ const prevSig = s => { for (let k = s.length - 1; k >= 0; k--) if (!/\s/.test(s[
    `aesthetic` renderizza come sempre. Chi vuole di piu sovrascrive un asse alla volta con
    `spec.skin`: shell, palette, tipografia, densita. */
 const SKIN = require('./skin.js');
+const SCHEDA = require('./scheda.js');
 
 /** La pelle risolta di una spec: shell + token + caratteri + ritmo. */
 const pelle = spec => SKIN.pelleDi(spec);
@@ -787,6 +788,18 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
 .ctxpill b{font-weight:600;color:var(--c2)}
 .resetb{font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:5px 9px;border-radius:2px;cursor:pointer;font-family:var(--font)}
 .resetb:hover{color:var(--bad);border-color:var(--bad)}
+.howb{border-color:var(--c2);color:var(--c2)}
+.howb:hover{color:var(--c2);border-color:var(--c2);background:var(--line2)}
+#howp{position:absolute;inset:0;background:rgba(10,18,32,.55);display:none;align-items:center;justify-content:center;z-index:60}
+#howp.open{display:flex}
+.howin{width:640px;max-height:600px;overflow:auto;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:20px 24px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.howin h3{margin:0 0 4px;font-family:var(--fontDisp);font-size:15px;color:var(--ink)}
+.howin h4{margin:14px 0 4px;font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flab)}
+.howin p{margin:0 0 5px;font-size:11.5px;line-height:1.5;color:var(--ink2)}
+.howin p.in{color:var(--muted);margin-bottom:10px}
+.howin b{color:var(--ink)}
+.howin .resetb{margin-top:16px}
 .updated{font-size:9.5px;color:var(--muted2);text-align:right;line-height:1.5}
 #page{flex:1;min-height:0;padding:${D.pad}px 16px;overflow:hidden;display:flex;flex-direction:column;gap:${gut}px}
 .row{display:flex;flex:0 0 auto;gap:${gut}px}
@@ -869,7 +882,7 @@ function dimFilters(spec, rail) {
 }
 /* @param ctxQui   le pill del contesto e il tasto azzera stanno qui, quando non c'e la riga filtri
    @param marchioQui  il nome del cliente non ha altro posto dove stare: niente rail, niente barra */
-function header(spec, ctxQui, marchioQui) {
+function header(spec, ctxQui, marchioQui, aiuto) {
   const m = spec.meta, T = m.strings || {}, b = m.brand || {};
   const inlineBrand = marchioQui;
   const rail = ctxQui;
@@ -878,7 +891,8 @@ function header(spec, ctxQui, marchioQui) {
       <div><div class="ttl" id="hTtl"></div><div class="sub" id="hSub"></div></div>
       <div class="spacer"></div>
       ${rail ? `<div class="ctxwrap" id="hCtx"></div>
-      <button class="resetb" id="btnReset">${esc(T.reset || 'Azzera filtri')}</button>` : ''}
+      <button class="resetb" id="btnReset">${esc(T.reset || 'Azzera filtri')}</button>
+      ${aiuto.bottone}` : ''}
       ${m.updated ? `<div class="updated">${esc(T.updatedLabel || 'Ultimo aggiornamento')}<br><b>${esc(m.updated)}</b></div>` : ''}
     </div>`;
 }
@@ -887,18 +901,21 @@ function header(spec, ctxQui, marchioQui) {
    tutto a sinistra; la rail stretta tiene solo la navigazione e manda i filtri sulla riga; la
    barra superiore mette il marchio sopra; "bare" toglie del tutto la cornice scura e lascia
    una pagina che sembra un documento invece di un'applicazione. */
-function shell(spec) {
+function shell(spec, data) {
   const P = pelle(spec), sh = P.shell, m = spec.meta, b = m.brand || {}, T2 = m.strings || {};
+  /* La scheda di interazione, generata dalla spec: il cliente riceve un file solo, quindi se
+     non e dentro il file non gli arriva. */
+  const aiuto = SCHEDA.pannello(spec, data, esc);
   const marchio = esc((b.name || m.title).toUpperCase());
   const filtriInRail = sh.rail > 0 && !sh.tools;
 
   const barraFiltri = sh.tools ? `<div id="tools">${dateSlicer(spec)}${dimFilters(spec, false)}<div class="spacer"></div>
     <div class="ctxwrap" id="hCtx"></div>
-    <button class="resetb" id="btnReset">${esc(T2.reset || 'Azzera filtri')}</button></div>` : '';
+    <button class="resetb" id="btnReset">${esc(T2.reset || 'Azzera filtri')}</button>${aiuto.bottone}</div>` : '';
 
   const corpo = `<div id="main">
     ${barraFiltri}
-    ${header(spec, !sh.tools, sh.rail === 0 && !sh.topbar)}
+    ${header(spec, !sh.tools, sh.rail === 0 && !sh.topbar, aiuto)}
     <div id="page"></div>
     <div class="wm">${esc(m.watermark)}</div>
   </div>`;
@@ -911,12 +928,14 @@ function shell(spec) {
     ${filtriInRail ? dateSlicer(spec) + dimFilters(spec, true) : ''}
     ${m.source && !sh.tools ? `<div class="railfoot">${esc(m.source)}</div>` : ''}
   </div>
-  ${corpo}`;
+  ${corpo}
+  ${aiuto.pannello}`;
   }
 
   return `${hasTopbar(spec) ? `<div id="topbar"><div class="nm">${marchio}</div>${navButtons(spec)}<div class="spacer"></div>
     ${b.tagline ? `<div class="updated">${esc(b.tagline)}</div>` : ''}</div>` : ''}
-  ${corpo}`;
+  ${corpo}
+  ${aiuto.pannello}`;
 }
 
 /* ---------- deterministic, compact JSON ---------- */
@@ -973,7 +992,7 @@ ${css(spec, compact).split('\n').map(l => l.trim()).filter(Boolean).join('\n')}
 </head>
 <body>
 <div id="stage"><div id="canvas">
-  ${shell(spec)}
+  ${shell(spec, data)}
 </div></div>
 <div id="tip"></div>
 <script>

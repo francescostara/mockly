@@ -164,6 +164,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     A.member = (dim, id) => (dims[dim] || []).filter(x => x.id === id)[0] || { id: id, n: id, c: '#888' };
     A.dimLabel = (dim, id) => A.member(dim, id).n;
     A.color = (dim, id) => A.member(dim, id).c;
+    /* Una dimensione e FILTRABILE se il report ha un controllo per lei. Serve ai visual per
+       sapere se un clic dentro il disegno puo portare un filtro: cliccare su una dimensione di
+       dettaglio che nessun controllo governa non filtrerebbe niente, e la barra si accenderebbe
+       per finta. */
+    A.filtrabile = id => FDIMS.some(f => f.id === id);
 
     /* ---------- state — ONE object drives everything ---------- */
     var d0 = (SPEC.filters && SPEC.filters.date && SPEC.filters.date.default) || {};
@@ -527,6 +532,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         }
         var pgb = cl('[data-page]'); if (pgb) { S.page = pgb.getAttribute('data-page'); S.drill = null; A.render(); return; }
         if (cl('#btnReset')) { FDIMS.forEach(d => S.f[d.id] = null); S.q = null; S.mo = null; A.render(); return; }
+        /* La scheda di interazione. Non passa da A.render(): e sopra il report, non dentro —
+           aprirla non deve toccare lo stato dei filtri ne ridisegnare la pagina. */
+        var hp = doc.getElementById('howp');
+        if (hp && cl('#btnHow')) { hp.classList.add('open'); return; }
+        if (hp && (cl('#btnHowX') || e.target === hp)) { hp.classList.remove('open'); return; }
         if (cl('#btnBack')) { S.page = S.from; S.drill = null; A.render(); return; }
         var fe = cl('[data-f]');
         if (fe) {
@@ -630,7 +640,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }
     var p = '';
     for (i = 0; i < vals.length; i++) p += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(vals[i]).toFixed(1);
-    s += '<path d="' + p + 'L' + X(vals.length - 1).toFixed(1) + ',' + ah + 'L0,' + ah + 'Z" fill="var(--c2)" opacity=".13"/>';
+    /* L'area porta il suo tooltip: e l'unica parte della delta-card che rappresenta dei valori
+       senza scriverli, e senza il tooltip resta un disegno di cui non si puo chiedere conto. */
+    s += '<path class="hit" d="' + p + 'L' + X(vals.length - 1).toFixed(1) + ',' + ah + 'L0,' + ah +
+      'Z" fill="var(--c2)" opacity=".13" data-tip="<b>' + M.esc(A.meas(ms).label || ms) +
+      '</b><br>' + M.esc(A.T.trajectory || 'traiettoria mensile') + ': ' +
+      A.mfmt(ms, Math.min.apply(null, vals)) + ' – ' + A.mfmt(ms, Math.max.apply(null, vals)) + '"/>';
     s += '<path d="' + p + '" fill="none" stroke="var(--c2)" stroke-width="1.6"/>';
     if (anni.length > 1)
       s += '<line x1="' + X(11.5).toFixed(1) + '" y1="0" x2="' + X(11.5).toFixed(1) + '" y2="' + ah +
@@ -806,7 +821,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     data.forEach(function (d, i) {
       var y = m.t + rh * i + rh / 2, bl = Math.max(1, (d.v / max) * iw);
       var dimd = b.parent && S.f[b.parent] && d.cat && S.f[b.parent] !== d.cat;
-      s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" ' + (b.parent && d.cat ? 'data-f="' + b.parent + ':' + d.cat + '"' : '') +
+      /* Il clic filtra: la dimensione padre quando la barra e una voce di dettaglio, altrimenti
+         la dimensione della barra stessa — purche il report abbia un controllo per governarla.
+         Prima il data-f usciva SOLO col padre: una hbar su una dimensione filtrabile aveva la
+         classe "hit" e il tooltip, sembrava cliccabile, e non filtrava niente. */
+      var df = (b.parent && d.cat) ? b.parent + ':' + d.cat
+        : (A.filtrabile(dim) ? dim + ':' + d.id : '');
+      s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" ' + (df ? 'data-f="' + df + '"' : '') +
         ' data-tip="<b>' + M.esc(d.l) + '</b><br>' + A.mfmt(ms, d.v) + (d.sub ? '<br>' + M.esc(d.sub) : '') + '">' +
         '<rect x="0" y="' + (y - rh / 2).toFixed(1) + '" width="' + w + '" height="' + rh.toFixed(1) + '" fill="transparent"/>' +
         '<text x="' + (lw - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--ink2)">' + M.esc(d.l) + '</text>' +
@@ -979,7 +1000,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 
     var s = '<svg width="' + w + '" height="' + h + '">';
     s += '<path d="' + arc(0, 1) + '" fill="none" stroke="var(--line)" stroke-width="' + sw + '" stroke-linecap="round"/>';
-    if (q > 0) s += '<path d="' + arc(0, q) + '" fill="none" stroke="' + colore + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
+    /* L'arco porta il suo tooltip come ogni altro elemento di dato: il gauge mostra il valore
+       grande al centro, ma il BERSAGLIO e lo scarto vivevano solo nell'annotazione sotto, e chi
+       passa sopra l'arco si aspetta di leggerli li. */
+    if (q > 0) s += '<path class="hit" d="' + arc(0, q) + '" fill="none" stroke="' + colore +
+      '" stroke-width="' + sw + '" stroke-linecap="round" data-tip="<b>' +
+      M.esc(A.meas(ms).label || ms) + '</b><br>' + A.mfmt(ms, val) +
+      (tg !== undefined ? '<br>' + M.esc(b.targetLabel || (A.T.target || 'obiettivo')) + ': ' +
+        A.mfmt(ms, target) : '') + '"/>';
 
     /* il marcatore del bersaglio: una tacca che attraversa l'arco, non una seconda lancetta */
     if (target > 0) {

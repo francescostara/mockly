@@ -12,6 +12,8 @@ const { JSDOM } = require('jsdom');
 const GN = require('./gates-numbers.js');
 const { render, toolbarBudget, lint, measurePage, AESTHETICS } = require('../engine/render.js');
 const SKIN = require('../engine/skin.js');
+const SCHEDA = require('../engine/scheda.js');
+const INTER = require('./interazione.js');
 
 /* contrasto WCAG: serve per la zona filtri, dove un grigio su grigio non si legge (BUG 5) */
 const lum = hex => {
@@ -126,6 +128,20 @@ function runCase(id, fixture, evalCase) {
   ok('toolbar fits the content width', !tb.overflow, `${tb.used}px / ${tb.available}px`);
   ok('dimensions with more than 5 members use a dropdown, not chips',
     (spec.filters.dims || []).every(f => (data.dims[f.id] || []).length <= 5 || f.control === 'dropdown'));
+
+  /* ---------- LA VERIFICA ESAUSTIVA: ogni interazione che la scheda promette ----------
+     Il piano non e scritto nell'harness: e la scheda di interazione che finisce dentro il file
+     per il cliente. Cosi la scheda non puo mentire, e il test non puo dimenticare un pezzo di
+     report — se il report acquista un visual cliccabile, la scheda lo dichiara e il test lo
+     prova, senza che nessuno aggiorni una lista a mano. */
+  {
+    const P = SCHEDA.piano(spec, data);
+    const es = INTER.esegui(B, spec, data, P);
+    R.states += es.prove;
+    ok(`interattivita: ${es.prove} interazioni, tutte sane`, es.problemi.length === 0,
+      es.problemi.slice(0, 4).join(' | '));
+    B.clk('#btnReset');
+  }
 
   /* ---------- Gate 5: every filter is live ---------- */
   const base = B.kpi();
