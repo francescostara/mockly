@@ -344,6 +344,70 @@ const PRESET = {
   'executive-minimal': { shell: 'top', palette: 'carta-inchiostro', tipografia: 'neutro-ui', densita: 'medio', banda: 'box' }
 };
 
+/**
+ * LA FAMIGLIA BRAND-DRIVEN: i colori del cliente, validati prima di essere usati.
+ *
+ * "Manipolare cio che esiste e gratis": incollare i propri esadecimali e deterministico, non
+ * chiama nessun modello, non costa crediti. Ma non puo nemmeno essere preso per buono — i
+ * colori di un marchio sono scelti per un logo, non per una barra da dodici pixel su carta
+ * bianca, e un rosa di brand su fondo chiaro sta spesso a 2:1.
+ *
+ * Quindi: si accettano, si CORREGGONO dove non reggono, e la correzione si DICHIARA. Un mockup
+ * illeggibile consegnato "perche i colori li ha dati il cliente" resta un mockup illeggibile,
+ * e chi lo riceve non pensa "che bel rispetto del brand".
+ *
+ * @param {string[]} colori  gli esadecimali del cliente, dal piu importante
+ * @param {object}   opz     { scuro: bool, base: id di una base CVD-safe per completare la scala }
+ * @returns {{ tokens: object, correzioni: Array<{da,a,contrastoPrima,contrastoDopo}> }}
+ */
+function famigliaBrand(colori, opz) {
+  opz = opz || {};
+  const scuro = !!opz.scuro;
+  const card = scuro ? '#191D2B' : '#FFFFFF';
+  const canvas = scuro ? '#111420' : '#F4F5F7';
+  const ink = scuro ? '#EDF0F7' : '#16202E';
+  const primo = (colori && colori[0]) || (scuro ? '#4C6FE0' : '#12304F');
+
+  /* La cornice nasce dal colore principale, ma sfumata: una rail nella tinta piena del marchio
+     e una parete di colore, e tutto cio che le sta sopra deve combatterci. */
+  const rail = scuro ? mix(primo, '#000000', 0.72) : mix(primo, '#101418', 0.55);
+
+  const correzioni = [];
+  const validati = (colori || []).map(c => {
+    const prima = COL.contrasto(c, card);
+    const corretto = COL.aggiusta(c, card, 3);
+    if (corretto !== c) {
+      correzioni.push({
+        da: c, a: corretto,
+        contrastoPrima: Number(prima.toFixed(2)),
+        contrastoDopo: Number(COL.contrasto(corretto, card).toFixed(2))
+      });
+    }
+    return corretto;
+  });
+
+  /* La scala si completa da una base misurata: due colori di marca non fanno una scala
+     categoriale, e inventare le voci mancanti attorno alla tinta del cliente e il modo piu
+     rapido di ritrovarsi due categorie indistinguibili. */
+  const completa = COL.serieCVD(BASI[opz.base || 'okabe'], card, 6, { minimo: 3 });
+  const serie = validati.slice(0, 3);
+  completa.forEach(c => {
+    if (serie.length >= 6) return;
+    /* si aggiunge solo cio che resta distinguibile da tutto il resto */
+    if (serie.every(s => COL.separati(s, c).ok)) serie.push(c);
+  });
+
+  const f = { etichetta: 'brand del cliente', scuro, radius: '3px', base: 'okabe',
+    sequenziale: 'viridis', canvas, card, ink, rail };
+  FAMIGLIE.__brand = f;
+  const tokens = palette('__brand');
+  delete FAMIGLIE.__brand;
+  serie.forEach((c, i) => { tokens['c' + (i + 1)] = c; });
+  for (let k = serie.length; k < 6; k++) tokens['c' + (k + 1)] = serie[k % serie.length];
+  tokens.serie = serie;
+  return { tokens, correzioni, serie };
+}
+
 /** La pelle effettiva di una spec: il preset, piu gli assi che la spec sovrascrive. */
 function pelleDi(spec) {
   const base = PRESET[spec.aesthetic];
@@ -403,7 +467,7 @@ function scegliPelle(v) {
 }
 
 module.exports = {
-  SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, BANDE, PRESET, ALIAS_TIPO,
+  SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, BANDE, PRESET, ALIAS_TIPO, famigliaBrand,
   palette, pelleDi, scegliPelle, seme,
   mix, contrasto
 };

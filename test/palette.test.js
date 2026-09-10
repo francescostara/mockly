@@ -158,4 +158,31 @@ ok('i colori di un utente illeggibili vengono corretti, non accettati', () => {
   assert.notStrictEqual(corretto, pallido);
 });
 
+ok('i colori del cliente vengono validati, corretti e la correzione e dichiarata', () => {
+  const r = SKIN.famigliaBrand(['#FFD9E8', '#7B2D8E', '#00C2A8']);
+  assert.ok(r.correzioni.length >= 1, 'un rosa pallido su carta bianca doveva essere corretto');
+  r.correzioni.forEach(c => {
+    assert.ok(c.contrastoPrima < 3, 'dichiarata una correzione su un colore che gia andava bene');
+    assert.ok(c.contrastoDopo >= 3, `${c.da} corretto in ${c.a} sta ancora sotto il 3:1`);
+  });
+  r.serie.forEach(c => {
+    assert.ok(C.contrasto(c, r.tokens.card) >= 3,
+      `la scala brand contiene ${c}, sotto il 3:1: un mockup illeggibile resta illeggibile ` +
+      'anche quando i colori li ha scelti il cliente');
+  });
+  /* la scala si completa da una base misurata, e le voci aggiunte devono restare distinguibili */
+  for (let i = 0; i < r.serie.length; i++) {
+    for (let j = i + 1; j < r.serie.length; j++) {
+      const e = C.separati(r.serie[i], r.serie[j]).esiti;
+      assert.ok(e.normale >= 10, `${r.serie[i]} e ${r.serie[j]} sono troppo vicini`);
+    }
+  }
+});
+
+ok('un brand gia leggibile non viene toccato', () => {
+  const r = SKIN.famigliaBrand(['#12304F', '#B2182B']);
+  assert.strictEqual(r.correzioni.length, 0,
+    'corretti colori che andavano bene: ' + JSON.stringify(r.correzioni));
+});
+
 console.log('  ' + n + ' checks · ' + ID.length + ' famiglie');
