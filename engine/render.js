@@ -470,8 +470,22 @@ function validate(spec, data) {
         if (b.dim && !(data.dims || {})[b.dim]) e.push(`page "${pg.id}" ${v.type}: unknown dim "${b.dim}"`);
         /* advisory, not a gate: chart-selection.md wants 2-5 slices, but the canonical ships a
            6-category donut. Judgement belongs to the spec author; the engine reports it. */
-        if (v.type === 'donut' && b.dim && data.dims[b.dim].length > 5)
+        if (v.type === 'donut' && b.dim && data.dims[b.dim].length > 5 && !b.topN)
           warn.push(`page "${pg.id}": donut on "${b.dim}" has ${data.dims[b.dim].length} slices (chart-selection.md: 2-5; consider hbar/stack100)`);
+        /* Oltre sei spicchi il donut smette di far vedere le proporzioni e diventa una ruota
+           colorata con una legenda da leggere: e il caso in cui il visual non fa piu il suo
+           mestiere, non una questione di gusto. La via d'uscita e dichiarata, non lasciata
+           all'intuito: `topN` aggrega la coda in "Altri" — che e anche cio che rende visibile
+           la concentrazione — oppure si passa a barre ordinate. */
+        if (v.type === 'donut' && b.dim && (data.dims[b.dim] || []).length > 6 && !b.topN) {
+          e.push(`page "${pg.id}" donut: "${b.dim}" ha ${data.dims[b.dim].length} membri. Sopra i ` +
+            `sei spicchi le proporzioni non si leggono piu. Dichiara "topN": 3 (o 4, o 5) per ` +
+            `aggregare la coda in "Altri" — che e anche il modo di far vedere la concentrazione ` +
+            `— oppure usa un hbar ordinato.`);
+        }
+        if (v.type === 'donut' && b.alert && b.dim && !(data.dims[b.dim] || []).some(m => m.id === b.alert)) {
+          e.push(`page "${pg.id}" donut: alert "${b.alert}" non e un membro di "${b.dim}".`);
+        }
         /* Una composizione che spezza una dimensione PER SE STESSA non e una distribuzione:
            ogni barra ha un solo segmento, o n segmenti identici da 100/n. Nel primo giro a
            pagamento e uscito cosi un "Nuovi clienti vs clienti di ritorno per canale" con

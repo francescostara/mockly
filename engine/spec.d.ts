@@ -141,6 +141,12 @@ export type Bind =
   | { dim: string; measure: string }                                          // donut
   | { dim: string; measure: string; top?: number; parent?: string; detail?: boolean; subMeasure?: string; subUnit?: string } // hbar
   | { dim: string; measure: string; by?: 'q' | 'm' | string }                 // stack100, ribbon
+  /** donut — il visual della CONCENTRAZIONE. `topN` aggrega la coda in "Altri" (e cio che
+   *  rende leggibile una dimensione con dodici membri); `centre: "share"` mette al centro la
+   *  QUOTA della testa invece del totale, quando il messaggio e la dipendenza — "il 68% da tre
+   *  clienti" e un rischio, non una statistica; `alert` colora di rosso lo spicchio problema. */
+  | { dim: string; measure: string; topN?: number; centre?: 'total' | 'share';
+      alert?: string; altriLabel?: string }                                    // donut
   /** heatmap — densita su due dimensioni: righe = membri di `dim`, colonne = membri di `by`
    *  (oppure i mesi con `by:"m"`, i trimestri con `by:"q"`). E' l'unico visual che ruota una
    *  seconda dimensione sulle colonne: la `matrix` ci mette le MISURE, quindi fascia-oraria x

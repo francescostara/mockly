@@ -15,5 +15,6 @@ module.exports = {
   'gauge-quota': require('./gauge-quota.js'),
   'filtro-organico': require('./filtro-organico.js'),
   'heatmap-fascia': require('./heatmap-fascia.js'),
-  'delta-margine': require('./delta-margine.js')
+  'delta-margine': require('./delta-margine.js'),
+  'concentrazione': require('./concentrazione.js')
 };

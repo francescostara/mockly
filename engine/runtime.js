@@ -691,28 +691,66 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 /*#endregion*/
 
 /*#region chart:donut*/
-/* Donut — mix by dimension, centre total, side legend. 2-5 slices ideally (chart-selection). */
+/* Donut — il visual della CONCENTRAZIONE, non la torta decorativa.
+ *
+ * A cosa serve davvero: in quasi ogni impresa vale una versione della legge di Pareto — pochi
+ * clienti fanno il grosso del fatturato, pochi prodotti il grosso del margine, poche
+ * piattaforme il grosso della spesa. E la concentrazione e FRAGILITA: "il 68% del fatturato
+ * viene da tre clienti" non e una statistica, e un rischio di dipendenza, ed e il gancio di
+ * pre-vendita piu forte che un mockup possa avere.
+ *
+ * Percio il donut dice due cose in un colpo: al centro il numero che riassume (il totale, o
+ * LA QUOTA quando il messaggio e proprio la concentrazione), nell'anello come quel totale si
+ * spacca fra poche categorie.
+ *
+ * `topN` aggrega la coda in "Altri": e cio che rende leggibile un donut su una dimensione con
+ * dodici membri senza trasformarlo in una ruota di spicchi.
+ */
 (function (M) {
   M.V.donut = function (A, v, w, h) {
     var b = v.bind || {}, dim = b.dim, ms = b.measure, S = A.S, f = A.f;
     h = v.h || h || 238;
     var data = A.byDim(dim, {}).map(r => ({ id: r.m.id, l: r.m.n, c: r.m.c, v: A.mv(ms, r.a) }))
       .filter(d => d.v > 0).sort((x, y) => y.v - x.v);
+    /* La coda: sommata in un solo spicchio grigio. Non e una semplificazione grafica — e cio
+       che l'occhio deve vedere, "questi pochi contro tutto il resto". */
+    var testa = data.length, quotaTesta = 0;
+    if (b.topN && data.length > b.topN + 1) {
+      var coda = data.slice(b.topN).reduce((a, d) => a + d.v, 0);
+      data = data.slice(0, b.topN);
+      testa = b.topN;
+      data.push({ id: '__altri', l: b.altriLabel || (A.T.others || 'Altri'), c: 'var(--muted3)', v: coda, coda: true });
+    }
     var cx = w * .30, cy = h / 2, rO = Math.min(w * .26, h * .44), rI = rO * .6;
     var tot = data.reduce((a, d) => a + d.v, 0) || 1, ang = -Math.PI / 2;
+    for (var _t = 0; _t < Math.min(testa, data.length); _t++) quotaTesta += data[_t].v;
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d) {
       var a2 = ang + (d.v / tot) * Math.PI * 2, big = (a2 - ang) > Math.PI ? 1 : 0;
       var P = (r, a) => [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)];
       var p1 = P(rO, ang), p2 = P(rO, a2), p3 = P(rI, a2), p4 = P(rI, ang);
       var dim2 = S.f[dim] && S.f[dim] !== d.id;
+      /* Rosso solo al problema: lo spicchio segnalato dalla spec, mai una tinta a caso. */
+      var col = (b.alert && b.alert === d.id) ? 'var(--bad)' : d.c;
       s += '<path class="hit ' + (dim2 ? 'dimd' : '') + '" d="M' + p1[0] + ',' + p1[1] + ' A' + rO + ',' + rO + ' 0 ' + big + ' 1 ' + p2[0] + ',' + p2[1] +
-        ' L' + p3[0] + ',' + p3[1] + ' A' + rI + ',' + rI + ' 0 ' + big + ' 0 ' + p4[0] + ',' + p4[1] + ' Z" fill="' + d.c +
-        '" stroke="var(--card)" stroke-width="1.5" data-f="' + dim + ':' + d.id + '" data-tip="<b>' + M.esc(d.l) + '</b><br>' +
+        ' L' + p3[0] + ',' + p3[1] + ' A' + rI + ',' + rI + ' 0 ' + big + ' 0 ' + p4[0] + ',' + p4[1] + ' Z" fill="' + col +
+        '" stroke="var(--card)" stroke-width="1.5" data-f="' + dim + ':' + (d.coda ? '' : d.id) + '" data-tip="<b>' + M.esc(d.l) + '</b><br>' +
         A.mfmt(ms, d.v) + '<br>' + f.pc(d.v / tot) + '"/>';
+      /* La QUOTA sullo spicchio, non il valore: la domanda del donut e "quanta parte", e il
+         valore sta gia nella legenda e nel tooltip. Sotto il 9% non ci sta e si omette. */
+      if (d.v / tot >= 0.09 && !dim2) {
+        var am = (ang + a2) / 2, rm = (rO + rI) / 2;
+        s += '<text x="' + (cx + rm * Math.cos(am)).toFixed(1) + '" y="' + (cy + rm * Math.sin(am) + 3).toFixed(1) +
+          '" text-anchor="middle" font-size="9" font-weight="600" fill="#fff" class="tnum" ' +
+          'style="pointer-events:none">' + f.pc(d.v / tot, 0) + '</text>';
+      }
       ang = a2;
     });
-    s += '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" class="tnum">' + A.mfmt(ms, tot) + '</text>';
+    /* Il numero al centro e SEMPRE calcolato: il totale, oppure la quota della testa quando il
+       messaggio e la concentrazione. Mai un testo fisso scritto nella spec. */
+    var centro = b.centre === 'share' ? f.pc(quotaTesta / tot, 0) : A.mfmt(ms, tot);
+    s += '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="' +
+      (b.centre === 'share' ? 19 : 14) + '" font-weight="600" fill="var(--ink)" class="tnum">' + centro + '</text>';
     s += '<text x="' + cx + '" y="' + (cy + 12) + '" text-anchor="middle" font-size="8" fill="var(--muted2)">' + M.esc((v.centreLabel || A.meas(ms).label || '').toUpperCase()) + '</text>';
     /* Legenda: sta accanto alla ciambella, e ogni voce filtra come la fetta.
        Il passo si adatta all'altezza della card, cosi non deborda quando il fit
