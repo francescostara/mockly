@@ -82,7 +82,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici · banco di prova'
   },
   aesthetic: 'corporate-sober',
-  skin: { palette: 'slate-freddo', tipografia: 'serif-display', densita: 'medio' },
+  skin: { palette: 'slate-freddo', tipografia: 'editoriale', densita: 'medio' },
   archetype: 'scorecard',
   grid: { contentWidth: 1044, gutter: 12, columns: 4 },
   model: {

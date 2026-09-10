@@ -37,7 +37,7 @@ assi su cinque. Definizioni degli assi: `layout-archetypes.md` e `engine/skin.js
 # Nicchia: SOCIAL / report agenzia (voce ricca, da lavoro reale — v2)
 
 **ARCHETIPI PLAUSIBILI:** 1 `scorecard` · 3 `funnel` · 2 `executive-summary`
-**PELLE PLAUSIBILE:** palette `dark-agency` · `jewel-desaturati` · `monocromo-accento` — tipografia `geometrico` o `condensato` — shell `top` o `bare`. Un report social non prende il navy corporate: il cliente ha un brand, e se lo dichiara vince lui.
+**PELLE PLAUSIBILE:** palette `dark-agency` · `jewel-desaturati` · `monocromo-accento` — tipografia `umanista` o `grottesco` — shell `top` o `bare`. Un report social non prende il navy corporate: il cliente ha un brand, e se lo dichiara vince lui.
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -141,7 +141,7 @@ churn follower.
 # Nicchia: RETAIL FISICO / negozio (voce validata dall'autore)
 
 **ARCHETIPI PLAUSIBILI:** 1 `scorecard` · 4 `quadrants` · 8 `operational`
-**PELLE PLAUSIBILE:** palette `warm-taupe` · `terroso` · `navy-corporate` — tipografia `humanist` o `sans-sistema` — shell `rail` o `rail-slim`.
+**PELLE PLAUSIBILE:** palette `warm-taupe` · `terroso` · `navy-corporate` — tipografia `umanista` o `neutro-ui` — shell `rail` o `rail-slim`.
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -219,7 +219,7 @@ riservato al problema (la sede/categoria in calo).
 # Nicchia: VENDITE B2B / pipeline CRM (voce validata dall'autore)
 
 **ARCHETIPI PLAUSIBILI:** 3 `funnel` · 4 `quadrants` · 2 `executive-summary`
-**PELLE PLAUSIBILE:** palette `navy-corporate` · `slate-freddo` · `blu-ghiaccio` — tipografia `sans-sistema` o `slab` — shell `rail` o `top`.
+**PELLE PLAUSIBILE:** palette `navy-corporate` · `slate-freddo` · `blu-ghiaccio` — tipografia `corporate` o `neutro-ui` — shell `rail` o `top`.
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -297,7 +297,7 @@ segmento/territorio, small multiples, funnel, toggle Chart/Table). Rosso riserva
 # Nicchia: RISTORAZIONE / F&B (voce validata dall'autore)
 
 **ARCHETIPI PLAUSIBILI:** 8 `operational` · 4 `quadrants` · 1 `scorecard`
-**PELLE PLAUSIBILE:** palette `terroso` · `warm-taupe` · `salvia` — tipografia `slab` o `editoriale` — shell `rail-slim` o `bare`. Il caldo appartiene al cibo piu del blu.
+**PELLE PLAUSIBILE:** palette `terroso` · `warm-taupe` · `salvia` — tipografia `umanista` o `editoriale` — shell `rail-slim` o `bare`. Il caldo appartiene al cibo piu del blu.
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -376,7 +376,7 @@ in perdita).
 # Nicchia: FINANZIARIO / controllo di gestione (CFO) (voce validata dall'autore)
 
 **ARCHETIPI PLAUSIBILI:** 5 `bridge` · 2 `executive-summary` · 4 `quadrants`
-**PELLE PLAUSIBILE:** palette `carta-inchiostro` · `slate-freddo` · `navy-corporate` — tipografia `editoriale` o `sans-sistema` — shell `bare` o `rail`. Un CFO non prende il pastello ne il dark agency: quella pelle dice "campagna", non "chiusura di bilancio".
+**PELLE PLAUSIBILE:** palette `carta-inchiostro` · `slate-freddo` · `navy-corporate` — tipografia `corporate` o `mono-numerico` — shell `bare` o `rail`. Un CFO non prende il pastello ne il dark agency: quella pelle dice "campagna", non "chiusura di bilancio".
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -459,7 +459,7 @@ scaduto in crescita).
 # Nicchia: LOGISTICA / trasporti (voce validata dall'autore, dal suo report reale)
 
 **ARCHETIPI PLAUSIBILI:** 4 `quadrants` · 8 `operational` · (6 `geo` quando il motore avra la mappa)
-**PELLE PLAUSIBILE:** palette `slate-freddo` · `blu-ghiaccio` · `dark-tecnico` — tipografia `condensato` o `tecnico` — shell `rail-slim` o `top`.
+**PELLE PLAUSIBILE:** palette `slate-freddo` · `blu-ghiaccio` · `dark-tecnico` — tipografia `tecnico` o `grottesco` — shell `rail-slim` o `top`.
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -542,7 +542,7 @@ problema (rotta/cliente in perdita).
 # Nicchia: ENERGIA / MANIFATTURA (gross margin) — voce validata dall'autore, dal suo report reale
 
 **ARCHETIPI PLAUSIBILI:** 4 `quadrants` · 8 `operational` · 5 `bridge`
-**PELLE PLAUSIBILE:** palette `dark-tecnico` · `slate-freddo` · `monocromo-accento` — tipografia `tecnico` o `condensato` — shell `rail` o `rail-slim`.
+**PELLE PLAUSIBILE:** palette `dark-tecnico` · `slate-freddo` · `monocromo-accento` — tipografia `tecnico` o `mono-numerico` — shell `rail` o `rail-slim`.
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -619,7 +619,7 @@ matrice; scatter con mediane; rosso riservato al problema (cliente/SKU a margine
 # Nicchia: CREATOR ECONOMY / education (voce validata dall'autore, dal report WeLearn)
 
 **ARCHETIPI PLAUSIBILI:** 3 `funnel` · 7 `cohorts` · 1 `scorecard`
-**PELLE PLAUSIBILE:** palette `jewel-desaturati` · `pastello-sobrio` · `dark-agency` — tipografia `geometrico` o `editoriale` — shell `top` o `bare`.
+**PELLE PLAUSIBILE:** palette `jewel-desaturati` · `pastello-sobrio` · `dark-agency` — tipografia `grottesco` o `editoriale` — shell `top` o `bare`.
 L'archetipo si sceglie dalla DOMANDA e dalla DENSITA, non dalla nicchia: questi sono i tre
 plausibili, non un ordine di preferenza. Definizioni in `layout-archetypes.md`.
 
@@ -699,7 +699,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 
 ### Palestre / catena fitness
 - **ARCHETIPI PLAUSIBILI:** 7 `cohorts` · 8 `operational` · 3 `funnel`
-- **PELLE PLAUSIBILE:** palette `salvia` · `pastello-sobrio` · `warm-taupe` — tipografia `geometrico` o `humanist` — shell `rail-slim` o `top`.
+- **PELLE PLAUSIBILE:** palette `salvia` · `pastello-sobrio` · `warm-taupe` — tipografia `umanista` o `grottesco` — shell `rail-slim` o `top`.
 - **Utente finale:** titolare / direttore club → corporate-sober, tono energico ma pulito.
 - **Domande:** stiamo trattenendo i soci o li perdiamo? quali corsi riempiono e quali no?
   i nuovi iscritti coprono gli abbandoni? quali sedi rendono?
@@ -714,7 +714,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 
 ### E-commerce moda
 - **ARCHETIPI PLAUSIBILI:** 3 `funnel` · 4 `quadrants` · 7 `cohorts`
-- **PELLE PLAUSIBILE:** palette `monocromo-accento` · `pastello-sobrio` · `jewel-desaturati` — tipografia `geometrico` o `condensato` — shell `top` o `bare`.
+- **PELLE PLAUSIBILE:** palette `monocromo-accento` · `pastello-sobrio` · `jewel-desaturati` — tipografia `grottesco` o `neutro-ui` — shell `top` o `bare`.
 - **Utente finale:** founder → corporate-sober o agency-modern.
 - **Domande:** quali canali portano clienti che poi RESTANO? quali categorie hanno troppi resi?
   il costo di acquisizione sta salendo? chi ricompra?
@@ -729,7 +729,7 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 
 ### SaaS (per board / leadership)
 - **ARCHETIPI PLAUSIBILI:** 2 `executive-summary` · 7 `cohorts` · 5 `bridge`
-- **PELLE PLAUSIBILE:** palette `carta-inchiostro` · `alto-contrasto` · `dark-tecnico` — tipografia `editoriale` o `sans-sistema` — shell `bare` o `top`.
+- **PELLE PLAUSIBILE:** palette `carta-inchiostro` · `alto-contrasto` · `dark-tecnico` — tipografia `mono-numerico` o `serif-scuro` — shell `bare` o `top`.
 - **Utente finale:** board / exec → executive-minimal, con frase narrativa.
 - **Domande:** cresciamo in modo sano o riempiamo un secchio bucato? l'espansione batte il
   churn? quanto ci mettiamo a ripagare l'acquisizione?

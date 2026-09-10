@@ -17,8 +17,22 @@ export type PaletteFamily =
 
 /** Coppie display + interfaccia. I numeri sono mono e tabellari in tutte, sempre. */
 export type Typeface =
-  | 'sans-sistema' | 'serif-display' | 'condensato' | 'humanist'
-  | 'geometrico' | 'slab' | 'editoriale' | 'tecnico';
+  /** Inter — il default sicuro, denso e leggibile a 11-13px */
+  | 'neutro-ui'
+  /** IBM Plex Sans + IBM Plex Mono — manifattura, energia, logistica */
+  | 'tecnico'
+  /** Merriweather + Source Sans 3 — serif nei titoli, sans nel resto: il sistema del data-journalism */
+  | 'editoriale'
+  /** Roboto — neutro fino a sparire: CFO e board */
+  | 'corporate'
+  /** Lato — F&B, retail, palestre, consumo */
+  | 'umanista'
+  /** Public Sans / Noto Sans — istituzionale, social, agenzia */
+  | 'grottesco'
+  /** Source Sans 3 + JetBrains Mono — massima precisione tabellare, report densi */
+  | 'mono-numerico'
+  /** Lora + Open Sans — il serif che regge il fondo scuro */
+  | 'serif-scuro';
 
 /** Il ritmo: spaziature, raggi, e se le card sono riquadrate o appoggiate al fondo continuo.
  *  "denso" toglie il riquadro alle card: e la variazione che si vede di piu. */

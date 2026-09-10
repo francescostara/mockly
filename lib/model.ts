@@ -217,8 +217,10 @@ async function request(turns: Turn[], model: string, opts: CallOptions = {}): Pr
                   palette: { type: 'string', enum: ['navy-corporate', 'slate-freddo', 'warm-taupe',
                     'carta-inchiostro', 'dark-agency', 'dark-tecnico', 'terroso', 'salvia',
                     'jewel-desaturati', 'monocromo-accento', 'alto-contrasto', 'pastello-sobrio', 'blu-ghiaccio'] },
-                  tipografia: { type: 'string', enum: ['sans-sistema', 'serif-display', 'condensato',
-                    'humanist', 'geometrico', 'slab', 'editoriale', 'tecnico'] },
+                  tipografia: { type: 'string', enum: ['neutro-ui', 'tecnico', 'editoriale',
+                    'corporate', 'umanista', 'grottesco', 'mono-numerico', 'serif-scuro'],
+                    description: 'Numbers are always tabular+lining. Pick the pairing whose use ' +
+                      'case matches the niche (see PELLE PLAUSIBILE in niches.md).' },
                   densita: { type: 'string', enum: ['arioso', 'medio', 'denso'],
                     description: 'Decides grid.gutter too: arioso 16, medio 12, denso 8.' },
                   banda: { type: 'string', enum: ['box', 'blocco'],

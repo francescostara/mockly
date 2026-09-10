@@ -72,7 +72,7 @@ const spec = {
   },
   aesthetic: 'corporate-sober',
   /* B2B sales: slate freddo e titoli slab — la pelle "commerciale seria" della nicchia. */
-  skin: { palette: 'slate-freddo', tipografia: 'slab' },
+  skin: { palette: 'slate-freddo', tipografia: 'editoriale' },
   archetype: 'funnel',
   grid: { contentWidth: 1044, gutter: 12, columns: 4 },
   model: {

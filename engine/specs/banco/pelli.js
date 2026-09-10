@@ -15,17 +15,17 @@ const { SHELLS } = require('../../skin.js');
 /* Sei combinazioni scelte per essere lontane fra loro, non a caso: due chiare e due scure, due
    con la rail e due senza, un editoriale e un tecnico, dal denso all'arioso. */
 const PELLI = [
-  { id: 'rail-navy', skin: { shell: 'rail', palette: 'navy-corporate', tipografia: 'sans-sistema', densita: 'medio' },
+  { id: 'rail-navy', skin: { shell: 'rail', palette: 'navy-corporate', tipografia: 'neutro-ui', densita: 'medio' },
     nome: 'rail · navy corporate · sans · medio' },
   { id: 'bare-carta', skin: { shell: 'bare', palette: 'carta-inchiostro', tipografia: 'editoriale', densita: 'arioso' },
     nome: 'senza cornice · carta e inchiostro · editoriale · arioso' },
-  { id: 'slim-terroso', skin: { shell: 'rail-slim', palette: 'terroso', tipografia: 'slab', densita: 'medio' },
+  { id: 'slim-terroso', skin: { shell: 'rail-slim', palette: 'terroso', tipografia: 'editoriale', densita: 'medio' },
     nome: 'rail stretta · terroso · slab · medio' },
   { id: 'top-tecnico', skin: { shell: 'top', palette: 'dark-tecnico', tipografia: 'tecnico', densita: 'denso', banda: 'blocco' },
     nome: 'barra superiore · dark tecnico · mono · denso · banda a blocco unico' },
-  { id: 'slim-salvia', skin: { shell: 'rail-slim', palette: 'salvia', tipografia: 'humanist', densita: 'arioso' },
+  { id: 'slim-salvia', skin: { shell: 'rail-slim', palette: 'salvia', tipografia: 'umanista', densita: 'arioso' },
     nome: 'rail stretta · salvia · humanist · arioso' },
-  { id: 'bare-mono', skin: { shell: 'bare', palette: 'monocromo-accento', tipografia: 'condensato', densita: 'denso', banda: 'blocco' },
+  { id: 'bare-mono', skin: { shell: 'bare', palette: 'monocromo-accento', tipografia: 'grottesco', densita: 'denso', banda: 'blocco' },
     nome: 'senza cornice · monocromo con accento · condensato · denso · banda a blocco' }
 ];
 

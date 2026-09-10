@@ -229,23 +229,87 @@ function palette(id, opz) {
 
 /* ---------------------------------------------------------------- 3. TIPOGRAFIA */
 
-/* Solo caratteri di sistema: il file e autonomo e non fa una sola richiesta di rete, quindi
-   un font da scaricare sarebbe un buco nel requisito piu importante del prodotto.
-   REGOLA CHE NON CAMBIA MAI: i numeri sono mono con cifre tabellari, in ogni abbinamento. Una
-   colonna di importi con cifre proporzionali balla, e un valore che cambia sposta l'etichetta
-   accanto: il movimento sembra un errore del report. */
-const MONO = '"Cascadia Mono",Consolas,"SF Mono",Menlo,"DejaVu Sans Mono",monospace';
-const SANS = '"Segoe UI","Segoe UI Web (West European)",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif';
+/* Otto abbinamenti, uno per caso d'uso. Le regole che li governano non sono di gusto:
+ *
+ *   - I NUMERI USANO SEMPRE CIFRE TABULARI E LINING. Le proporzionali fanno ballare le colonne
+ *     — un valore che cambia sposta l'etichetta accanto, e il movimento sembra un errore del
+ *     report. Le oldstyle, comuni nei serif, hanno cifre che salgono e scendono: illeggibili in
+ *     tabella, nei tooltip e sui tick degli assi.
+ *   - MASSIMO DUE FAMIGLIE per mockup, piu la mono per i numeri se distinta. Tre famiglie sono
+ *     il segnale che si sta risolvendo con la tipografia un problema di gerarchia.
+ *   - SANS PER NUMERI ED ETICHETTE, sempre. Il serif e ammesso nei titoli e nel testo di
+ *     supporto, mai su una cifra.
+ *   - ZERO E O MAIUSCOLA devono restare distinguibili.
+ *
+ * VIETATI, e il test lo verifica: Montserrat (cifre proporzionali, colonne disallineate),
+ * Raleway (cifre oldstyle), i serif display ad alto contrasto (Didot, Bodoni: i tratti sottili
+ * spariscono a 9px), i pesi thin e hairline, e i condensati nelle tabelle numeriche.
+ *
+ * NOTA SULLA CONSEGNA, che e un vincolo di prodotto e non una preferenza: il mockup e UN file
+ * solo e non fa nessuna richiesta di rete. Quindi i caratteri non si scaricano — si NOMINANO,
+ * e chi li ha installati li vede. Ogni pila finisce con un ripiego di sistema scelto per
+ * somigliare al primo nome, cosi il report resta quello che deve essere anche su una macchina
+ * spoglia: Inter ripiega su Segoe UI, Merriweather su Georgia, IBM Plex Mono su Consolas.
+ * Incorporare i woff2 in base64 costerebbe fra i 30 e i 60KB per famiglia — su un file che ne
+ * pesa 60 in tutto e una decisione di prodotto, non una scelta tecnica.
+ */
+const SIST = '"Segoe UI","Segoe UI Web (West European)",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif';
+const SERIF = 'Georgia,"Times New Roman",serif';
+const MONO_SIST = 'Consolas,"Cascadia Mono","SF Mono",Menlo,"DejaVu Sans Mono",monospace';
 
 const TIPOGRAFIE = {
-  'sans-sistema': { etichetta: 'tutto sans', display: SANS, ui: SANS, num: MONO },
-  'serif-display': { etichetta: 'serif display + sans UI', display: 'Georgia,"Times New Roman",serif', ui: SANS, num: MONO },
-  condensato: { etichetta: 'grotesque condensato', display: '"Arial Narrow","Roboto Condensed","Liberation Sans Narrow",' + SANS, ui: SANS, num: MONO },
-  humanist: { etichetta: 'humanist', display: 'Tahoma,Verdana,Geneva,' + SANS, ui: 'Tahoma,Verdana,Geneva,' + SANS, num: MONO },
-  geometrico: { etichetta: 'geometrico', display: '"Century Gothic","Avenir Next",Futura,"Trebuchet MS",' + SANS, ui: '"Trebuchet MS",' + SANS, num: MONO },
-  slab: { etichetta: 'slab per i titoli', display: 'Rockwell,"Bookman Old Style","Roboto Slab",Georgia,serif', ui: SANS, num: MONO },
-  editoriale: { etichetta: 'editoriale, serif ad alto contrasto', display: '"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif', ui: SANS, num: MONO },
-  tecnico: { etichetta: 'tecnico', display: MONO, ui: SANS, num: MONO }
+  /* 1. il default sicuro: denso e leggibile a 11-13px, dove vive questo prodotto */
+  'neutro-ui': {
+    etichetta: 'Neutro-UI — Inter', uso: 'il default sicuro, qualunque nicchia',
+    display: 'Inter,"Inter var","Segoe UI Variable",' + SIST, ui: 'Inter,' + SIST, num: 'Inter,' + SIST
+  },
+  /* 2. manifattura, energia, logistica: la mono sui numeri e la firma del tecnico */
+  tecnico: {
+    etichetta: 'Tecnico — IBM Plex Sans + IBM Plex Mono', uso: 'manifattura, energia, logistica',
+    display: '"IBM Plex Sans",' + SIST, ui: '"IBM Plex Sans",' + SIST,
+    num: '"IBM Plex Mono",' + MONO_SIST
+  },
+  /* 3. serif nei titoli, sans nel resto: il sistema del data-journalism, il piu facile da far
+     funzionare perche la gerarchia la fa il contrasto fra le due famiglie */
+  editoriale: {
+    etichetta: 'Editoriale — Merriweather + Source Sans 3', uso: 'immobiliare, racconto, report da leggere',
+    display: 'Merriweather,' + SERIF, ui: '"Source Sans 3","Source Sans Pro",' + SIST,
+    num: '"Source Sans 3","Source Sans Pro",' + SIST
+  },
+  /* 4. neutro fino a sparire: e cio che un CFO vuole */
+  corporate: {
+    etichetta: 'Corporate sobrio — Roboto', uso: 'CFO, board, finanziario',
+    display: 'Roboto,' + SIST, ui: 'Roboto,' + SIST, num: 'Roboto,' + SIST
+  },
+  /* 5. caldo senza essere informale */
+  umanista: {
+    etichetta: 'Umanista caldo — Lato', uso: 'F&B, retail, palestre, consumo',
+    display: 'Lato,' + SIST, ui: 'Lato,' + SIST, num: 'Lato,' + SIST
+  },
+  /* 6. istituzionale: Public Sans nasce per i documenti pubblici americani */
+  grottesco: {
+    etichetta: 'Grottesco moderno — Public Sans / Noto Sans', uso: 'istituzionale, social, agenzia',
+    display: '"Public Sans","Noto Sans",' + SIST, ui: '"Public Sans","Noto Sans",' + SIST,
+    num: '"Public Sans","Noto Sans",' + SIST
+  },
+  /* 7. massima precisione tabellare: report densi e finanziari */
+  'mono-numerico': {
+    etichetta: 'Mono-numerico — Source Sans 3 + JetBrains Mono', uso: 'report densi, finanziario',
+    display: '"Source Sans 3","Source Sans Pro",' + SIST, ui: '"Source Sans 3","Source Sans Pro",' + SIST,
+    num: '"JetBrains Mono",' + MONO_SIST
+  },
+  /* 8. il serif che regge il fondo scuro: Lora ha tratti piu uniformi di un Didot */
+  'serif-scuro': {
+    etichetta: 'Serif editoriale scuro — Lora + Open Sans', uso: 'report a tema scuro',
+    display: 'Lora,' + SERIF, ui: '"Open Sans",' + SIST, num: '"Open Sans",' + SIST
+  }
+};
+
+/* I nomi vecchi continuano a risolvere: le spec scritte prima non si rompono per un cambio di
+   nomenclatura, e il rinvio a un abbinamento nuovo e sempre quello piu vicino di carattere. */
+const ALIAS_TIPO = {
+  'sans-sistema': 'neutro-ui', 'serif-display': 'editoriale', condensato: 'grottesco',
+  humanist: 'umanista', geometrico: 'grottesco', slab: 'editoriale'
 };
 
 /* ---------------------------------------------------------------- 4. DENSITA */
@@ -275,9 +339,9 @@ const BANDE = {
 /* Le tre estetiche di prima, espresse come combinazioni. Restano il modo piu breve di dire
    "quella faccia li", e una spec che dichiara solo `aesthetic` renderizza come sempre. */
 const PRESET = {
-  'corporate-sober': { shell: 'rail', palette: 'navy-corporate', tipografia: 'sans-sistema', densita: 'medio', banda: 'box' },
-  'agency-modern': { shell: 'top', palette: 'dark-agency', tipografia: 'sans-sistema', densita: 'medio', banda: 'box' },
-  'executive-minimal': { shell: 'top', palette: 'carta-inchiostro', tipografia: 'sans-sistema', densita: 'medio', banda: 'box' }
+  'corporate-sober': { shell: 'rail', palette: 'navy-corporate', tipografia: 'neutro-ui', densita: 'medio', banda: 'box' },
+  'agency-modern': { shell: 'top', palette: 'dark-agency', tipografia: 'neutro-ui', densita: 'medio', banda: 'box' },
+  'executive-minimal': { shell: 'top', palette: 'carta-inchiostro', tipografia: 'neutro-ui', densita: 'medio', banda: 'box' }
 };
 
 /** La pelle effettiva di una spec: il preset, piu gli assi che la spec sovrascrive. */
@@ -285,6 +349,7 @@ function pelleDi(spec) {
   const base = PRESET[spec.aesthetic];
   if (!base) throw new Error('aesthetic sconosciuta: "' + spec.aesthetic + '"');
   const s = Object.assign({}, base, spec.skin || {});
+  if (ALIAS_TIPO[s.tipografia]) s.tipografia = ALIAS_TIPO[s.tipografia];
   if (!SHELLS[s.shell]) throw new Error('shell sconosciuta: "' + s.shell + '"');
   if (!FAMIGLIE[s.palette]) throw new Error('palette sconosciuta: "' + s.palette + '"');
   if (!TIPOGRAFIE[s.tipografia]) throw new Error('tipografia sconosciuta: "' + s.tipografia + '"');
@@ -338,7 +403,7 @@ function scegliPelle(v) {
 }
 
 module.exports = {
-  SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, BANDE, PRESET,
+  SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, BANDE, PRESET, ALIAS_TIPO,
   palette, pelleDi, scegliPelle, seme,
   mix, contrasto
 };

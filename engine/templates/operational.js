@@ -84,7 +84,7 @@ const spec = {
   aesthetic: 'corporate-sober',
   /* Palestra: salvia e humanist, ritmo denso — le card perdono il riquadro e la pagina
      operativa guadagna lo spazio che le serve. */
-  skin: { palette: 'salvia', tipografia: 'humanist', densita: 'denso' },
+  skin: { palette: 'salvia', tipografia: 'umanista', densita: 'denso' },
   archetype: 'operational',
   grid: { contentWidth: 1044, gutter: 8, columns: 4 },
   model: {

@@ -96,7 +96,7 @@ const spec = {
     watermark: 'Mockup dimostrativo · dati sintetici'
   },
   aesthetic: 'corporate-sober',
-  skin: { shell: 'rail-slim', palette: 'dark-tecnico', tipografia: 'condensato', densita: 'medio' },
+  skin: { shell: 'rail-slim', palette: 'dark-tecnico', tipografia: 'grottesco', densita: 'medio' },
   archetype: 'quadrants',
   grid: { contentWidth: 1116, gutter: 12, columns: 4 },
   model: {

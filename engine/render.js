@@ -713,13 +713,20 @@ function css(spec, compact) {
      tenue, mai assente. */
   const bordo = D.bordo + 'px';
   const banda = P.banda.id;
+  /* Sul fondo scuro lo stesso peso appare piu leggero: e un effetto ottico noto, e la cura e
+     salire di un gradino sul testo corrente. Non sui titoli, che sono gia in grassetto: li un
+     gradino in piu diventa pesantezza. */
+  const scuroTema = SKIN.contrasto(P.tokens.ink, '#000000') > SKIN.contrasto(P.tokens.ink, '#FFFFFF');
   return `:root{${vars}}
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100%;background:var(--page);font-family:var(--font);-webkit-font-smoothing:antialiased}
+html,body{margin:0;padding:0;height:100%;background:var(--page);font-family:var(--font);
+  font-weight:${P.tokens.canvas && SKIN.contrasto(P.tokens.ink, P.tokens.card) > 0 && scuroTema ? 500 : 400};
+  -webkit-font-smoothing:antialiased}
 #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 #canvas{width:1280px;height:720px;transform-origin:center center;background:var(--canvas);display:flex;${rail ? '' : 'flex-direction:column;'}
   box-shadow:0 8px 40px rgba(12,25,45,.28);position:relative}
-.tnum{font-family:var(--fontNum);font-variant-numeric:tabular-nums;font-feature-settings:"tnum";letter-spacing:-.2px}
+.tnum{font-family:var(--fontNum);font-variant-numeric:tabular-nums lining-nums;
+  font-feature-settings:"tnum","lnum";letter-spacing:-.2px}
 text.tnum{letter-spacing:0}
 ${rail ? `#rail{width:${sh.rail}px;flex:0 0 ${sh.rail}px;background:var(--rail);color:var(--railInk);display:flex;flex-direction:column;padding:16px 0}
 .brand{padding:0 16px 14px;border-bottom:1px solid rgba(255,255,255,.09)}
