@@ -292,6 +292,17 @@ async function fine() {
   const dati = await fetch('/api/coda').then(r => r.json());
   coda = dati.coda;
   voti = {};
+  if (dati.aPosto) {
+    $('#fuori').textContent = '· ' + dati.aPosto +
+      (dati.aPosto === 1 ? ' gia a posto, fuori coda' : ' gia a posto, fuori coda');
+  }
+  if (!coda.length) {
+    document.body.innerHTML = '<div class="fine"><h1>Niente in sospeso.</h1>' +
+      '<p>Tutti i mockup hanno l ultimo giudizio pieno e nessun intervento aperto.</p>' +
+      '<p>Per rivederli comunque: <code>npm run review -- --tutti</code></p>' +
+      '<p><a href="/riepilogo">Vai al riepilogo</a></p></div>';
+    return;
+  }
   /* Si riprende dal primo mockup senza un voto PER LA SUA VERSIONE. Contare quanti ne sono
      stati votati in passato non basta: un mockup corretto dopo un commento e una versione
      nuova e deve tornare davanti, non finire in coda dietro a quelli mai visti. I gia votati
@@ -312,6 +323,7 @@ function pagina(titolo) {
 <header>
   <h1>Revisione</h1>
   <span class="avanz" id="avanz">…</span>
+  <span class="avanz" id="fuori"></span>
   <span class="spazio"></span>
   <a href="/riepilogo">Riepilogo</a>
 </header>

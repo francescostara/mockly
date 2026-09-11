@@ -39,6 +39,9 @@ function build() {
         impr: Math.round(impr),
         eng: Math.round(eng),
         paidImpr: Math.round(paidImpr),
+        /* le impression paid in migliaia: il CPM e un costo PER MILLE, e senza questo
+           denominatore la misura usciva a mezzo centesimo — un numero vero e inutile */
+        paidMille: paidImpr / 1000,
         orgImpr: Math.round(impr - paidImpr),
         spend: Math.round(paidImpr / 1000 * p.cpm * j(.93, 1.07)),   /* paid always costs; organic never */
         clicks: Math.round(eng * j(.11, .19)),
@@ -69,7 +72,7 @@ function build() {
   const fmtMembers = [];
   PLATS.forEach(p => FORMATS.forEach(f => fmtMembers.push({ id: p.id + ':' + f.id, n: f.n, c: p.c, parent: p.id, parentDim: 'plat' })));
 
-  const cols = ['y', 'm', 'plat', 'reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'post', 'folNew'];
+  const cols = ['y', 'm', 'plat', 'reach', 'impr', 'eng', 'paidImpr', 'paidMille', 'orgImpr', 'spend', 'clicks', 'post', 'folNew'];
   return {
     dims: { plat: PLATS.map(p => ({ id: p.id, n: p.n, c: p.c, brand: true })), fmt: fmtMembers },
     years: YRS,
@@ -99,7 +102,7 @@ const spec = {
   palette: { series: ['#4C6FE0', '#22B5A6', '#3D4A6B', '#7A5AF8', '#2E9BD6', '#F0A63C'] },
   grid: { contentWidth: 1248, gutter: 12, columns: 5 },
   model: {
-    sums: ['reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'post', 'folNew'],
+    sums: ['reach', 'impr', 'eng', 'paidImpr', 'paidMille', 'orgImpr', 'spend', 'clicks', 'post', 'folNew'],
     measures: [
       { id: 'reach', label: 'Reach', agg: 'sum', field: 'reach', unit: 'count', format: 'N' },
       { id: 'impr', label: 'Impression', agg: 'sum', field: 'impr', unit: 'count', format: 'N' },
@@ -114,7 +117,7 @@ const spec = {
       { id: 'post', label: 'Pubblicazioni', agg: 'sum', field: 'post', unit: 'count', format: 'N' },
       /* le due misure che rendono confrontabili piattaforme di taglia diversa */
       { id: 'reachPost', label: 'Reach per pubblicazione', agg: 'ratio', num: 'reach', den: 'post', unit: 'count', format: 'N' },
-      { id: 'cpm', label: 'CPM', agg: 'ratio', num: 'spend', den: 'paidImpr', unit: 'money', format: 'eurF', inv: true }
+      { id: 'cpm', label: 'CPM', agg: 'ratio', num: 'spend', den: 'paidMille', unit: 'money', format: 'eur2', inv: true }
     ]
   },
   filters: {

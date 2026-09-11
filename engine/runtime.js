@@ -46,6 +46,35 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }
     return w * (px || 9.5);
   };
+  /* IL CUSCINETTO. Ogni grafico tiene questa distanza dai bordi della sua card, a destra e a
+     sinistra. Non e una raffinatezza: un disegno che tocca il bordo sembra tagliato anche
+     quando e intero, e la revisione l'ha segnalato su sei mockup prima che diventasse una
+     regola invece di un numero ripetuto a mano in ogni visual. */
+  M.PAD = 12;
+
+  /**
+   * UN TESTO SU FONDO INCERTO. Un valore bianco scritto dentro una forma colorata funziona
+   * finche resta dentro la forma: appena sporge — un nastro sottile ai bordi, un'etichetta
+   * accanto a un arco — finisce sul fondo chiaro della card e sparisce. E' il difetto che la
+   * revisione ha segnalato tre volte, su ribbon e gauge, con lo stesso rimedio: un velo sotto
+   * il testo.
+   * Il velo prende il colore che si vuole con l'opacita che si vuole, e le sue dimensioni si
+   * ricavano dal testo — non ci sono numeri magici da tenere allineati a mano.
+   */
+  M.testoVelato = function (testo, x, y, o) {
+    o = o || {};
+    var px = o.px || 8.5, anc = o.anc || 'middle';
+    var w = M.largh(testo, px) + (o.padX === undefined ? 7 : o.padX) * 2;
+    var h = px + (o.padY === undefined ? 3 : o.padY) * 2;
+    var rx = anc === 'end' ? x - w + 3 : anc === 'start' ? x - 3 : x - w / 2;
+    return '<rect x="' + rx.toFixed(1) + '" y="' + (y - px + 1).toFixed(1) + '" width="' + w.toFixed(1) +
+      '" height="' + h.toFixed(1) + '" rx="' + (h / 2).toFixed(1) + '" fill="' + (o.velo || 'var(--ink)') +
+      '" opacity="' + (o.opacita === undefined ? 0.55 : o.opacita) + '" style="pointer-events:none"/>' +
+      '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="' + anc +
+      '" font-size="' + px + '" font-weight="' + (o.peso || 600) + '" fill="' + (o.ink || '#fff') +
+      '" class="tnum" style="pointer-events:none">' + M.esc(testo) + '</text>';
+  };
+
   /** La colonna delle etichette: quanto basta a contenerle, entro un tetto. */
   M.colonnaEtichette = function (etichette, px, tetto, pad) {
     var max = 0;
@@ -73,6 +102,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       return s + cur + Math.round(a);
     };
     f.eurF = v => (!isFinite(v) ? cur + '0' : (v < 0 ? '−' : '') + cur + num(Math.abs(v)));
+    /* Con DUE DECIMALI, per le misure che vivono sotto l'euro: un CPM, un costo per clic, un
+       prezzo unitario. Arrotondato all'intero un CPM da 5,42 diventa 5 e un costo per clic da
+       0,38 diventa zero — un numero vero e inutile, che e il modo peggiore di sbagliare. */
+    f.eur2 = v => (!isFinite(v) ? cur + '0,00'
+      : (v < 0 ? '−' : '') + cur + d(Math.abs(v).toFixed(2)));
     f.pc = function (v, k) { k = k === undefined ? 1 : k; return d((isFinite(v) ? v * 100 : 0).toFixed(k)) + '%'; };
     f.pp = function (v, k) { k = k === undefined ? 1 : k; v = isFinite(v) ? v : 0; return (v >= 0 ? '+' : '−') + d(Math.abs(v * 100).toFixed(k)) + ' pp'; };
     f.sgp = function (v, k) { v = isFinite(v) ? v : 0; return (v > 0 ? '+' : '−') + f.pc(Math.abs(v), k); };
@@ -873,7 +907,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        sinistra, e le barre partivano da meta riquadro senza motivo. Il tetto resta, perche un
        nome lunghissimo non deve mangiarsi il grafico. */
     var lw = M.colonnaEtichette(data.map(d => d.l), 9.5, Math.min(158, w * .42), 10);
-    var m = { t: 5, r: 46, b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r;
+    var m = { t: 5, r: 46, b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r - M.PAD;
     var max = Math.max.apply(null, data.map(d => d.v)) || 1, rh = ih / (data.length || 1), bh = Math.min(13, rh * .56);
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d, i) {
@@ -1011,7 +1045,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       line.forEach((val, k) => p += (k ? 'L' : 'M') + (mgn.l + cw * k + cw / 2).toFixed(1) + ',' + Y2(val).toFixed(1));
       s += '<path d="' + p + '" fill="none" stroke="var(--amber)" stroke-width="1.8"/>';
       line.forEach((val, k) => s += '<circle cx="' + (mgn.l + cw * k + cw / 2).toFixed(1) + '" cy="' + Y2(val).toFixed(1) + '" r="2.2" fill="var(--amber)"/>');
-      s += '<text x="' + (w - 4) + '" y="' + (mgn.t + 6) + '" text-anchor="end" font-size="8.5" fill="var(--amber)">' + M.esc(A.meas(ln).label || '') + '</text>';
+      s += '<text x="' + (w - M.PAD) + '" y="' + (mgn.t + 6) + '" text-anchor="end" font-size="8.5" fill="var(--amber)">' + M.esc(A.meas(ln).label || '') + '</text>';
     }
     return A.card(v, s + '</svg>');
   };
@@ -1029,7 +1063,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var cats = A.dims[dim];
     /* stessa regola dell'hbar: "Q1" non ha bisogno di novantasei pixel */
     var lw = M.colonnaEtichette(groups.map(g => g.l), 10, 96, 10);
-    var m = { t: 6, r: 10, b: 6 }, rh = (h - m.t - m.b) / groups.length, bh = Math.min(20, rh * .6), iw = w - lw - m.r;
+    var m = { t: 6, r: M.PAD, b: 6 }, rh = (h - m.t - m.b) / groups.length, bh = Math.min(20, rh * .6), iw = w - lw - m.r;
     var s = '<svg width="' + w + '" height="' + h + '">';
     groups.forEach(function (grp, i) {
       var y = m.t + rh * i + rh / 2, vals = {}, tot = 0;
@@ -1140,9 +1174,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var wLbl = M.largh(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target), 8.5);
       if (anc === 'end') lblX = Math.min(lblX, w - 2); else if (anc === 'start') lblX = Math.max(lblX, 2);
       else lblX = Math.min(Math.max(lblX, wLbl / 2 + 2), w - wLbl / 2 - 2);
-      s += '<text x="' + lblX.toFixed(1) + '" y="' + Math.max(9, lblY).toFixed(1) +
-        '" text-anchor="' + anc + '" font-size="8.5" font-weight="600" fill="var(--ink2)">' +
-        M.esc(A.tpl(b.targetLabel || 'target')) + ' ' + A.mfmt(ms, target) + '</text>';
+      /* Il velo qui e del colore della SUPERFICIE, non dell'inchiostro: l'etichetta cade
+         sull'arco colorato o sul fondo a seconda di dov'e il bersaglio, e un velo chiaro con
+         inchiostro scuro sopra e leggibile in tutti e due i casi. */
+      s += M.testoVelato(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target),
+        lblX, Math.max(10, lblY), { px: 8.5, anc: anc, velo: 'var(--card)', opacita: 0.88,
+          ink: 'var(--ink)', padX: 4, padY: 2 });
     }
 
     s += '<text x="' + cx + '" y="' + (cy - 6) + '" text-anchor="middle" font-size="' +
@@ -1227,7 +1264,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }
 
     var lw = M.colonnaEtichette(righe.map(r => r.n), 9, Math.min(96, w * .22), 8);
-    var m = { t: 16, r: 6, b: 4 };
+    var m = { t: 16, r: M.PAD, b: 4 };
     var iw = w - lw - m.r, ih = h - m.t - m.b;
     var cw = iw / (cols.length || 1), ch = ih / (righe.length || 1), gap = 1.5;
     var s = '<svg width="' + w + '" height="' + h + '">';
@@ -1331,9 +1368,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
            troppo bassa per contenerlo si omette quel segmento — meglio un'etichetta in meno che
            una che deborda sul nastro accanto. */
         if (alt >= 13 && !dimd) {
-          s += '<text x="' + X(p).toFixed(1) + '" y="' + (o.y0 + alt / 2 + 3).toFixed(1) +
-            '" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff" class="tnum" ' +
-            'style="pointer-events:none">' + M.esc(A.mfmt(ms, o.v)) + '</text>';
+          /* Sul velo, non sul nastro: ai due estremi il numero sporge sul fondo chiaro della
+             card, e in bianco non si legge piu. Il velo lo accompagna ovunque vada. */
+          s += M.testoVelato(A.mfmt(ms, o.v), X(p), o.y0 + alt / 2 + 3, { px: 8.5, opacita: 0.55 });
         }
       });
     });
@@ -1363,7 +1400,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     h = v.h || h || 200;
     var a = A.agg(A.slice({}));
     var vals = stages.map(st => A.mv(st.measure, a));
-    var m = { t: 10, r: 12, b: 10, l: 12 }, ih = h - m.t - m.b, rh = ih / (stages.length || 1);
+    var m = { t: 10, r: M.PAD, b: 10, l: M.PAD }, ih = h - m.t - m.b, rh = ih / (stages.length || 1);
     var max = vals[0] || 1;
     var s = '<svg width="' + w + '" height="' + h + '">';
     stages.forEach(function (st, i) {
@@ -1385,7 +1422,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         s += '<text x="' + (x + bw + 7).toFixed(1) + '" y="' + yt + '" font-size="10" fill="var(--ink2)">' +
           M.esc(st.label) + ' <tspan class="tnum" fill="var(--ink)">' + A.mfmt(st.measure, vals[i]) + '</tspan></text>';
       }
-      if (i) s += '<text x="' + (w - 4) + '" y="' + yt + '" text-anchor="end" font-size="8.5" fill="var(--muted)" class="tnum">' + f.pc(conv, 0) + '</text>';
+      if (i) s += '<text x="' + (w - M.PAD) + '" y="' + yt + '" text-anchor="end" font-size="8.5" fill="var(--muted)" class="tnum">' + f.pc(conv, 0) + '</text>';
     });
     return A.card(v, s + '</svg>');
   };
@@ -1404,7 +1441,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var bars = [{ l: A.tpl(b.startLabel || '{py}'), abs: start, kind: 't' }]
       .concat(steps.map(s2 => ({ l: s2.l, d: s2.d, kind: 's', id: s2.id })))
       .concat([{ l: A.tpl(b.endLabel || '{y}'), abs: end, kind: 't' }]);
-    var mgn = { t: 14, r: 10, b: 24, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
+    var mgn = { t: 14, r: M.PAD, b: 24, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var lo = 0, hi = Math.max(start, end), run = start;
     steps.forEach(function (s2) { run += s2.d; hi = Math.max(hi, run); lo = Math.min(lo, run); });
     var tk = M.ticks(hi * 1.1 || 1), top = tk[tk.length - 1] || 1;

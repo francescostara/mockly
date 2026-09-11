@@ -23,6 +23,10 @@ const { perMockup } = require('./interventi.js');
 
 const PORTA = Number(process.env.PRUVA_REVIEW_PORT) || 4173;
 const LIMITE = Number((process.argv.find(a => a.startsWith('--solo=')) || '').split('=')[1]) || 0;
+/* Di norma si rivede solo cio che ha ancora qualcosa in sospeso: rimettere in coda un mockup
+   gia approvato costa attenzione e non produce niente. `--tutti` rimette tutto in fila, che
+   serve quando si vuole un giro completo di controllo. */
+const TUTTI = process.argv.indexOf('--tutti') >= 0;
 const ARCHIVIO = path.join(__dirname, 'reviews.json');
 const VERSIONI = path.join(__dirname, 'versioni');
 fs.mkdirSync(VERSIONI, { recursive: true });
@@ -41,6 +45,24 @@ function versioneDi(id, impronta, giudizi) {
      — il ciclo comincia da li. */
   const viste = new Set(passate.map(g => g.impronta || 'senza-impronta:v' + (g.versione || 1)));
   return viste.size + 1;
+}
+
+/**
+ * Ha ancora qualcosa in sospeso?
+ *
+ * Tre modi di essere in sospeso, e bastano uno:
+ *   - l'ultimo giudizio non e un "si" pieno — c'e un ritocco chiesto, o un no;
+ *   - alla domanda "e risolto?" la risposta e stata "in parte" o "no";
+ *   - resta un intervento aperto o parziale nel registro.
+ * Un mockup mai giudicato non e in sospeso: non e ancora stato chiesto niente.
+ */
+function inSospeso(id, giudizi) {
+  const suoi = giudizi.filter(g => g.id === id);
+  if (!suoi.length) return true;                       /* mai visto: va visto */
+  const ult = suoi[suoi.length - 1];
+  if (ult.verdetto !== 'si') return true;
+  if (ult.risolto === 'parte' || ult.risolto === 'no') return true;
+  return perMockup(id).some(i => i.stato !== 'fatto');
 }
 
 function leggiArchivio() {
@@ -63,6 +85,12 @@ coda.forEach(c => { auto[c.id] = c.auto; });
 console.log('  spedibili secondo la macchina: ' +
   coda.filter(c => c.auto.verdetto === 'SPEDIBILE').length + '/' + coda.length +
   '   (l autore non li vede prima di votare)');
+{
+  const g0 = leggiArchivio().giudizi;
+  const sosp = coda.filter(c => inSospeso(c.id, g0));
+  console.log('  in sospeso: ' + sosp.length + '/' + coda.length +
+    (TUTTI ? '   (--tutti: in coda ci sono comunque tutti)' : '   (gli altri non entrano in coda)'));
+}
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -77,7 +105,7 @@ const server = http.createServer((req, res) => {
     /* NIENTE verdetto qui dentro: e il punto dello strumento */
     const giudizi = leggiArchivio().giudizi;
     const gia = giudizi.map(g => g.id);
-    const pubblica = coda.map(c => {
+    const pubblica = coda.filter(c => TUTTI || inSospeso(c.id, giudizi)).map(c => {
       const versione = versioneDi(c.id, c.impronta, giudizi);
       /* I giudizi precedenti SI mostrano: sono parole dell'autore, non il verdetto della
          macchina. Servono proprio a ricordargli cosa aveva scritto, per poter dire se il
@@ -95,7 +123,9 @@ const server = http.createServer((req, res) => {
         versione, votato, precedenti, interventi: perMockup(c.id)
       };
     });
-    return invia('application/json', JSON.stringify({ coda: pubblica, gia }));
+    /* quanti sono rimasti fuori, e perche: il conto va detto, non nascosto */
+    const aPosto = coda.length - pubblica.length;
+    return invia('application/json', JSON.stringify({ coda: pubblica, gia, aPosto, tutti: TUTTI }));
   }
 
   if (url.pathname.startsWith('/mock/')) {

@@ -241,6 +241,116 @@ const INTERVENTI = [
       'trend stagionali resta aperto: e un visual in piu nella pagina, e la pagina e piena — ' +
       'va deciso cosa esce.',
     stato: 'parziale'
+  },
+
+  /* ---------------------------------------------------------------- terzo giro */
+  {
+    id: 'banco/ribbon-sorpasso', versione: 2,
+    commento: 'ribbon chart: i valori non sono leggibili in bianco perche quelli a sinistra e ' +
+      'destra sforano nello sfondo: includi uno sfondo grigio con trasparenza leggera per ' +
+      'renderli visibili. Inoltre commento per tutte le tabelle: molte sono grandi senza motivi ' +
+      'con righe alte, lo spazio potrebbe essere occupato dalle visuals o da nuove visuals.',
+    dove: 'ribbon · tabelle · fit',
+    fatto: 'Ogni valore dentro un nastro viaggia ora su un VELO semitrasparente che lo ' +
+      'accompagna anche quando sporge sul fondo chiaro. E la correzione precedente sulle ' +
+      'tabelle e stata ribaltata: avevo fatto allungare le righe per riempire la card, mentre ' +
+      'la richiesta era l opposto — la tabella resta alta quanto le sue righe e lo spazio che ' +
+      'avanza lo prendono i GRAFICI, fino a un quarto in piu del dichiarato.',
+    stato: 'fatto'
+  },
+  {
+    id: 'archetipi/canonical-operational', versione: 2,
+    commento: 'l etichetta del gauge non e ancora ben leggibile, pensa a metterla esternamente ' +
+      'o applicare uno sfondo bianco con trasparenza leggera.',
+    dove: 'gauge',
+    fatto: 'Applicato il velo, con il colore della SUPERFICIE e inchiostro scuro sopra: ' +
+      'l etichetta del bersaglio cade sull arco colorato o sul fondo a seconda di dove sta il ' +
+      'target, e cosi si legge in tutti e due i casi. Stesso rimedio del ribbon, stessa ' +
+      'funzione: un testo su fondo incerto porta il suo fondo con se.',
+    stato: 'fatto'
+  },
+  {
+    id: 'archetipi/canonical-quadrants', versione: 2,
+    commento: 'la tabella ha ancora dello spazio vuoto sotto il suo box.',
+    dove: 'fit',
+    fatto: 'Lo spazio che avanza va ai grafici invece di restare bianco: quando i grafici ' +
+      'dichiarati e la tabella stanno comodi, le altezze crescono fino a un quarto in piu. La ' +
+      'tabella non si allunga, perche righe alte non aggiungono informazione.',
+    stato: 'fatto'
+  },
+  {
+    id: 'eval/social-monthly', versione: 2,
+    commento: 'Il cpm deve avere numeri decimali appropriati, solitamente e minore di 0 euro ma ' +
+      'devono vedersi almeno 2 o 3 numeri decimali.',
+    dove: 'CPM · formati',
+    fatto: 'Il difetto era piu profondo del formato: il CPM e un costo PER MILLE impression e ' +
+      'io lo dividevo per le impression secche, quindi usciva mezzo centesimo. Ora il ' +
+      'denominatore e in migliaia e il formato eur2 mostra due decimali — 4,11 a 11,40 euro, ' +
+      'dentro l ancora della nicchia. Il formato e disponibile a ogni misura di denaro che vive ' +
+      'sotto l euro.',
+    stato: 'fatto'
+  },
+  {
+    id: 'archetipi/canonical-funnel', versione: 3,
+    commento: 'Il cuscinetto va applicato in ogni grafico, vedi 2,3,4 grafici centrali da ' +
+      'sinistra alto a destra basso. Inoltra l etichetta win rate nel secondo grafico non e ' +
+      'chiara, rendila piu vicina alla fine della riga o inserisci una legenda in basso.',
+    dove: 'tutti i visual',
+    fatto: 'Il cuscinetto e diventato una costante del motore (M.PAD) applicata da hbar, ' +
+      'stack100, heatmap, scatter, funnel e colline: nessun disegno tocca piu il bordo della ' +
+      'sua card. Resta aperta l etichetta del win rate nel colline: va accostata alla fine ' +
+      'della linea o portata in legenda.',
+    stato: 'parziale'
+  },
+  {
+    id: 'archetipi/canonical-executive-summary', versione: 3,
+    commento: 'L etichetta potrebbe essere piu chiara: o esternamente al grafico o con uno ' +
+      'sfondo bianco in trasparenza',
+    dove: 'gauge',
+    fatto: 'Velo del colore della superficie sotto l etichetta del bersaglio, con inchiostro ' +
+      'scuro sopra.',
+    stato: 'fatto'
+  },
+  {
+    id: 'banco/immobiliare', versione: 2,
+    commento: 'i numeri nel ribbon non si leggono bene, intendo quelli che interfacciano con il ' +
+      'background bianco: applica uno sfondo grigio con leggera trasparenza ai valori in ' +
+      'maniera tale da uniformarli e renderli leggibili anche con lo sfondo.',
+    dove: 'ribbon',
+    fatto: 'Fatto esattamente cosi: velo semitrasparente sotto ogni valore del ribbon.',
+    stato: 'fatto'
+  },
+  {
+    id: 'locale/scuola-online', versione: 3,
+    commento: 'stesso commento di prima (spazio per i trend stagionali)',
+    dove: 'contenuto',
+    fatto: '',
+    stato: 'aperto'
+  },
+  {
+    id: 'banco/concentrazione', versione: 2,
+    commento: 'il grafico a torta ha ancora molto spazio a sinistra non proporzionale al ' +
+      'cuscinetto di destra dalle legende al box, trova una soluzione piu estetica. inoltre ' +
+      'manca ancora la separazione della fetta',
+    dove: 'donut',
+    fatto: '',
+    stato: 'aperto'
+  },
+  {
+    id: 'eval/ecommerce-retail', versione: 2,
+    commento: 'stesso commento di prima per return rate, inserire leggende in basso coi colori?',
+    dove: 'colline · legenda',
+    fatto: '',
+    stato: 'aperto'
+  },
+  {
+    id: 'banco/filtro-organico', versione: 2,
+    commento: 'stessi commenti di prima (CPM e pubblicazioni mancanti, margine del donut)',
+    dove: 'modello dati',
+    fatto: 'Il margine del donut e sistemato dalla regola del cuscinetto. CPM e pubblicazioni ' +
+      'restano da portare in questo caso: sul social sono gia fatti, qui e lavoro sul modello ' +
+      'dati della spec.',
+    stato: 'parziale'
   }
 ];
 

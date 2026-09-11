@@ -191,7 +191,24 @@ function planFit(spec, page, data, dense) {
   const wanted = flex.reduce((a, r) => a + flexNeed(r, data, rowH), 0);
   const declared = fixed.reduce((a, r) => a + rowHeight(r), 0);
 
-  if (declared <= budget - wanted) return { scaled: false, tight: false, k: 1, declared, room: budget - wanted };
+  if (declared <= budget - wanted) {
+    /* LO SPAZIO CHE AVANZA NON RESTA BIANCO. Se i grafici dichiarati e la tabella stanno
+       comodi, il resto della pagina sarebbe un rettangolo vuoto in fondo: succedeva su quattro
+       mockup, e la revisione l'ha segnalato ogni volta. Il surplus va ai grafici, che con
+       qualche pixel in piu mostrano davvero di piu — la tabella invece resta alta quanto le sue
+       righe, perche allungarle non aggiunge niente.
+       Il tetto e un quarto in piu del dichiarato: oltre, un grafico pensato per centocinquanta
+       pixel diventa un'altra cosa, e la spec smetterebbe di dire quello che dice. */
+    const avanza = budget - wanted - declared;
+    const chromeF = fixed.reduce((a, r) => a + Math.max(...r.visuals.map(chromeOf)), 0);
+    const chartsF = declared - chromeF;
+    if (avanza > 8 && chartsF > 0 && fixed.length) {
+      const su = Math.min(1.25, (chartsF + avanza) / chartsF);
+      return { scaled: true, cresciuto: true, tight: false, over: 0,
+        k: Math.round(su * 1000) / 1000, declared, room: budget - wanted };
+    }
+    return { scaled: false, tight: false, k: 1, declared, room: budget - wanted };
+  }
 
   /* Si scala solo la parte grafico: il chrome (titolo, legenda) occupa quello che occupa.
      Sotto MIN_CHART_H un grafico non si legge piu, quindi li ci si ferma. */
@@ -563,7 +580,10 @@ function validate(spec, data) {
      formato deve appartenere all'unita dichiarata, e una conta col simbolo di valuta non e
      piu esprimibile. */
   const UNITA_FORMATI = {
-    money: ['eur', 'eurF'],
+    /* eur2 e per le misure di denaro che vivono SOTTO l'euro — un CPM, un costo per clic, un
+       prezzo unitario: arrotondate all'intero diventano zero, che e il modo peggiore di
+       sbagliare un numero perche sembra un dato e non lo e. */
+    money: ['eur', 'eurF', 'eur2'],
     count: ['N', 'raw'],
     pct: ['pc', 'sgp', 'bps'],
     pp: ['pp'],
@@ -853,12 +873,13 @@ ${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri sparis
 .dcd{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.45}
 .narr{padding:12px 14px;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.55;color:var(--ink)}
 .mx{padding:2px 8px 8px;overflow:hidden}
-/* LA TABELLA RIEMPIE LA SUA CARD. La card di chiusura prende tutto lo spazio che avanza — ed e
-   giusto, e cio che tiene allineato il bordo inferiore — ma la tabella dentro restava alta
-   quanto le sue righe e sotto restava un rettangolo bianco, segnalato dalla revisione su
-   quattro mockup su diciassette. Lo spazio in piu va alle RIGHE, che diventano piu comode da
-   leggere: e cio che fa una tabella in Power BI quando la si allarga. */
-.mx>table{height:100%}
+/* LA TABELLA RESTA ALTA QUANTO LE SUE RIGHE.
+   Al primo giro avevo fatto il contrario — righe allungate a riempire la card — e la revisione
+   ha chiarito che la richiesta era l'opposto: "molte tabelle sono grandi senza motivo con righe
+   alte, lo spazio potrebbe essere occupato dalle visuals". Giusto: una tabella di quattro righe
+   alta trecento pixel non da nessuna informazione in piu, la da solo piu lentamente.
+   Lo spazio che avanza lo prendono i GRAFICI (vedi planFit), che con altezza in piu mostrano
+   davvero di piu. */
 .mx>table td,.mx>table th{vertical-align:middle}
 ${compact ? String.raw`th,td{padding:2px 6px}.card>.ch{padding:7px 13px 3px}#page{padding:10px 16px;gap:8px}.row{gap:8px}.kpi{padding:8px 14px 7px}` : ``}
 table{width:100%;border-collapse:collapse;font-size:10.5px}
