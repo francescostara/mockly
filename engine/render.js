@@ -1030,6 +1030,17 @@ function render(specIn, data) {
     throw new Error('spec validation failed:' + String.fromCharCode(10) + '  - ' + righe.join(String.fromCharCode(10) + '  - '));
   }
   const { types } = validate(spec, data);
+
+  /* IL GUTTER DELLA PAGINA DENSA VALE ANCHE PER LE LARGHEZZE.
+     La pagina densa stringe le spaziature nel foglio di stile — .row{gap:8px} — ma le larghezze
+     delle card le calcola il runtime dal gutter della spec, che era rimasto a 12. Le due cose
+     non tornavano, e il risultato non era un pixel: una riga da cinque card finiva sedici pixel
+     prima di una riga da una sola, quindi il bordo destro del report era A SCALINI, diverso per
+     ogni riga. E' il difetto che la revisione ha chiamato "errore grave", ed era invisibile a
+     ogni conto perche ogni singola riga tornava — con il gutter sbagliato.
+     Si scrive DOPO la validazione: il gate vuole il gutter della densita dichiarata, ed e
+     giusto cosi — la pagina densa e una decisione del motore, non della spec. */
+  if (compact) spec.grid = Object.assign({}, spec.grid, { gutter: DENSE_GUTTER });
   const lang = (spec.meta.locale || 'it-IT').slice(0, 2);
   return `<!DOCTYPE html>
 <html lang="${lang}">

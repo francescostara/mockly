@@ -181,6 +181,33 @@ ok('la colonna delle etichette non si mangia il grafico', () => {
   assert.deepStrictEqual(sprechi, [], sprechi.join(' | '));
 });
 
+ok('il bordo destro e lo stesso per tutte le righe', () => {
+  /* L'errore piu grave del primo giro, e il piu invisibile: in pagina densa il foglio di stile
+     stringeva il gutter a 8px mentre le larghezze delle card restavano calcolate su 12. Ogni
+     riga tornava — col gutter sbagliato — e il bordo destro del report finiva A SCALINI, in un
+     punto diverso a seconda di quante card aveva la riga.
+     Il controllo si fa con il gutter che il CSS USA DAVVERO, letto dal foglio emesso: e l'unico
+     modo di accorgersi che i due numeri hanno smesso di essere lo stesso numero. */
+  const storti = [];
+  renderizzati.forEach(r => {
+    const css = r.doc.querySelector('style').textContent;
+    /* l'ultima regola .row{gap:...} vince: in pagina densa e quella del blocco compatto */
+    const gaps = [...css.matchAll(/\.row\{[^}]*gap:([\d.]+)px/g)].map(m => parseFloat(m[1]));
+    const gap = gaps.length ? gaps[gaps.length - 1] : null;
+    if (gap === null) return;
+    const righe = [...r.doc.querySelectorAll('#page > .row')];
+    const larghezze = righe.map(rw => {
+      const c = [...rw.children].map(x => parseFloat(x.style.width) || 0);
+      return Math.round((c.reduce((a, b) => a + b, 0) + gap * (c.length - 1)) * 10) / 10;
+    });
+    const distinte = [...new Set(larghezze)];
+    if (distinte.length > 1) {
+      storti.push(`${r.id}: le righe finiscono a ${distinte.join(', ')} (gutter del CSS ${gap}px)`);
+    }
+  });
+  assert.deepStrictEqual(storti, [], storti.join(' | '));
+});
+
 ok('la heatmap ha almeno cinque gradini e scrive i suoi numeri', () => {
   /* Il caso della ritenzione per coorte: con tre gradini una mappa i cui valori stanno vicini
      diventa un muro di due tinte, e il colore da solo non dice quanto. */

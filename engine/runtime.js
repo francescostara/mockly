@@ -1224,7 +1224,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var dimd = A.S.f[dim] && A.S.f[dim] !== c.id;
       for (var p = 0; p < periods.length - 1; p++) {
         var a = cols[p][c.id], z = cols[p + 1][c.id], x1 = X(p), x2 = X(p + 1), cx = (x1 + x2) / 2;
-        s += '<path class="' + (dimd ? 'dimd' : '') + '" d="M' + x1 + ',' + a.y0.toFixed(1) + ' C' + cx + ',' + a.y0.toFixed(1) + ' ' + cx + ',' + z.y0.toFixed(1) + ' ' + x2 + ',' + z.y0.toFixed(1) +
+        var pd0 = periods[p], pd1 = periods[p + 1];
+        /* IL NASTRO E' CLICCABILE, non solo il nodo. Prima il filtro stava su una fascetta di
+           dieci pixel a ogni periodo: su un grafico largo cinquecento pixel, il novanta per
+           cento della superficie non rispondeva al clic — e chi prova a cliccare il nastro,
+           che e la cosa grande e colorata, conclude che i filtri non funzionano. La conclusione
+           era giusta: quello che non funzionava era il bersaglio, non il filtro. */
+        s += '<path class="hit ' + (dimd ? 'dimd' : '') + '" data-f="' + dim + ':' + c.id +
+          '" data-tip="<b>' + M.esc(c.n) + '</b><br>' + M.esc(pd0.l + ' ' + A.mfmt(ms, a.v)) +
+          ' → ' + M.esc(pd1.l + ' ' + A.mfmt(ms, z.v)) + '" d="M' + x1 + ',' + a.y0.toFixed(1) + ' C' + cx + ',' + a.y0.toFixed(1) + ' ' + cx + ',' + z.y0.toFixed(1) + ' ' + x2 + ',' + z.y0.toFixed(1) +
           ' L' + x2 + ',' + z.y1.toFixed(1) + ' C' + cx + ',' + z.y1.toFixed(1) + ' ' + cx + ',' + a.y1.toFixed(1) + ' ' + x1 + ',' + a.y1.toFixed(1) + ' Z" fill="' + c.c + '" opacity=".85"/>';
       }
       periods.forEach(function (pd, p) {

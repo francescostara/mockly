@@ -81,10 +81,18 @@ function runCase(id, fixture, evalCase) {
     !!B.q('#slBtn') && !!B.q('#slYear [data-y]') && B.qa('#slQtr [data-q]').length === 5 && B.qa('#slMon [data-m]').length === 13);
   ok('render produced a page', B.page().length > 500, String(B.page().length));
 
+  /* Il gutter da usare nei conti e quello che il FOGLIO DI STILE applica, non quello scritto
+     nella spec: in pagina densa il motore li stringe entrambi, e confrontare le larghezze con
+     il numero sbagliato faceva tornare ogni riga singolarmente mentre il bordo destro del
+     report era a scalini. */
+  const gapCss = (() => {
+    const g = [...B.q('style').textContent.matchAll(/\.row\{[^}]*gap:([\d.]+)px/g)].map(m => parseFloat(m[1]));
+    return g.length ? g[g.length - 1] : spec.grid.gutter;
+  })();
   const rows = B.qa('#page > .row');
   const kpiCards = B.qa('#page > .row:first-child .kpi');
   ok('KPI band is the full-width top row', kpiCards.length === spec.kpiBand.length &&
-    Math.round(kpiCards.reduce((a, c) => a + parseFloat(c.style.width), 0) + spec.grid.gutter * (kpiCards.length - 1)) === spec.grid.contentWidth,
+    Math.round(kpiCards.reduce((a, c) => a + parseFloat(c.style.width), 0) + gapCss * (kpiCards.length - 1)) === spec.grid.contentWidth,
     `${kpiCards.length} cards`);
   ok('KPI cards label the variance basis (YoY/MoM)',
     B.qa('#page .kpi .d').length > 0 && B.qa('#page .kpi .d').every(e => /YoY|MoM/.test(e.textContent)));
@@ -92,8 +100,9 @@ function runCase(id, fixture, evalCase) {
     rows.slice(1).every(r => r.children.length <= 3), rows.slice(1).map(r => r.children.length).join(','));
   ok('every row is on the shared column grid (edges align top to bottom)',
     rows.every(r => Math.round([...r.children].reduce((a, c) => a + (parseFloat(c.style.width) || 0), 0)
-      + spec.grid.gutter * (r.children.length - 1)) === spec.grid.contentWidth),
-    rows.map(r => Math.round([...r.children].reduce((a, c) => a + (parseFloat(c.style.width) || 0), 0))).join(','));
+      + gapCss * (r.children.length - 1)) === spec.grid.contentWidth),
+    rows.map(r => Math.round([...r.children].reduce((a, c) => a + (parseFloat(c.style.width) || 0), 0)
+      + gapCss * (r.children.length - 1))).join(','));
 
   const last = rows[rows.length - 1];
   const closingTable = last && last.querySelector('table');
