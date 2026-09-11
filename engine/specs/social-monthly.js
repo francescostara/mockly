@@ -8,11 +8,15 @@ const DM = require('../data-model.js');
 const SEED = 31071;
 /* engagement rates stay platform-plausible: IG 1-4%, TikTok higher, LinkedIn 2-5% */
 const PLATS = [
-  { id: 'ig', n: 'Instagram', c: '#4C6FE0', base: 980000, growth: .08, er: .031, paid: .42, cpm: 6.2, fol: .019 },
-  { id: 'tt', n: 'TikTok', c: '#22B5A6', base: 620000, growth: .41, er: .062, paid: .28, cpm: 4.1, fol: .048 },
-  { id: 'fb', n: 'Facebook', c: '#3D4A6B', base: 540000, growth: -.14, er: .009, paid: .61, cpm: 5.4, fol: -.004 }, /* the negative storyline */
-  { id: 'yt', n: 'YouTube', c: '#7A5AF8', base: 310000, growth: .17, er: .022, paid: .35, cpm: 8.9, fol: .012 },
-  { id: 'li', n: 'LinkedIn', c: '#2E9BD6', base: 145000, growth: .23, er: .038, paid: .19, cpm: 11.4, fol: .021 }
+  /* I COLORI SONO QUELLI DELLE PIATTAFORME, e sono dichiarati `brand: true`: qui la tinta e
+     l'identita, non una scelta estetica — un lettore riconosce Instagram e TikTok prima di
+     leggere la legenda, e vederli in una scala neutra e semplicemente sbagliato. E' l'unica
+     eccezione ammessa alla scala categoriale verificata dal motore. */
+  { id: 'ig', n: 'Instagram', c: '#C13584', brand: true, base: 980000, growth: .08, er: .031, paid: .42, cpm: 6.2, fol: .019, post: 62 },
+  { id: 'tt', n: 'TikTok', c: '#111111', brand: true, base: 620000, growth: .41, er: .062, paid: .28, cpm: 4.1, fol: .048, post: 88 },
+  { id: 'fb', n: 'Facebook', c: '#4267B2', brand: true, base: 540000, growth: -.14, er: .009, paid: .61, cpm: 5.4, fol: -.004, post: 41 }, /* the negative storyline */
+  { id: 'yt', n: 'YouTube', c: '#C4302B', brand: true, base: 310000, growth: .17, er: .022, paid: .35, cpm: 8.9, fol: .012, post: 12 },
+  { id: 'li', n: 'LinkedIn', c: '#0A66C2', brand: true, base: 145000, growth: .23, er: .038, paid: .19, cpm: 11.4, fol: .021, post: 24 }
 ];
 const FORMATS = [
   { id: 'reel', n: 'Reel / Short' }, { id: 'post', n: 'Post statico' },
@@ -38,6 +42,12 @@ function build() {
         orgImpr: Math.round(impr - paidImpr),
         spend: Math.round(paidImpr / 1000 * p.cpm * j(.93, 1.07)),   /* paid always costs; organic never */
         clicks: Math.round(eng * j(.11, .19)),
+        /* LE PUBBLICAZIONI. Mancavano, ed era il difetto piu grave del report: senza sapere
+           quante volte si e pubblicato, "reach in crescita del 12%" non si puo giudicare — puo
+           essere una redazione che lavora meglio o una che pubblica il doppio. La reach per
+           pubblicazione e la misura che rende la domanda rispondibile, ed e la prima cosa che
+           un social media manager guarda. */
+        post: Math.max(1, Math.round(p.post / 12 * j(.75, 1.25) * (yi ? 1.08 : 1))),
         folNew: Math.round(reach * p.fol * j(.8, 1.2) / 12 * (yi ? 1.1 : 1))
       };
     }
@@ -59,9 +69,9 @@ function build() {
   const fmtMembers = [];
   PLATS.forEach(p => FORMATS.forEach(f => fmtMembers.push({ id: p.id + ':' + f.id, n: f.n, c: p.c, parent: p.id, parentDim: 'plat' })));
 
-  const cols = ['y', 'm', 'plat', 'reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'folNew'];
+  const cols = ['y', 'm', 'plat', 'reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'post', 'folNew'];
   return {
-    dims: { plat: PLATS.map(p => ({ id: p.id, n: p.n, c: p.c })), fmt: fmtMembers },
+    dims: { plat: PLATS.map(p => ({ id: p.id, n: p.n, c: p.c, brand: true })), fmt: fmtMembers },
     years: YRS,
     facts: { cols, rows: facts.map(f => cols.map(c => f[c])) },
     detailModel: { dim: 'fmt', parentDim: 'plat', fields: ['impr', 'eng'], shares },
@@ -89,7 +99,7 @@ const spec = {
   palette: { series: ['#4C6FE0', '#22B5A6', '#3D4A6B', '#7A5AF8', '#2E9BD6', '#F0A63C'] },
   grid: { contentWidth: 1248, gutter: 12, columns: 5 },
   model: {
-    sums: ['reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'folNew'],
+    sums: ['reach', 'impr', 'eng', 'paidImpr', 'orgImpr', 'spend', 'clicks', 'post', 'folNew'],
     measures: [
       { id: 'reach', label: 'Reach', agg: 'sum', field: 'reach', unit: 'count', format: 'N' },
       { id: 'impr', label: 'Impression', agg: 'sum', field: 'impr', unit: 'count', format: 'N' },
@@ -100,7 +110,11 @@ const spec = {
       { id: 'paidImpr', label: 'Impression paid', agg: 'sum', field: 'paidImpr', unit: 'count', format: 'N' },
       { id: 'er', label: 'Engagement rate', agg: 'ratio', num: 'eng', den: 'impr', unit: 'pct', format: 'pc' },
       { id: 'ctr', label: 'CTR', agg: 'ratio', num: 'clicks', den: 'impr', unit: 'pct', format: 'pc' },
-      { id: 'paidShare', label: 'Quota paid', agg: 'ratio', num: 'paidImpr', den: 'impr', unit: 'pct', format: 'pc' }
+      { id: 'paidShare', label: 'Quota paid', agg: 'ratio', num: 'paidImpr', den: 'impr', unit: 'pct', format: 'pc' },
+      { id: 'post', label: 'Pubblicazioni', agg: 'sum', field: 'post', unit: 'count', format: 'N' },
+      /* le due misure che rendono confrontabili piattaforme di taglia diversa */
+      { id: 'reachPost', label: 'Reach per pubblicazione', agg: 'ratio', num: 'reach', den: 'post', unit: 'count', format: 'N' },
+      { id: 'cpm', label: 'CPM', agg: 'ratio', num: 'spend', den: 'paidImpr', unit: 'money', format: 'eurF', inv: true }
     ]
   },
   filters: {
@@ -111,8 +125,8 @@ const spec = {
     { id: 'reach', label: 'Reach', measure: 'reach', span: 1 },
     { id: 'er', label: 'Engagement rate', measure: 'er', span: 1 },
     { id: 'fol', label: 'Nuovi follower', measure: 'folNew', span: 1 },
-    { id: 'spend', label: 'Spesa paid', measure: 'spend', span: 1 },
-    { id: 'ctr', label: 'CTR', measure: 'ctr', span: 1 }
+    { id: 'post', label: 'Pubblicazioni', measure: 'post', span: 1 },
+    { id: 'spend', label: 'Spesa paid', measure: 'spend', span: 1 }
   ],
   pages: [{
     id: 'main', title: 'Performance social', subtitle: 'Reach, engagement e crescita follower per piattaforma',
@@ -143,9 +157,12 @@ const spec = {
             columns: [
               { measure: 'reach', label: 'Reach' },
               { measure: 'reach', label: '{basis}', kind: 'var' },
-              { measure: 'impr', label: 'Impression' },
+              /* le pubblicazioni e la reach per pubblicazione: senza, cinque piattaforme di
+                 taglia diversa non sono confrontabili, e la crescita non si sa a cosa attribuirla */
+              { measure: 'post', label: 'Pubbl.' },
+              { measure: 'reachPost', label: 'Reach/pubbl.' },
               { measure: 'er', label: 'Eng. rate', kind: 'heat', scale: [.008, .06] },
-              { measure: 'paidShare', label: 'Quota paid' },
+              { measure: 'cpm', label: 'CPM' },
               { measure: 'folNew', label: 'Follower' },
               { measure: 'spend', label: 'Spesa' }
             ]

@@ -853,10 +853,21 @@ ${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri sparis
 .dcd{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.45}
 .narr{padding:12px 14px;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.55;color:var(--ink)}
 .mx{padding:2px 8px 8px;overflow:hidden}
+/* LA TABELLA RIEMPIE LA SUA CARD. La card di chiusura prende tutto lo spazio che avanza — ed e
+   giusto, e cio che tiene allineato il bordo inferiore — ma la tabella dentro restava alta
+   quanto le sue righe e sotto restava un rettangolo bianco, segnalato dalla revisione su
+   quattro mockup su diciassette. Lo spazio in piu va alle RIGHE, che diventano piu comode da
+   leggere: e cio che fa una tabella in Power BI quando la si allarga. */
+.mx>table{height:100%}
+.mx>table td,.mx>table th{vertical-align:middle}
 ${compact ? String.raw`th,td{padding:2px 6px}.card>.ch{padding:7px 13px 3px}#page{padding:10px 16px;gap:8px}.row{gap:8px}.kpi{padding:8px 14px 7px}` : ``}
 table{width:100%;border-collapse:collapse;font-size:10.5px}
 th{text-align:right;font-weight:600;color:var(--muted);font-size:8.5px;letter-spacing:.4px;text-transform:uppercase;padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
 th:first-child{text-align:left}
+th.ord{cursor:pointer;user-select:none}
+th.ord:hover{color:var(--ink)}
+th.ord .so{opacity:.35;font-size:8px}
+th.ord .so.on{opacity:1;color:var(--c2)}
 td{padding:5px 6px;text-align:right;color:var(--ink2);border-bottom:1px solid var(--line2);white-space:nowrap}
 td:first-child{text-align:left;color:var(--ink);font-weight:500}
 tr.r{cursor:pointer}

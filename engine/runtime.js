@@ -556,13 +556,29 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           A.render(); return;
         }
         var pgb = cl('[data-page]'); if (pgb) { S.page = pgb.getAttribute('data-page'); S.drill = null; A.render(); return; }
-        if (cl('#btnReset')) { FDIMS.forEach(d => S.f[d.id] = null); S.q = null; S.mo = null; A.render(); return; }
+        if (cl('#btnReset')) { FDIMS.forEach(d => S.f[d.id] = null); S.q = null; S.mo = null; S.ord = {}; A.render(); return; }
         /* La scheda di interazione. Non passa da A.render(): e sopra il report, non dentro —
            aprirla non deve toccare lo stato dei filtri ne ridisegnare la pagina. */
         var hp = doc.getElementById('howp');
         if (hp && cl('#btnHow')) { hp.classList.add('open'); return; }
         if (hp && (cl('#btnHowX') || e.target === hp)) { hp.classList.remove('open'); return; }
         if (cl('#btnBack')) { S.page = S.from; S.drill = null; A.render(); return; }
+        /* l'intestazione ordina, e non filtra: il clic si ferma qui prima di arrivare a
+           [data-f], che sulla stessa riga non c'e ma su altre tabelle potrebbe esserci */
+        var oe = cl('[data-ord]');
+        if (oe) {
+          var raw2 = oe.getAttribute('data-ord'), ix2 = raw2.indexOf(':');
+          var dimO = raw2.slice(0, ix2), colO = raw2.slice(ix2 + 1);
+          if (colO !== '__nome') colO = +colO;
+          S.ord = S.ord || {};
+          var cur = S.ord[dimO];
+          /* stesso clic: si inverte. Colonna nuova: si parte dal piu alto per i numeri e dalla
+             A per i nomi, che e cio che ci si aspetta in entrambi i casi. */
+          S.ord[dimO] = (cur && String(cur.i) === String(colO))
+            ? { i: colO, d: cur.d === 'asc' ? 'desc' : 'asc' }
+            : { i: colO, d: colO === '__nome' ? 'asc' : 'desc' };
+          A.render(); return;
+        }
         var fe = cl('[data-f]');
         if (fe) {
           var raw = fe.getAttribute('data-f'), ix = raw.indexOf(':'), k = raw.slice(0, ix), v = raw.slice(ix + 1);
@@ -770,7 +786,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       testa = b.topN;
       data.push({ id: '__altri', l: b.altriLabel || (A.T.others || 'Altri'), c: 'var(--muted3)', v: coda, coda: true });
     }
-    var cx = w * .30, cy = h / 2, rO = Math.min(w * .26, h * .44), rI = rO * .6;
+    /* IL CUSCINETTO E' COSTANTE DA TUTTE E DUE LE PARTI. Prima l'anello stava al 30% della
+       larghezza con un margine sinistro del 4%, e la legenda arrivava a quattro pixel dal
+       bordo destro: il disegno appariva spinto a destra e senza aria, ed e il difetto che la
+       revisione ha segnalato su quattro donut diversi. Ora si fissa il margine e l'anello si
+       CENTRA nello spazio che gli resta, invece di stare a una frazione fissa. */
+    var PAD = 12, lx = Math.max(w * .56, w - 190);
+    var zona0 = PAD, zona1 = lx - 12;
+    var cx = (zona0 + zona1) / 2, cy = h / 2;
+    var rO = Math.max(18, Math.min((zona1 - zona0) / 2, h * .44)), rI = rO * .6;
     var tot = data.reduce((a, d) => a + d.v, 0) || 1, ang = -Math.PI / 2;
     for (var _t = 0; _t < Math.min(testa, data.length); _t++) quotaTesta += data[_t].v;
     var s = '<svg width="' + w + '" height="' + h + '">';
@@ -804,18 +828,18 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* Legenda: sta accanto alla ciambella, e ogni voce filtra come la fetta.
        Il passo si adatta all'altezza della card, cosi non deborda quando il fit
        stringe il grafico (pattern-library, legende). */
-    var lx = w * .58, wide = w > 300;
+    var wide = w > 300;
     var step = Math.max(11, Math.min(15.5, (h - 16) / Math.max(1, data.length)));
     var ly = cy - (data.length * step) / 2 + step * .7;
     data.forEach(function (d) {
       var dimd = S.f[dim] && S.f[dim] !== d.id;
       s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" data-f="' + dim + ':' + d.id +
         '" data-tip="<b>' + M.esc(d.l) + '</b><br>' + A.mfmt(ms, d.v) + '<br>' + f.pc(d.v / tot) + '">' +
-        '<rect x="' + lx + '" y="' + (ly - 7.5) + '" width="' + (w - lx - 4) + '" height="' + Math.min(step, 15) + '" fill="transparent"/>' +
+        '<rect x="' + lx + '" y="' + (ly - 7.5) + '" width="' + (w - lx - PAD) + '" height="' + Math.min(step, 15) + '" fill="transparent"/>' +
         '<rect x="' + lx + '" y="' + (ly - 6.5) + '" width="8" height="8" rx="1.5" fill="' + d.c + '"/>' +
         '<text x="' + (lx + 12) + '" y="' + ly + '" font-size="9.5" fill="var(--ink2)">' + M.esc(d.l) + '</text>' +
-        (wide ? '<text x="' + (w - 42) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) + '</text>' : '') +
-        '<text x="' + (w - 4) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted2)" class="tnum">' + f.pc(d.v / tot, 0) + '</text></g>';
+        (wide ? '<text x="' + (w - PAD - 30) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) + '</text>' : '') +
+        '<text x="' + (w - PAD) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted2)" class="tnum">' + f.pc(d.v / tot, 0) + '</text></g>';
       ly += step;
     });
     return A.card(v, s + '</svg>');
@@ -880,10 +904,44 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   M.V.matrix = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, f = A.f, dim = b.dim, cols = b.columns || [];
     var rows = A.byDim(dim, {}).filter(r => r.a.n > 0);
-    var sortM = b.sort || (cols[0] || {}).measure;
-    rows.sort((x, y) => A.mv(sortM, y.a) - A.mv(sortM, x.a));
+    /* L'ORDINE LO DECIDE ANCHE IL LETTORE. La spec dice da cosa partire, ma chi guarda una
+       tabella prova a cliccare l'intestazione: e il gesto piu automatico che ci sia davanti a
+       delle colonne di numeri, e finora non succedeva niente. Lo stato vive per tabella (la
+       chiave e la dimensione), cosi due matrici sulla stessa pagina si ordinano ognuna per
+       conto suo, e si azzera col resto dei filtri. */
+    var ord = (S.ord || {})[dim];
+    /* La chiave e l'INDICE della colonna, non la misura: due colonne possono legare la stessa
+       misura — il valore e la sua variazione — e ordinare "per ricavi" sarebbe ambiguo, oltre
+       ad accendere la freccia su tutte e due. */
+    var valOrd = function (r, i) {
+      if (i === '__nome') return null;
+      var c = cols[i];
+      if (!c) return 0;
+      if (c.kind === 'var') return A.delta(A.mv(c.measure, r.a), A.mv(c.measure, r.b));
+      return A.mv(c.measure, r.a);
+    };
+    if (ord) {
+      var verso = ord.d === 'asc' ? 1 : -1;
+      if (ord.i === '__nome') {
+        rows.sort(function (x, y) { return verso * String(x.m.n).localeCompare(String(y.m.n)); });
+      } else {
+        rows.sort(function (x, y) { return verso * (valOrd(x, ord.i) - valOrd(y, ord.i)); });
+      }
+    } else {
+      var sortM = b.sort || (cols[0] || {}).measure;
+      rows.sort(function (x, y) { return A.mv(sortM, y.a) - A.mv(sortM, x.a); });
+    }
     var tot = A.agg(A.slice({ ignore: [dim] })), totP = A.prev({ ignore: [dim] });
-    var head = '<tr><th>' + M.esc(A.tpl(b.label || dim)) + '</th>' + cols.map(c => '<th>' + M.esc(A.tpl(c.label || A.meas(c.measure).label || '')) + '</th>').join('') + '</tr>';
+    var frec = function (chiave) {
+      if (!ord || String(ord.i) !== String(chiave)) return '<span class="so"> ⇅</span>';
+      return '<span class="so on"> ' + (ord.d === 'asc' ? '▲' : '▼') + '</span>';
+    };
+    var head = '<tr><th class="ord" data-ord="' + dim + ':__nome">' +
+      M.esc(A.tpl(b.label || dim)) + frec('__nome') + '</th>' +
+      cols.map(function (c, i) {
+        return '<th class="ord" data-ord="' + dim + ':' + i + '">' +
+          M.esc(A.tpl(c.label || A.meas(c.measure).label || '')) + frec(i) + '</th>';
+      }).join('') + '</tr>';
     var cell = function (c, a, p, base) {
       var cv = A.mv(c.measure, a), pv = A.mv(c.measure, p);
       if (c.kind === 'var') {
@@ -1063,11 +1121,27 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     if (target > 0) {
       var an = Math.PI * (1 - qt), c = Math.cos(an), sn = Math.sin(an);
       var r0 = r - sw * .8, r1 = r + sw * .8;
-      s += '<line x1="' + (cx + r0 * c).toFixed(1) + '" y1="' + (cy - r0 * sn).toFixed(1) +
+      /* IL BERSAGLIO DEVE STACCARE. Una tacca sottile in inchiostro su un arco colorato si
+         perde: la revisione l'ha segnalata due volte, "il target non e chiaro visivamente".
+         Sotto la tacca corre una seconda linea del colore della superficie, piu spessa: fa da
+         alone e stacca la tacca sia dall'arco sia dal fondo, qualunque palette ci sia sotto. */
+      s += '<line x1="' + (cx + (r0 - 1) * c).toFixed(1) + '" y1="' + (cy - (r0 - 1) * sn).toFixed(1) +
+        '" x2="' + (cx + (r1 + 1) * c).toFixed(1) + '" y2="' + (cy - (r1 + 1) * sn).toFixed(1) +
+        '" stroke="var(--card)" stroke-width="5" stroke-linecap="round"/>' +
+        '<line x1="' + (cx + r0 * c).toFixed(1) + '" y1="' + (cy - r0 * sn).toFixed(1) +
         '" x2="' + (cx + r1 * c).toFixed(1) + '" y2="' + (cy - r1 * sn).toFixed(1) +
-        '" stroke="var(--ink)" stroke-width="2"/>' +
-        '<text x="' + (cx + (r1 + 4) * c).toFixed(1) + '" y="' + (cy - (r1 + 4) * sn - 2).toFixed(1) +
-        '" text-anchor="' + (qt > .5 ? 'end' : 'start') + '" font-size="8.5" fill="var(--muted)">' +
+        '" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>';
+      /* L'etichetta del bersaglio segue la tacca, e la tacca puo stare in cima all'arco: li il
+         testo finiva mezzo fuori dal riquadro — "si vede a meta il testo". La riga di base non
+         puo salire sopra l'altezza del carattere, e l'ancora si sceglie da dove sta la tacca,
+         non a meta strada. */
+      var lblX = cx + (r1 + 4) * c, lblY = cy - (r1 + 4) * sn - 2;
+      var anc = qt > .62 ? 'end' : (qt < .38 ? 'start' : 'middle');
+      var wLbl = M.largh(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target), 8.5);
+      if (anc === 'end') lblX = Math.min(lblX, w - 2); else if (anc === 'start') lblX = Math.max(lblX, 2);
+      else lblX = Math.min(Math.max(lblX, wLbl / 2 + 2), w - wLbl / 2 - 2);
+      s += '<text x="' + lblX.toFixed(1) + '" y="' + Math.max(9, lblY).toFixed(1) +
+        '" text-anchor="' + anc + '" font-size="8.5" font-weight="600" fill="var(--ink2)">' +
         M.esc(A.tpl(b.targetLabel || 'target')) + ' ' + A.mfmt(ms, target) + '</text>';
     }
 
@@ -1210,7 +1284,20 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var val = (cid, pi) => A.mv(ms, A.agg(A.slice({ pin: { [dim]: cid }, months: periods[pi].months })));
     /* Il ribbon e fatto solo di colore: senza legenda restano cinque bande anonime.
        Sta su una riga sola sopra il grafico, e ogni voce filtra (pattern-library, legende). */
-    var legH = 15, m = { t: 14 + legH, r: 10, b: 20, l: 34 };
+    /* I margini laterali devono contenere META ETICHETTA: i valori sono centrati sul nodo, e
+       sul primo e sull'ultimo periodo la meta esterna finiva fuori dal riquadro — "i valori non
+       si leggono bene, specialmente a sinistra e destra". Si misura l'etichetta piu larga e si
+       riserva quanto serve, con un minimo che tiene il grafico staccato dal bordo. */
+    var wEtich = 0;
+    periods.forEach(function (pd, p) {
+      cats.forEach(function (c) {
+        /* si misura dal DATO, non dalla geometria: qui i nastri non sono ancora disposti, e
+           servono i margini per disporli */
+        wEtich = Math.max(wEtich, M.largh(A.mfmt(ms, val(c.id, p)), 8.5));
+      });
+    });
+    var lato = Math.max(34, Math.ceil(wEtich / 2) + 8);
+    var legH = 15, m = { t: 14 + legH, r: lato, b: 20, l: lato };
     var iw = w - m.l - m.r, ih = h - m.t - m.b, gap = 6;
     var X = i => m.l + (iw / (periods.length - 1)) * i;
     var cols = periods.map(function (_, pi) {
