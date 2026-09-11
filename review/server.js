@@ -86,10 +86,13 @@ const server = http.createServer((req, res) => {
         .map(g => ({ versione: g.versione || 1, nota: g.nota, verdetto: g.verdetto,
           numeri: g.numeri, lingua: g.lingua, lettura: g.lettura,
           disponibile: fs.existsSync(fileVersione(c.id, g.versione || 1)) }));
+      /* "Gia visto" non basta piu: un mockup corretto dopo un commento e una VERSIONE NUOVA,
+         e va rivisto. Quello che conta e se esiste un voto per QUESTA versione. */
+      const votato = giudizi.some(g => g.id === c.id && (g.versione || 1) === versione);
       return {
         id: c.id, fonte: c.fonte, nome: c.nome, titolo: c.titolo,
         archetipo: c.archetipo, scheda: c.scheda,
-        versione, precedenti, interventi: perMockup(c.id)
+        versione, votato, precedenti, interventi: perMockup(c.id)
       };
     });
     return invia('application/json', JSON.stringify({ coda: pubblica, gia }));

@@ -292,9 +292,12 @@ async function fine() {
   const dati = await fetch('/api/coda').then(r => r.json());
   coda = dati.coda;
   voti = {};
-  /* si riprende da dove si era rimasti: i gia votati si saltano, ma restano raggiungibili
-     con Indietro, perche correggere un voto e piu utile che rifare tutto il giro */
-  i = dati.gia.length ? Math.min(dati.gia.length, coda.length - 1) : 0;
+  /* Si riprende dal primo mockup senza un voto PER LA SUA VERSIONE. Contare quanti ne sono
+     stati votati in passato non basta: un mockup corretto dopo un commento e una versione
+     nuova e deve tornare davanti, non finire in coda dietro a quelli mai visti. I gia votati
+     restano raggiungibili con Indietro, perche correggere un voto vale piu che rifare il giro. */
+  const primo = coda.findIndex(c => !c.votato);
+  i = primo < 0 ? 0 : primo;
   $('#indietro').onclick = () => { if (i > 0) { i--; mostra(); } };
   $('#salta').onclick = () => salva(true);
   $('#avanti').onclick = () => salva(false);
