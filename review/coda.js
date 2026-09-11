@@ -12,6 +12,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { JSDOM } = require('jsdom');
 const { render, measurePage } = require('../engine/render.js');
 const GN = require('../test/gates-numbers.js');
@@ -97,6 +98,12 @@ function giudica(caso) {
   };
 }
 
+/* L'IMPRONTA DELLA VERSIONE. Due mockup sono la stessa versione se il file renderizzato e
+   identico byte per byte — e il render e deterministico, quindi l'impronta cambia se e solo se
+   e cambiato qualcosa nel motore o nella spec. Non serve numerare a mano: il numero di versione
+   e quante impronte diverse sono state giudicate per quel mockup. */
+const impronta = html => crypto.createHash('sha1').update(html).digest('hex').slice(0, 12);
+
 /** La coda pronta: html in memoria, verdetto tenuto da parte. */
 function costruisci(limite) {
   const tutti = mescola(casi());
@@ -106,6 +113,7 @@ function costruisci(limite) {
     return {
       id: c.id,
       fonte: c.fonte,
+      impronta: g.html ? impronta(g.html) : null,
       nome: c.caso.name || c.id,
       titolo: (c.caso.spec.meta || {}).title || c.id,
       archetipo: c.caso.spec.archetype || null,
@@ -117,4 +125,4 @@ function costruisci(limite) {
   });
 }
 
-module.exports = { costruisci, giudica, casi, mescola };
+module.exports = { costruisci, giudica, casi, mescola, impronta };

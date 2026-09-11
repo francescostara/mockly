@@ -28,6 +28,31 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   /* ---------- formatting helpers ---------- */
   M.esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
+  /* Quanto e larga una stringa, piu o meno. Serve a dimensionare le colonne delle etichette
+     invece di riservare loro una frazione fissa della card: con etichette corte — "Ads",
+     "Q1" — la frazione fissa lasciava un terzo del grafico vuoto a sinistra, e il disegno
+     sembrava sbilanciato pur essendo corretto.
+     Non e una misura vera (in SVG servirebbe il browser e qui si renderizza prima), ma una
+     stima per eccesso sul carattere medio: meglio due pixel di troppo che un'etichetta
+     tagliata. Le maiuscole e le cifre pesano di piu, gli spazi e la punteggiatura di meno. */
+  M.largh = function (testo, px) {
+    var s = String(testo == null ? '' : testo), w = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i];
+      if (/[A-ZÀÈÉÌÒÙ0-9%€]/.test(c)) w += 0.66;
+      else if (/[ .,:;'·|!ilIJ]/.test(c)) w += 0.30;
+      else if (/[mwMW]/.test(c)) w += 0.82;
+      else w += 0.54;
+    }
+    return w * (px || 9.5);
+  };
+  /** La colonna delle etichette: quanto basta a contenerle, entro un tetto. */
+  M.colonnaEtichette = function (etichette, px, tetto, pad) {
+    var max = 0;
+    (etichette || []).forEach(function (e) { max = Math.max(max, M.largh(e, px)); });
+    return Math.min(tetto, Math.ceil(max) + (pad === undefined ? 10 : pad));
+  };
+
   M.fmt = function (o) {
     o = o || {};
     var lang = o.locale || 'it-IT', cur = o.currency || '€';
@@ -650,8 +675,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     if (anni.length > 1)
       s += '<line x1="' + X(11.5).toFixed(1) + '" y1="0" x2="' + X(11.5).toFixed(1) + '" y2="' + ah +
         '" stroke="var(--line)" stroke-dasharray="3 3"/>';
-    s += '<circle cx="' + X(vals.length - 1).toFixed(1) + '" cy="' + Y(vals[vals.length - 1]).toFixed(1) +
-      '" r="2.6" fill="var(--c2)"/></svg>';
+    /* Il punto finale sta sul bordo destro dell'area, e un cerchio ha un raggio: senza questo
+       rientro meta pallino finiva fuori dall'SVG e usciva tagliato a filo card. Tre pixel, ed
+       e il genere di cosa che si vede solo quando qualcuno guarda il file. */
+    var rP = 2.6;
+    s += '<circle cx="' + Math.min(X(vals.length - 1), w - rP - 0.5).toFixed(1) + '" cy="' +
+      Y(vals[vals.length - 1]).toFixed(1) + '" r="' + rP + '" fill="var(--c2)"/></svg>';
 
     /* La card si allunga fino all'altezza della riga — se accanto c'e un grafico con la
        legenda, la riga e piu alta di h. Con un'altezza fissa l'area restava a mezz'aria a
@@ -815,7 +844,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         sub: (par ? A.dimLabel(b.parent, par) + ' · ' : '') + (b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : '')
       };
     }).sort((x, y) => y.v - x.v).slice(0, b.top || 8);
-    var lw = Math.min(158, w * .42), m = { t: 5, r: 46, b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r;
+    /* La colonna delle etichette vale quanto le etichette, non una frazione della card: con
+       nomi corti — "Ads", "Fiere" — il 42% fisso lasciava un terzo del grafico vuoto a
+       sinistra, e le barre partivano da meta riquadro senza motivo. Il tetto resta, perche un
+       nome lunghissimo non deve mangiarsi il grafico. */
+    var lw = M.colonnaEtichette(data.map(d => d.l), 9.5, Math.min(158, w * .42), 10);
+    var m = { t: 5, r: 46, b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r;
     var max = Math.max.apply(null, data.map(d => d.v)) || 1, rh = ih / (data.length || 1), bh = Math.min(13, rh * .56);
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d, i) {
@@ -935,7 +969,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var groups = by === 'q' ? [0, 1, 2, 3].map(q => ({ id: 'q' + q, l: 'Q' + (q + 1), months: A.QMON(q) }))
       : A.dims[by].map(m => ({ id: m.id, l: m.n, pin: { [by]: m.id } }));
     var cats = A.dims[dim];
-    var lw = 96, m = { t: 6, r: 10, b: 6 }, rh = (h - m.t - m.b) / groups.length, bh = Math.min(20, rh * .6), iw = w - lw - m.r;
+    /* stessa regola dell'hbar: "Q1" non ha bisogno di novantasei pixel */
+    var lw = M.colonnaEtichette(groups.map(g => g.l), 10, 96, 10);
+    var m = { t: 6, r: 10, b: 6 }, rh = (h - m.t - m.b) / groups.length, bh = Math.min(20, rh * .6), iw = w - lw - m.r;
     var s = '<svg width="' + w + '" height="' + h + '">';
     groups.forEach(function (grp, i) {
       var y = m.t + rh * i + rh / 2, vals = {}, tot = 0;
@@ -988,7 +1024,21 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var q = max ? Math.min(1, Math.max(0, val / max)) : 0;
     var qt = max ? Math.min(1, Math.max(0, target / max)) : 0;
 
-    var cx = w / 2, r = Math.min(w * .40, h * .78), cy = h * .80, sw = Math.max(9, r * .16);
+    /* LA GEOMETRIA NASCE DALLO SPAZIO, non da due frazioni scelte a occhio.
+       Il raggio non e l'unica cosa che occupa posto: l'arco ha uno SPESSORE (sw ~ 0,16 r) che
+       sporge di meta da entrambe le parti, e sopra ci va l'etichetta del bersaglio. Con
+       `r = min(w*0.40, h*0.78)` il bordo superiore dell'arco finiva sette pixel SOPRA il
+       riquadro — tagliato — ed e il difetto segnalato dalla revisione.
+       Qui il raggio si ricava dai vincoli: sta dentro in orizzontale (r + sw/2 <= meta
+       larghezza) e in verticale (cy - r - sw/2 >= spazio per l'etichetta). Siccome sw dipende
+       da r, i due vincoli si risolvono in una divisione per 1,08 invece che a tentativi. */
+    var cx = w / 2;
+    var mTop = tg !== undefined ? 15 : 6;   /* la tacca del bersaglio scrive li sopra */
+    var mBot = 34;                          /* il valore grande e l'annotazione sotto l'arco */
+    var cy = h - mBot;
+    var rMax = Math.min((w / 2 - 6) / 1.08, (cy - mTop) / 1.08);
+    var r = Math.max(24, rMax);
+    var sw = Math.max(9, r * .16);
     /* semicerchio da sinistra a destra: 180 gradi e la forma che si legge senza istruzioni */
     var P = function (t) { var an = Math.PI * (1 - t); return [cx + r * Math.cos(an), cy - r * Math.sin(an)]; };
     var arc = function (t0, t1) {
@@ -1084,20 +1134,26 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         e la mappa diventa un muro di un colore solo — che e esattamente cio che una heatmap non
         deve essere. Coi terzili un terzo delle celle sta in ogni gradino e la struttura si
         vede, che e la ragione per cui si disegna una mappa invece di una tabella. */
+    /* CINQUE GRADINI, non tre. Con tre, una mappa dove i valori stanno vicini diventa un muro
+       di due tinte e non si legge piu niente: e il difetto segnalato sulla ritenzione per
+       coorte, dove tutte le celle finivano nello stesso secchio. Cinque e il massimo che
+       l'occhio distingue su una superficie velata, e sono i quintili dei valori osservati —
+       quindi la mappa si adatta ai dati invece di sperare che i dati si distribuiscano bene. */
     var soglie;
     if (b.scale) {
       var sp0 = (b.scale[1] - b.scale[0]) || 1;
-      soglie = [b.scale[0] + sp0 / 3, b.scale[0] + sp0 * 2 / 3];
+      soglie = [1, 2, 3, 4].map(function (k) { return b.scale[0] + sp0 * k / 5; });
     } else {
       var ord = [];
       for (var _q = 0; _q < celle.length; _q++) ord = ord.concat(celle[_q]);
       ord.sort(function (p, q) { return p - q; });
       soglie = ord.length
-        ? [ord[Math.floor(ord.length / 3)], ord[Math.floor(ord.length * 2 / 3)]]
-        : [0, 1];
+        ? [1, 2, 3, 4].map(function (k) { return ord[Math.floor(ord.length * k / 5)]; })
+        : [0, 0.25, 0.5, 0.75];
     }
 
-    var lw = Math.min(96, w * .22), m = { t: 16, r: 6, b: 4 };
+    var lw = M.colonnaEtichette(righe.map(r => r.n), 9, Math.min(96, w * .22), 8);
+    var m = { t: 16, r: 6, b: 4 };
     var iw = w - lw - m.r, ih = h - m.t - m.b;
     var cw = iw / (cols.length || 1), ch = ih / (righe.length || 1), gap = 1.5;
     var s = '<svg width="' + w + '" height="' + h + '">';
@@ -1112,15 +1168,30 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += '<text x="' + (lw - 6) + '" y="' + (y + ch / 2 + 3).toFixed(1) + '" text-anchor="end" ' +
         'font-size="9" fill="var(--ink2)">' + M.esc(r.n) + '</text>';
       celle[ri].forEach(function (x, ci) {
-        /* tre gradini invece di una rampa continua: sono gli stessi della matrice heat, cosi
-           una cella qui e una cella li si leggono allo stesso modo */
-        var col = x >= soglie[1] ? 'var(--heatHi)' : x >= soglie[0] ? 'var(--heatMid)' : 'var(--heatLo)';
+        /* Il gradino della cella, dal piu freddo al piu caldo. Sono velature della rampa
+           sequenziale (Viridis o Cividis), quindi la scala sale in luminanza in modo monotono e
+           resta leggibile anche in stampa e sotto le tre dicromazie. */
+        var liv = 0;
+        while (liv < soglie.length && x >= soglie[liv]) liv++;
+        var col = ['var(--heat1)', 'var(--heat2)', 'var(--heat3)', 'var(--heat4)', 'var(--heat5)'][liv];
         var dimd = S.f[dim] && S.f[dim] !== r.id;
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (lw + cw * ci + gap / 2).toFixed(1) +
           '" y="' + (y + gap / 2).toFixed(1) + '" width="' + Math.max(1, cw - gap).toFixed(1) +
           '" height="' + Math.max(1, ch - gap).toFixed(1) + '" rx="1" fill="' + col +
           '" data-f="' + dim + ':' + r.id + '" data-tip="<b>' + M.esc(r.n + ' · ' + cols[ci].n) +
           '</b><br>' + A.mfmt(ms, x) + '"/>';
+        /* IL NUMERO DENTRO LA CELLA. Il colore dice "piu o meno", il numero dice quanto: una
+           mappa senza cifre costringe a passare il mouse su ogni cella per leggere il report,
+           e su una slide stampata non si legge affatto. Si scrive solo dove ci sta davvero —
+           l'etichetta troppo stretta si omette, come nel ribbon. */
+        var testo = A.mfmt(ms, x);
+        if (!dimd && ch >= 17 && cw - gap >= M.largh(testo, 8.5) + 8) {
+          /* sui due gradini piu caldi il fondo e piu carico: l'inchiostro chiaro si stacca meglio */
+          s += '<text x="' + (lw + cw * ci + cw / 2).toFixed(1) + '" y="' + (y + ch / 2 + 3).toFixed(1) +
+            '" text-anchor="middle" font-size="8.5" class="tnum" fill="' +
+            (liv >= 3 ? 'var(--heatInk)' : 'var(--ink2)') + '" style="pointer-events:none">' +
+            M.esc(testo) + '</text>';
+        }
       });
     });
     return A.card(v, s + '</svg>');
@@ -1205,9 +1276,21 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var conv = i ? (vals[i - 1] ? vals[i] / vals[i - 1] : 0) : 1;
       s += '<rect class="hit" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" fill="' + (st.c || 'var(--c2)') +
         '" data-tip="<b>' + M.esc(st.label) + '</b><br>' + A.mfmt(st.measure, vals[i]) + (i ? '<br>' + f.pc(conv) + ' ' + (A.T.conv || 'conv.') : '') + '"/>';
-      s += '<text x="' + (x + 8) + '" y="' + (y + bh / 2 + 3.5).toFixed(1) + '" font-size="10" fill="#fff">' + M.esc(st.label) + '</text>';
-      s += '<text x="' + (x + bw - 8) + '" y="' + (y + bh / 2 + 3.5).toFixed(1) + '" text-anchor="end" font-size="10" fill="#fff" class="tnum">' + A.mfmt(st.measure, vals[i]) + '</text>';
-      if (i) s += '<text x="' + (w - 4) + '" y="' + (y + bh / 2 + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted)" class="tnum">' + f.pc(conv, 0) + '</text>';
+      /* L'etichetta e il valore stanno DENTRO la barra finche ci stanno. Un funnel si stringe
+         verso il basso per costruzione, e gli ultimi stadi sono i piu stretti: e proprio li che
+         il nome e il numero finivano uno sopra l'altro, cioe dove il lettore cerca la risposta
+         — "quanti ne restano alla fine". Quando non ci stanno, escono a destra della barra, in
+         inchiostro invece che in bianco. */
+      var yt = (y + bh / 2 + 3.5).toFixed(1);
+      var wNome = M.largh(st.label, 10), wVal = M.largh(A.mfmt(st.measure, vals[i]), 10);
+      if (bw >= wNome + wVal + 26) {
+        s += '<text x="' + (x + 8) + '" y="' + yt + '" font-size="10" fill="#fff">' + M.esc(st.label) + '</text>';
+        s += '<text x="' + (x + bw - 8) + '" y="' + yt + '" text-anchor="end" font-size="10" fill="#fff" class="tnum">' + A.mfmt(st.measure, vals[i]) + '</text>';
+      } else {
+        s += '<text x="' + (x + bw + 7).toFixed(1) + '" y="' + yt + '" font-size="10" fill="var(--ink2)">' +
+          M.esc(st.label) + ' <tspan class="tnum" fill="var(--ink)">' + A.mfmt(st.measure, vals[i]) + '</tspan></text>';
+      }
+      if (i) s += '<text x="' + (w - 4) + '" y="' + yt + '" text-anchor="end" font-size="8.5" fill="var(--muted)" class="tnum">' + f.pc(conv, 0) + '</text>';
     });
     return A.card(v, s + '</svg>');
   };
@@ -1263,11 +1346,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var med = function (arr) { var s2 = arr.slice().sort((p, q) => p - q); var n = s2.length; return n ? (n % 2 ? s2[(n - 1) / 2] : (s2[n / 2 - 1] + s2[n / 2]) / 2) : 0; };
     var mgn = { t: 14, r: 14, b: 24, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var xmax = Math.max.apply(null, pts.map(p => p.x)) * 1.15 || 1, ymax = Math.max.apply(null, pts.map(p => p.y)) * 1.15 || 1;
-    var X = val => mgn.l + (val / xmax) * iw, Y = val => mgn.t + ih - (val / ymax) * ih;
+    /* La scala verticale arriva fino all'ULTIMA TACCA, non fino al dato piu alto. Le tacche si
+       arrotondano verso l'alto — con un massimo al 74% la piu alta e 80% — e scalando sul dato
+       quella tacca finiva sopra il bordo: la riga si vedeva, il suo numero no, perche era
+       disegnato a y negativa. E' lo stesso accorgimento che il trend ha da sempre e che qui
+       mancava. */
+    var tkY = M.ticks(ymax), top = tkY[tkY.length - 1] || ymax;
+    var X = val => mgn.l + (val / xmax) * iw, Y = val => mgn.t + ih - (val / top) * ih;
     var mx = med(pts.map(p => p.x)), my = med(pts.map(p => p.y));
     var smax = Math.max.apply(null, pts.map(p => p.s)) || 1;
     var s = '<svg width="' + w + '" height="' + h + '">';
-    M.ticks(ymax).forEach(t => s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--line2)"/>' +
+    tkY.forEach(t => s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--line2)"/>' +
       '<text x="' + (mgn.l - 7) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted2)" class="tnum">' + A.mfmt(b.y, t) + '</text>');
     s += '<line x1="' + X(mx).toFixed(1) + '" y1="' + mgn.t + '" x2="' + X(mx).toFixed(1) + '" y2="' + (mgn.t + ih) + '" stroke="var(--muted2)" stroke-dasharray="3 3"/>';
     s += '<line x1="' + mgn.l + '" y1="' + Y(my).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(my).toFixed(1) + '" stroke="var(--muted2)" stroke-dasharray="3 3"/>';

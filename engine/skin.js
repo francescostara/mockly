@@ -222,11 +222,29 @@ function palette(id, opz) {
      e "piu o meno", non "questo o quello". */
   const seq = f.sequenziale === 'cividis' ? COL.CIVIDIS : COL.VIRIDIS;
   t.seq1 = seq[0]; t.seq2 = seq[1]; t.seq3 = seq[2]; t.seq4 = seq[3]; t.seq5 = seq[4];
-  /* i tre gradini della heat restano velature sulla superficie: la cella deve lasciar leggere
-     il numero che ci sta sopra, quindi si prende la rampa e la si stende sul fondo */
-  t.heatLo = mix(card, seq[1], scuro ? 0.30 : 0.14);
-  t.heatMid = mix(card, seq[2], scuro ? 0.34 : 0.20);
-  t.heatHi = mix(card, seq[3], scuro ? 0.40 : 0.28);
+  /* I GRADINI DELLA HEAT: cinque, non tre. Con tre, una mappa i cui valori stanno vicini
+     diventa un muro di due tinte — il difetto trovato dalla revisione sulla ritenzione per
+     coorte. Restano velature sulla superficie, perche la cella deve lasciar leggere il numero
+     che le sta sopra; e siccome la rampa sale in luminanza in modo monotono, i cinque gradini
+     si distinguono anche in stampa. */
+  /* Si vela sempre verso UNA tinta sola, a intensita crescente, non verso cinque stop diversi
+     della rampa: cinque stop hanno cinque luminanze proprie, e mescolati alla superficie danno
+     salti irregolari — fra il terzo e il quarto gradino ne usciva uno da 0,2, cioe due celle
+     identiche. Con una tinta sola la scala di chiarezza e monotona per costruzione, che e la
+     proprieta per cui una heatmap si legge.
+     La direzione la decide la superficie: su carta chiara si scurisce, su fondo scuro si
+     schiarisce, e in entrambi i casi ci si ferma prima del punto in cui la cifra sopra la cella
+     smette di staccare. */
+  const tinta = scuro ? seq[3] : seq[1];
+  const veli = scuro ? [0.10, 0.20, 0.30, 0.40, 0.52] : [0.07, 0.16, 0.27, 0.40, 0.56];
+  veli.forEach((q, i) => { t['heat' + (i + 1)] = mix(card, tinta, q); });
+  /* L'inchiostro delle cifre sui gradini carichi: si sceglie misurando, non per convenzione —
+     sul quinto gradino di una famiglia chiara il nero tiene, su una scura tiene il bianco, e su
+     qualche famiglia intermedia la risposta non e quella che ci si aspetta. */
+  t.heatInk = COL.contrasto('#FFFFFF', t.heat5) > COL.contrasto(ink, t.heat5) ? '#FFFFFF' : ink;
+  /* i tre nomi storici restano: la matrice li usa, e cambiare due visual insieme e il modo
+     migliore per non capire quale dei due ha rotto qualcosa */
+  t.heatLo = t.heat1; t.heatMid = t.heat3; t.heatHi = t.heat5;
 
   /* DIVERGENTE: due tinte con punto medio neutro, per varianza e scostamenti dal bersaglio. */
   const div = COL.DIV_BLU_ARANCIO;

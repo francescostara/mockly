@@ -1,3 +1,44 @@
 {
-  "giudizi": []
+  "giudizi": [
+    {
+      "id": "archetipi/canonical-executive-summary",
+      "nota": "Il gauge non entra bene nel riquadro.",
+      "numeri": 5,
+      "lingua": 4,
+      "lettura": 3,
+      "verdetto": "ritocco",
+      "data": "2026-09-11T06:58:47.132Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "locale/trasporti-verona",
+      "nota": "Il filtro dell'anno non è allineato rispetto agli altri filtri.",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 3,
+      "verdetto": "ritocco",
+      "data": "2026-09-11T07:00:22.211Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "archetipi/canonical-funnel",
+      "nota": "Nel \"Dal lead al contratto\" non si leggono bene le categorie se le barre sono piccole. In  \"Win rate per fonte\" e \"Composizione delle vinte per segmento\" c'è molto spazio a sinistra, le visual andrebbero centrate od occupare più spazio dentro al box.",
+      "numeri": 4,
+      "lingua": 5,
+      "lettura": 3,
+      "verdetto": "ritocco",
+      "data": "2026-09-11T07:02:54.706Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "locale/scuola-online",
+      "nota": "\"Ritenzione per coorte e trimestre \" non è molto chiaro, servirebbe più gradazione dei colori o inserire qualche numero all'interno per renderlo più chiaro. In questo caso dato che si analizza il trimestre aggiungerei uno spazio per vedere i trend stagionali.",
+      "numeri": 3,
+      "lingua": 4,
+      "lettura": 5,
+      "verdetto": "ritocco",
+      "data": "2026-09-11T07:05:11.094Z",
+      "auto": "SPEDIBILE"
+    }
+  ]
 }

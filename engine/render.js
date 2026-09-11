@@ -755,8 +755,13 @@ ${rail ? `#rail{width:${sh.rail}px;flex:0 0 ${sh.rail}px;background:var(--rail);
   font-family:var(--font);font-size:12px;font-weight:600;text-align:left;border-radius:2px;cursor:pointer}
 .navbtn.on{background:var(--chrome);color:var(--chromeInk)}
 .navbtn .ic{width:14px;height:14px;flex:0 0 14px}
-.slgrp{padding:14px 16px 0;position:relative}
-.catgrp{padding:16px 16px 0}
+/* Queste due regole valgono DENTRO la rail, e vanno dette esplicitamente: sulla shell con la
+   rail stretta la barra dei filtri esiste insieme alla rail, quindi entrambi i blocchi di CSS
+   vengono emessi — e il padding pensato per la colonna verticale finiva addosso al selettore
+   del periodo che ormai vive sulla barra, rendendolo alto 48px dentro una banda da 40 e
+   disallineandolo rispetto agli altri filtri. */
+#rail .slgrp{padding:14px 16px 0;position:relative}
+#rail .catgrp{padding:16px 16px 0}
 .railfoot{margin-top:auto;padding:0 16px;font-size:8.5px;color:var(--muted2);line-height:1.5}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}` : ``}
 ${sh.topbar ? `#topbar{height:46px;flex:0 0 46px;background:var(--rail);display:flex;align-items:center;gap:10px;padding:0 16px}

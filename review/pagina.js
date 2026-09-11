@@ -67,6 +67,26 @@ const STILE = `
   .esito .macchina{font-weight:600}
   .esito .accordo{font-size:11.5px;color:#6A665F;margin-top:8px;line-height:1.4}
   .esito ul{margin:8px 0 0;padding-left:16px;font-size:11.5px;color:#9B3A2E}
+  .prima{background:#FFF;border:1px solid #D9D5CD;border-left:3px solid #1C1B19;border-radius:8px;
+         padding:12px 14px;display:none}
+  .prima.mostra{display:block}
+  .prima h3{font-size:12px;margin:0 0 6px;text-transform:uppercase;letter-spacing:.6px;color:#6A665F}
+  .prima .cit{font-size:12.5px;line-height:1.45;color:#1C1B19;margin:0 0 8px}
+  .prima .fatto{font-size:11.5px;line-height:1.45;color:#4A473F;background:#F2F1EE;
+                border-radius:5px;padding:7px 9px;margin:0 0 8px}
+  .prima .fatto b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;
+                  color:#6A665F;margin-bottom:2px}
+  .prima .aperto{color:#9B3A2E}
+  .risolto{display:flex;gap:6px;margin-top:8px}
+  .risolto label{flex:1;position:relative}
+  .risolto input{position:absolute;opacity:0;pointer-events:none}
+  .risolto span{display:block;text-align:center;padding:6px 0;border:1px solid #D9D5CD;
+                border-radius:5px;background:#F7F6F3;cursor:pointer;font-size:11.5px}
+  .risolto input:checked + span{background:#1C1B19;color:#F7F6F3;border-color:#1C1B19;font-weight:600}
+  .confronto{display:flex;gap:6px;align-items:center;margin-left:auto;font-size:11.5px;color:#6A665F}
+  .confronto button{padding:3px 9px;font-size:11.5px;background:transparent;color:#1C1B19;
+                    border:1px solid #D9D5CD}
+  .confronto button.on{background:#1C1B19;color:#F7F6F3;border-color:#1C1B19}
   .fine{padding:60px 20px;text-align:center}
   .fine a{color:#1C1B19}`;
 
@@ -121,6 +141,31 @@ function scala16by9() {
 addEventListener('resize', scala16by9);
 if (window.ResizeObserver) new ResizeObserver(scala16by9).observe(document.querySelector('.tela'));
 
+/* IL COMMENTO DI PRIMA, a schermo mentre si guarda la versione dopo.
+   Senza questo, "e risolto?" e una domanda alla memoria: si rilegge il mockup da capo e si
+   rigiudica come fosse nuovo, e il giro precedente non e servito a niente. Il commento e
+   dell'autore, non della macchina, quindi mostrarlo prima del voto non ancora niente — anzi,
+   e l'unica ancora giusta: la sua. */
+function pannelloPrima(c) {
+  const p = $('#prima');
+  if (!c.precedenti || !c.precedenti.length) { p.className = 'prima'; p.innerHTML = ''; return false; }
+  const ult = c.precedenti[c.precedenti.length - 1];
+  const inter = (c.interventi || []).filter(x => x.versione === ult.versione);
+  p.innerHTML = '<h3>Sulla versione ' + ult.versione + ' avevi scritto</h3>' +
+    '<p class="cit">' + (ult.nota ? '"' + ult.nota + '"' : 'nessuna nota — voti ' +
+      ult.numeri + '/' + ult.lingua + '/' + ult.lettura + ', "' + ult.verdetto + '"') + '</p>' +
+    inter.map(x => '<p class="fatto"><b>' + (x.stato === 'fatto' ? 'cosa e cambiato' : 'ancora aperto') +
+      ' · ' + x.dove + '</b>' +
+      (x.stato === 'fatto' ? x.fatto : '<span class="aperto">non ancora affrontato</span>') +
+      '</p>').join('') +
+    '<div class="risolto">' +
+      [['si', 'Risolto'], ['parte', 'In parte'], ['no', 'No']].map(([v, t]) =>
+        '<label><input type="radio" name="risolto" value="' + v + '"><span>' + t + '</span></label>'
+      ).join('') + '</div>';
+  p.className = 'prima mostra';
+  return true;
+}
+
 function mostra() {
   const c = coda[i];
   if (!c) { fine(); return; }
@@ -129,6 +174,24 @@ function mostra() {
   $('#fonte').textContent = c.fonte;
   $('#arche').textContent = c.archetipo || '—';
   $('#palco').src = '/mock/' + encodeURIComponent(c.id);
+  $('#vers').textContent = 'v' + (c.versione || 1);
+  const conPrima = pannelloPrima(c);
+  /* il confronto esiste solo se la versione precedente e stata conservata su disco */
+  const disp = conPrima && c.precedenti[c.precedenti.length - 1].disponibile;
+  $('#confronto').hidden = !disp;
+  if (disp) {
+    const vPrec = c.precedenti[c.precedenti.length - 1].versione;
+    $('#bPrima').textContent = 'Versione ' + vPrec;
+    $('#bAdesso').className = 'on'; $('#bPrima').className = '';
+    $('#bAdesso').onclick = () => {
+      $('#palco').src = '/mock/' + encodeURIComponent(c.id);
+      $('#bAdesso').className = 'on'; $('#bPrima').className = '';
+    };
+    $('#bPrima').onclick = () => {
+      $('#palco').src = '/mock/' + encodeURIComponent(c.id) + '?v=' + vPrec;
+      $('#bPrima').className = 'on'; $('#bAdesso').className = '';
+    };
+  }
   $('#schedaCorpo').textContent = c.scheda;
   $('#modulo').innerHTML = modulo();
   const es = $('#esito'), col = es.parentNode;
@@ -155,6 +218,13 @@ function raccogli() {
   });
   const v = document.querySelector('[name=verdetto]:checked');
   if (!v) mancano.push('Lo manderei a un cliente?'); else g.verdetto = v.value;
+  /* se c'era un commento precedente, dire se e risolto non e facoltativo: e il motivo per cui
+     questo mockup e tornato in coda */
+  const rp = document.querySelector('[name=risolto]');
+  if (rp) {
+    const r = document.querySelector('[name=risolto]:checked');
+    if (!r) mancano.push('Il problema di prima e risolto?'); else g.risolto = r.value;
+  }
   if (mancano.length) return { errore: 'Manca: ' + mancano.join(' · ') };
   const basso = CRITERI.some(([k]) => g[k] <= 3) || g.verdetto === 'no';
   if (basso && !g.nota) return { errore: 'Serve la nota: un voto e 3 o meno, oppure il verdetto e No.', nota: true };
@@ -248,10 +318,16 @@ function pagina(titolo) {
       <b id="tit">…</b>
       <span class="tag" id="fonte"></span>
       <span class="tag" id="arche"></span>
+      <span class="tag" id="vers">v1</span>
+      <span class="confronto" id="confronto" hidden>
+        <button id="bAdesso" class="on">Questa</button>
+        <button id="bPrima">Versione precedente</button>
+      </span>
     </div>
     <div class="tela"><iframe id="palco" src="about:blank"></iframe></div>
   </section>
   <aside>
+    <div class="prima" id="prima"></div>
     <div class="modulo">
       <h2>Le stesse quattro domande</h2>
       <p class="sub">Sempre queste, sempre in quest ordine: i voti di giri diversi devono essere confrontabili.</p>

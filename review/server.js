@@ -19,10 +19,29 @@ const fs = require('fs');
 const path = require('path');
 const { costruisci } = require('./coda.js');
 const { pagina, riepilogo } = require('./pagina.js');
+const { perMockup } = require('./interventi.js');
 
 const PORTA = Number(process.env.PRUVA_REVIEW_PORT) || 4173;
 const LIMITE = Number((process.argv.find(a => a.startsWith('--solo=')) || '').split('=')[1]) || 0;
 const ARCHIVIO = path.join(__dirname, 'reviews.json');
+const VERSIONI = path.join(__dirname, 'versioni');
+fs.mkdirSync(VERSIONI, { recursive: true });
+
+const fileVersione = (id, v) => path.join(VERSIONI, id.replace(/\//g, '__') + '__v' + v + '.html');
+
+/* Che versione e questa, per questo mockup. Il conto si fa sulle IMPRONTE gia giudicate: se
+   l'impronta e nuova, e la prossima versione; se e gia stata vista, si sta correggendo un voto
+   sulla stessa versione, non giudicandone una nuova. */
+function versioneDi(id, impronta, giudizi) {
+  const passate = giudizi.filter(g => g.id === id);
+  const vecchia = passate.find(g => g.impronta && g.impronta === impronta);
+  if (vecchia) return vecchia.versione || 1;
+  /* I giudizi dati prima che esistessero le impronte contano lo stesso come una versione
+     vista: sono i primi quattro di questo archivio, e sono proprio quelli che non vanno persi
+     — il ciclo comincia da li. */
+  const viste = new Set(passate.map(g => g.impronta || 'senza-impronta:v' + (g.versione || 1)));
+  return viste.size + 1;
+}
 
 function leggiArchivio() {
   try { return JSON.parse(fs.readFileSync(ARCHIVIO, 'utf8')); }
@@ -55,17 +74,37 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/') return invia('text/html', pagina());
 
   if (url.pathname === '/api/coda') {
-    const gia = leggiArchivio().giudizi.map(g => g.id);
     /* NIENTE verdetto qui dentro: e il punto dello strumento */
-    const pubblica = coda.map(c => ({
-      id: c.id, fonte: c.fonte, nome: c.nome, titolo: c.titolo,
-      archetipo: c.archetipo, scheda: c.scheda
-    }));
+    const giudizi = leggiArchivio().giudizi;
+    const gia = giudizi.map(g => g.id);
+    const pubblica = coda.map(c => {
+      const versione = versioneDi(c.id, c.impronta, giudizi);
+      /* I giudizi precedenti SI mostrano: sono parole dell'autore, non il verdetto della
+         macchina. Servono proprio a ricordargli cosa aveva scritto, per poter dire se il
+         problema e stato risolto davvero. */
+      const precedenti = giudizi.filter(g => g.id === c.id && (g.versione || 1) < versione)
+        .map(g => ({ versione: g.versione || 1, nota: g.nota, verdetto: g.verdetto,
+          numeri: g.numeri, lingua: g.lingua, lettura: g.lettura,
+          disponibile: fs.existsSync(fileVersione(c.id, g.versione || 1)) }));
+      return {
+        id: c.id, fonte: c.fonte, nome: c.nome, titolo: c.titolo,
+        archetipo: c.archetipo, scheda: c.scheda,
+        versione, precedenti, interventi: perMockup(c.id)
+      };
+    });
     return invia('application/json', JSON.stringify({ coda: pubblica, gia }));
   }
 
   if (url.pathname.startsWith('/mock/')) {
     const id = decodeURIComponent(url.pathname.slice('/mock/'.length));
+    const v = url.searchParams.get('v');
+    /* con ?v=N si riapre una versione conservata: e cosi che si confronta il prima col dopo
+       senza fidarsi della memoria */
+    if (v) {
+      const f = fileVersione(id, v);
+      if (fs.existsSync(f)) return invia('text/html', fs.readFileSync(f, 'utf8'));
+      return invia('text/html', '<p>versione ' + v + ' non conservata</p>', 404);
+    }
     const c = perId[id];
     if (!c || !c.html) return invia('text/html', '<p>mockup non renderizzabile</p>', 404);
     return invia('text/html', c.html);
@@ -78,15 +117,26 @@ const server = http.createServer((req, res) => {
       let voto;
       try { voto = JSON.parse(corpo); } catch { return invia('application/json', '{}', 400); }
       const archivio = leggiArchivio();
+      const c = perId[voto.id] || {};
+      const versione = versioneDi(voto.id, c.impronta, archivio.giudizi);
       const g = Object.assign({}, voto, {
+        versione, impronta: c.impronta || null,
         data: new Date().toISOString(),
         auto: (auto[voto.id] || {}).verdetto || null
       });
-      /* un voto corretto sostituisce il precedente: l'autore puo tornare indietro */
-      const i = archivio.giudizi.findIndex(x => x.id === voto.id);
+      /* LA VERSIONE GIUDICATA SI CONSERVA. Senza il file, alla revisione successiva si puo
+         rileggere il commento ma non rivedere cio a cui si riferiva, e "e risolto?" diventa una
+         domanda a memoria. Sono sessanta kilobyte per versione, ed e il prezzo piu basso che
+         questo ciclo paga. */
+      if (c.html) {
+        try { fs.writeFileSync(fileVersione(voto.id, versione), c.html); } catch { /* pazienza */ }
+      }
+      /* un voto sulla STESSA versione sostituisce il precedente (si sta correggendo); un voto
+         su una versione nuova si aggiunge, perche la storia e il valore dell'archivio */
+      const i = archivio.giudizi.findIndex(x => x.id === voto.id && (x.versione || 1) === versione);
       if (i >= 0) archivio.giudizi[i] = g; else archivio.giudizi.push(g);
       scriviArchivio(archivio);
-      console.log('  ' + (i >= 0 ? 'corretto' : 'votato  ') + '  ' + voto.id.padEnd(34) +
+      console.log('  ' + (i >= 0 ? 'corretto' : 'votato  ') + '  v' + versione + '  ' + voto.id.padEnd(34) +
         '  ' + voto.numeri + '/' + voto.lingua + '/' + voto.lettura + '  ' + voto.verdetto +
         '   (macchina: ' + ((auto[voto.id] || {}).verdetto || '—') + ')');
       /* SOLO ORA il verdetto della macchina attraversa la rete */
