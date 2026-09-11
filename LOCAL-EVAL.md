@@ -49,8 +49,18 @@ crediti, sempre.
 4. **Girano i gate e il verdetto di spedibilità**, e l'esito si dice **prima** che Fra apra il
    file. Un difetto che il motore ha già visto non deve costare a nessuno il tempo di guardarlo.
 
-5. **Fra apre, clicca, giudica.** Ogni difetto trovato si classifica, e la classificazione
-   decide dove va la correzione:
+5. **Fra apre, clicca, giudica** — con `npm run review`, che è il posto dove questo passo
+   avviene: un mockup alla volta a schermo, interattivo (si clicca dentro davvero, non è uno
+   screenshot), con accanto le stesse quattro domande e la scheda di interazione.
+
+   > **Il verdetto automatico non si vede prima del voto.** Non è nascosto: non esce proprio
+   > dal server finché il voto non è partito. Se lo si vedesse prima lo si prenderebbe come
+   > ancora; mostrandolo dopo si misura una cosa che nessun test sa dire da solo — **quanto i
+   > gate sono tarati sul gusto di chi decide**. Macchina SPEDIBILE e umano "No" significa che
+   > manca un gate; macchina DA RIVEDERE e umano "Sì" che il gate è troppo severo. Il riepilogo
+   > riporta lo scarto come riga a sé.
+
+   Ogni difetto trovato si classifica, e la classificazione decide dove va la correzione:
    - **del MOTORE** → un caso nel corpus, poi il fix;
    - **della SKILL** (regola mancante o ambigua) → si corregge la skill, e si annota che il
      modello in produzione avrebbe sbagliato allo stesso modo.
@@ -93,7 +103,15 @@ npm run banco        # rigenera tutto: archetipi, campionario delle pelli, banco
 npm test             # unit + harness sui casi dell'eval
 npm run templates    # riesporta gli esempi canonici in skill/assets
 npm run locale       # renderizza i giri del ciclo e dà il verdetto di spedibilità
+npm run catalogo     # genera il campionario delle pelli da curare
+npm run review       # lo strumento di revisione: un mockup alla volta, questionario fisso
 ```
+
+**Il questionario è fisso e resta fisso** — tre criteri da 1 a 5 (i numeri reggono · parla la
+lingua della nicchia · si legge bene), il verdetto (sì / sì con un ritocco / no) e una nota,
+obbligatoria solo quando un voto è ≤ 3 o il verdetto è No. Se un giorno si aggiunge un
+criterio, i voti dei giri precedenti smettono di essere confrontabili: è il motivo per cui non
+si aggiunge a cuor leggero. I voti vivono in `review/reviews.json`, versionato.
 
 I file finiscono in `out/banco/` (`index.html` è l'indice cliccabile,
 `banco-standalone.html` è il file unico da aprire col doppio clic, senza server).

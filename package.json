@@ -13,7 +13,8 @@
     "banco": "node test/banco.js",
     "templates": "node test/templates.js",
     "locale": "node test/locale.js",
-    "catalogo": "node test/catalogo.js"
+    "catalogo": "node test/catalogo.js",
+    "review": "node review/server.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

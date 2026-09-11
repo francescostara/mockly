@@ -622,6 +622,19 @@ function validate(spec, data) {
     }
   }
 
+  /* UNA PAGINA CHE NESSUN CLIC APRE NON ESISTE. Il caso vero: un report a due pagine su una
+     shell senza barra del marchio, dove la navigazione non aveva un posto dove stare — la
+     seconda pagina era scritta nella spec, renderizzata, e irraggiungibile. Il motore ora
+     rifiuta invece di consegnare meta report. */
+  if ((spec.pages || []).length > 1) {
+    const senzaNav = spec.pages.filter(p => !p.nav);
+    if (senzaNav.length) {
+      e.push(`il report ha ${spec.pages.length} pagine ma ${senzaNav.length} ${senzaNav.length === 1 ? "non ha" : "non hanno"} "nav": ` +
+        `${senzaNav.map(p => '"' + p.id + '"').join(', ')}. Senza etichetta di navigazione la ` +
+        `pagina esiste nel file e non si puo aprire con un clic.`);
+    }
+  }
+
   /* IL CONFINE. Ogni card ha un bordo, e il bordo deve essere PERCEPIBILE: un hairline dello
      stesso colore della superficie non separa niente, e il lettore resta a indovinare dove
      finisce un grafico e comincia quello accanto. La soglia e bassa di proposito — il bordo
@@ -793,6 +806,7 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
 #hdr .ttl{font-family:var(--fontDisp);font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
 #hdr .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
 #hdr .spacer{flex:1}
+.hnav{display:flex;gap:4px;margin-left:14px}
 .ctxwrap{display:flex;gap:6px}
 .ctxpill{font-size:10px;color:var(--ink2);background:var(--line2);border:1px solid var(--line);padding:4px 8px;border-radius:2px}
 .ctxpill b{font-weight:600;color:var(--c2)}
@@ -892,13 +906,18 @@ function dimFilters(spec, rail) {
 }
 /* @param ctxQui   le pill del contesto e il tasto azzera stanno qui, quando non c'e la riga filtri
    @param marchioQui  il nome del cliente non ha altro posto dove stare: niente rail, niente barra */
-function header(spec, ctxQui, marchioQui, aiuto) {
+function header(spec, ctxQui, marchioQui, aiuto, navQui) {
   const m = spec.meta, T = m.strings || {}, b = m.brand || {};
   const inlineBrand = marchioQui;
   const rail = ctxQui;
+  /* La shell "bare" non ha ne rail ne barra del marchio: senza questa riga un report a piu
+     pagine perderebbe del tutto la navigazione, e la seconda pagina resterebbe scritta nella
+     spec e irraggiungibile con un clic. */
+  const nav = navQui ? navButtons(spec) : '';
   return `<div id="hdr">
       ${inlineBrand ? `<div class="hbrand">${esc((b.name || m.title).toUpperCase())}</div>` : ''}
       <div><div class="ttl" id="hTtl"></div><div class="sub" id="hSub"></div></div>
+      ${nav ? `<div class="hnav">${nav}</div>` : ''}
       <div class="spacer"></div>
       ${rail ? `<div class="ctxwrap" id="hCtx"></div>
       <button class="resetb" id="btnReset">${esc(T.reset || 'Azzera filtri')}</button>
@@ -925,7 +944,7 @@ function shell(spec, data) {
 
   const corpo = `<div id="main">
     ${barraFiltri}
-    ${header(spec, !sh.tools, sh.rail === 0 && !sh.topbar, aiuto)}
+    ${header(spec, !sh.tools, sh.rail === 0 && !sh.topbar, aiuto, sh.rail === 0 && !sh.topbar)}
     <div id="page"></div>
     <div class="wm">${esc(m.watermark)}</div>
   </div>`;
