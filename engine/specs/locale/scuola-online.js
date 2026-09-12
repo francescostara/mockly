@@ -135,7 +135,12 @@ const spec = {
            e nessuna delle due merita di uscire dalla pagina, quindi condividono il riquadro e
            si sceglie con una linguetta. E' il bookmark chiesto dalla revisione: al posto di
            una seconda pagina, la stessa card che mostra un'altra cosa. */
-        { span: 3, h: 168, id: 'coorti-vista', viste: [
+        /* Il motivo e obbligatorio: engine/viste.js rifiuta un bookmark che non dichiara perche
+           nasconde qualcosa. Qui e "pagina-sprecata", e non "altro-taglio": le due viste non
+           guardano la stessa misura — una parla di ritenzione per coorte, l'altra di iscrizioni
+           nel tempo. La ragione onesta e che la stagionalita serviva, la pagina era piena, e una
+           pagina con dentro un grafico solo sarebbe stata peggio. */
+        { span: 3, h: 168, id: 'coorti-vista', motivo: 'pagina-sprecata', viste: [
           { etichetta: 'Per coorte', type: 'heatmap',
             title: 'Ritenzione per coorte e trimestre — {y}',
             subtitle: 'piu chiaro = meno studenti tornano; clicca una cella per filtrare la coorte',

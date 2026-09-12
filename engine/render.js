@@ -121,6 +121,7 @@ const prevSig = s => { for (let k = s.length - 1; k >= 0; k--) if (!/\s/.test(s[
    `spec.skin`: shell, palette, tipografia, densita. */
 const SKIN = require('./skin.js');
 const SCHEDA = require('./scheda.js');
+const VISTE = require('./viste.js');
 
 /** La pelle risolta di una spec: shell + token + caratteri + ritmo. */
 const pelle = spec => SKIN.pelleDi(spec);
@@ -276,7 +277,9 @@ function espandiViste(spec) {
   pagine.forEach(pg => (pg.rows || []).forEach(row => {
     (row.visuals || []).forEach((v, i) => {
       if (!v.viste || !v.viste.length) return;
-      const base = { span: v.span, h: v.h, id: v.id, viste: v.viste };
+      /* `motivo` viaggia con il contenitore: la dottrina delle viste si applica anche alla
+         spec appianata, che e quella che validate() guarda */
+      const base = { span: v.span, h: v.h, id: v.id, viste: v.viste, motivo: v.motivo };
       row.visuals[i] = Object.assign({}, v.viste[0], base);
     });
   }));
@@ -456,6 +459,10 @@ function gateArchetipo(spec, e) {
 
 function validate(spec, data) {
   const e = [], warn = [];
+  /* Il bookmark ha una dottrina, e sta in engine/viste.js: i suoi rifiuti entrano qui dentro
+     insieme agli altri, perche una card che nasconde meta del suo contenuto senza dire perche
+     e un difetto di composizione come un gauge su una misura assoluta. */
+  VISTE.valida(spec).forEach(m => e.push(m));
   const NC = spec.grid.columns;
   if (!spec.kpiBand || !spec.kpiBand.length) e.push('kpiBand is required (full-width top row)');
   else {
@@ -739,6 +746,8 @@ const lint = (spec, data) => {
   const piatta = JSON.parse(JSON.stringify(spec));
   espandiViste(piatta);
   const a = validate(piatta, data).advisories;
+  /* dove un bookmark ci starebbe: due lenti che stanno occupando due riquadri */
+  VISTE.consiglia(spec).forEach(m => a.push(m));
   fitSpec(spec, data).report.forEach(r => {
     if (r.tight) a.push("pagina \"" + r.page + "\": troppe righe per il canvas — grafici al minimo leggibile e la matrice perde " + r.over + "px. Togli una riga, oppure usa una estetica con shell piu bassa.");
     else a.push("pagina \"" + r.page + "\": altezze riscalate a " + r.k + "x per stare nel canvas 720px" + (r.dense ? ", pagina densa" : "") + ".");
