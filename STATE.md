@@ -75,7 +75,44 @@ molti segmenti. Model floor: Sonnet (Haiku da testare sulla sola spec).
   dominio + motore) e stack di design gratuita con Claude (niente Higgsfield: l'animazione UI è
   codice).
 
+## 5-bis. Le tre strade aperte in questo giro (tutte a costo zero)
+
+**LA FINESTRA TEMPORALE** (`engine/runtime.js`, gate `test/tempo.test.js`). Il selettore del
+periodo ha una domanda che viene prima delle altre: *quanti anni*. La finestra e contigua e si
+allarga all'indietro dall'anno scelto; il confronto si sposta con lei (tre anni contro i tre
+precedenti). Il disegno segue l'ampiezza: fino a cinque anni il trend mette una linea per anno
+sull'asse Gen-Dic, dai sei in su un punto per anno; il ribbon fa lo stesso (dodici trimestri su
+due-tre anni, un anno per colonna oltre). **La storia lunga costa**: ogni anno mensile e ~6KB di
+righe dentro l'HTML, quindi gli anni oltre gli ultimi (`dataParams.dettaglioMesi`, default 3)
+arrivano gia sommati per anno — totali esatti, si perde solo la ripartizione fra i mesi. Dove i
+mesi non ci sono, i controlli di trimestre e mese si nascondono e la selezione che c'era si mette
+da parte, tornando quando la finestra si restringe. Sotto i tre anni di storia non cambia niente
+e il codice non viaggia nemmeno nel file.
+
+**LA DOTTRINA DEL BOOKMARK** (`engine/viste.js`, gate `test/bookmark.test.js`). Una card a piu
+viste deve dichiarare `motivo`, e i motivi ammessi sono tre e non altri: `due-lenti` (ricavo e
+margine sulla stessa cosa), `altro-taglio` (stessa domanda, altro asse), `pagina-sprecata`
+(serve un grafico, la pagina e piena, e da solo non merita una schermata). Se le viste non
+condividono ne misura ne dimensione, "altro-taglio" e una dichiarazione falsa e il motore
+rifiuta. Tetti: 3 viste per card, 2 sull'apertura, 2 card a linguette per pagina. Il rovescio e
+un consiglio: `lint()` segnala dove un bookmark MANCA — due volte lo stesso grafico sulla stessa
+dimensione con misure diverse sono due lenti che occupano due riquadri.
+
+**L'ALBERO DELLE DOMANDE** (`engine/intervista.js` + `npm run intervista`, gate
+`test/intervista.test.js`). Quattordici domande a risposta chiusa portano a una spec completa
+senza linguaggio naturale e senza crediti: ogni domanda dichiara `quando`, quindi il questionario
+si ramifica (al funnel le trattative chiuse, all'operativo le transazioni al giorno). Il mockup
+non si compone da zero: si veste lo scheletro dell'archetipo col vocabolario della nicchia (8
+mestieri x 2 dimensioni), che arriva fino ai titoli, alle colonne e alle etichette delle misure.
+**Due ancore, due leve**: la base dei membri e un attributo, con due passate di misura-e-correggi,
+portano entrambi i numeri dichiarati a meno dell'1% — un numero solo applicato al campo sbagliato
+darebbe nove milioni di lead. Non tutti gli archetipi stanno bene a tutti i mestieri: ogni nicchia
+dichiara i suoi. E' la strada (a) del punto 9, costruita.
+
 ## 6. Problemi noti / migliorie in sospeso
+- **banco/immobiliare pesa 94KB**, oltre il tetto di 75KB: il grano dei fatti e largo
+  (25 combinazioni per mese). `npm run banco` ora scrive PESANTE accanto a chi sfora — prima il
+  tetto era verificato solo sui quattro casi dell'eval e nessuno se ne accorgeva.
 - **6 bug visivi** (IN CORSO su fix-visual-bugs): (1 MAX) riga di visual in basso tagliata/senza
   margine; (2) {y}/{py} non interpolati nei titoli; (3) slicer mese/trimestre richiede re-click
   "tutti i mesi"; (4) AP/AC non chiari; (5) contrasto filtri grigio-su-grigio in dark; (6)
