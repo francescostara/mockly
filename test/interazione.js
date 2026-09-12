@@ -170,6 +170,31 @@ function esegui(B, spec, data, P) {
     prova('slicer mese ' + m, () => B.clk(`#slMon [data-m="${m}"]`), { deveCambiare: m !== 'all' });
     if (m !== 'all') { apri(); B.clk('#slMon [data-m="all"]'); }
   });
+  /* LA FINESTRA DI PIU ANNI, quando la scheda la dichiara. Il difetto da cui questa prova
+     difende non e un errore visibile: e un controllo che si accende e non cambia niente — tre
+     chip evidenziati e la pagina ferma su un anno solo. Quindi ogni ampiezza oltre 1 DEVE
+     muovere i numeri, e l'ampiezza 1 deve riportarli dov'erano. */
+  const fin = (P.data || {}).finestra;
+  if (fin) {
+    apri();
+    const ampiezze = B.qa('#slSpan [data-span]').map(e => e.getAttribute('data-span'));
+    const partenza = testo(B);
+    ampiezze.forEach(n => {
+      apri();
+      prova('finestra ' + n + ' anni', () => B.clk(`#slSpan [data-span="${n}"]`),
+        { deveCambiare: n !== '1' });
+      if (n !== '1') {
+        apri(); B.clk('#slSpan [data-span="1"]');
+        if (testo(B) !== partenza) {
+          guasto('finestra ' + n + ' anni',
+            'tornando a un anno i numeri non tornano quelli di partenza: la finestra lascia uno strascico');
+        }
+        prove++;
+      }
+    });
+    reset();
+  }
+
   /* l'esenzione: sotto un mese il trend deve avere ancora i suoi dodici punti */
   if (puntiBase) {
     apri();

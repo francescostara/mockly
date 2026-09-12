@@ -217,6 +217,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var DIMK = Object.keys(dims);
     var FDIMS = (SPEC.filters && SPEC.filters.dims) || [];      /* filterable dims, in toolbar order */
     var YRS = DATA.years;
+    /* Gli anni che hanno ancora i dodici mesi. Quando la storia e lunga i piu vecchi arrivano
+       gia sommati per anno (data-builder, passo 4.5): il report non deve fingere di avere un
+       dettaglio che non c'e — offrire il filtro del mese su un anno che vale una riga sola
+       sarebbe un controllo che azzera la pagina. */
+    var MENS = DATA.mensili || DATA.years;
 
     A.SPEC = SPEC; A.DATA = DATA; A.dims = dims; A.f = f; A.g = g; A.MON = MON; A.T = T;
     A.facts = F; A.detail = DT; A.doc = doc; A.esc = M.esc;
@@ -234,6 +239,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var S = A.S = {
       page: SPEC.pages[0].id,
       y: d0.y !== undefined ? d0.y : YRS[YRS.length - 1],
+      /* LA FINESTRA TEMPORALE. `y` e l'anno finale, `y0` quello iniziale: quando coincidono —
+         ed e cosi che si apre sempre — il report si comporta esattamente come prima, un anno
+         alla volta. Chi ha dieci anni di storia e ne vuole guardare tre allarga la finestra
+         invece di aprire tre report: la selezione resta UNA, contigua, e ogni visual la legge
+         dal layer condiviso senza saperne niente.
+         Perche l'estremo finale e `y` e non un array: il confronto col periodo precedente, le
+         etichette {y}/{py} e la traiettoria hanno bisogno di un ORDINE, e un insieme di anni
+         sparsi non ce l'ha. Una finestra contigua si sposta indietro di se stessa e il
+         confronto resta onesto. */
+      y0: d0.y0 !== undefined ? d0.y0 : (d0.y !== undefined ? d0.y : YRS[YRS.length - 1]),
       q: d0.q === undefined ? null : d0.q,
       mo: d0.m === undefined ? null : d0.m,
       f: {},                       /* dim id -> member id | null */
@@ -242,15 +257,84 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       slOpen: false
     };
     FDIMS.forEach(d => S.f[d.id] = null);
+    /* il periodo di partenza, per poterci tornare: "azzera filtri" che lascia selezionato il
+       2018 di dieci anni fa non ha azzerato il filtro piu importante della pagina */
+    var YDEF = S.y;
 
     /* ---------- date helpers ---------- */
+    /*#breve*/
+    /* Sotto i tre anni di storia la finestra non ha niente da fare: queste sono le stesse
+       risposte, date senza calcolarle. Nel sorgente le sovrascrivono le versioni vere qui
+       sotto; nel file spedito a un report di dodici o ventiquattro mesi ci sono solo queste. */
+    A.ampiezza = function () { return 1; };
+    A.anniSel = function () { return [S.y]; };
+    A.grossa = function () { return false; };
+    A.annoLabel = function (fine) { return String(fine === undefined ? S.y : fine); };
+    A.finestra = function (fine) { if (fine !== undefined) { S.y = fine; S.y0 = fine; } };
+    /*#/breve*/
+    /*#finestra*/
+    /* quanti anni sono selezionati adesso (1 = comportamento storico) */
+    A.ampiezza = function () { return Math.max(1, S.y - S.y0 + 1); };
+    A.anniSel = function () { var o = [], y; for (y = S.y0; y <= S.y; y++) o.push(y); return o; };
+    /* Le ampiezze proponibili: mai piu di quanti anni il dato ha davvero, perche un chip
+       "5 anni" su tre anni di storia promette qualcosa che non c'e. */
+    A.ampiezze = function () {
+      var n = YRS.length, out = [];
+      [1, 2, 3, 5, n].forEach(function (k) { if (k <= n && out.indexOf(k) < 0) out.push(k); });
+      return out.sort(function (a, b) { return a - b; });
+    };
+    /* Sposta la finestra tenendo l'ampiezza, e la tiene dentro gli anni disponibili. */
+    A.finestra = function (fine, amp) {
+      var n = YRS.length ? YRS.length : 1, primo = YRS[0], ultimo = YRS[YRS.length - 1];
+      amp = Math.min(Math.max(1, amp || A.ampiezza()), n);
+      fine = Math.min(Math.max(fine === undefined ? S.y : fine, primo + amp - 1), ultimo);
+      S.y = fine; S.y0 = fine - amp + 1;
+      /* Una selezione che il dato non puo piu esprimere si mette DA PARTE, non si butta:
+         allargando la finestra alla storia lontana il trimestre scelto sparisce (li i mesi non
+         ci sono), e tornando indietro deve ritrovarsi dov'era. Buttarlo sarebbe una perdita
+         silenziosa — il lettore torna a un anno e il suo Q4 non c'e piu, senza che nessuno
+         glielo abbia detto. */
+      if (A.grossa()) {
+        if (S.q !== null || S.mo !== null) S.sosp = { q: S.q, mo: S.mo };
+        S.q = null; S.mo = null;
+      } else if (S.sosp) {
+        S.q = S.sosp.q; S.mo = S.sosp.mo; S.sosp = null;
+      }
+    };
+    /* la finestra pesca in un anno senza mesi? */
+    A.grossa = function () {
+      for (var y = S.y0; y <= S.y; y++) if (MENS.indexOf(y) < 0) return true;
+      return false;
+    };
+    /*#/finestra*/
     A.QMON = q => q === null ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] : [q * 3, q * 3 + 1, q * 3 + 2];
-    A.inSel = m => { if (S.mo !== null) return m === S.mo; if (S.q !== null) return A.QMON(S.q).includes(m); return true; };
-    A.basis = () => S.mo !== null ? 'MoM' : 'YoY';
+    A.inSel = function (m) {
+      if (A.grossa()) return true;      /* niente mesi da scegliere: il dato non li ha piu */
+      if (S.mo !== null) return m === S.mo;
+      if (S.q !== null) return A.QMON(S.q).includes(m);
+      return true;
+    };
+    /* Con una finestra di piu anni "YoY" e falso: si confrontano tre anni con i tre
+       precedenti, non un anno con l'anno prima. Dirlo per quello che e costa una stringa. */
+    A.basis = function () {
+      if (S.mo !== null) return 'MoM';
+      var n = A.ampiezza();
+      return n > 1 ? (T.pop || (n + 'A vs ' + n + 'A')) : 'YoY';
+    };
+    /* L'etichetta dell'anno: "2025" quando la finestra e di uno, "2023–2025" quando e larga.
+       Ci passano il pulsante del periodo, i titoli con {y} e le pillole di contesto, cosi il
+       report non puo dire "2025" mentre mostra tre anni. */
+    /*#finestra*/
+    A.annoLabel = function (fine, inizio) {
+      fine = fine === undefined ? S.y : fine;
+      inizio = inizio === undefined ? S.y0 : inizio;
+      return inizio < fine ? inizio + '–' + fine : String(fine);
+    };
+    /*#/finestra*/
     A.periodLabel = function () {
-      if (S.mo !== null) return MON[S.mo] + ' ' + S.y;
-      if (S.q !== null) return 'Q' + (S.q + 1) + ' ' + S.y;
-      return S.y + (T.fullYear ? ' · ' + T.fullYear : '');
+      if (S.mo !== null) return MON[S.mo] + ' ' + A.annoLabel();
+      if (S.q !== null) return 'Q' + (S.q + 1) + ' ' + A.annoLabel();
+      return A.annoLabel() + (T.fullYear && A.ampiezza() === 1 ? ' · ' + T.fullYear : '');
     };
 
     /* ---------- THE shared slice layer ----------
@@ -259,11 +343,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          detail   : slice the detail grain instead of the fact grain
          timeline : ignore quarter/month (the trend exemption)
          y,months : explicit window (used by the previous-period comparison)
+         finestra : [primo, ultimo] anno — la finestra spostata indietro del confronto
          pin      : {dim:id} force a member — implies ignoring the page filter on that dim
          ignore   : [dim] ignore the page filter on these dims (own-breakdown visuals) */
     A.slice = function (o) {
       o = o || {};
-      var y = o.y !== undefined ? o.y : S.y;
+      /* Un anno esplicito vince su tutto (lo usano le traiettorie, che disegnano un anno per
+         volta); poi una finestra esplicita; in mancanza di entrambi, la finestra selezionata. */
+      var yEsp = o.y !== undefined ? o.y : null;
+      var fin = o.finestra || null;
       var months = o.months || null;
       var pin = Object.assign({}, A.drillPin(), o.pin || {});
       var ignore = o.ignore || [];
@@ -274,7 +362,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          dettaglio, che quelle colonne ce le ha. */
       var detailOnly = !o.detail && DT && DT.length && A.detailOnly(pin, ignore);
       var keep = function (r) {
-        if (r.y !== y) return false;
+        if (yEsp !== null) { if (r.y !== yEsp) return false; }
+        else if (fin) { if (r.y < fin[0] || r.y > fin[1]) return false; }
+        else if (r.y < S.y0 || r.y > S.y) return false;
         if (months) { if (!months.includes(r.m)) return false; }
         else if (!o.timeline && !A.inSel(r.m)) return false;
         for (var i = 0; i < DIMK.length; i++) {
@@ -346,6 +436,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (S.mo === 0) return A.agg(A.slice(Object.assign(o, { y: S.y - 1, months: [11] })));
         return A.agg(A.slice(Object.assign(o, { months: [S.mo - 1] })));
       }
+      var n = A.ampiezza();
+      /* Il periodo precedente di una finestra larga e la finestra stessa spostata indietro
+         della sua ampiezza: tre anni si confrontano coi tre di prima. Se quegli anni nel dato
+         non ci sono, l'aggregato esce vuoto e la card dice che il confronto manca — che e la
+         verita, invece di confrontare tre anni con uno. */
+      if (n > 1) return A.agg(A.slice(Object.assign(o, { finestra: [S.y0 - n, S.y - n], months: A.QMON(S.q) })));
       return A.agg(A.slice(Object.assign(o, { y: S.y - 1, months: A.QMON(S.q) })));
     };
     A.meas = id => MEASBY[id] || { id: id, format: 'N', label: id };
@@ -357,7 +453,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       o = o || {};
       return (dims[dim] || []).map(function (mb) {
         var s = Object.assign({}, o, { pin: Object.assign({}, o.pin || {}, { [dim]: mb.id }) });
-        var p = Object.assign({}, s); delete p.y; delete p.months;
+        var p = Object.assign({}, s); delete p.y; delete p.months; delete p.finestra;
         return { m: mb, a: A.agg(A.slice(s)), b: A.prev(p) };
       });
     };
@@ -426,8 +522,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var pm = S.mo === 0 ? MON[11] + ' ' + (S.y - 1) : MON[S.mo - 1] + ' ' + S.y;
         return { prev: pm, cur: MON[S.mo] + ' ' + S.y };
       }
-      var q = S.q !== null ? 'Q' + (S.q + 1) + ' ' : '';
-      return { prev: q + (S.y - 1), cur: q + S.y };
+      var q = S.q !== null ? 'Q' + (S.q + 1) + ' ' : '', n = A.ampiezza();
+      return { prev: q + A.annoLabel(S.y - n, S.y0 - n), cur: q + A.annoLabel() };
     };
     A.detail = function (k, cv, pv) {
       var p = A.periodPair();
@@ -478,7 +574,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }).join('') + '</div>';
     /* tiny token interpolation for labels: {y} {py} {basis} {period} {drill} */
     A.tpl = s => String(s)
-      .replace(/\{y\}/g, S.y).replace(/\{py\}/g, S.y - 1)
+      .replace(/\{y\}/g, A.annoLabel())
+      .replace(/\{py\}/g, A.annoLabel(S.y - A.ampiezza(), S.y0 - A.ampiezza()))
       .replace(/\{basis\}/g, A.basis()).replace(/\{period\}/g, A.periodLabel())
       .replace(/\{drill\}/g, S.drill ? A.dimLabel(S.drill.dim, S.drill.id) : '');
 
@@ -541,9 +638,30 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       if ($('#slCur')) {
         $('#slCur').textContent = A.periodLabel();
         $('#slPanel').classList.toggle('open', S.slOpen);
-        $('#slYear').innerHTML = YRS.map(y => '<button class="slchip ' + (S.y === y ? 'on' : '') + '" data-y="' + y + '">' + y + '</button>').join('');
+        /* L'AMPIEZZA prima degli anni, perche e la domanda che viene prima: "quanti anni
+           guardo" e poi "quali". Con un anno solo di storia la riga non compare — un controllo
+           che ha una sola scelta e rumore. */
+        var amp = A.ampiezza();
+        /*#finestra*/
+        if ($('#slSpanG')) {
+          $('#slSpanG').style.display = YRS.length > 1 ? '' : 'none';
+          $('#slSpan').innerHTML = A.ampiezze().map(function (n) {
+            var et = n === 1 ? (T.spanUno || '1 anno')
+              : (n >= YRS.length ? (T.spanTutti || 'Tutti') : n + ' ' + (T.anni || 'anni'));
+            return '<button class="slchip ' + (amp === n ? 'on' : '') + '" data-span="' + n + '">' + et + '</button>';
+          }).join('');
+        }
+        /*#/finestra*/
+        /* Gli anni dentro la finestra si vedono: `on` e l'estremo che si sposta cliccando,
+           `in` sono gli altri compresi. Senza, con l'ampiezza a tre si vedrebbe acceso un anno
+           solo e la finestra sembrerebbe non essersi allargata. */
+        $('#slYear').innerHTML = YRS.map(y => '<button class="slchip ' +
+          (S.y === y ? 'on' : (y >= S.y0 && y < S.y ? 'in' : '')) + '" data-y="' + y + '">' + y + '</button>').join('');
         $('#slQtr').innerHTML = '<button class="slchip ' + (S.q === null ? 'on' : '') + '" data-q="all">' + (T.all || 'Tutto') + '</button>' +
           [0, 1, 2, 3].map(q => '<button class="slchip ' + (S.q === q ? 'on' : '') + '" data-q="' + q + '">Q' + (q + 1) + '</button>').join('');
+        var grossa = A.grossa();
+        if ($('#slQtrG')) $('#slQtrG').style.display = grossa ? 'none' : '';
+        if ($('#slMonG')) $('#slMonG').style.display = grossa ? 'none' : '';
         $('#slMon').innerHTML = '<button class="slchip mo ' + (S.mo === null ? 'on' : '') + '" data-m="all">' + (T.allM || 'Tutti') + '</button>' +
           MON.map((mn, i) => '<button class="slchip mo ' + (S.mo === i ? 'on' : '')+ '" data-m="' + i + '">' + mn + '</button>').join('');
       }
@@ -568,6 +686,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       if ($('#hSub')) $('#hSub').textContent = A.tpl(pg.subtitle || '');
       if ($('#hCtx')) {
         var cx = ['<span class="ctxpill">' + (T.compare || 'Confronto') + ' ' + A.basis() + '</span>'];
+        if (A.ampiezza() > 1) cx.push('<span class="ctxpill">' + (T.period || 'Periodo') + ' <b>' + A.annoLabel() + '</b></span>');
         if (S.q !== null && S.mo === null) cx.push('<span class="ctxpill">' + (T.qtr || 'Trim.') + ' <b>Q' + (S.q + 1) + '</b></span>');
         if (S.mo !== null) cx.push('<span class="ctxpill">' + (T.month || 'Mese') + ' <b>' + MON[S.mo] + '</b></span>');
         FDIMS.forEach(fd => { if (S.f[fd.id]) cx.push('<span class="ctxpill">' + M.esc(fd.pill || fd.label) + ' <b>' + M.esc(A.dimLabel(fd.id, S.f[fd.id])) + '</b></span>'); });
@@ -600,7 +719,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var t = e.target, cl = s => t.closest && t.closest(s);
         if (cl('#slBtn')) { S.slOpen = !S.slOpen; S.dd = null; A.render(); return; }
         var dd = cl('[data-dd]'); if (dd) { S.dd = S.dd === dd.getAttribute('data-dd') ? null : dd.getAttribute('data-dd'); S.slOpen = false; A.render(); return; }
-        var yy = cl('[data-y]'); if (yy) { S.y = +yy.getAttribute('data-y'); A.render(); return; }
+        /* l'ampiezza tiene fermo l'anno finale e allarga all'indietro: si continua a guardare
+           l'ultimo periodo, con piu storia dietro */
+        /*#finestra*/
+        var sp = cl('[data-span]');
+        if (sp) { A.finestra(S.y, +sp.getAttribute('data-span')); A.render(); return; }
+        /*#/finestra*/
+        var yy = cl('[data-y]'); if (yy) { A.finestra(+yy.getAttribute('data-y')); A.render(); return; }
         var qq = cl('[data-q]'); if (qq) {
           var qv = qq.getAttribute('data-q'); S.q = qv === 'all' ? null : +qv;
           if (S.mo !== null && !A.QMON(S.q).includes(S.mo)) S.mo = null;
@@ -613,7 +738,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           A.render(); return;
         }
         var pgb = cl('[data-page]'); if (pgb) { S.page = pgb.getAttribute('data-page'); S.drill = null; A.render(); return; }
-        if (cl('#btnReset')) { FDIMS.forEach(d => S.f[d.id] = null); S.q = null; S.mo = null; S.ord = {}; S.vista = {}; A.render(); return; }
+        if (cl('#btnReset')) { FDIMS.forEach(d => S.f[d.id] = null); S.q = null; S.mo = null; S.ord = {}; S.vista = {};
+          /* l'azzeramento riporta anche il periodo a com'era all'apertura: un anno solo,
+             quello di partenza */
+          S.y = YDEF; S.y0 = YDEF; S.sosp = null; A.render(); return; }
         /* La scheda di interazione. Non passa da A.render(): e sopra il report, non dentro —
            aprirla non deve toccare lo stato dei filtri ne ridisegnare la pagina. */
         var hp = doc.getElementById('howp');
@@ -719,10 +847,21 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* La traiettoria: i mesi dell'anno precedente e di quello corrente, quando ci sono
        entrambi. Passa dal layer condiviso, quindi una ratio qui vale quello che vale nella
        banda KPI e non una linea piatta a zero. */
-    var anni = (A.DATA.years || [S.y]).filter(function (y) { return y === S.y || y === S.y - 1; }).sort();
+    /* Con la finestra larga la traiettoria e la finestra: tre anni di mesi in fila. Con un
+       anno solo resta il confronto con l'anno prima, che e il suo mestiere. */
+    var disp = A.DATA.years || [S.y];
+    var anni = A.ampiezza() > 1
+      ? A.anniSel().filter(function (y) { return disp.indexOf(y) >= 0; })
+      : disp.filter(function (y) { return y === S.y || y === S.y - 1; }).sort();
+    if (!anni.length) anni = [S.y];
     var vals = [], i, y, k;
+    /* Se la finestra pesca nella storia lontana i mesi non ci sono: la traiettoria diventa un
+       punto per anno su tutta la storia, che e la scala a cui quella domanda si fa. */
+    var perAnno = A.grossa();
+    if (perAnno) anni = (A.DATA.years || anni).slice();
     for (i = 0; i < anni.length; i++) {
       y = anni[i];
+      if (perAnno) { vals.push(A.mv(ms, A.agg(A.slice({ y: y, timeline: true })))); continue; }
       var val = A.byKeyValue(A.slice({ y: y, timeline: true }), function (r) { return r.m; }, ms);
       for (k = 0; k < 12; k++) vals.push(val(k));
     }
@@ -753,8 +892,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       '</b><br>' + M.esc(A.T.trajectory || 'traiettoria mensile') + ': ' +
       A.mfmt(ms, Math.min.apply(null, vals)) + ' – ' + A.mfmt(ms, Math.max.apply(null, vals)) + '"/>';
     s += '<path d="' + p + '" fill="none" stroke="var(--c2)" stroke-width="1.6"/>';
-    if (anni.length > 1)
-      s += '<line x1="' + X(11.5).toFixed(1) + '" y1="0" x2="' + X(11.5).toFixed(1) + '" y2="' + ah +
+    /* una riga fra un anno e l'altro: senza, trentasei mesi in fila sono una linea sola e non
+       si capisce dove finisce il 2023 */
+    for (i = 1; i < anni.length && !perAnno; i++)
+      s += '<line x1="' + X(i * 12 - 0.5).toFixed(1) + '" y1="0" x2="' + X(i * 12 - 0.5).toFixed(1) + '" y2="' + ah +
         '" stroke="var(--line)" stroke-dasharray="3 3"/>';
     /* Il punto finale sta sul bordo destro dell'area, e un cerchio ha un raggio: senza questo
        rientro meta pallino finiva fuori dall'SVG e usciva tagliato a filo card. Tre pixel, ed
@@ -793,6 +934,106 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       return o;
     };
     cur = byM(S.y); prev = byM(S.y - 1);
+
+    /* LA FINESTRA LARGA CAMBIA IL DISEGNO, non solo i numeri.
+       Tre anni schiacciati in trentasei punti su cinquecento pixel sono una linea seghettata
+       che non si legge; e undici linee sovrapposte su un asse Gen-Dic sono un gomitolo. Quindi
+       il disegno segue l'ampiezza, come farebbe un analista a mano:
+         2-5 anni  -> una linea per anno sullo stesso asse Gen-Dic: e il confronto stagionale,
+                      la domanda vera di chi allarga la finestra ("quest'anno va come gli altri?");
+         6 anni e oltre -> un punto per anno: e la storia lunga, e i mesi non servono piu. */
+    /*#finestra*/
+    var nA = A.ampiezza();
+    if (nA > 1 || A.grossa()) {
+      var anniW = A.anniSel().filter(function (y) { return (A.DATA.years || []).indexOf(y) >= 0; });
+      if (!anniW.length) anniW = [S.y];
+      /* "lungo" e il disegno per anni. Ci si arriva in due modi: perche gli anni scelti sono
+         tanti, o perche fra loro c'e un anno della storia lontana, che i mesi non li ha piu.
+         In quel caso l'asse porta TUTTA la storia e la finestra scelta si vede evidenziata —
+         lo stesso mestiere che il trend fa gia col trimestre dentro l'anno. */
+      var lungo = anniW.length >= 6 || A.grossa();
+      if (lungo) anniW = (A.DATA.years || anniW).slice();
+      var COLORI = ['var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--c1)'];
+      var serie = lungo
+        ? [{ etichetta: A.annoLabel(), vals: anniW.map(function (y) {
+              return A.mv(ms, A.agg(A.slice({ y: y, timeline: true })));
+            }), colore: 'var(--c2)', forte: true }]
+        : anniW.map(function (y, k) {
+            return { etichetta: String(y), vals: byM(y),
+              /* l'ultimo anno e il protagonista: pieno e piu spesso. Gli altri sono lo sfondo
+                 su cui si legge, e devono restare distinguibili senza rubare l'occhio. */
+              colore: k === anniW.length - 1 ? 'var(--c2)' : COLORI[k % COLORI.length],
+              forte: k === anniW.length - 1 };
+          });
+      var etichette = lungo ? anniW.map(String) : A.MON;
+      var nPunti = lungo ? anniW.length : 12;
+      /* a destra ci sta il nome della serie, attaccato all'ultimo punto: una legenda separata
+         allontanerebbe di nuovo il nome dalla linea che nomina */
+      var rEt = lungo ? 14 : Math.max(30, M.largh('0000', 8.5) + 12);
+      var mgnW = { t: 14, r: rEt, b: 22, l: 46 };
+      var iwW = w - mgnW.l - mgnW.r, ihW = h - mgnW.t - mgnW.b;
+      var tutti = serie.reduce(function (a, s2) { return a.concat(s2.vals); }, []);
+      var maxW = Math.max.apply(null, tutti) * 1.14 || 1, tkW = M.ticks(maxW), topW = tkW[tkW.length - 1] || 1;
+      var YW = function (val) { return mgnW.t + ihW - (val / topW) * ihW; };
+      var XW = function (i) { return mgnW.l + (iwW / Math.max(1, nPunti - 1)) * i; };
+      var sw = '<svg width="' + w + '" height="' + h + '">';
+      tkW.forEach(function (t) {
+        sw += '<line x1="' + mgnW.l + '" y1="' + YW(t).toFixed(1) + '" x2="' + (mgnW.l + iwW) + '" y2="' + YW(t).toFixed(1) +
+          '" stroke="' + (t ? 'var(--line2)' : 'var(--line)') + '"/>' +
+          '<text x="' + (mgnW.l - 7) + '" y="' + (YW(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted2)" class="tnum">' +
+          A.mfmt(ms, t) + '</text>';
+      });
+      serie.forEach(function (s2) {
+        var p2 = '';
+        s2.vals.forEach(function (val, i) { p2 += (i ? 'L' : 'M') + XW(i).toFixed(1) + ',' + YW(val).toFixed(1); });
+        if (s2.forte)
+          sw += '<path d="' + p2 + 'L' + XW(nPunti - 1).toFixed(1) + ',' + (mgnW.t + ihW) + 'L' + mgnW.l + ',' + (mgnW.t + ihW) +
+            'Z" fill="var(--c2)" opacity=".06"/>';
+        sw += '<path d="' + p2 + '" fill="none" stroke="' + s2.colore + '" stroke-width="' + (s2.forte ? 2 : 1.4) + '"/>';
+      });
+      /* i pallini con il tooltip stanno sulla serie in primo piano, e il tooltip porta TUTTI
+         gli anni di quel mese: e li che si legge il confronto, non passando su tre linee */
+      var avanti = serie[serie.length - 1];
+      avanti.vals.forEach(function (val, i) {
+        var tip = '<b>' + M.esc(etichette[i]) + (lungo ? '' : ' ' + A.annoLabel()) + '</b><br>' + A.mfmt(ms, val);
+        if (!lungo) serie.slice(0, -1).forEach(function (s2) {
+          tip += '<br>' + s2.etichetta + ': ' + A.mfmt(ms, s2.vals[i]);
+        });
+        sw += '<circle class="hit" cx="' + XW(i).toFixed(1) + '" cy="' + YW(val).toFixed(1) +
+          '" r="3" fill="var(--card)" stroke="var(--c2)" stroke-width="1.7" data-tip="' + tip + '"/>';
+      });
+      /* la finestra scelta, evidenziata sull'asse della storia */
+      if (lungo && (S.y0 > anniW[0] || S.y < anniW[anniW.length - 1])) {
+        var i0 = anniW.indexOf(S.y0), i1 = anniW.indexOf(S.y), passoX = iwW / Math.max(1, nPunti - 1);
+        if (i0 >= 0 && i1 >= 0)
+          sw += '<rect x="' + Math.max(mgnW.l, XW(i0) - passoX / 2).toFixed(1) + '" y="' + mgnW.t +
+            '" width="' + Math.min(iwW, (i1 - i0 + 1) * passoX).toFixed(1) + '" height="' + ihW +
+            '" fill="var(--c2)" opacity=".06"/>';
+      }
+      /* le etichette dell'asse: con dieci anni si stampano una sì e una no, altrimenti si
+         toccano e diventano una striscia grigia */
+      var passo = Math.ceil(nPunti / 12);
+      etichette.forEach(function (et, i) {
+        if (i % passo) return;
+        sw += '<text x="' + XW(i).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' +
+          ((!lungo && A.inSel(i)) || lungo ? 'var(--ink2)' : 'var(--muted3)') + '">' + M.esc(et) + '</text>';
+      });
+      /* il nome dell'anno accanto alla sua linea, non in un angolo */
+      if (!lungo) {
+        var ordinate = serie.map(function (s2, k) { return { k: k, y: YW(s2.vals[nPunti - 1]), s: s2 }; })
+          .sort(function (a, b2) { return a.y - b2.y; });
+        var ultimaY = -99;
+        ordinate.forEach(function (o2) {
+          var yy2 = Math.max(mgnW.t + 4, Math.max(o2.y, ultimaY + 10));
+          ultimaY = yy2;
+          sw += '<text x="' + (XW(nPunti - 1) + 5).toFixed(1) + '" y="' + (yy2 + 3).toFixed(1) +
+            '" font-size="8.5" font-weight="' + (o2.s.forte ? 700 : 500) + '" fill="' + o2.s.colore +
+            '" class="tnum">' + M.esc(o2.s.etichetta) + '</text>';
+        });
+      }
+      return A.card(v, sw + '</svg>');
+    }
+    /*#/finestra*/
     var mgn = { t: 14, r: 14, b: 22, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var max = Math.max.apply(null, cur.concat(prev)) * 1.14 || 1, tk = M.ticks(max), top = tk[tk.length - 1] || 1;
     var Y = val => mgn.t + ih - (val / top) * ih, X = i => mgn.l + (iw / 11) * i;
@@ -1065,7 +1306,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        mentre le colonne sommavano comunque la colonna grezza. */
     var lm = ln ? A.meas(ln) : null;
     var gCur = A.byKey(A.slice({ timeline: true }), r => r.m);
-    var gPri = A.byKey(A.slice({ y: S.y - 1, timeline: true }), r => r.m);
+    /* il termine di paragone si sposta con la finestra: tre anni si confrontano coi tre
+       precedenti, non con l'anno prima dell'ultimo */
+    var nAmp = A.ampiezza();
+    var gPri = A.byKey(A.slice(nAmp > 1
+      ? { finestra: [S.y0 - nAmp, S.y - nAmp], timeline: true }
+      : { y: S.y - 1, timeline: true }), r => r.m);
     var cur = new Array(12), pri = new Array(12), line = new Array(12), _i;
     for (_i = 0; _i < 12; _i++) {
       cur[_i] = gCur.agg[_i] ? A.mv(ms, gCur.agg[_i]) : 0;
@@ -1083,9 +1329,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     for (var i = 0; i < 12; i++) {
       var x0 = mgn.l + cw * i + cw / 2;
       s += '<rect class="hit" x="' + (x0 - bw - 1).toFixed(1) + '" y="' + Y(pri[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(pri[i])).toFixed(1) +
-        '" fill="var(--c5)" data-tip="<b>' + A.MON[i] + ' ' + (S.y - 1) + '</b><br>' + A.mfmt(ms, pri[i]) + '"/>';
+        '" fill="var(--c5)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel(S.y - nAmp, S.y0 - nAmp) + '</b><br>' + A.mfmt(ms, pri[i]) + '"/>';
       s += '<rect class="hit" x="' + (x0 + 1).toFixed(1) + '" y="' + Y(cur[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(cur[i])).toFixed(1) +
-        '" fill="var(--c2)" data-tip="<b>' + A.MON[i] + ' ' + S.y + '</b><br>' + A.mfmt(ms, cur[i]) + (ln ? '<br>' + A.meas(ln).label + ': ' + A.mfmt(ln, line[i]) : '') + '"/>';
+        '" fill="var(--c2)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel() + '</b><br>' + A.mfmt(ms, cur[i]) + (ln ? '<br>' + A.meas(ln).label + ': ' + A.mfmt(ln, line[i]) : '') + '"/>';
       s += '<text x="' + x0.toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
     }
     if (ln) {
@@ -1380,8 +1626,37 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var b = v.bind || {}, dim = b.dim, ms = b.measure;
     h = v.h || h || 200;
     var periods = (b.by === 'm' ? A.MON.map((l, i) => ({ l: l, months: [i] })) : [0, 1, 2, 3].map(q => ({ l: 'Q' + (q + 1), months: A.QMON(q) })));
+    /*#finestra*/
+    /* IL RIBBON SEGUE LA FINESTRA. Il commento che l'ha chiesto diceva esattamente questo: "il
+       ribbon chart deve adeguarsi di conseguenza e diventare piu lungo o piu corto".
+       Il grano si sceglie da solo, come lo sceglierebbe una persona: dentro un anno i mesi (o i
+       trimestri); su due o tre anni i TRIMESTRI di ciascun anno, che sono otto o dodici colonne
+       — abbastanza per vedere i sorpassi, poche per non impastarle; da quattro anni in su un
+       anno per colonna. Il ribbon esiste per far vedere chi supera chi: con quaranta colonne
+       non lo si vedrebbe piu. */
+    if (A.ampiezza() > 1) {
+      var anniR = A.anniSel().filter(function (y) { return (A.DATA.years || []).indexOf(y) >= 0; });
+      if (anniR.length > 3 || A.grossa()) {
+        periods = anniR.map(function (y) { return { l: String(y), y: y, months: null }; });
+      } else {
+        periods = [];
+        anniR.forEach(function (y) {
+          [0, 1, 2, 3].forEach(function (q) {
+            periods.push({ l: 'Q' + (q + 1) + ' ' + String(y).slice(2), y: y, months: A.QMON(q) });
+          });
+        });
+      }
+    }
+    /*#/finestra*/
     var cats = A.dims[dim];
-    var val = (cid, pi) => A.mv(ms, A.agg(A.slice({ pin: { [dim]: cid }, months: periods[pi].months })));
+    /* Il periodo porta con se il suo anno quando la finestra e larga; quando la colonna e un
+       anno intero, la selezione di trimestre o mese resta valida e si applica dentro l'anno. */
+    var val = function (cid, pi) {
+      var pd = periods[pi], o = { pin: { [dim]: cid } };
+      if (pd.y !== undefined) o.y = pd.y;
+      o.months = pd.months || (A.S.mo !== null ? [A.S.mo] : A.QMON(A.S.q));
+      return A.mv(ms, A.agg(A.slice(o)));
+    };
     /* Il ribbon e fatto solo di colore: senza legenda restano cinque bande anonime.
        Sta su una riga sola sopra il grafico, e ogni voce filtra (pattern-library, legende). */
     /* I margini laterali devono contenere META ETICHETTA: i valori sono centrati sul nodo, e

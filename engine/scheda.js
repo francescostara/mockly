@@ -41,6 +41,13 @@ const T = {
     periodo: 'Periodo',
     periodoTxt: (liv, anni) => 'In alto il selettore del periodo: ' + liv +
       '. Anni disponibili: ' + anni.join(', ') + '.',
+    finestraTxt: (mens) => 'Puoi guardare piu anni insieme: "Quanti anni" allarga la ' +
+      'selezione all\u2019indietro a partire dall\u2019anno scelto, e tutta la pagina — numeri, ' +
+      'confronto col periodo precedente, grafici — si aggiorna sull\u2019intervallo. Il ' +
+      'confronto diventa intervallo su intervallo: tre anni contro i tre precedenti. ' +
+      'Il dettaglio mensile e disponibile su ' + mens.join(', ') +
+      '; sugli anni piu vecchi il report ragiona per anno e i controlli di trimestre e mese ' +
+      'si nascondono, invece di offrire una scelta che il dato non ha.',
     dimTxt: (lab, n, ctrl) => lab + ' — ' + n + (n === 1 ? ' voce' : ' voci') +
       (ctrl === 'dropdown' ? ', a tendina' : ', in elenco') +
       '. Seleziona una voce e tutta la pagina si aggiorna; riselezionala per togliere il filtro.',
@@ -73,6 +80,11 @@ const T = {
     periodo: 'Period',
     periodoTxt: (liv, anni) => 'The period selector sits at the top: ' + liv +
       '. Years available: ' + anni.join(', ') + '.',
+    finestraTxt: (mens) => 'You can look at several years at once: "How many years" widens the ' +
+      'selection backwards from the chosen year, and the whole page — figures, prior-period ' +
+      'comparison, charts — follows the interval. Monthly detail is available on ' +
+      mens.join(', ') + '; older years are read by year, and the quarter and month controls ' +
+      'hide instead of offering a choice the data no longer has.',
     dimTxt: (lab, n, ctrl) => lab + ' — ' + n + (n === 1 ? ' item' : ' items') +
       (ctrl === 'dropdown' ? ', dropdown' : ', list') +
       '. Pick one and the whole page updates; pick it again to clear.',
@@ -143,6 +155,13 @@ function piano(spec, data) {
     data: {
       livelli: (spec.filters.date || {}).levels || [],
       anni: (data && data.years) || [],
+      /* Gli anni a grana mensile: fuori da questi il selettore del mese non c'e, e il piano
+         di prova non deve cercarlo (test/interazione.js lo legge da qui). */
+      mensili: (data && data.mensili) || (data && data.years) || [],
+      /* la finestra esiste solo dove la storia e lunga: sotto i tre anni il controllo non
+         viene nemmeno emesso, e prometterlo nella scheda sarebbe una bugia stampata */
+      finestra: (((data && data.years) || []).length > 2)
+        ? { sel: '#slSpan [data-span]', ampiezze: '#slSpan .slchip' } : null,
       sel: { apri: '#slBtn', anno: '#slYear [data-y]', trimestre: '#slQtr [data-q]', mese: '#slMon [data-m]' }
     },
     cross: [], drill: [], esenti: [], fermi: [], reset: '#btnReset',
@@ -186,6 +205,8 @@ function testo(spec, data) {
   s.push('## ' + L.filtri, '');
   const LV = LIVELLI[lingua(spec)];
   s.push('- **' + L.periodo + '.** ' + L.periodoTxt(P.data.livelli.map(l => LV[l] || l).join(' › '), P.data.anni));
+  if (P.data.finestra) s.push('- **' + L.periodo + ' — ' + (L.piuAnni || 'piu anni') + '.** ' +
+    L.finestraTxt(P.data.mensili));
   P.filtri.forEach(f => s.push('- **' + f.label + '.** ' + L.dimTxt(f.label, f.membri.length, f.control)));
   s.push('- ' + L.resetTxt, '');
 

@@ -123,7 +123,8 @@ ok('il generatore dichiarativo è deterministico', () => {
 ok('il generatore rifiuta dataParams incoerenti con un messaggio azionabile', () => {
   /* i messaggi del motore sono in inglese: l'italiano vive solo nello strato app */
   const cases = [
-    [{ years: [2025] }, /exactly two years/i],
+    [{ years: [2025] }, /almeno due anni/i],
+    [{ years: [2020, 2022, 2023] }, /CONTIGUA/],
     [{ years: [2024, 2025], facts: { dim: 'x', fields: [{ id: 'rev', kind: 'share', of: 'rev' }] } }, /seasonal/i],
     [{
       years: [2024, 2025], dims: { s: { members: [{ id: 'a', n: 'A', base: 10, growth: 0 }] } },

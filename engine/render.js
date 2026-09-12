@@ -17,6 +17,17 @@ function regions(src) {
   while ((m = re.exec(src))) out[m[1]] = m[2];
   return out;
 }
+/* LA FINESTRA LARGA VIAGGIA SOLO DOVE SERVE. Sotto i tre anni di storia non ha niente da fare:
+   con dodici mesi non c'e niente da allargare, e con ventiquattro il confronto con l'anno prima
+   il trend lo fa gia da solo — allargare a due anni mostrerebbe le stesse due curve chiedendo
+   un clic in piu. Dai tre anni in su la domanda diventa vera ("quest'anno va come gli altri?",
+   "guardo tre anni dei dieci che ho") e il codice sale a bordo. E' lo stesso criterio con cui
+   un grafico non usato non entra nel bundle, applicato a una funzione invece che a un visual. */
+const FINESTRA = /\/\*#finestra\*\/[\s\S]*?\/\*#\/finestra\*\//g;
+/* Il complementare: cio che vive SOLO nei report a storia corta — le versioni costanti delle
+   funzioni della finestra, che stanno in tre righe invece che in trenta. Nel sorgente ci sono
+   entrambe le versioni, e vince l'ultima: la completa. Nel file spedito ne viaggia una sola. */
+const BREVE = /\/\*#breve\*\/[\s\S]*?\/\*#\/breve\*\//g;
 function bundle(types, opts) {
   const R = regions(fs.readFileSync(RUNTIME_PATH, 'utf8'));
   const parts = [R.core];
@@ -25,7 +36,8 @@ function bundle(types, opts) {
     if (!R[k]) throw new Error(`render: unknown visual type "${t}"`);
     parts.push(R[k]);
   });
-  const src = parts.join('\n');
+  let src = parts.join('\n');
+  src = (opts && opts.finestra === false) ? src.replace(FINESTRA, '') : src.replace(BREVE, '');
   return (opts && opts.raw) ? src : strip(src);
 }
 
@@ -853,6 +865,10 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
 .slchip:hover{background:rgba(127,127,127,.12)}
 .slchip.on{background:${rail ? '#fff' : 'var(--c2)'};color:${rail ? 'var(--rail)' : '#fff'};border-color:${rail ? '#fff' : 'var(--c2)'};font-weight:600}
 .slchip.mo{flex:1 0 27%;font-size:9.5px;padding:4px 2px}
+/* un anno COMPRESO nella finestra ma non l'estremo: acceso a meta, perche e selezionato ma
+   non e quello che il clic sposta */
+.slchip.in{background:${rail ? 'rgba(255,255,255,.22)' : 'var(--c6, rgba(127,127,127,.18))'};
+  border-color:${rail ? 'rgba(255,255,255,.4)' : 'var(--c4)'};font-weight:600}
 .catitem{display:flex;align-items:center;gap:8px;padding:5px 6px;font-size:11px;color:${rail ? 'var(--railInk)' : 'var(--ink2)'};cursor:pointer;border-radius:2px}
 .catitem:hover{background:rgba(127,127,127,.12)}
 .catitem .dot{width:8px;height:8px;flex:0 0 8px;border-radius:2px}
@@ -955,15 +971,16 @@ const CAL_ICON = '<svg class="cal" viewBox="0 0 16 16" fill="none" stroke="curre
 const BAR_ICON = '<svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M2 13h12v1H2zM3 7h2v5H3zM6.5 4h2v8h-2zM10 8.5h2V12h-2z"/></svg>';
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
-function dateSlicer(spec) {
+function dateSlicer(spec, larga) {
   const T = spec.meta.strings || {};
   const dentroRail = pelle(spec).shell.rail > 0 && !pelle(spec).shell.tools;
   return `<div class="slgrp">${dentroRail ? `<div class="rlbl">${esc(T.period || 'Periodo')}</div>` : ''}
       <button class="slbtn" id="slBtn">${CAL_ICON}<span class="cur" id="slCur"></span><span class="car">▼</span></button>
       <div class="slpanel" id="slPanel">
+        ${larga ? `<div id="slSpanG"><div class="slsec">${esc(T.spanLong || 'Quanti anni')}</div><div class="slrow" id="slSpan"></div></div>` : ''}
         <div class="slsec">${esc(T.year || 'Anno')}</div><div class="slrow" id="slYear"></div>
-        <div class="slsec">${esc(T.qtrLong || 'Trimestre')}</div><div class="slrow" id="slQtr"></div>
-        <div class="slsec">${esc(T.monthLong || 'Mese')}</div><div class="slrow" id="slMon"></div>
+        <div id="slQtrG"><div class="slsec">${esc(T.qtrLong || 'Trimestre')}</div><div class="slrow" id="slQtr"></div></div>
+        <div id="slMonG"><div class="slsec">${esc(T.monthLong || 'Mese')}</div><div class="slrow" id="slMon"></div></div>
       </div></div>`;
 }
 function navButtons(spec) {
@@ -1012,7 +1029,10 @@ function shell(spec, data) {
   const marchio = esc((b.name || m.title).toUpperCase());
   const filtriInRail = sh.rail > 0 && !sh.tools;
 
-  const barraFiltri = sh.tools ? `<div id="tools">${dateSlicer(spec)}${dimFilters(spec, false)}<div class="spacer"></div>
+  /* la riga "quanti anni" esiste solo se gli anni ci sono: sotto i tre e un controllo che
+     propone una scelta sola */
+  const storiaLarga = ((data && data.years) || []).length > 2;
+  const barraFiltri = sh.tools ? `<div id="tools">${dateSlicer(spec, storiaLarga)}${dimFilters(spec, false)}<div class="spacer"></div>
     <div class="ctxwrap" id="hCtx"></div>
     <button class="resetb" id="btnReset">${esc(T2.reset || 'Azzera filtri')}</button>${aiuto.bottone}</div>` : '';
 
@@ -1028,7 +1048,7 @@ function shell(spec, data) {
     <div class="brand"><div class="mk"><div class="sq"></div><div class="nm">${marchio}</div></div>
       ${b.tagline && !sh.tools ? `<div class="sub">${esc(b.tagline)}</div>` : ''}</div>
     ${navButtons(spec) ? `<div class="navgrp"><div class="rlbl">${esc(T2.report || 'Report')}</div>${navButtons(spec)}</div>` : ''}
-    ${filtriInRail ? dateSlicer(spec) + dimFilters(spec, true) : ''}
+    ${filtriInRail ? dateSlicer(spec, storiaLarga) + dimFilters(spec, true) : ''}
     ${m.source && !sh.tools ? `<div class="railfoot">${esc(m.source)}</div>` : ''}
   </div>
   ${corpo}
@@ -1048,6 +1068,9 @@ function tableJSON(t) {
 function dataJSON(data) {
   const parts = ['"dims":' + JSON.stringify(data.dims), '"years":' + JSON.stringify(data.years),
   '"facts":' + tableJSON(data.facts)];
+  /* solo quando dice qualcosa: se ogni anno e mensile — ed e il caso normale — la riga sarebbe
+     una ripetizione di `years` */
+  if (data.mensili && data.mensili.length < data.years.length) parts.push('"mensili":' + JSON.stringify(data.mensili));
   if (data.detail) parts.push('"detail":' + tableJSON(data.detail));
   if (data.detailModel) parts.push('"detailModel":' + JSON.stringify(data.detailModel));
   if (data.tieOut) parts.push('"tieOut":' + JSON.stringify(data.tieOut));
@@ -1127,10 +1150,10 @@ ${css(spec, compact).split('\n').map(l => l.trim()).filter(Boolean).join('\n')}
 </div></div>
 <div id="tip"></div>
 <script>
-${bundle(types)}
+${bundle(types, { finestra: ((data && data.years) || []).length > 2 })}
 var SPEC=${JSON.stringify(spec)};
 var DATA=${dataJSON(data)};
-MK.boot(SPEC,DATA,document);
+MK.__A=MK.boot(SPEC,DATA,document);
 </script>
 </body>
 </html>

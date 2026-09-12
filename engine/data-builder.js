@@ -100,7 +100,18 @@ function evalField(f, row, own, split, ctx) {
 function build(dp) {
   if (!dp || typeof dp !== 'object') fail('dataParams is missing');
   const years = dp.years || [2024, 2025];
-  if (years.length !== 2) fail('dataParams.years must hold exactly two years (prior, current)');
+  /* DUE ANNI SONO IL MINIMO, NON IL MASSIMO. Il minimo perche senza l'anno precedente ogni
+     variazione e inventata; il massimo era una restrizione che non serviva a niente e impediva
+     l'unica cosa che una storia lunga permette — guardarne tre dei dieci che si hanno.
+     Il tetto e la dimensione del file: gli anni moltiplicano le righe dei fatti, che viaggiano
+     dentro l'HTML, e oltre la dozzina il mockup diventa pesante senza diventare piu vero. */
+  if (years.length < 2) fail('dataParams.years: servono almeno due anni (il precedente e il corrente) — es. [2024, 2025]');
+  if (years.length > 12) fail(`dataParams.years: ${years.length} anni sono troppi (massimo 12): gli anni moltiplicano le righe dei fatti, che viaggiano dentro l'HTML`);
+  for (let i = 1; i < years.length; i++) {
+    if (years[i] !== years[i - 1] + 1) {
+      fail(`dataParams.years deve essere una serie CONTIGUA e crescente (${years.join(', ')}): la finestra temporale del report seleziona un intervallo, e un buco fra gli anni la renderebbe una selezione che il lettore non puo esprimere`);
+    }
+  }
   const seas = (dp.seasonality && dp.seasonality.length === 12) ? dp.seasonality : DEFAULT_SEAS;
   const facts = dp.facts || fail('dataParams.facts is missing');
   const fields = facts.fields || [];
@@ -213,14 +224,44 @@ function build(dp) {
     if (d.counts && d.counts.field) detailModel.counts = { field: d.counts.field, from: d.counts.from || d.counts.field };
   }
 
+  /* ---- 4.5 LA STORIA LONTANA COSTA, E NON LA GUARDA NESSUNO PER MESE ----
+     Ogni anno in piu sono dodici righe per membro dentro l'HTML: circa sei kilobyte. Dieci anni
+     a grana mensile sono centotredici kilobyte di file per un dettaglio che nessuno aprira mai
+     — nel 2017 di un mockup non si va a guardare marzo.
+     Quindi la profondita segue l'uso: gli ultimi anni restano mensili perche li si legge la
+     stagionalita e ci si confronta col precedente; gli anni piu vecchi si riducono a UNA riga
+     per membro, che tiene i totali esatti e perde solo la ripartizione fra i mesi.
+     Il report lo sa (`data.mensili`) e si comporta di conseguenza: su una finestra che pesca
+     nella storia lontana il trend passa a un punto per anno e i controlli del mese spariscono,
+     invece di disegnare undici mesi a zero e un picco a gennaio. */
+  const factDims = splitCfg ? [dimId, splitCfg.dim] : [dimId];
+  const profondita = Math.max(2, dp.dettaglioMesi === undefined ? 3 : dp.dettaglioMesi);
+  const mensili = years.slice(-profondita);
+  if (mensili.length < years.length) {
+    const somme = {}, ordine = [], numerici = fields.map(f => f.id);
+    grain.forEach(r => {
+      if (mensili.indexOf(r.y) >= 0) { ordine.push(r); return; }
+      const k = r.y + '|' + factDims.map(dd => r[dd]).join('|');
+      if (!somme[k]) {
+        somme[k] = Object.assign({}, r, { m: 0 });
+        numerici.forEach(c => { somme[k][c] = 0; });
+        ordine.push(somme[k]);
+      }
+      numerici.forEach(c => { somme[k][c] += r[c] || 0; });
+    });
+    grain = ordine;
+  }
+
   /* ---- 5. serialise ---- */
   const idx = {};
   Object.keys(dims).forEach(k => { idx[k] = {}; dims[k].forEach((m, i) => idx[k][m.id] = i); });
-  const factDims = splitCfg ? [dimId, splitCfg.dim] : [dimId];
   const cols = ['y', 'm'].concat(factDims).concat(fields.map(f => f.id));
   const data = {
     dims: dims,
     years: years,
+    /* quali anni hanno ancora i dodici mesi: il report ci decide se il mese e una domanda
+       che si puo fare */
+    mensili: mensili,
     facts: { cols: cols, rows: grain.map(r => cols.map(c => idx[c] ? idx[c][r[c]] : r[c])) },
     tieOut: {}
   };

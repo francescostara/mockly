@@ -624,6 +624,97 @@
       "impronta": "b5475b5a01d7",
       "data": "2026-09-12T12:02:41.622Z",
       "auto": "SPEDIBILE"
+    },
+    {
+      "id": "archetipi/canonical-funnel",
+      "nota": "",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 5,
+      "verdetto": "si",
+      "risolto": "si",
+      "versione": 5,
+      "impronta": "5460f26d9d15",
+      "data": "2026-09-12T12:25:55.842Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "locale/scuola-online",
+      "nota": "",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 5,
+      "verdetto": "si",
+      "risolto": "si",
+      "versione": 5,
+      "impronta": "5014d960ee81",
+      "data": "2026-09-12T12:26:14.167Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "banco/ribbon-sorpasso",
+      "nota": "",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 5,
+      "verdetto": "si",
+      "risolto": "no",
+      "versione": 4,
+      "impronta": "f8c626d496d7",
+      "data": "2026-09-12T12:26:27.349Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "banco/concentrazione",
+      "nota": "il grafico centrato con le legende affianco è meglio",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 5,
+      "verdetto": "si",
+      "risolto": "si",
+      "versione": 4,
+      "impronta": "5919dbd36e39",
+      "data": "2026-09-12T12:26:55.095Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "banco/immobiliare",
+      "nota": "",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 5,
+      "verdetto": "si",
+      "risolto": "no",
+      "versione": 4,
+      "impronta": "126c290fd62d",
+      "data": "2026-09-12T12:27:04.194Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "eval/ecommerce-retail",
+      "nota": "",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 5,
+      "verdetto": "si",
+      "risolto": "si",
+      "versione": 4,
+      "impronta": "e9dc9de66e5c",
+      "data": "2026-09-12T12:27:16.686Z",
+      "auto": "SPEDIBILE"
+    },
+    {
+      "id": "banco/filtro-organico",
+      "nota": "il padding nel pie chart è buono",
+      "numeri": 5,
+      "lingua": 5,
+      "lettura": 5,
+      "verdetto": "si",
+      "risolto": "si",
+      "versione": 4,
+      "impronta": "b73ac2c34671",
+      "data": "2026-09-12T12:27:36.487Z",
+      "auto": "SPEDIBILE"
     }
   ]
 }
