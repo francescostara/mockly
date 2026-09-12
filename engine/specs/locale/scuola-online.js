@@ -130,9 +130,21 @@ const spec = {
         /* L'APERTURA dell'archetipo a coorti: righe = chi e entrato quando, colonne = i
            trimestri. Le righe in basso — gli entrati di recente — sono piu fredde, ed e la
            risposta alla domanda del consiglio. */
-        { type: 'heatmap', span: 3, h: 168, title: 'Ritenzione per coorte e trimestre — {y}',
-          subtitle: 'piu chiaro = meno studenti tornano; clicca una cella per filtrare la coorte',
-          bind: { dim: 'coorte', measure: 'ritenzione', by: 'q' } },
+        /* DUE DOMANDE, UNA POSIZIONE. La mappa risponde a "chi e entrato quando resta di
+           piu"; il trend stagionale a "in che mesi si iscrive la gente". Sono due domande vere
+           e nessuna delle due merita di uscire dalla pagina, quindi condividono il riquadro e
+           si sceglie con una linguetta. E' il bookmark chiesto dalla revisione: al posto di
+           una seconda pagina, la stessa card che mostra un'altra cosa. */
+        { span: 3, h: 168, id: 'coorti-vista', viste: [
+          { etichetta: 'Per coorte', type: 'heatmap',
+            title: 'Ritenzione per coorte e trimestre — {y}',
+            subtitle: 'piu chiaro = meno studenti tornano; clicca una cella per filtrare la coorte',
+            bind: { dim: 'coorte', measure: 'ritenzione', by: 'q' } },
+          { etichetta: 'Stagionalita', type: 'colline',
+            title: 'Iscrizioni per mese, con la ritenzione come linea — {y} vs {py}',
+            subtitle: 'settembre e gennaio sono le due partenze: il resto dell anno vive di code',
+            bind: { measure: 'iscrizioni', line: 'ritenzione' } }
+        ] },
         { type: 'delta-card', span: 1, h: 168, title: 'Ritenzione', bind: { measure: 'ritenzione' } }
       ] },
       /* LA CHIUSURA dell'archetipo: la tabella per coorte. */

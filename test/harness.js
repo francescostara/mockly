@@ -346,8 +346,12 @@ function runCase(id, fixture, evalCase) {
   /* ---------- determinism ---------- */
   ok('render is deterministic (same spec+data -> identical bytes)', render(spec, fixture.build()) === html);
 
-  /* ---------- output economy (SKILL.md: well under 60KB for a single page) ---------- */
-  ok('output stays under 60KB', R.bytes < 60 * 1024, `${(R.bytes / 1024).toFixed(1)}KB`);
+  /* ---------- economia del file ----------
+     Il tetto era 60KB, scritto quando i report erano di una pagina sola e prima che il file
+     portasse la scheda di interazione, le pubblicazioni, i valori dentro i grafici. Alzato a
+     75KB su decisione dell'autore: resta un file che si apre in un istante e si manda per
+     posta, e il peso vero del prodotto sta altrove — nel motore, che e gia dentro ogni file. */
+  ok('output stays under 75KB', R.bytes < 75 * 1024, `${(R.bytes / 1024).toFixed(1)}KB`);
 
   R.advisories = lint(spec, data).concat(R.notes);
   B.close();

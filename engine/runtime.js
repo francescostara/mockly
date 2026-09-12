@@ -469,7 +469,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         'text-align:center;padding:14px;font-size:11px;color:var(--muted)">' + M.esc(na) + '</div>';
       var head = v.title ? '<div class="ch"><h3>' + M.esc(A.tpl(v.title)) + '</h3>' +
         (v.subtitle ? '<span class="hs">' + M.esc(A.tpl(v.subtitle)) + '</span>' : '') +
-        (v.note ? '<span class="hr">' + M.esc(A.tpl(v.note)) + '</span>' : '') + '</div>' : '';
+        (v.note ? '<span class="hr">' + (v.__noteHtml ? v.note : M.esc(A.tpl(v.note))) + '</span>' : '') + '</div>' : '';
       return '<div class="card" style="width:' + g.span(v.span) + 'px' + (opts.flex ? ';display:flex;flex-direction:column' : '') + '">' +
         head + (v.legend ? A.legend(v) : '') + body + '</div>';
     };
@@ -505,7 +505,30 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       return out;
     };
 
+    /* IL BOOKMARK — una posizione, piu visual, uno per volta.
+       Nasce da una richiesta precisa: "non aver paura di aggiungere una pagina, o meglio ancora
+       un bookmark che sostituisce una visual o due con una nuova". E' il modo in cui Power BI
+       fa stare in una pagina piu di quanto la pagina contenga, senza mandare il lettore su una
+       seconda schermata: la card resta dov'e, cambia cosa mostra.
+       Costa poco e rende molto: due domande diverse — "com'e distribuito" e "come va nel tempo"
+       — occupano lo stesso riquadro, e il lettore sceglie. Lo stato vive con i filtri, quindi
+       si azzera insieme a loro. */
     A.visual = function (v, row) {
+      var viste = v.viste;
+      if (viste && viste.length) {
+        var chiave = v.id || (v.type + ':' + (v.bind && v.bind.measure) + ':' + (v.span || 1));
+        var i = (S.vista || {})[chiave] || 0;
+        if (i >= viste.length) i = 0;
+        /* la vista scelta eredita posizione e altezza dal contenitore: cambia il contenuto,
+           non il posto che occupa — altrimenti la pagina ballerebbe a ogni clic */
+        var scelta = Object.assign({}, viste[i], { span: v.span, h: v.h });
+        scelta.note = viste.map(function (vi, k) {
+          return '<span class="vsw' + (k === i ? ' on' : '') + '" data-vista="' + chiave + ':' + k + '">' +
+            M.esc(vi.etichetta || vi.title || ('vista ' + (k + 1))) + '</span>';
+        }).join('');
+        scelta.__noteHtml = true;
+        return A.visual(scelta, row);
+      }
       var b = M.V[v.type];
       if (!b) return A.card(v, '<div class="mx">?</div>');
       return b(A, v, g.span(v.span), v.h || (row.flex ? 0 : 200));
@@ -590,7 +613,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           A.render(); return;
         }
         var pgb = cl('[data-page]'); if (pgb) { S.page = pgb.getAttribute('data-page'); S.drill = null; A.render(); return; }
-        if (cl('#btnReset')) { FDIMS.forEach(d => S.f[d.id] = null); S.q = null; S.mo = null; S.ord = {}; A.render(); return; }
+        if (cl('#btnReset')) { FDIMS.forEach(d => S.f[d.id] = null); S.q = null; S.mo = null; S.ord = {}; S.vista = {}; A.render(); return; }
         /* La scheda di interazione. Non passa da A.render(): e sopra il report, non dentro —
            aprirla non deve toccare lo stato dei filtri ne ridisegnare la pagina. */
         var hp = doc.getElementById('howp');
@@ -599,6 +622,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (cl('#btnBack')) { S.page = S.from; S.drill = null; A.render(); return; }
         /* l'intestazione ordina, e non filtra: il clic si ferma qui prima di arrivare a
            [data-f], che sulla stessa riga non c'e ma su altre tabelle potrebbe esserci */
+        /* la linguetta di una vista: cambia cosa mostra la card, niente altro */
+        var ve = cl('[data-vista]');
+        if (ve) {
+          var rawV = ve.getAttribute('data-vista'), ixV = rawV.lastIndexOf(':');
+          S.vista = S.vista || {};
+          S.vista[rawV.slice(0, ixV)] = +rawV.slice(ixV + 1);
+          A.render(); return;
+        }
         var oe = cl('[data-ord]');
         if (oe) {
           var raw2 = oe.getAttribute('data-ord'), ix2 = raw2.indexOf(':');
@@ -825,10 +856,27 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        bordo destro: il disegno appariva spinto a destra e senza aria, ed e il difetto che la
        revisione ha segnalato su quattro donut diversi. Ora si fissa il margine e l'anello si
        CENTRA nello spazio che gli resta, invece di stare a una frazione fissa. */
-    var PAD = 12, lx = Math.max(w * .56, w - 190);
-    var zona0 = PAD, zona1 = lx - 12;
-    var cx = (zona0 + zona1) / 2, cy = h / 2;
-    var rO = Math.max(18, Math.min((zona1 - zona0) / 2, h * .44)), rI = rO * .6;
+    /* ANELLO E LEGENDA SONO UN BLOCCO SOLO, CENTRATO INSIEME.
+       Il cuscinetto ai bordi non bastava, ed e il difetto che la revisione ha ripetuto tre
+       volte dicendo "non e cambiato nulla": il vuoto non era ai lati, era IN MEZZO. L'anello
+       stava al centro della sua meta e la legenda cominciava a una frazione fissa della
+       larghezza, e fra i due restavano centoquaranta pixel di niente mentre a sinistra ce
+       n'erano quaranta.
+       Ora si misurano le due parti — il diametro che l'altezza concede, e la legenda che serve
+       alle etichette vere — si sommano con una distanza fissa in mezzo, e il blocco si centra
+       nella card. Se avanza spazio, avanza in parti uguali ai due lati. */
+    var PAD = 12, GAP = 22;
+    var dia = Math.min(h * .88, (w - PAD * 2) * .5);
+    var wLeg = 0;
+    data.forEach(function (d) { wLeg = Math.max(wLeg, M.largh(d.l, 9.5)); });
+    /* la legenda porta anche valore e quota quando la card e larga */
+    var largaAbb = w > 300;
+    wLeg = Math.min(w - PAD * 2 - dia - GAP, wLeg + 12 + (largaAbb ? 78 : 34));
+    var blocco = dia + GAP + wLeg;
+    var x0 = Math.max(PAD, (w - blocco) / 2);
+    var cx = x0 + dia / 2, cy = h / 2;
+    var rO = Math.max(18, dia / 2), rI = rO * .6;
+    var lx = x0 + dia + GAP;
     var tot = data.reduce((a, d) => a + d.v, 0) || 1, ang = -Math.PI / 2;
     for (var _t = 0; _t < Math.min(testa, data.length); _t++) quotaTesta += data[_t].v;
     var s = '<svg width="' + w + '" height="' + h + '">';
@@ -862,18 +910,18 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* Legenda: sta accanto alla ciambella, e ogni voce filtra come la fetta.
        Il passo si adatta all'altezza della card, cosi non deborda quando il fit
        stringe il grafico (pattern-library, legende). */
-    var wide = w > 300;
+    var wide = largaAbb;
     var step = Math.max(11, Math.min(15.5, (h - 16) / Math.max(1, data.length)));
     var ly = cy - (data.length * step) / 2 + step * .7;
     data.forEach(function (d) {
       var dimd = S.f[dim] && S.f[dim] !== d.id;
       s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" data-f="' + dim + ':' + d.id +
         '" data-tip="<b>' + M.esc(d.l) + '</b><br>' + A.mfmt(ms, d.v) + '<br>' + f.pc(d.v / tot) + '">' +
-        '<rect x="' + lx + '" y="' + (ly - 7.5) + '" width="' + (w - lx - PAD) + '" height="' + Math.min(step, 15) + '" fill="transparent"/>' +
+        '<rect x="' + lx + '" y="' + (ly - 7.5) + '" width="' + wLeg + '" height="' + Math.min(step, 15) + '" fill="transparent"/>' +
         '<rect x="' + lx + '" y="' + (ly - 6.5) + '" width="8" height="8" rx="1.5" fill="' + d.c + '"/>' +
         '<text x="' + (lx + 12) + '" y="' + ly + '" font-size="9.5" fill="var(--ink2)">' + M.esc(d.l) + '</text>' +
-        (wide ? '<text x="' + (w - PAD - 30) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) + '</text>' : '') +
-        '<text x="' + (w - PAD) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted2)" class="tnum">' + f.pc(d.v / tot, 0) + '</text></g>';
+        (wide ? '<text x="' + (lx + wLeg - 32) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) + '</text>' : '') +
+        '<text x="' + (lx + wLeg) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted2)" class="tnum">' + f.pc(d.v / tot, 0) + '</text></g>';
       ly += step;
     });
     return A.card(v, s + '</svg>');
@@ -1045,7 +1093,22 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       line.forEach((val, k) => p += (k ? 'L' : 'M') + (mgn.l + cw * k + cw / 2).toFixed(1) + ',' + Y2(val).toFixed(1));
       s += '<path d="' + p + '" fill="none" stroke="var(--amber)" stroke-width="1.8"/>';
       line.forEach((val, k) => s += '<circle cx="' + (mgn.l + cw * k + cw / 2).toFixed(1) + '" cy="' + Y2(val).toFixed(1) + '" r="2.2" fill="var(--amber)"/>');
-      s += '<text x="' + (w - M.PAD) + '" y="' + (mgn.t + 6) + '" text-anchor="end" font-size="8.5" fill="var(--amber)">' + M.esc(A.meas(ln).label || '') + '</text>';
+      /* L'ETICHETTA STA ATTACCATA ALLA FINE DELLA LINEA, non nell'angolo in alto.
+         Nell'angolo era a mezza card di distanza dalla curva a cui si riferisce, e la revisione
+         l'ha segnalata due volte: "non si capisce subito a cosa fa riferimento". Ora parte
+         dall'ultimo punto, e se li non ci sta — la linea finisce alta e vicina al bordo — si
+         sposta sopra il punto invece di uscire dal riquadro. Il velo la tiene leggibile anche
+         quando cade sopra una colonna. */
+      var xUlt = mgn.l + cw * 11 + cw / 2, yUlt = Y2(line[11]);
+      var wLbl = M.largh(A.meas(ln).label || '', 8.5);
+      var accanto = xUlt + 8 + wLbl + 6 <= w - M.PAD;
+      /* accanto all'ultimo punto se ci sta, altrimenti SOPRA di esso — mai nell'angolo, che e
+         il posto piu lontano possibile dalla curva che l'etichetta nomina */
+      s += M.testoVelato(A.meas(ln).label || '',
+        accanto ? xUlt + 8 : Math.min(Math.max(xUlt, M.PAD + wLbl / 2), w - M.PAD - wLbl / 2),
+        accanto ? yUlt + 3 : Math.max(mgn.t + 8, yUlt - 10),
+        { px: 8.5, anc: accanto ? 'start' : 'middle', velo: 'var(--card)', opacita: 0.9,
+          ink: 'var(--amber)', padX: 4, padY: 2 });
     }
     return A.card(v, s + '</svg>');
   };

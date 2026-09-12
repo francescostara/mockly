@@ -46,6 +46,25 @@ export type BandStyle = 'box' | 'blocco';
  *  `aesthetic` resta il preset con un nome; `skin` sovrascrive un asse alla volta.
  *  8 archetipi x 4 shell x 13 palette x 8 tipografie x 3 densita = quasi diecimila facce, senza
  *  mantenere diecimila file. Vincoli e rotazione: skill/references/layout-archetypes.md. */
+/**
+ * UNA CARD, PIU VISTE — il "bookmark".
+ *
+ * Due domande diverse possono meritare lo stesso posto in pagina: "chi e entrato quando resta
+ * di piu" e "in che mesi si iscrive la gente" sono entrambe vere, e nessuna delle due merita
+ * di finire su una seconda schermata. Il contenitore dichiara span e altezza; le viste
+ * dichiarano cosa mostrare, e il lettore sceglie con una linguetta nell'intestazione.
+ *
+ * La PRIMA vista e quella che si vede aprendo il file: e su quella che il motore giudica
+ * l'archetipo, il fit e la geometria. L'azzeramento dei filtri riporta ogni card alla prima.
+ */
+export interface CardAVista {
+  /** identita stabile della posizione: serve a ricordare quale vista e scelta */
+  id?: string;
+  span: number;
+  h?: number;
+  viste: Array<Visual & { etichetta?: string }>;
+}
+
 export interface Skin {
   shell?: Shell;
   palette?: PaletteFamily;

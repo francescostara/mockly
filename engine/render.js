@@ -248,6 +248,28 @@ function fitPage(spec, page, data) {
 }
 
 /** Applica il fit a ogni pagina, su una copia: la spec del chiamante non viene toccata. */
+/**
+ * LE CARD A PIU VISTE, appianate per tutto cio che non e il clic.
+ *
+ * Un contenitore con `viste` non ha un tipo suo: ne ha due o tre, uno per vista. Ma il fit deve
+ * sapere quanto e alto, la validazione quale archetipo apre la pagina, il bundler quali pezzi
+ * di runtime servono — e nessuno di loro puo ragionare su un visual senza tipo.
+ * Qui il contenitore prende addosso la sua PRIMA vista, che e quella che il lettore vede
+ * aprendo il file, e si tiene le altre per il runtime. Cosi ogni controllo a valle vede un
+ * visual normale, e il bundler riceve i tipi di tutte le viste — perche una qualunque puo
+ * finire a schermo con un clic.
+ */
+function espandiViste(spec) {
+  const pagine = (spec.pages || []).concat(spec.drill && spec.drill.page ? [spec.drill.page] : []);
+  pagine.forEach(pg => (pg.rows || []).forEach(row => {
+    (row.visuals || []).forEach((v, i) => {
+      if (!v.viste || !v.viste.length) return;
+      const base = { span: v.span, h: v.h, id: v.id, viste: v.viste };
+      row.visuals[i] = Object.assign({}, v.viste[0], base);
+    });
+  }));
+}
+
 function fitSpec(spec, data) {
   /* Il file emesso porta dentro la spec GIA adattata, perche il runtime ha bisogno delle
      altezze che sono state davvero disegnate. Ri-renderizzare quel file la adatterebbe una
@@ -258,6 +280,7 @@ function fitSpec(spec, data) {
   const copy = JSON.parse(JSON.stringify(spec));
   const report = [];
   copy.__fit = true;
+  espandiViste(copy);
   copy.pages.forEach(p => { const r = fitPage(copy, p, data); if (r && r.scaled) report.push({ page: p.id, ...r }); });
   if (copy.drill && copy.drill.page) {
     const r = fitPage(copy, copy.drill.page, data);
@@ -483,6 +506,9 @@ function validate(spec, data) {
       row.visuals.forEach(v => {
         if (!Number.isInteger(v.span)) e.push(`page "${pg.id}": non-integer span ${v.span} (off-grid width)`);
         types.add(v.type);
+        /* anche i tipi delle viste alternative: una di loro finira a schermo al primo clic, e
+           il suo pezzo di runtime deve essere nel file */
+        (v.viste || []).forEach(vi => { if (vi.type) types.add(vi.type); });
         const b = v.bind || {};
         if (b.measure && !known.has(b.measure)) e.push(`page "${pg.id}" ${v.type}: unknown measure "${b.measure}"`);
         if (b.dim && !(data.dims || {})[b.dim]) e.push(`page "${pg.id}" ${v.type}: unknown dim "${b.dim}"`);
@@ -695,7 +721,12 @@ function validate(spec, data) {
   return { types: [...types], advisories: warn };
 }
 const lint = (spec, data) => {
-  const a = validate(spec, data).advisories;
+  /* Si valida la spec APPIANATA, come fa il render: un contenitore a piu viste non ha un tipo
+     suo, e chi lo guarda senza espanderlo vede un visual senza tipo e si ferma. La copia serve
+     a non toccare la spec dell'autore, che e sua. */
+  const piatta = JSON.parse(JSON.stringify(spec));
+  espandiViste(piatta);
+  const a = validate(piatta, data).advisories;
   fitSpec(spec, data).report.forEach(r => {
     if (r.tight) a.push("pagina \"" + r.page + "\": troppe righe per il canvas — grafici al minimo leggibile e la matrice perde " + r.over + "px. Togli una riga, oppure usa una estetica con shell piu bassa.");
     else a.push("pagina \"" + r.page + "\": altezze riscalate a " + r.k + "x per stare nel canvas 720px" + (r.dense ? ", pagina densa" : "") + ".");
@@ -862,6 +893,12 @@ ${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri sparis
 .card .ch h3{margin:0;font-family:var(--fontDisp);font-size:12px;font-weight:600;color:var(--ink);letter-spacing:-.1px}
 .card .ch .hs{font-size:9.5px;color:var(--muted)}
 .card .ch .hr{margin-left:auto;font-size:9px;color:var(--muted2)}
+/* le linguette di una card a piu viste: piccole, in fondo all'intestazione, e si vede quale
+   comanda — sono un interruttore, non una decorazione */
+.vsw{display:inline-block;margin-left:5px;padding:2px 8px;border:1px solid var(--line);
+  border-radius:999px;font-size:9px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.vsw:hover{color:var(--ink2);border-color:var(--muted2)}
+.vsw.on{background:var(--c2);border-color:var(--c2);color:#fff;font-weight:600}
 .kpi{padding:11px 14px 10px;display:flex;flex-direction:column;justify-content:space-between}
 .kpi .k{font-size:9px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);font-weight:600}
 .kpi .vr{display:flex;align-items:flex-end;gap:7px;margin-top:6px}
