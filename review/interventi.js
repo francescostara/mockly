@@ -353,72 +353,55 @@ const INTERVENTI = [
     stato: 'parziale'
   },
 
-  /* ---------------------------------------------------------------- quarto giro */
+  /* ------------------------------------------------------------ quarto giro */
   {
-    id: 'banco/concentrazione', versione: 3,
-    commento: 'commento di prima sul padding',
-    dove: 'donut',
-    fatto: 'Avevo capito male due volte: il cuscinetto lo mettevo ai BORDI, mentre il vuoto era ' +
-      'IN MEZZO — fra l'anello e la legenda restavano centoquaranta pixel mentre a sinistra ce ' +
-      'n'erano quaranta. Ora anello e legenda sono un blocco solo: si misurano le due parti, si ' +
-      'sommano con una distanza fissa, e il blocco si centra nella card. Margini uguali ai due ' +
-      'lati. Resta la fetta staccata, che e una scelta di disegno.',
-    stato: 'parziale'
+    id: "banco/concentrazione", versione: 3,
+    commento: "commento di prima sul padding",
+    dove: "donut",
+    fatto: "Avevo capito male due volte: il cuscinetto lo mettevo ai BORDI, mentre il vuoto era IN MEZZO — fra l'anello e la legenda restavano centoquaranta pixel mentre a sinistra ce n'erano quaranta. Ora anello e legenda sono un blocco solo: si misurano le due parti, si sommano con una distanza fissa, e il blocco si centra nella card. Margini uguali ai due lati. Resta la fetta staccata, che e una scelta di disegno da fare insieme.",
+    stato: "parziale"
   },
   {
-    id: 'eval/ecommerce-retail', versione: 3,
-    commento: 'non e cambiato nulla',
-    dove: 'donut · colline',
-    fatto: 'Vero: il donut era centrato coi bordi, non col contenuto. Sistemato come sopra. E ' +
-      'l'etichetta del return rate non sta piu nell'angolo in alto ma a dieci pixel ' +
-      'dall'ultimo punto della sua linea, col velo che la tiene leggibile sopra le colonne — ' +
-      'invece della legenda in basso, che allontanava di nuovo il nome dalla curva.',
-    stato: 'fatto'
+    id: "eval/ecommerce-retail", versione: 3,
+    commento: "non e cambiato nulla",
+    dove: "donut · colline",
+    fatto: "Vero: il donut era centrato coi bordi, non col contenuto. Sistemato come sopra. E l'etichetta del return rate non sta piu nell'angolo in alto ma a dieci pixel dall'ultimo punto della sua linea, col velo che la tiene leggibile sopra le colonne — invece della legenda in basso, che avrebbe allontanato di nuovo il nome dalla curva.",
+    stato: "fatto"
   },
   {
-    id: 'banco/filtro-organico', versione: 3,
-    commento: 'ok per la tabella ma manca ancora il padding giusto',
-    dove: 'donut',
-    fatto: 'Stessa causa e stessa cura: il blocco anello+legenda ora si centra invece di stare ' +
-      'a una frazione fissa. Restano CPM e pubblicazioni da portare anche in questo caso.',
-    stato: 'parziale'
+    id: "banco/filtro-organico", versione: 3,
+    commento: "ok per la tabella ma manca ancora il padding giusto",
+    dove: "donut",
+    fatto: "Stessa causa e stessa cura: il blocco anello+legenda ora si centra invece di stare a una frazione fissa della larghezza. Restano CPM e pubblicazioni da portare anche in questo caso.",
+    stato: "parziale"
   },
   {
-    id: 'archetipi/canonical-funnel', versione: 4,
-    commento: 'stesso problema di prima per win rate. il cuscinetto e applicato a destra ' +
-      'rispetto al mio primo commento ma a sinistra e ancora un po' stretto.',
-    dove: 'colline',
-    fatto: 'L'etichetta del win rate stava nell'angolo in alto a destra, cioe nel posto piu ' +
-      'lontano possibile dalla curva che nomina. Ora e attaccata alla fine della linea — dieci ' +
-      'pixel dall'ultimo punto — e se li non ci sta si mette sopra il punto, mai nell'angolo.',
-    stato: 'fatto'
+    id: "archetipi/canonical-funnel", versione: 4,
+    commento: "stesso problema di prima per win rate. il cuscinetto e applicato a destra rispetto al mio primo commento ma a sinistra e ancora un po' stretto.",
+    dove: "colline",
+    fatto: "L'etichetta del win rate stava nell'angolo in alto a destra, cioe nel posto piu lontano possibile dalla curva che nomina. Ora e attaccata alla fine della linea — dieci pixel dall'ultimo punto — e se li non ci sta si mette sopra il punto, mai nell'angolo.",
+    stato: "fatto"
   },
   {
-    id: 'locale/scuola-online', versione: 4,
-    commento: 'non ancora affrontato (spazio per i trend stagionali)',
-    dove: 'bookmark',
-    fatto: 'Fatto col BOOKMARK che hai suggerito tu, invece che con una pagina in piu: la card ' +
-      'della heatmap ospita due viste — "Per coorte" e "Stagionalita" — e si sceglie con una ' +
-      'linguetta nell'intestazione. La prima e quella che si apre; l'azzeramento dei filtri ' +
-      'riporta la card alla prima vista. Il meccanismo e generale, non un caso speciale di ' +
-      'questo mockup.',
-    stato: 'fatto'
+    id: "locale/scuola-online", versione: 4,
+    commento: "non ancora affrontato (spazio per i trend stagionali)",
+    dove: "bookmark",
+    fatto: "Fatto col BOOKMARK che hai suggerito tu, invece che con una pagina in piu: la card della heatmap ospita due viste — Per coorte e Stagionalita — e si sceglie con una linguetta nell'intestazione. La prima e quella che si apre; l'azzeramento dei filtri riporta la card alla prima vista. Il meccanismo e generale, non un caso speciale di questo mockup.",
+    stato: "fatto"
   },
   {
-    id: 'banco/ribbon-sorpasso', versione: 3,
-    commento: 'Iniziamo a poter selezionare piu di un time period assieme, pensa ad una ' +
-      'soluzione, il ribbon chart deve adeguarsi di conseguenza e diventare piu lungo o piu corto.',
-    dove: 'slicer · ribbon',
-    fatto: '',
-    stato: 'aperto'
+    id: "banco/ribbon-sorpasso", versione: 3,
+    commento: "Iniziamo a poter selezionare piu di un time period assieme, pensa ad una soluzione, il ribbon chart deve adeguarsi di conseguenza e diventare piu lungo o piu corto.",
+    dove: "slicer · ribbon",
+    fatto: "",
+    stato: "aperto"
   },
   {
-    id: 'banco/immobiliare', versione: 3,
-    commento: 'iniziamo a pensare a come inserire un date range piu lungo ed applicarlo ' +
-      'dinamicamente anche al ribbon chart',
-    dove: 'slicer · ribbon',
-    fatto: '',
-    stato: 'aperto'
+    id: "banco/immobiliare", versione: 3,
+    commento: "iniziamo a pensare a come inserire un date range piu lungo ed applicarlo dinamicamente anche al ribbon chart",
+    dove: "slicer · ribbon",
+    fatto: "",
+    stato: "aperto"
   }
 ];
 
