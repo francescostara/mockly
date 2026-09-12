@@ -47,8 +47,11 @@ ok('il ribbon disegna tutti i periodi con tutte le entita', () => {
 /* Il dato costruito: Nord scende, Sud sale. Prima si verifica che il SORPASSO esista davvero
    nei numeri — se non ci fosse, il test del disegno non direbbe niente. */
 ok('nel dato Nord e davanti a Sud nel primo periodo e dietro nell ultimo', () => {
+  /* L'anno corrente e l'ULTIMO della serie, non il secondo: da quando una spec puo portare
+     cinque anni di storia, `years[1]` e un anno qualunque in mezzo. */
+  const corrente = data.years[data.years.length - 1];
   const somma = (id, mesi) => data.facts.rows
-    .filter(r => r[data.facts.cols.indexOf('y')] === data.years[1] &&
+    .filter(r => r[data.facts.cols.indexOf('y')] === corrente &&
       mesi.includes(r[data.facts.cols.indexOf('m')]) &&
       data.dims.area[r[data.facts.cols.indexOf('area')]].id === id)
     .reduce((a, r) => a + r[data.facts.cols.indexOf('rev')], 0);

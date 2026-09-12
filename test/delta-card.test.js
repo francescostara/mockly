@@ -50,7 +50,7 @@ ok('la card scrive la variazione, non il livello', () => {
 
 ok('la riga di dettaglio nomina i due periodi e porta la variazione assoluta', () => {
   const ric = carte.filter(c => c.titolo === 'Ricavi')[0];
-  const anno = data.years[1];
+  const anno = data.years[data.years.length - 1];   /* l'ultimo, non il secondo */
   assert.ok(ric.det.includes(String(anno)) && ric.det.includes(String(anno - 1)),
     'i due periodi vanno nominati: "+14,2%" senza sapere fra cosa e cosa non e un dato');
   assert.match(ric.det, /[+−]€/, 'la variazione assoluta e meta dell\'informazione');

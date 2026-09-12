@@ -26,12 +26,17 @@ const dataParams = {
         /* Nord parte alto e scende, Sud parte basso e sale: si incrociano dentro l'anno */
         /* la stagionalita PER MEMBRO e cio che rende possibile il sorpasso dentro l'anno:
            la crescita agisce fra gli anni, quindi da sola lascia i ranghi immobili */
-        { id: 'nord', n: 'Nord', c: '#12304F', base: 52000, growth: -0.18, attrs: { deal: 4200 },
+        /* La crescita e ANNUA e si compone: con cinque anni di storia i vecchi -18% e +34%
+           portavano il Sud tanto avanti che nel 2025 il sorpasso era gia avvenuto a gennaio, e
+           il ribbon tornava a essere un area chart. I tassi qui sotto sono gli stessi di prima
+           presi alla radice quarta: l'anno corrente arriva agli stessi livelli, e la storia
+           dietro e una salita lenta invece di un salto. */
+        { id: 'nord', n: 'Nord', c: '#12304F', base: 52000, growth: -0.049, attrs: { deal: 4200 },
           seasonality: [1.45, 1.40, 1.32, 1.18, 1.05, 0.95, 0.86, 0.80, 0.74, 0.70, 0.65, 0.62] },
-        { id: 'sud', n: 'Sud', c: '#A8926E', base: 46000, growth: 0.34, attrs: { deal: 3100 },
+        { id: 'sud', n: 'Sud', c: '#A8926E', base: 46000, growth: 0.076, attrs: { deal: 3100 },
           seasonality: [0.58, 0.64, 0.72, 0.84, 0.96, 1.06, 1.16, 1.24, 1.32, 1.40, 1.48, 1.56] },
-        { id: 'centro', n: 'Centro', c: '#4A7FA8', base: 44000, growth: 0.05, attrs: { deal: 3800 } },
-        { id: 'isole', n: 'Isole', c: '#7FA8C6', base: 19000, growth: 0.12, attrs: { deal: 2600 } }
+        { id: 'centro', n: 'Centro', c: '#4A7FA8', base: 44000, growth: 0.012, attrs: { deal: 3800 } },
+        { id: 'isole', n: 'Isole', c: '#7FA8C6', base: 19000, growth: 0.029, attrs: { deal: 2600 } }
       ]
     }
   },

@@ -45,7 +45,7 @@ ok('il gauge su una misura ASSOLUTA e rifiutato dalla grammatica', () => {
 /* La prova che il divieto non e pedanteria: col valore assoluto il numero SAREBBE sbagliato. */
 ok('col valore assoluto il gauge direbbe davvero un numero falso sotto filtro', () => {
   const cols = data.facts.cols, iSeg = cols.indexOf('segmento'), iVinto = cols.indexOf('vinto');
-  const iY = cols.indexOf('y'), anno = data.years[1];
+  const iY = cols.indexOf('y'), anno = data.years[data.years.length - 1];   /* l'ultimo */
   const totale = data.facts.rows.filter(r => r[iY] === anno).reduce((a, r) => a + r[iVinto], 0);
   const soloEnt = data.facts.rows
     .filter(r => r[iY] === anno && data.dims.segmento[r[iSeg]].id === 'ent')
