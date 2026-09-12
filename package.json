@@ -14,7 +14,8 @@
     "templates": "node test/templates.js",
     "locale": "node test/locale.js",
     "catalogo": "node test/catalogo.js",
-    "review": "node review/server.js"
+    "review": "node review/server.js",
+    "intervista": "node intervista/server.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
