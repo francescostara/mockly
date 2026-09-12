@@ -13,7 +13,11 @@ const builder = require('../../data-builder.js');
 
 const dataParams = {
   seed: 8123,
-  years: [2024, 2025],
+  /* CINQUE ANNI DI STORIA, non due: e la richiesta arrivata in revisione ("un date range piu
+     lungo applicato dinamicamente"). Gli ultimi tre restano mensili, i due piu vecchi arrivano
+     gia sommati per anno — il selettore "Quanti anni" li rende guardabili, il file resta leggero.
+     Vedi engine/data-builder.js, passo 4.5. */
+  years: [2021, 2022, 2023, 2024, 2025],
   /* piatta di proposito: il sorpasso deve venire dalla crescita delle aree, non dalla stagione */
   seasonality: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   dims: {

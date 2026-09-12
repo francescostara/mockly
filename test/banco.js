@@ -16,6 +16,7 @@ const templates = require('../engine/templates/index.js');
 const pelli = require('../engine/specs/banco/pelli.js');
 const SCHEDA = require('../engine/scheda.js');
 const fixtures = require('../engine/specs/index.js');
+const { TETTO_BYTE } = require('./harness.js');
 
 const out = path.join(__dirname, '..', 'out', 'banco');
 fs.mkdirSync(out, { recursive: true });
@@ -29,8 +30,14 @@ const rendi = (id, entry, gruppo) => {
   if (html) fs.writeFileSync(path.join(out, id + '.html'), html);
   const note = html ? lint(entry.spec, data) : [];
   voci.push({ id, nome: entry.name || id, gruppo, kb: html ? Math.round(Buffer.byteLength(html) / 1024) : 0, errore, note });
-  console.log('  ' + (errore ? 'ERRORE  ' : 'ok      ') + id.padEnd(24) +
-    (errore ? errore.slice(0, 90) : voci[voci.length - 1].kb + 'KB'));
+  /* IL PESO SI DICE. Il tetto del file (75KB) era verificato solo sui quattro casi dell'eval:
+     i mockup del banco potevano ingrassare senza che nessuno se ne accorgesse, ed e successo.
+     Qui non fallisce — il banco serve a guardare, non a sbarrare — ma la riga lo dice forte,
+     e la stessa costante di harness.js decide cosa e "troppo". */
+  const grasso = html && Buffer.byteLength(html) > TETTO_BYTE;
+  console.log('  ' + (errore ? 'ERRORE  ' : (grasso ? 'PESANTE ' : 'ok      ')) + id.padEnd(24) +
+    (errore ? errore.slice(0, 90) : voci[voci.length - 1].kb + 'KB' +
+      (grasso ? '   oltre il tetto di ' + (TETTO_BYTE / 1024) + 'KB' : '')));
   note.forEach(n => console.log('          nota: ' + n));
 };
 

@@ -32,7 +32,15 @@ const CRESCITA = [0.66, 0.70, 0.78, 0.88, 0.98, 1.08, 1.14, 0.82, 1.26, 1.34, 1.
 
 const dataParams = {
   seed: 60421,
-  years: [2024, 2025],
+  /* CINQUE ANNI DI STORIA, non due: e la richiesta arrivata in revisione ("un date range piu
+     lungo applicato dinamicamente"). Gli ultimi tre restano mensili, i due piu vecchi arrivano
+     gia sommati per anno — il selettore "Quanti anni" li rende guardabili, il file resta leggero.
+     Vedi engine/data-builder.js, passo 4.5. */
+  years: [2021, 2022, 2023, 2024, 2025],
+  /* Il grano di questo caso e largo (venticinque combinazioni per mese): con tre anni mensili
+     il file passerebbe di un pezzo il tetto. Due bastano — il confronto con l'anno prima resta
+     intero, e gli altri tre anni si guardano per anno. */
+  dettaglioMesi: 2,
   /* il mercato immobiliare italiano: primavera e autunno forti, agosto fermo, dicembre lento */
   seasonality: [0.88, 0.94, 1.12, 1.18, 1.14, 1.02, 0.90, 0.52, 1.06, 1.22, 1.16, 0.86],
   dims: {

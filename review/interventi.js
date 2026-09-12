@@ -390,17 +390,27 @@ const INTERVENTI = [
     stato: "fatto"
   },
   {
-    id: "banco/ribbon-sorpasso", versione: 3,
+    id: "banco/ribbon-sorpasso",
+    versione: 3,
     commento: "Iniziamo a poter selezionare piu di un time period assieme, pensa ad una soluzione, il ribbon chart deve adeguarsi di conseguenza e diventare piu lungo o piu corto.",
-    dove: "slicer · ribbon",
-    fatto: "",
-    stato: "aperto"
+    dove: "slicer · ribbon · runtime",
+    fatto: "Il selettore del periodo ha una domanda in piu, \"Quanti anni\", che allarga la finestra all’indietro a partire dall’anno scelto: la selezione resta una sola e contigua, e ogni visual la legge dal layer condiviso. Il confronto si sposta con lei — tre anni contro i tre precedenti, non contro l’anno prima. Il ribbon cambia grano da solo: quattro trimestri dentro un anno, dodici su due o tre anni, un anno per colonna da quattro in su, perche con ventotto colonne i sorpassi non si vedono piu. Il mockup ora porta cinque anni di storia. Gate: test/tempo.test.js.",
+    stato: "fatto"
   },
   {
-    id: "banco/immobiliare", versione: 3,
+    id: "banco/immobiliare",
+    versione: 3,
     commento: "iniziamo a pensare a come inserire un date range piu lungo ed applicarlo dinamicamente anche al ribbon chart",
-    dove: "slicer · ribbon",
-    fatto: "",
+    dove: "slicer · ribbon · data-builder",
+    fatto: "Cinque anni di storia al posto di due, e la finestra li rende guardabili a gruppi. Perche una storia lunga non gonfi il file, gli anni oltre gli ultimi (qui gli ultimi due) arrivano gia sommati per anno: i totali restano esatti e si perde solo la ripartizione fra i mesi, che su un 2021 di mockup non guarda nessuno. Dove i mesi non ci sono, i controlli di trimestre e mese si nascondono invece di azzerare la pagina.",
+    stato: "fatto"
+  },
+  {
+    id: "banco/immobiliare",
+    versione: 4,
+    commento: "(trovato dal motore, non da te) il file di questo mockup pesa oltre il tetto.",
+    dove: "peso del file",
+    fatto: "Il tetto di 75KB era verificato solo sui quattro casi dell’eval: i mockup del banco potevano ingrassare senza che nessuno se ne accorgesse, e immobiliare era gia a 85KB prima di questo giro (94KB con i cinque anni). Ora `npm run banco` scrive PESANTE accanto a chi sfora, con la stessa costante di harness.js. Resta da fare la cura: il grano dei fatti di questo caso e largo (venticinque combinazioni per mese) e va stretto, oppure il caso va spezzato.",
     stato: "aperto"
   }
 ];
