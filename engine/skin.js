@@ -242,6 +242,13 @@ function palette(id, opz) {
      sul quinto gradino di una famiglia chiara il nero tiene, su una scura tiene il bianco, e su
      qualche famiglia intermedia la risposta non e quella che ci si aspetta. */
   t.heatInk = COL.contrasto('#FFFFFF', t.heat5) > COL.contrasto(ink, t.heat5) ? '#FFFFFF' : ink;
+  /* LA FETTA "ALTRI". Non e una categoria: e la somma di tutto cio che non e in testa. Quindi non
+     prende un colore dalla scala categoriale — prenderlo vorrebbe dire presentarla come un
+     cliente o un canale come gli altri — ma un grigio neutro, impastato da carta e inchiostro
+     della pelle, cosi sta bene su ogni famiglia. Deve comunque staccare dalla card (3:1, la
+     soglia WCAG per gli elementi grafici), e la cifra sopra si sceglie misurando. */
+  t.altri = COL.aggiusta(mix(card, ink, 0.30), card, 3);
+  t.altriInk = COL.contrasto('#FFFFFF', t.altri) > COL.contrasto(ink, t.altri) ? '#FFFFFF' : ink;
   /* i tre nomi storici restano: la matrice li usa, e cambiare due visual insieme e il modo
      migliore per non capire quale dei due ha rotto qualcosa */
   t.heatLo = t.heat1; t.heatMid = t.heat3; t.heatHi = t.heat5;

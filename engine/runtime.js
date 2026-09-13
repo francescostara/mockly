@@ -1090,7 +1090,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var coda = data.slice(b.topN).reduce((a, d) => a + d.v, 0);
       data = data.slice(0, b.topN);
       testa = b.topN;
-      data.push({ id: '__altri', l: b.altriLabel || (A.T.others || 'Altri'), c: 'var(--muted3)', v: coda, coda: true });
+      data.push({ id: '__altri', l: b.altriLabel || (A.T.others || 'Altri'), c: 'var(--altri)', v: coda, coda: true });
     }
     /* IL CUSCINETTO E' COSTANTE DA TUTTE E DUE LE PARTI. Prima l'anello stava al 30% della
        larghezza con un margine sinistro del 4%, e la legenda arrivava a quattro pixel dal
@@ -1116,7 +1116,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var blocco = dia + GAP + wLeg;
     var x0 = Math.max(PAD, (w - blocco) / 2);
     var cx = x0 + dia / 2, cy = h / 2;
-    var rO = Math.max(18, dia / 2), rI = rO * .6;
+    /* LO STACCO DI "ALTRI": tre pixel, non di piu. Deve bastare a dire "questa fetta e diversa
+       dalle altre" senza chiamare l'occhio: il donut esiste per mostrare quanto pesa la TESTA,
+       e una coda esplosa in fuori diventerebbe la cosa piu vistosa della card. Il raggio cede
+       quei tre pixel, cosi la fetta staccata resta dentro il riquadro. */
+    var STACCO = data.some(d => d.coda) ? 3 : 0;
+    var rO = Math.max(18, dia / 2 - STACCO), rI = rO * .6;
     var lx = x0 + dia + GAP;
     var tot = data.reduce((a, d) => a + d.v, 0) || 1, ang = -Math.PI / 2;
     for (var _t = 0; _t < Math.min(testa, data.length); _t++) quotaTesta += data[_t].v;
@@ -1128,7 +1133,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var dim2 = S.f[dim] && S.f[dim] !== d.id;
       /* Rosso solo al problema: lo spicchio segnalato dalla spec, mai una tinta a caso. */
       var col = (b.alert && b.alert === d.id) ? 'var(--bad)' : d.c;
-      s += '<path class="hit ' + (dim2 ? 'dimd' : '') + '" d="M' + p1[0] + ',' + p1[1] + ' A' + rO + ',' + rO + ' 0 ' + big + ' 1 ' + p2[0] + ',' + p2[1] +
+      var sp = d.coda ? STACCO : 0, amS = (ang + a2) / 2;
+      var tr = sp ? ' transform="translate(' + (sp * Math.cos(amS)).toFixed(2) + ',' + (sp * Math.sin(amS)).toFixed(2) + ')"' : '';
+      s += '<path class="hit ' + (dim2 ? 'dimd' : '') + (d.coda ? ' altri' : '') + '"' + tr + ' d="M' + p1[0] + ',' + p1[1] + ' A' + rO + ',' + rO + ' 0 ' + big + ' 1 ' + p2[0] + ',' + p2[1] +
         ' L' + p3[0] + ',' + p3[1] + ' A' + rI + ',' + rI + ' 0 ' + big + ' 0 ' + p4[0] + ',' + p4[1] + ' Z" fill="' + col +
         '" stroke="var(--card)" stroke-width="1.5" data-f="' + dim + ':' + (d.coda ? '' : d.id) + '" data-tip="<b>' + M.esc(d.l) + '</b><br>' +
         A.mfmt(ms, d.v) + '<br>' + f.pc(d.v / tot) + '"/>';
@@ -1136,8 +1143,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          valore sta gia nella legenda e nel tooltip. Sotto il 9% non ci sta e si omette. */
       if (d.v / tot >= 0.09 && !dim2) {
         var am = (ang + a2) / 2, rm = (rO + rI) / 2;
-        s += '<text x="' + (cx + rm * Math.cos(am)).toFixed(1) + '" y="' + (cy + rm * Math.sin(am) + 3).toFixed(1) +
-          '" text-anchor="middle" font-size="9" font-weight="600" fill="#fff" class="tnum" ' +
+        s += '<text' + tr + ' x="' + (cx + rm * Math.cos(am)).toFixed(1) + '" y="' + (cy + rm * Math.sin(am) + 3).toFixed(1) +
+          '" text-anchor="middle" font-size="9" font-weight="600" fill="' + (d.coda ? 'var(--altriInk)' : '#fff') + '" class="tnum" ' +
           'style="pointer-events:none">' + f.pc(d.v / tot, 0) + '</text>';
       }
       ang = a2;

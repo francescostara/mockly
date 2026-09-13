@@ -93,5 +93,23 @@ ok('ogni entita tiene lo stesso colore su tutti i periodi', () => {
   });
 });
 
+/* IL BERSAGLIO E' IL NASTRO. Dalla revisione: "i filtri non funzionano". Funzionavano — ma il
+   clic rispondeva solo su una fascetta di dieci pixel a ogni periodo, e il nastro, che e la cosa
+   grande e colorata che chiunque prova a cliccare, non faceva niente. Il fix rende cliccabile
+   l'intero nastro; questa prova impedisce che torni la fascetta. */
+ok('il nastro intero filtra, non solo la fascetta del periodo', () => {
+  const nastri = [...doc.querySelectorAll('path.hit[data-f^="area:"]')];
+  const periodi = ancore().length;
+  assert.strictEqual(nastri.length, data.dims.area.length * (periodi - 1),
+    'ogni entita deve avere un nastro cliccabile fra ogni coppia di periodi: trovati ' + nastri.length);
+  const kpi = () => [...doc.querySelectorAll('#page .kpi .v')].map(e => e.textContent).join('|');
+  const prima = kpi();
+  const bersaglio = nastri.filter(p => p.getAttribute('data-f') === 'area:sud')[0];
+  bersaglio.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+  assert.strictEqual(dom.window.MK.__A.S.f.area, 'sud', 'il clic sul nastro deve accendere il filtro');
+  assert.notStrictEqual(kpi(), prima, 'e i numeri della pagina devono muoversi');
+  doc.getElementById('btnReset').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+});
+
 dom.window.close();
 console.log('  ' + n + ' checks');
