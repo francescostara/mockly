@@ -51,6 +51,8 @@ export default function Page() {
   const [risposte, setRisposte] = useState<string[]>([]);
   const [incollata, setIncollata] = useState('');
   const [copiato, setCopiato] = useState(false);
+  /* il kit Power BI arriva col mockup: guida, tema e dati, tre file da scaricare */
+  const [kitPbi, setKitPbi] = useState<{ guida: string; tema: string; csv: string } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const t = STRINGS[lang];
@@ -137,6 +139,7 @@ export default function Page() {
         return;
       }
       setIncolla(null);
+      setKitPbi(data.powerbi || null);
       setHtml(data.html);
       setMeta(data.meta);
       setRuns(r => ({ n: r.n + 1, costUsd: r.costUsd + (data.meta?.costUsd || 0) }));
@@ -147,15 +150,19 @@ export default function Page() {
     }
   }
 
-  function download() {
-    if (!html) return;
-    const blob = new Blob([html], { type: 'text/html' });
+  function salvaFile(contenuto: string, nome: string, tipo: string) {
+    const blob = new Blob([contenuto], { type: tipo });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'pruva-report.html';
+    a.download = nome;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function download() {
+    if (!html) return;
+    salvaFile(html, 'pruva-report.html', 'text/html');
   }
 
   async function copiaMessaggio() {
@@ -167,7 +174,7 @@ export default function Page() {
   function restart() {
     setStarted(false); setStep(0); setAnswers({}); setFollowUp(null);
     setDraft(''); setHtml(null); setMeta(null); setError(null); setExtra([]);
-    setIncolla(null); setRisposte([]); setIncollata('');
+    setIncolla(null); setRisposte([]); setIncollata(''); setKitPbi(null);
   }
 
   const answeredSteps = INTAKE.filter((s, i) => i < step && answered(s.id));
@@ -378,6 +385,19 @@ export default function Page() {
         <section className="stage">
           <div className="toolbar">
             <button className="btn-ghost btn-sm" onClick={download} disabled={!html}>{t.download}</button>
+            <button className="btn-ghost btn-sm" disabled={!kitPbi}
+              title={lang === 'it' ? 'Dataset, modello dati, DAX e pagine per ricostruirlo in Power BI' : 'Dataset, data model, DAX and pages to rebuild it in Power BI'}
+              onClick={() => kitPbi && salvaFile(kitPbi.guida, 'pruva-kit-powerbi.md', 'text/markdown')}>
+              {lang === 'it' ? 'Kit Power BI' : 'Power BI kit'}
+            </button>
+            <button className="btn-ghost btn-sm" disabled={!kitPbi}
+              onClick={() => kitPbi && salvaFile(kitPbi.tema, 'pruva-tema-powerbi.json', 'application/json')}>
+              {lang === 'it' ? 'Tema' : 'Theme'}
+            </button>
+            <button className="btn-ghost btn-sm" disabled={!kitPbi}
+              onClick={() => kitPbi && salvaFile(kitPbi.csv, 'pruva-dati.csv', 'text/csv')}>
+              {lang === 'it' ? 'Dati CSV' : 'Data CSV'}
+            </button>
             <button className="btn-ghost btn-sm" disabled={!html} title={lang === 'it' ? 'Non ancora attivo' : 'Not wired yet'}>{t.share}</button>
             <button className="btn-ghost btn-sm" onClick={() => generate()} disabled={busy || !briefText().trim()}>{t.regenerate}</button>
             <div className="spacer" />

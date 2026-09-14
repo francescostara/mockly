@@ -15,6 +15,7 @@ import { buildUserMessage, buildRepairMessage, PROMPT_STATS, SYSTEM_PROMPT } fro
 import { messaggioIniziale, rispostaPer, salvaScambio, MODO as MODO_INCOLLA } from '@/lib/incolla.js';
 import { callModel, extractJson, emptyUsage, addUsage, ConfigError, TransientError, resolveModel, type Turn, type Usage } from '@/lib/model';
 import { checkAndRender } from '@/lib/validate';
+import { powerbi } from '@/lib/engine';
 import { buildFallback } from '@/lib/fallback';
 import { record } from '@/lib/metering';
 import { STUB_RESPONSE, STUB_BROKEN } from '@/lib/stub';
@@ -87,6 +88,8 @@ export async function POST(req: NextRequest) {
      conviene: il prezzo per token non e una prova. */
   const turns: Turn[] = [{ role: 'user', content: buildUserMessage(brief, intake) }];
   let result: ReturnType<typeof checkAndRender> | null = null;
+  /* la spec che ha passato i controlli: il kit Power BI si genera da questa, non da un'altra */
+  let accettata: { spec: unknown; dataParams: unknown } | null = null;
 
   /* attempt 1, then ONE targeted repair */
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -121,6 +124,7 @@ export async function POST(req: NextRequest) {
     try {
       const { spec, dataParams } = extractJson(answer);
       result = checkAndRender(spec, dataParams);
+      if (result.ok) accettata = { spec, dataParams };
     } catch (err) {
       result = { ok: false, errors: [err instanceof Error ? err.message : String(err)] };
     }
@@ -143,6 +147,7 @@ export async function POST(req: NextRequest) {
     fallback = true;
     const fb = buildFallback(intake);
     result = checkAndRender(fb.spec, fb.dataParams);
+    accettata = { spec: fb.spec, dataParams: fb.dataParams };
     if (!result.ok) {
       /* the fallback itself is broken: that is a bug in our own code, not in the generation */
       console.error('[pruva:generate] FALLBACK NON VALIDO', result.errors.join(' | '));
@@ -184,5 +189,21 @@ export async function POST(req: NextRequest) {
     costUsd: usage.costUsd, latencyMs: meta.latencyMs, bytes: meta.bytes
   });
 
-  return NextResponse.json({ html: result.html, meta: { ...meta, session } });
+  /* Il kit Power BI viaggia col mockup: e il passo dopo il "si" del cliente, e nasce dalla stessa
+     spec. Se per qualche motivo non si genera, il mockup esce comunque — il kit e un di piu. */
+  let kitPbi: { guida: string; tema: string; csv: string } | null = null;
+  try {
+    if (accettata) {
+      const data = result.data;
+      kitPbi = {
+        guida: powerbi.kit(accettata.spec, accettata.dataParams, data),
+        tema: JSON.stringify(powerbi.tema(accettata.spec), null, 2),
+        csv: powerbi.csv(accettata.spec, data)
+      };
+    }
+  } catch (err) {
+    console.warn('[pruva:generate] kit Power BI non generato:', err instanceof Error ? err.message : String(err));
+  }
+
+  return NextResponse.json({ html: result.html, powerbi: kitPbi, meta: { ...meta, session } });
 }

@@ -22,5 +22,14 @@ type EngineModule = {
 
 type DataBuilderModule = { build: (dataParams: unknown) => Record<string, unknown> };
 
+/* Il kit Power BI (engine/powerbi.js): la guida per ricostruire il mockup in Power BI Desktop,
+   il tema importabile e i fatti in CSV. Nasce dalla stessa spec, quindi viaggia col mockup. */
+type PowerBiModule = {
+  kit: (spec: unknown, dataParams: unknown, data: unknown) => string;
+  tema: (spec: unknown) => Record<string, unknown>;
+  csv: (spec: unknown, data: unknown) => string;
+};
+
 export const engine: EngineModule = fromRoot('engine', 'render.js');
+export const powerbi: PowerBiModule = fromRoot('engine', 'powerbi.js');
 export const dataBuilder: DataBuilderModule = fromRoot('engine', 'data-builder.js');
