@@ -43,6 +43,14 @@ export default function Page() {
   const [html, setHtml] = useState<string | null>(null);
   const [meta, setMeta] = useState<GenMeta | null>(null);
   const [runs, setRuns] = useState({ n: 0, costUsd: 0 });
+  /* LA MODALITA INCOLLA (PRUVA_STUB=incolla, lib/incolla.js): il server non chiama l'API ma
+     restituisce il messaggio da portare in una chat. Qui si tiene cio che serve a chiudere il
+     giro — il passo, il messaggio, e le risposte incollate finora, che ripartono ogni volta
+     verso il server perche il server non ricorda niente. */
+  const [incolla, setIncolla] = useState<{ passo: number; messaggio: string; errori: string[] } | null>(null);
+  const [risposte, setRisposte] = useState<string[]>([]);
+  const [incollata, setIncollata] = useState('');
+  const [copiato, setCopiato] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const t = STRINGS[lang];
@@ -109,17 +117,26 @@ export default function Page() {
     setStep(INTAKE.findIndex(s => s.id === 'domain'));
   }
 
-  async function generate() {
+  async function generate(incollate: string[] = []) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ brief: briefText(), intake: { ...answers, domain: briefText() } })
+        body: JSON.stringify({ brief: briefText(), intake: { ...answers, domain: briefText() }, risposte: incollate })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Errore ' + res.status);
+      setRisposte(incollate);
+      if (data.incolla) {
+        /* il server aspetta una risposta incollata: niente mockup ancora, si mostra il ponte */
+        setIncolla(data.incolla);
+        setIncollata('');
+        setCopiato(false);
+        return;
+      }
+      setIncolla(null);
       setHtml(data.html);
       setMeta(data.meta);
       setRuns(r => ({ n: r.n + 1, costUsd: r.costUsd + (data.meta?.costUsd || 0) }));
@@ -141,9 +158,16 @@ export default function Page() {
     URL.revokeObjectURL(url);
   }
 
+  async function copiaMessaggio() {
+    if (!incolla) return;
+    try { await navigator.clipboard.writeText(incolla.messaggio); setCopiato(true); }
+    catch { setError(lang === 'it' ? 'Copia non riuscita: seleziona il testo a mano.' : 'Copy failed: select the text by hand.'); }
+  }
+
   function restart() {
     setStarted(false); setStep(0); setAnswers({}); setFollowUp(null);
     setDraft(''); setHtml(null); setMeta(null); setError(null); setExtra([]);
+    setIncolla(null); setRisposte([]); setIncollata('');
   }
 
   const answeredSteps = INTAKE.filter((s, i) => i < step && answered(s.id));
@@ -298,10 +322,51 @@ export default function Page() {
                 </div>
               )}
 
+              {incolla && (
+                <div className="q">
+                  <span className="stamp">
+                    {lang === 'it' ? 'Modalità incolla · passo ' : 'Paste mode · step '}{incolla.passo}/2
+                    {' · '}{lang === 'it' ? 'nessun credito API' : 'no API credits'}
+                  </span>
+                  <span className="qt">
+                    {incolla.passo === 1
+                      ? (lang === 'it' ? 'Porta questo messaggio in una chat nuova di claude.ai' : 'Take this message to a new claude.ai chat')
+                      : (lang === 'it' ? 'Il motore ha rifiutato la risposta: manda questo nella STESSA chat' : 'The engine rejected the reply: send this in the SAME chat')}
+                  </span>
+                  {incolla.errori.length > 0 && (
+                    <ul className="note">{incolla.errori.slice(0, 6).map((e, i) => <li key={i}>{e}</li>)}</ul>
+                  )}
+                  <textarea className="field" readOnly value={incolla.messaggio} rows={5} />
+                  <div className="actions">
+                    <button className="btn-ghost btn-sm" onClick={copiaMessaggio}>
+                      {copiato ? (lang === 'it' ? 'Copiato' : 'Copied') : (lang === 'it' ? 'Copia il messaggio' : 'Copy message')}
+                    </button>
+                    <span className="note num">{Math.round(incolla.messaggio.length / 1024)} KB</span>
+                  </div>
+                  <span className="qh">{lang === 'it' ? 'Poi incolla qui la risposta, così com’è:' : 'Then paste the reply here, as it is:'}</span>
+                  <textarea
+                    className="field"
+                    value={incollata}
+                    rows={5}
+                    placeholder='{ "spec": …, "dataParams": … }'
+                    onChange={e => setIncollata(e.target.value)}
+                  />
+                  <div className="actions">
+                    <button className="btn btn-sm" disabled={busy || !incollata.trim()}
+                      onClick={() => generate([...risposte, incollata])}>
+                      {lang === 'it' ? 'Usa questa risposta' : 'Use this reply'}
+                    </button>
+                    <button className="btn-ghost btn-sm" disabled={busy} onClick={() => { setIncolla(null); setRisposte([]); }}>
+                      {lang === 'it' ? 'Annulla' : 'Cancel'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {error && <div className="alert" role="alert">{error}</div>}
 
               <div className="actions">
-                <button className="btn" onClick={generate} disabled={busy || !briefText().trim()}>
+                <button className="btn" onClick={() => generate()} disabled={busy || !briefText().trim()}>
                   {busy ? t.generating : t.generate}
                 </button>
                 <button className="btn-ghost" onClick={restart} disabled={busy}>{t.restart}</button>
@@ -314,7 +379,7 @@ export default function Page() {
           <div className="toolbar">
             <button className="btn-ghost btn-sm" onClick={download} disabled={!html}>{t.download}</button>
             <button className="btn-ghost btn-sm" disabled={!html} title={lang === 'it' ? 'Non ancora attivo' : 'Not wired yet'}>{t.share}</button>
-            <button className="btn-ghost btn-sm" onClick={generate} disabled={busy || !briefText().trim()}>{t.regenerate}</button>
+            <button className="btn-ghost btn-sm" onClick={() => generate()} disabled={busy || !briefText().trim()}>{t.regenerate}</button>
             <div className="spacer" />
             <span className="stamp">{t.size}</span>
           </div>

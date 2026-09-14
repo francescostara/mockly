@@ -10,7 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { buildUserMessage, buildRepairMessage, PROMPT_STATS } from '@/lib/prompt';
+import path from 'node:path';
+import { buildUserMessage, buildRepairMessage, PROMPT_STATS, SYSTEM_PROMPT } from '@/lib/prompt';
+import { messaggioIniziale, rispostaPer, salvaScambio, MODO as MODO_INCOLLA } from '@/lib/incolla.js';
 import { callModel, extractJson, emptyUsage, addUsage, ConfigError, TransientError, resolveModel, type Turn, type Usage } from '@/lib/model';
 import { checkAndRender } from '@/lib/validate';
 import { buildFallback } from '@/lib/fallback';
@@ -23,17 +25,33 @@ export const runtime = 'nodejs';
 /* generation runs 20-60s; Vercel Hobby caps at 60, Pro at 300 */
 export const maxDuration = 300;
 
-const stubbed = () => env('STUB') === '1' || env('STUB') === 'broken';
+const incolla = () => env('STUB') === MODO_INCOLLA;
+const stubbed = () => env('STUB') === '1' || env('STUB') === 'broken' || incolla();
 
-async function ask(turns: Turn[], model: string): Promise<{ text: string; usage: Usage }> {
+/* Nella modalita incolla (lib/incolla.js) il "modello" e una persona che porta il messaggio in
+   una chat e ne riporta la risposta. Quando la risposta per questo tentativo non c'e ancora, la
+   generazione si ferma qui e l'app mostra cosa incollare: non e un errore, e un'attesa. */
+class AttesaIncolla extends Error {
+  constructor(public passo: number, public messaggio: string) { super('in attesa della risposta incollata'); }
+}
+
+async function ask(turns: Turn[], model: string, attempt: number, risposte: string[]): Promise<{ text: string; usage: Usage }> {
   if (env('STUB') === 'broken') return { text: STUB_BROKEN, usage: emptyUsage() };
   if (env('STUB') === '1') return { text: STUB_RESPONSE, usage: emptyUsage() };
+  if (incolla()) {
+    const r = rispostaPer(risposte, attempt);
+    if (r) return { text: r, usage: emptyUsage() };
+    /* al primo giro si incolla tutto, istruzioni comprese; alla riparazione solo l'ultimo
+       messaggio, perche va mandato nella STESSA chat, che le istruzioni le ha gia */
+    const ultimo = turns[turns.length - 1].content;
+    throw new AttesaIncolla(attempt + 1, attempt === 0 ? messaggioIniziale(SYSTEM_PROMPT, ultimo) : ultimo);
+  }
   return callModel(turns, model);
 }
 
 export async function POST(req: NextRequest) {
   const started = Date.now();
-  let body: { brief?: string; intake?: IntakeAnswers; model?: string };
+  let body: { brief?: string; intake?: IntakeAnswers; model?: string; risposte?: string[] };
   try {
     body = await req.json();
   } catch {
@@ -74,10 +92,15 @@ export async function POST(req: NextRequest) {
   for (let attempt = 0; attempt < 2; attempt++) {
     let answer: string;
     try {
-      const out = await ask(turns, model);
+      const out = await ask(turns, model, attempt, body.risposte || []);
       answer = out.text;
       usage = addUsage(usage, out.usage);
     } catch (err) {
+      if (err instanceof AttesaIncolla) {
+        return NextResponse.json({
+          incolla: { passo: err.passo, messaggio: err.messaggio, errori: err.passo > 1 ? lastErrors : [] }
+        });
+      }
       /* account problems (no key, rejected key, no credit) and upstream hiccups are NOT
          generation failures: say so loudly instead of serving a fallback mockup forever and
          looking like the model is broken */
@@ -127,6 +150,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  /* lo scambio incollato si conserva: e un giro di eval gratuito, e si rigioca quando il motore cambia */
+  const salvato = incolla()
+    ? salvaScambio(path.join(process.cwd(), 'eval-out', 'incolla'), {
+        data: new Date().toISOString(), brief, intake,
+        risposte: body.risposte || [], rifiutati: rejected,
+        esito: fallback ? 'fallback' : (repairs ? 'valida dopo riparazione' : 'valida al primo colpo')
+      })
+    : null;
+
   const meta = {
     model: stubbed() ? `stub:${env('STUB')}` : model,
     valid: !fallback,
@@ -138,7 +170,8 @@ export async function POST(req: NextRequest) {
     bytes: Buffer.byteLength(result.html),
     advisories: result.advisories,
     tieOut: (result.data as { tieOut?: unknown }).tieOut,
-    ...(flag('TRACE') ? { rejected } : {}),
+    ...(flag('TRACE') || incolla() ? { rejected } : {}),
+    ...(salvato ? { salvato } : {}),
     ...usage
   };
 

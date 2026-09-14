@@ -5,6 +5,7 @@
   "description": "Pruva — deterministic BI mockup engine + MVP web app",
   "scripts": {
     "dev": "next dev",
+    "dev:incolla": "node scripts/dev-incolla.js",
     "build": "next build",
     "start": "next start",
     "smoke": "node test/runtime.smoke.js",
