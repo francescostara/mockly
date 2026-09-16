@@ -479,6 +479,27 @@ function validate(spec, data) {
     deps.forEach(d => { if (!before.has(d)) e.push(`measure "${m.id}" references "${d}" before it is declared`); });
   });
 
+  /* UN FLUSSO DIVISO UNO STOCK E UN NUMERO SBAGLIATO DODICI VOLTE.
+     Una misura `last` legge l'ultimo mese (gli abbonati di dicembre); una somma legge tutti i
+     mesi del periodo (gli abbonati-mese dell'anno). Un rapporto che mette l'una sopra l'altra
+     su un anno intero vale dodici volte il vero: e cosi che una "conversione a pagamento" e
+     uscita al 68,9% invece del 6%, in un mockup valido, riconciliato e completamente falso.
+     Il tranello piu comune e il nome: una misura `last` con lo STESSO id di un campo sommato
+     (MAU, abbonati) oscura quel campo, e ogni rapporto che lo cita legge lo stock senza che
+     nessuno l'abbia chiesto. Qui si rifiuta la combinazione e si dice come uscirne. */
+  const stock = new Set((spec.model.measures || []).filter(m => m.agg === 'last').map(m => m.id));
+  (spec.model.measures || []).forEach(m => {
+    if (m.agg !== 'ratio' && m.agg !== 'diff') return;
+    const [x, y] = m.agg === 'ratio' ? [m.num, m.den] : [m.a, m.b];
+    if (stock.has(x) !== stock.has(y)) {
+      const s = stock.has(x) ? x : y, f = stock.has(x) ? y : x;
+      e.push(`measure "${m.id}" mixes a point-in-time value ("${s}", agg:"last") with a summed one ("${f}"): ` +
+        `over a year the result is ~12x off. Reference the summed FIELD on both sides ` +
+        `(num/den must be names in model.sums), and give the "last" measure a different id ` +
+        `(e.g. "${s}Last") so it no longer shadows the field.`);
+    }
+  });
+
   (spec.filters.dims || []).forEach(fd => {
     const mem = (data.dims || {})[fd.id];
     if (!mem) { e.push(`filter dim "${fd.id}" has no members in data.dims`); return; }

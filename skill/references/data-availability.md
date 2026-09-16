@@ -41,6 +41,7 @@ Se il brief non dà segnali, assumi un cliente **piccolo-medio**: floor + parte 
 | **Energia/manifattura** | ricavo, COGS, cliente, SKU | gross margin, utilization | what-if cost rate, service-level fine |
 | **Creator-economy** | ricavo, creator, tipo prodotto | margine, target | OTM/NOT-OTM (soglia), sentiment, launch detail |
 | **Palestre/fitness** | soci, ricavo, tipo abbonamento | nuovi/churn, prenotazioni corsi | retention coorti, footfall |
+| **App consumer / EdTech** | utenti, iscrizioni, eventi di sessione/lezione, abbonamenti, ricavi store | DAU/MAU, retention D1/D7/D30, activation, trial-to-paid, canale (MMP/ads), eventi community | coorti fini, attribuzione multi-touch, sentiment, difficolta per singolo utente |
 
 I confini tra le colonne NON sono fissi: sono la posizione più probabile, spostata dal
 modificatore taglia. In caso di dubbio, resta più in basso (floor) e modella+etichetta il resto.

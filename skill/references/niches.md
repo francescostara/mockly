@@ -742,5 +742,37 @@ heatmap condizionale; rosso riservato al problema (nicchia/team a basso margine)
 - **Estetica:** executive-minimal, monocromo + colore solo sulla varianza.
 - **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** CAC payback **12 – 24 MESI** (mai zero, mai giorni) → `CAC = ARPA mensile × payback`; NRR **95 – 120%**; churn logo mensile **0,5 – 2%**; ARPA coerente col piano, **decine o centinaia di euro al mese**.
 
+### App consumer / EdTech (app di apprendimento, abbonamenti in-app)
+Voce nata dal primo test del linguaggio naturale (un'app per imparare le lingue) e dal feedback del
+tester: senza questa voce il modello ripiegava sul SaaS e produceva un report senza i KPI di
+prodotto che chiunque lavori su un'app si aspetta, e con una retention a 30 giorni del 63% — il
+numero degli utenti gia attivi spacciato per quello dei nuovi.
+- **ARCHETIPI PLAUSIBILI:** 7 `cohorts` · 1 `scorecard` (panoramica per il founder) · 3 `funnel` (attivazione)
+- **PELLE PLAUSIBILE:** palette `jewel-desaturati` · `pastello-sobrio` · `blu-ghiaccio` — tipografia `grottesco` o `neutro-ui` — shell `top` o `bare`.
+- **Utente finale:** founder, product, growth, marketing → densita media, piu pagine per pubblico.
+- **Domande:** il prodotto trattiene i nuovi? quanti tornano ogni giorno? chi attiviamo e chi
+  perdiamo alla prima settimana? il freemium converte? la community trattiene di piu? quali
+  contenuti sono difficili, e in quale lingua?
+- **KPI DI PRODOTTO STANDARD — obbligatori, sono il linguaggio del settore:** MAU, DAU,
+  **stickiness DAU/MAU**, nuovi utenti, **activation rate** (prima lezione completata),
+  **retention D1 / D7 / D30 sui nuovi**, **trial-to-paid**, **conversione a pagamento**
+  (abbonati / MAU), **ARPPU**, churn mensile degli abbonati. Un report di app senza DAU/MAU e
+  senza D1/D7/D30 non viene riconosciuto come tale da chi lavora sul prodotto.
+- **KPI di apprendimento:** lezioni completate, tasso di errore, retry, lezioni per utente attivo.
+- **COMMUNITY (se l'app ha chat o voice room — dargli una pagina sua):** % del MAU attivo nelle
+  room, messaggi per utente in chat, minuti di voce per utente, **retention D30 di chi entra in
+  community contro chi no** — e la metrica che giustifica o boccia la feature.
+- **METRICHE PER LINGUA, SEMPRE:** la lingua appresa e la dimensione primaria, e ogni KPI sopra
+  deve potersi leggere per lingua. I contenuti sono SPECIFICI della lingua: i casi in polacco,
+  russo e ucraino, l'armonia vocalica e le catene di suffissi in turco, le radici e la scrittura
+  senza vocali in ebraico. Topic generici uguali per tutte le lingue sono il segno del template.
+- **Dimensioni:** lingua appresa, categoria e topic (lingua-specifici), livello CEFR A1–C2, paese,
+  lingua madre, canale di acquisizione, piano (free/premium).
+- **Storia negativa:** una lingua che acquisisce bene e trattiene male (D30 sotto la media); una
+  community usata da pochi che raddoppia la retention di chi la usa (feature sottoutilizzata);
+  una categoria grammaticale dove si concentrano errori e abbandoni.
+- **Estetica:** moderna ma sobria; colore costante per lingua; rosso solo su retention e churn.
+- **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** stickiness DAU/MAU **15 – 35%** → `DAU = MAU × stickiness`; retention dei NUOVI D1 **25 – 45%**, D7 **12 – 25%**, D30 **6 – 15%** (mai 40–60%: quella e la retention di chi e gia attivo) → `trattenuti = nuovi × tasso`; activation **50 – 75%**; conversione a pagamento **3 – 8% del MAU** → `abbonati = MAU × conversione`; trial-to-paid **30 – 55%**; ARPPU **6 – 15 €/mese** → `ricavi = abbonati × ARPPU`; churn abbonati mensile **5 – 10%**; community **8 – 25% del MAU**, con retention D30 **1,8 – 3×** quella di chi non partecipa.
+
 ---
 

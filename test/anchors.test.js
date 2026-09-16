@@ -47,11 +47,11 @@ ok('ogni blocco dichiara almeno due rapporti con un intervallo numerico', () => 
   });
 });
 
-ok('le tre voci starter portano la riga di ancore', () => {
-  ['Palestre', 'E-commerce moda', 'SaaS'].forEach(voce => {
+ok('le voci starter portano la riga di ancore', () => {
+  ['Palestre', 'E-commerce moda', 'SaaS', 'App consumer'].forEach(voce => {
     const i = src.indexOf('### ' + voce);
     assert.ok(i > 0, 'voce starter "' + voce + '" non trovata');
-    const blocco = src.slice(i, i + 1800);
+    const blocco = src.slice(i, i + 4000);   /* le voci nuove sono piu lunghe: la riga delle ancore sta in fondo */
     assert.ok(/ÀNCORE DI GRANDEZZA/.test(blocco), voce + ': manca la riga delle ancore');
   });
 });

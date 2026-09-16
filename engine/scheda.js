@@ -89,6 +89,8 @@ const T = {
       (ctrl === 'dropdown' ? ', dropdown' : ', list') +
       '. Pick one and the whole page updates; pick it again to clear.',
     cross: 'Clicking inside the charts',
+    cliccabili: { donut: 'a slice', hbar: 'a bar', stack100: 'a segment', ribbon: 'a ribbon', heatmap: 'a cell',
+      scatter: 'a point', waterfall: 'a column', matrix: 'a row' },
     crossTxt: (cosa, tit, dim) => 'In "' + tit + '" click ' + cosa + ' to filter ' + dim +
       ' across the rest of the page.',
     drill: 'Drilling down',
@@ -212,7 +214,9 @@ function testo(spec, data) {
 
   if (P.cross.length) {
     s.push('## ' + L.cross, '');
-    P.cross.forEach(c => s.push('- ' + L.crossTxt(c.cosa, c.titolo, dimLabel(c.dim))));
+    /* il nome della cosa da cliccare e nella lingua del report: "click una riga" in un report
+       inglese e stato il primo difetto segnalato da un tester esterno sulla scheda */
+    P.cross.forEach(c => s.push('- ' + L.crossTxt(L.cliccabili ? (L.cliccabili[c.tipo] || c.cosa) : c.cosa, c.titolo, dimLabel(c.dim))));
     s.push('');
   }
   if (P.drill.length) {

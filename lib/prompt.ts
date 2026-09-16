@@ -31,7 +31,7 @@ about; the rules further down only decide how it looks.
 
 1. **Identify the niche.** Map the client's business to one entry of the niche library below
    (social/agency, physical retail, B2B sales, food service, finance/CFO, logistics,
-   energy/manufacturing, creator economy, e-commerce, SaaS, gyms). If none matches exactly,
+   energy/manufacturing, creator economy, e-commerce, SaaS, gyms, consumer apps / EdTech). If none matches exactly,
    take the closest one and lean on the general house style.
 2. **Load that entry.** Its KPIs, its dimensions, its signature visuals, its negative
    storyline. Not a generic sales dashboard with the client's words pasted on top — that is
