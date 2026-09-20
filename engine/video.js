@@ -10,6 +10,12 @@
  * che invecchia da sola. Se domani un visual smette di essere cliccabile, la scheda lo sa e il
  * video cambia con lei.
  *
+ * LA DIVISIONE DEI COMPITI, decisa dall'autore: nella scheda cio che e vero del MOCKUP, qui cio
+ * che e vero della RIPRESA. "Questo visual filtra" e del mockup e sta nella scheda, che ha un
+ * lettore preciso — il cliente che riceve il file. "Filmiamo prima i donut perche si leggono
+ * meglio" e della ripresa e sta qui: metterlo nella scheda inquinerebbe un documento con un
+ * destinatario chiaro, e creerebbe la seconda verita che si e evitata per la sceneggiatura.
+ *
  * Qui non si tocca il browser: si producono PASSI dichiarativi, e il driver (scripts/video.js)
  * li esegue. Cosi la sceneggiatura si prova in jsdom, senza registrare niente.
  *
@@ -25,9 +31,16 @@
 
 const SCHEDA = require('./scheda.js');
 
-/* Quanto si resta fermi dopo ogni tipo di passo. L'occhio deve avere il tempo di vedere il
-   cambiamento: meglio lento e chiaro che veloce e incomprensibile. */
-const ATTESE = { apertura: 1400, clic: 1900, periodo: 1700, drill: 2100, indietro: 1400, reset: 1800, fine: 1200 };
+/* LA PAUSA E' PROPORZIONALE A QUANTI NUMERI CAMBIANO. Non e una preferenza di ritmo: e quanto
+   serve all'occhio. Un clic su una fetta muove qualche KPI e un secondo basta; l'azzeramento e
+   il cambio di trimestre RIDISEGNANO la pagina intera, e sotto i due secondi il lettore vede
+   uno sfarfallio invece di un cambiamento. Per accorciare un video non si accorciano le pause:
+   si tolgono passi (vedi FEED). */
+const ATTESE = { apertura: 1400, clic: 1100, periodo: 2100, drill: 2000, indietro: 1600, pagina: 1600, reset: 2100, fine: 1200 };
+
+/* La versione per il feed: tre passi soli. LinkedIn decide nei primi tre secondi, e li deve
+   esserci un clic che filtra; chi resta guarda il resto. Il video lungo resta per chi lo chiede. */
+const FEED = ['filtro', 'drill', 'reset'];
 
 /* I visual che si leggono meglio in un video: una fetta o una barra che si accende dicono
    "ho filtrato" in un colpo d'occhio, una riga di tabella molto meno. */
@@ -59,7 +72,7 @@ function sceneggiatura(spec, data, opt) {
   const scelto = cross.slice().sort((a, b) => (PREFERENZA[b.tipo] || 0) - (PREFERENZA[a.tipo] || 0))[0];
   if (passi.indexOf('filtro') >= 0 && scelto) {
     if (scelto.page !== prima) agg({ tipo: 'pagina', sel: selPagina(scelto.page), pagina: prima,
-      etichetta: 'vai alla pagina "' + scelto.page + '"', attesa: ATTESE.indietro });
+      etichetta: 'vai alla pagina "' + scelto.page + '"', attesa: ATTESE.pagina });
     agg({ tipo: 'clic', sel: scelto.sel, dentro: scelto.titolo, pagina: scelto.page,
       etichetta: 'clicca ' + scelto.cosa + ' in "' + scelto.titolo + '": filtra ' + scelto.dim,
       attesa: ATTESE.clic });
@@ -79,7 +92,7 @@ function sceneggiatura(spec, data, opt) {
   const dr = P.drill[0];
   if (passi.indexOf('drill') >= 0 && dr) {
     if (dr.page !== (s[s.length - 1] || {}).pagina) agg({ tipo: 'pagina', sel: selPagina(dr.page),
-      pagina: (s[s.length - 1] || {}).pagina, etichetta: 'vai alla pagina "' + dr.page + '"', attesa: ATTESE.indietro });
+      pagina: (s[s.length - 1] || {}).pagina, etichetta: 'vai alla pagina "' + dr.page + '"', attesa: ATTESE.pagina });
     agg({ tipo: 'destro', sel: dr.sel, dentro: dr.titolo, pagina: dr.page,
       etichetta: 'tasto destro su una riga di "' + dr.titolo + '": apre il dettaglio', attesa: ATTESE.drill });
     agg({ tipo: 'indietro', sel: '#btnBack', pagina: dr.page, etichetta: 'torna indietro', attesa: ATTESE.indietro });
@@ -92,7 +105,7 @@ function sceneggiatura(spec, data, opt) {
   }
   /* si chiude dove si e cominciato: un video che finisce su una pagina interna sembra tagliato */
   if (((s[s.length - 1] || {}).pagina || prima) !== prima) agg({ tipo: 'pagina', sel: selPagina(prima),
-    pagina: s[s.length - 1].pagina, etichetta: 'torna alla prima pagina', attesa: ATTESE.indietro });
+    pagina: s[s.length - 1].pagina, etichetta: 'torna alla prima pagina', attesa: ATTESE.pagina });
   agg({ tipo: 'pausa', pagina: prima, etichetta: 'l\'ultima inquadratura', attesa: ATTESE.fine });
   return s;
 }
@@ -105,4 +118,4 @@ function durata(passi, velocita) {
   return Math.round((passi.reduce((a, p) => a + p.attesa, 0) + movimento) / v) / 1000;
 }
 
-module.exports = { sceneggiatura, durata, PASSI_NOTI, ATTESE, selPagina };
+module.exports = { sceneggiatura, durata, PASSI_NOTI, FEED, ATTESE, selPagina };

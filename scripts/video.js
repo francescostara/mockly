@@ -43,12 +43,14 @@ argv.forEach(a => {
   else if (m[1] === 'passi') opt.passi = m[2].split(',').map(s => s.trim()).filter(Boolean);
   else if (m[1] === 'out') opt.out = m[2];
   else if (m[1] === 'tieni') opt.tieni = true;
+  /* --feed: la versione corta per il feed, tre passi soli, senza toccare le pause */
+  else if (m[1] === 'feed') opt.passi = VIDEO.FEED.slice();
 });
 if (!liberi.length) {
-  console.log('uso: npm run video -- <caso|file.html> [--velocita=1] [--passi=' + VIDEO.PASSI_NOTI.join(',') + '] [--out=nome.mp4]');
+  console.log('uso: npm run video -- <caso|file.html> [--velocita=1] [--feed] [--passi=' + VIDEO.PASSI_NOTI.join(',') + '] [--out=nome.mp4]');
   console.log('esempi:');
   console.log('  npm run video -- archetipi/canonical-executive-summary');
-  console.log('  npm run video -- out/powerbi/mockup-app-lingue-v2.html --velocita=1.3');
+  console.log('  npm run video -- out/powerbi/mockup-app-lingue-v2.html --feed');
   process.exit(1);
 }
 const bersaglio = liberi[0];
@@ -90,7 +92,11 @@ function preparaSorgente() {
   return { file, nome: path.basename(file, '.html'), passi: null, fonte: 'dom' };
 }
 
-/* ---------- l'overlay: cursore e cerchio del clic ---------- */
+/* ---------- l'overlay: cursore e cerchio del clic ----------
+   UN PALLINO, NON UNA FRECCIA, e la scelta e dell'autore: qui non si documenta uno schermo, si
+   dimostra che una cosa risponde al tocco. In un video piccolo, muto, in mezzo a uno scroll, il
+   segno "da tutorial" e leggibilita: la freccia sparisce sul fondo chiaro del report, il pallino
+   con l'alone no. */
 /* Gira dentro la pagina, prima del contenuto. Non tocca nessun evento: pointer-events none su
    tutto, e z-index sopra qualunque cosa il mockup disegni. */
 function overlay() {
