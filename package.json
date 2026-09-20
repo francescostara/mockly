@@ -16,7 +16,8 @@
     "locale": "node test/locale.js",
     "catalogo": "node test/catalogo.js",
     "review": "node review/server.js",
-    "intervista": "node intervista/server.js"
+    "intervista": "node intervista/server.js",
+    "video": "node scripts/video.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
@@ -29,6 +30,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "jsdom": "^24.1.0",
+    "playwright": "^1.63.0",
     "typescript": "^5.7.0"
   }
 }
