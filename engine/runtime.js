@@ -1513,7 +1513,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var scarto = val - target, ass = Math.abs(scarto);
       var testo = pct ? A.f.pp(ass).replace(/^[+−-]\s*/, '') : A.mfmt(ms, ass);
       nota = '<div class="gnote">' + M.esc(A.meas(ms).label || ms) + ' ' + A.mfmt(ms, val) + ', ' +
-        testo + ' ' + (scarto >= 0 ? 'sopra' : 'sotto') + ' ' +
+        testo + ' ' + (scarto >= 0 ? (A.T.sopra || 'sopra') : (A.T.sotto || 'sotto')) + ' ' +
         M.esc(A.tpl(b.targetLabel || 'target')) + '</div>';
     }
     return A.card(v, s + nota);

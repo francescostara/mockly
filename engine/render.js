@@ -1108,6 +1108,31 @@ function dataJSON(data) {
 }
 
 /* ---------- render ---------- */
+/* LE PAROLE DEL MOTORE SEGUONO LA LINGUA DEL REPORT.
+   Titoli e sottotitoli li scrive il modello; la CORNICE la scrive il motore — il selettore del
+   periodo, le pillole di contesto, "Ultimo aggiornamento", l'azzeramento, la fetta "Altri", la
+   nota del gauge. Ogni voce arriva da meta.strings, e la mancanza ripiega sull'italiano: in un
+   report inglese senza quella chiave esce una parola italiana, ed e successo davvero — il primo
+   tester esterno ha ricevuto un mockup con "Ultimo aggiornamento" in testa e "6,1 pp sopra goal"
+   sotto un gauge. Qui le chiavi mancanti si riempiono con l'inglese quando il locale non e
+   italiano. Non e un permesso per lasciarle fuori dalla spec: e la rete sotto. */
+const INGLESE = {
+  period: 'Period', spanLong: 'How many years', year: 'Year', qtrLong: 'Quarter', monthLong: 'Month',
+  reset: 'Reset filters', updatedLabel: 'Last updated', report: 'Report',
+  all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var',
+  spanUno: '1 year', spanTutti: 'All', anni: 'years', others: 'Others', target: 'target',
+  conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory',
+  sopra: 'above', sotto: 'below'
+};
+
+/** Riempie le voci mancanti nella lingua del report. L'italiano non si tocca: le sue parole
+ *  sono gia il ripiego scritto nel runtime, e riscriverle cambierebbe i byte di ogni file. */
+function lingua(spec) {
+  if (/^it/i.test((spec.meta || {}).locale || 'it')) return;
+  const T = spec.meta.strings = Object.assign({}, spec.meta.strings);
+  Object.keys(INGLESE).forEach(k => { if (T[k] === undefined) T[k] = INGLESE[k]; });
+}
+
 function render(specIn, data) {
   /* il fit avviene qui, prima della validazione: la spec emessa nel file e quella
      effettivamente renderizzata, cosi cio che si vede e cio che si e validato */
@@ -1116,6 +1141,9 @@ function render(specIn, data) {
      un blocco unico o quattro riquadri, e non puo ricalcolarla — skin.js sta nel motore, non
      nel file. Sono tre stringhe, ed evitano di duplicare la tabella dei preset nel runtime. */
   spec.__pelle = { banda: pelle(spec).banda.id, densita: pelle(spec).densita.id, shell: pelle(spec).shell.id };
+
+  /* la cornice parla la lingua del report: vedi INGLESE piu sopra */
+  lingua(spec);
 
   /* I COLORI DEI MEMBRI VENGONO DALLA PALETTE, non dalla spec.
      Fino a qui il lavoro sull'accessibilita non toccava i grafici: le fette, le barre e i
@@ -1190,4 +1218,4 @@ MK.__A=MK.boot(SPEC,DATA,document);
 `;
 }
 
-module.exports = { render, validate, lint, toolbarBudget, bundle, css, AESTHETICS, fitSpec, measurePage, pageBudget, rowHeight };
+module.exports = { render, validate, lint, toolbarBudget, bundle, css, AESTHETICS, fitSpec, measurePage, pageBudget, rowHeight, INGLESE };

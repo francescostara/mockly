@@ -210,6 +210,19 @@ The output should be lean: it generates faster, embeds better, and has less surf
 Default to the language of the brief. The author delivers client-facing work in Italian for
 Italian clients and in English otherwise — match that. Never mix two languages in one output.
 
+**The report is in that language down to the last word the ENGINE writes, not just the words you
+write.** Titles, subtitles and labels are yours; the chrome is the engine's — the period slicer
+("All", "Quarter"), the context pills, the "Updated" caption, the reset button, the "Others"
+slice, the gauge note ("2.5 pp above target"), the tooltip wording, the interaction card. The
+engine writes those from `meta.strings`, and falls back to Italian when a key is missing: a
+`meta.locale` outside `it-*` therefore REQUIRES `meta.strings`. The engine now fills the missing
+keys with English defaults so a gap can never surface as an Italian word in an English report,
+but the fallback is a net, not a licence: set `meta.strings` explicitly, because only you know
+whether the client says "Reset filters" or "Clear".
+
+This was a real defect, found by the first external tester: an English mockup whose interaction
+card said "click una riga", and whose header said "Ultimo aggiornamento".
+
 ## Reference files
 
 - `references/pattern-library.md` — the reusable HTML/CSS/JS scaffold and every chart helper.
