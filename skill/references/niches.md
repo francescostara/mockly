@@ -762,17 +762,36 @@ numero degli utenti gia attivi spacciato per quello dei nuovi.
 - **COMMUNITY (se l'app ha chat o voice room — dargli una pagina sua):** % del MAU attivo nelle
   room, messaggi per utente in chat, minuti di voce per utente, **retention D30 di chi entra in
   community contro chi no** — e la metrica che giustifica o boccia la feature.
+  **La community non e un blocco unico: e un insieme di FEATURE, e il tester la pensa cosi**
+  ("chatrooms, games, voice call rooms — just a place for people to meet and have fun"; il
+  riferimento del settore e HelloTalk). Ogni feature ha la SUA adozione, la SUA intensita e il
+  SUO effetto sulla retention, ed e cio che il founder deve decidere: su quale investire.
+  Feature tipiche: **chat room** per lingua (messaggi per partecipante), **voice room** (minuti
+  per partecipante), **giochi** di parole/quiz a squadre (partite per giocatore), **scambio
+  linguistico 1:1** alla HelloTalk (partner abbinati, correzioni fatte e ricevute), eventualmente
+  un **feed** di post/"moments". Per ognuna: **% del MAU che la usa**, **intensita d'uso**,
+  **D30 di chi la usa contro chi non usa nessuna feature**. Storia tipica: lo scambio 1:1 e la
+  feature meno usata e quella che trattiene di piu; i giochi sono la piu usata e trattengono poco.
+  COME SI ESPRIME NEL MOTORE: la tabella dei fatti ha due dimensioni (lingua × categoria), quindi
+  la feature NON e una terza dimensione — ogni feature e una famiglia di CAMPI (utenti, attivita,
+  nuovi che la usano, loro trattenuti a D30) e le misure si leggono in una matrice per lingua e
+  in card dedicate. Dirlo nel sottotitolo della pagina se il brief chiede di filtrare per feature.
 - **METRICHE PER LINGUA, SEMPRE:** la lingua appresa e la dimensione primaria, e ogni KPI sopra
   deve potersi leggere per lingua. I contenuti sono SPECIFICI della lingua: i casi in polacco,
   russo e ucraino, l'armonia vocalica e le catene di suffissi in turco, le radici e la scrittura
   senza vocali in ebraico. Topic generici uguali per tutte le lingue sono il segno del template.
+  **I TOPIC TRAINANO LA LINGUA, e il dato lo deve dire**: ogni topic dichiara il suo peso (`w`)
+  e, dove serve, la sua difficolta (`mult: { mistakes: … }`) — mai quote casuali (vedi
+  data-realism.md, "The detail grain has a character too"). Il drill su una lingua mostra i suoi
+  topic ordinati per pratica E per tasso di errore: la domanda del founder e "cosa pratichiamo di
+  piu e dove si inciampa", e la risposta e diversa per ogni lingua.
 - **Dimensioni:** lingua appresa, categoria e topic (lingua-specifici), livello CEFR A1–C2, paese,
   lingua madre, canale di acquisizione, piano (free/premium).
 - **Storia negativa:** una lingua che acquisisce bene e trattiene male (D30 sotto la media); una
   community usata da pochi che raddoppia la retention di chi la usa (feature sottoutilizzata);
   una categoria grammaticale dove si concentrano errori e abbandoni.
 - **Estetica:** moderna ma sobria; colore costante per lingua; rosso solo su retention e churn.
-- **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** stickiness DAU/MAU **15 – 35%** → `DAU = MAU × stickiness`; retention dei NUOVI D1 **25 – 45%**, D7 **12 – 25%**, D30 **6 – 15%** (mai 40–60%: quella e la retention di chi e gia attivo) → `trattenuti = nuovi × tasso`; activation **50 – 75%**; conversione a pagamento **3 – 8% del MAU** → `abbonati = MAU × conversione`; trial-to-paid **30 – 55%**; ARPPU **6 – 15 €/mese** → `ricavi = abbonati × ARPPU`; churn abbonati mensile **5 – 10%**; community **8 – 25% del MAU**, con retention D30 **1,8 – 3×** quella di chi non partecipa.
+- **ÀNCORE DI GRANDEZZA (fissale prima delle conte):** stickiness DAU/MAU **15 – 35%** → `DAU = MAU × stickiness`; retention dei NUOVI D1 **25 – 45%**, D7 **12 – 25%**, D30 **6 – 15%** (mai 40–60%: quella e la retention di chi e gia attivo) → `trattenuti = nuovi × tasso`; activation **50 – 75%**; conversione a pagamento **3 – 8% del MAU** → `abbonati = MAU × conversione`; trial-to-paid **30 – 55%**; ARPPU **6 – 15 €/mese** → `ricavi = abbonati × ARPPU`; churn abbonati mensile **5 – 10%**; community **8 – 25% del MAU**, con retention D30 **1,8 – 3×** quella di chi non partecipa; per feature (stime starter, da validare): giochi **15 – 30% del MAU**, chat room **10 – 20%**, voice room **3 – 10%**, scambio 1:1 **3 – 8%** — piu una feature e intima, meno la usano e piu trattiene.
 
 ---
 

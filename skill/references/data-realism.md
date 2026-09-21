@@ -71,6 +71,22 @@ const UNITS=[
 ];
 ```
 
+**The detail grain has a character too — declare it, never leave it to chance.**
+A drill-down grain (topics within a language, models within a category) used to ship as a
+random share per child, and every measure split with the SAME share. Two things followed, both
+invisible until someone read the page: which child "led" was luck, and no child could be harder,
+cheaper or riskier than its siblings — every rate at the child level was a copy of the parent's.
+The first external tester loved seeing "sz / cz / rz sounds" as the most practised Polish topic;
+it was the most practised by accident. If the page says "these topics drive this language", the
+data has to MEAN it:
+- give each child a **weight** (`w`) — its share of the parent's volume, in proportion to its
+  siblings: the topic everyone practises gets 2–3× the niche one;
+- give a child a **per-measure multiplier** (`mult`) where its RATE must differ from the parent's:
+  the case system that trips learners up gets `mistakes: 1.6`, the easy vocabulary topic `0.6`.
+  The engine renormalises inside each parent, so children still tie out to the parent exactly.
+
+Leave a child as a plain name only when its share genuinely does not matter to the story.
+
 ## Build with a seed and structure, not flat randomness
 
 Layer real structure onto the seeded PRNG:
