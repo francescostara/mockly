@@ -284,6 +284,14 @@ there is no such thing as an inert legend). Keep it compact: the legend earns it
 sitting beside the chart (donut) or on one line above it (ribbon, stacked bars), never as a
 tall column of names with the chart squeezed into what is left.
 
+**The legend of a time chart is drawn by the engine, never declared.** In a trend the prior
+period is a dashed grey line; in a colline (columns + line) it is a second column in another
+colour. A legend written by hand has to guess which, and it guessed wrong three times — a
+colline whose legend promised "2024 = dashed line" above two sets of coloured bars, in two
+mockups already approved and in the language-app mockup the author then caught. The engine now
+builds the legend of `trend` and `colline` from the series it actually draws, and the spec has
+no `legend` field: there is nothing to declare, so nothing to get wrong.
+
 Two helpers for the less obvious charts (adapt colours to the aesthetic):
 
 ```js
