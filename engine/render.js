@@ -537,10 +537,14 @@ function validate(spec, data) {
          solo aprendo il file. E' successo al primo scheletro executive-summary. */
       if (row.flex && !row.visuals.some(v => v.type === 'matrix')) {
         row.visuals.filter(v => !v.h).forEach(v => {
-          e.push(`page "${pg.id}" riga ${ri}: "${v.type}" sta in una riga flex senza "h". La ` +
+          /* una card a piu viste non ha un `type` suo: nominarla per id, o il messaggio dice
+             "undefined" — ed e successo, nella riparazione della v3 dell'app di lingue */
+          const chi = v.type ? '"' + v.type + '"' : 'la card a viste "' + (v.id || '?') + '"';
+          e.push(`page "${pg.id}" riga ${ri}: ${chi} sta in una riga flex senza "h". La ` +
             `riga flex riserva lo spazio residuo alla matrice; un altro visual li dentro ` +
             `disegna alla sua altezza di default e sfora il fondo pagina senza che nessun ` +
-            `conto se ne accorga. Dichiara "h", oppure togli "flex" alla riga.`);
+            `conto se ne accorga. Dichiara "h", oppure togli "flex" alla riga` +
+            (v.type ? '.' : ' (vale anche se le sue viste sono matrici: e la card che occupa la riga).'));
         });
       }
       row.visuals.forEach(v => {
