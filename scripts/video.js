@@ -158,6 +158,13 @@ async function centro(page, sel, dentro, quale) {
     }
     let el = [...ambito.querySelectorAll(sel)].filter(e => { const r = e.getBoundingClientRect(); return r.width > 4 && r.height > 4; });
     if (!el.length) return null;
+    /* Se un filtro e attivo, si clicca la voce SELEZIONATA, non una attenuata: un drill su
+       "English" con il filtro su "Ukrainian" e un video incoerente, anche se il mockup lo
+       permette. E' una scelta della ripresa, non del mockup. */
+    const accese = el.filter(e => /(^|\s)sel(\s|$)/.test(e.getAttribute('class') || ''));
+    if (accese.length) el = accese;
+    else el = el.filter(e => !/(^|\s)(dim|dimd)(\s|$)/.test(e.getAttribute('class') || '')).concat(
+      el.filter(e => /(^|\s)(dim|dimd)(\s|$)/.test(e.getAttribute('class') || '')));
     /* per un clic si prende il bersaglio piu grande: e quello che un umano colpirebbe; per il
        tasto destro si prende la prima riga, che e la piu alta e la piu leggibile */
     el = quale === 'primo' ? el : el.sort((a, b) => {
