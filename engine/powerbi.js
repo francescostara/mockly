@@ -92,7 +92,7 @@ const T = {
     heatCF: (m, lo, hi) => 'Formattazione condizionale → Colore di sfondo su ' + m + ': sfumatura' + (lo !== undefined ? ' da ' + lo + ' a ' + hi : '') + '.',
     varCF: 'Formattazione condizionale → Icone (▲ ▼) sulla colonna di variazione.',
     totali: 'Totali di riga attivi.', target: (t) => 'Valore di destinazione: ' + t + '.',
-    linea: (m) => 'Asse Y secondario: ' + m + '.', legendaAnni: 'Legenda: ’Date’[Year] (anno corrente pieno, anno precedente tratteggiato).',
+    linea: (m) => 'Asse Y secondario: ' + m + '.', legendaAnni: 'Legenda: ’Date’[Year] (anno corrente pieno, anno precedente tratteggiato).', legendaColonne: 'Legenda: ’Date’[Year] (anno corrente e anno precedente come due colonne affiancate, l’anno precedente nel colore secondario del tema).',
     colore: (d) => 'Colore per categoria: legenda = ' + d + ' (lo stesso colore su ogni pagina).',
     alert: (m) => 'Evidenzia in rosso lo spicchio "' + m + '" (colore dati → formattazione condizionale).',
     deltaCard: (m) => 'Valore principale: ' + m + '; etichetta di riferimento: periodo precedente → periodo corrente; aggiungi la sparkline mensile.',
@@ -161,7 +161,7 @@ const T = {
     heatCF: (m, lo, hi) => 'Conditional formatting → Background colour on ' + m + ': gradient' + (lo !== undefined ? ' from ' + lo + ' to ' + hi : '') + '.',
     varCF: 'Conditional formatting → Icons (▲ ▼) on the change column.',
     totali: 'Row totals on.', target: (t) => 'Target value: ' + t + '.',
-    linea: (m) => 'Secondary Y axis: ' + m + '.', legendaAnni: 'Legend: ’Date’[Year] (current year solid, prior year dashed).',
+    linea: (m) => 'Secondary Y axis: ' + m + '.', legendaAnni: 'Legend: ’Date’[Year] (current year solid, prior year dashed).', legendaColonne: 'Legend: ’Date’[Year] (current and prior year as two columns side by side, the prior year in the theme’s secondary colour).',
     colore: (d) => 'Colour by category: legend = ' + d + ' (the same colour on every page).',
     alert: (m) => 'Highlight the "' + m + '" slice in red (data colours → conditional formatting).',
     deltaCard: (m) => 'Main value: ' + m + '; reference label: prior period → current period; add the monthly sparkline.',
@@ -315,7 +315,7 @@ function descriviVisual(spec, v, L, N) {
   const campi = [];
   switch (v.type) {
     case 'trend': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); righe.push(L.legendaAnni, L.esenzione); break;
-    case 'colline': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); if (b.line) righe.push(L.linea(m(b.line))); righe.push(L.legendaAnni); break;
+    case 'colline': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); if (b.line) righe.push(L.linea(m(b.line))); righe.push(L.legendaColonne); break;   /* nel colline l'anno prima e una colonna, non un tratteggio */
     case 'donut': campi.push('Legend: ' + dim(b.dim), 'Values: ' + m(b.measure)); if (b.topN) righe.push(L.topn(b.topN)); if (b.alert) righe.push(L.alert(b.alert)); break;
     case 'hbar': campi.push('Y: ' + dim(b.dim), 'X: ' + m(b.measure)); righe.push(L.ordina); if (b.top) righe.push(L.topn(b.top)); if (b.parent) righe.push(L.colore(dim(b.parent))); break;
     case 'stack100': campi.push('Y: ' + dim(b.dim), 'Legend: ' + dim(b.by), 'X: ' + m(b.measure)); break;
