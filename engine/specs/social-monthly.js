@@ -140,7 +140,6 @@ const spec = {
           {
             type: 'trend', span: 3, h: 184, title: 'Reach mensile', subtitle: '{y} vs {py}',
             note: 'i filtri Trim./Mese non toccano la timeline',
-            legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
             bind: { measure: 'reach' }
           },
           {
@@ -223,7 +222,6 @@ const spec = {
         visuals: [
           {
             type: 'trend', span: 3, h: 210, title: 'Reach mensile', subtitle: '{drill} · {y} vs {py}',
-            legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
             bind: { measure: 'reach' }
           },
           {

@@ -156,7 +156,8 @@ page opts out). `flex: true` makes a row absorb the leftover canvas height — u
 row. `h` on a visual fixes its chart body height in px.
 
 Common visual fields: `type`, `span`, `h`, `title`, `subtitle`, `note` (right-aligned hint),
-`legend: [{l, c, dash}]`, `bind` (type-specific). Label strings interpolate `{y}`, `{py}`,
+`bind` (type-specific). There is no `legend`: the engine draws the legend of `trend` and
+`colline` from the series it actually draws, and rejects a declared one. Label strings interpolate `{y}`, `{py}`,
 `{basis}`, `{period}`, `{drill}`.
 
 ### Visual types and their `bind`

@@ -127,7 +127,6 @@ const spec = {
           {
             type: 'trend', span: 3, h: 176, title: 'Net new MRR by month', subtitle: '{y} vs {py}',
             note: 'quarter/month filters do not touch the timeline',
-            legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
             bind: { measure: 'netNew' }
           },
           {
@@ -167,7 +166,6 @@ const spec = {
         visuals: [
           {
             type: 'trend', span: 3, h: 200, title: 'Net new MRR by month', subtitle: '{drill} · {y} vs {py}',
-            legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
             bind: { measure: 'netNew' }
           },
           {

@@ -163,17 +163,31 @@ const TABLE_ROW_H_CMP = 20; /* la stessa riga in modalita compatta */
 /* Quanto spazio chiede DAVVERO una riga flex. Per la matrice non e una costante: dipende da
    quanti membri ha la dimensione, cioe dai dati. Riservargliene meno significa tagliare le
    ultime righe della tabella, che e proprio il bug segnalato. */
-function flexNeed(row, data, rowH) {
+function flexNeed(row, data, rowH, drillDim) {
   return Math.max(MIN_FLEX_H, ...row.visuals.map(v => {
     if (v.type !== 'matrix') return MIN_FLEX_H;
     const dim = (v.bind || {}).dim;
-    const members = ((data && data.dims && data.dims[dim]) || []).length || 5;
+    let members = ((data && data.dims && data.dims[dim]) || []).length || 5;
+    /* Nella pagina di drill su un genitore, la matrice dei suoi figli mostra solo QUEI figli:
+       gli agenti di un'area, non tutti. Contarli tutti sovrastimava lo spazio della tabella, e la
+       pagina di drill di immobiliare stava nel canvas per caso — bastava la riga della legenda
+       per farla sforare di sedici pixel. */
+    const dm = data && data.detailModel;
+    if (drillDim && dm && dm.dim === dim && dm.parentDim === drillDim) {
+      const perGenitore = {};
+      (data.dims[dim] || []).forEach(m => { perGenitore[m.parent] = (perGenitore[m.parent] || 0) + 1; });
+      members = Math.max(1, ...Object.values(perGenitore));
+    }
     const totals = (v.bind || {}).totals === false ? 0 : 1;
     return chromeOf(v) + TABLE_HEAD_H + (members + totals) * (rowH || TABLE_ROW_H) + 12;
   }));
 }
 
-const chromeOf = v => (v.title ? CHROME_H : 0) + (v.legend ? LEGEND_H : 0);
+/* I grafici nel tempo portano SEMPRE la loro legenda, e la disegna il runtime (A.legendaAuto):
+   l'anno prima e una linea tratteggiata nel trend e una seconda colonna nel colline, e una
+   legenda scritta a mano doveva indovinare quale — ha sbagliato tre volte. */
+const LEGENDA_AUTO = { trend: true, colline: true };
+const chromeOf = v => (v.title ? CHROME_H : 0) + (LEGENDA_AUTO[v.type] ? LEGEND_H : 0);
 
 /** Altezza utile della pagina, al netto di shell, padding e gutter. */
 function pageBudget(spec, page, gutter) {
@@ -201,7 +215,8 @@ function planFit(spec, page, data, dense) {
 
   const fixed = rows.filter(r => !r.flex);
   const flex = rows.filter(r => r.flex);
-  const wanted = flex.reduce((a, r) => a + flexNeed(r, data, rowH), 0);
+  const drillDim = spec.drill && page === spec.drill.page ? spec.drill.dim : null;
+  const wanted = flex.reduce((a, r) => a + flexNeed(r, data, rowH, drillDim), 0);
   const declared = fixed.reduce((a, r) => a + rowHeight(r), 0);
 
   if (declared <= budget - wanted) {
@@ -316,7 +331,8 @@ function measurePage(spec, data, pageId) {
   let budget = pageBudget(fitted.spec, page, dense ? DENSE_GUTTER : spec.grid.gutter)
     + (dense ? padDi(spec) - DENSE_PAD : 0);
   if (spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H - 6 : KPI_H;
-  const h = r => r.flex ? flexNeed(r, data, rowH) : rowHeight(r);
+  const drillDim = fitted.spec.drill && page === fitted.spec.drill.page ? fitted.spec.drill.dim : null;
+  const h = r => r.flex ? flexNeed(r, data, rowH, drillDim) : rowHeight(r);
   const rows = page.rows.map(h);
   const charts = [].concat(...page.rows.filter(r => !r.flex).map(r => r.visuals.map(v => v.h || 200)));
   return {
@@ -619,6 +635,14 @@ function validate(spec, data) {
           }
         }
 
+        /* La legenda non si dichiara: quella dei grafici nel tempo la costruisce il motore dalle
+           serie che disegna. Scritta a mano sbagliava lo stile dell'anno prima (la linea
+           tratteggiata del trend copiata in un colline, dove l'anno prima e una colonna). */
+        if (v.legend !== undefined) {
+          e.push(`page "${pg.id}" ${v.type}: "legend" non si dichiara. La legenda di trend e colline ` +
+            `la disegna il motore dalle serie che traccia davvero (anno corrente, anno prima, e con che ` +
+            `segno); una scritta a mano deve indovinare lo stile e sbaglia. Togli il campo.`);
+        }
         if (v.type === 'gauge') {
           const mis = (spec.model.measures || []).find(m => m.id === b.measure);
           const u = mis && mis.unit;

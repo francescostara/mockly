@@ -84,7 +84,6 @@ export function buildFallback(intake: IntakeAnswers) {
             {
               type: 'trend', span: 3, h: 206, title: 'Ricavi mensili', subtitle: '{y} vs {py}',
               note: 'i filtri Trim./Mese non toccano la timeline',
-              legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
               bind: { measure: 'rev' }
             },
             {
@@ -124,7 +123,6 @@ export function buildFallback(intake: IntakeAnswers) {
           visuals: [
             {
               type: 'trend', span: 3, h: 210, title: 'Andamento mensile', subtitle: '{drill} · {y} vs {py}',
-              legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
               bind: { measure: 'rev' }
             },
             {

@@ -111,7 +111,6 @@ const spec = {
           bind: { measure: 'marginePc' } },
         { type: 'trend', span: 2, h: 148, title: 'Margine lordo % per mese — {y} vs {py}',
           subtitle: 'la divergenza dai ricavi e la storia',
-          legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
           bind: { measure: 'marginePc' } }
       ] },
       { flex: true, visuals: [{

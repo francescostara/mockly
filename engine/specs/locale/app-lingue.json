@@ -456,16 +456,6 @@
         "h": 176,
         "title": "New users and activation — {y} vs {py}",
         "note": "The line is the activation rate",
-        "legend": [
-         {
-          "l": "{y}",
-          "c": "var(--c2)"
-         },
-         {
-          "l": "{py}",
-          "dash": true
-         }
-        ],
         "bind": {
          "measure": "newUsers",
          "line": "activation"

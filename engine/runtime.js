@@ -576,9 +576,18 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         (v.subtitle ? '<span class="hs">' + M.esc(A.tpl(v.subtitle)) + '</span>' : '') +
         (v.note ? '<span class="hr">' + (v.__noteHtml ? v.note : M.esc(A.tpl(v.note))) + '</span>' : '') + '</div>' : '';
       return '<div class="card" style="width:' + g.span(v.span) + 'px' + (opts.flex ? ';display:flex;flex-direction:column' : '') + '">' +
-        head + (v.legend ? A.legend(v) : '') + body + '</div>';
+        head + (A.legendaAuto(v) ? A.legend(A.legendaAuto(v)) : '') + body + '</div>';
     };
-    A.legend = v => '<div class="lgd">' + v.legend.map(function (l) {
+    /* LA LEGENDA LA DISEGNA CHI DISEGNA IL GRAFICO. Nel trend l'anno prima e una linea grigia
+       tratteggiata; nel colline e una seconda colonna nel colore --c5. Quando la scriveva la
+       spec, il modello copiava quella del trend dentro un colline: "2024 = tratteggio" sopra due
+       serie di barre colorate, in tre mockup, due gia approvati. */
+    A.legendaAuto = function (v) {
+      if (v.type === 'trend') return [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }];
+      if (v.type === 'colline') return [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', c: 'var(--c5)' }];
+      return null;
+    };
+    A.legend = voci => '<div class="lgd">' + voci.map(function (l) {
       return '<span>' + (l.dash ? '<span class="ln"></span>' : '<i style="background:' + (l.c || 'var(--c2)') + '"></i>') + M.esc(A.tpl(l.l)) + '</span>';
     }).join('') + '</div>';
     /* tiny token interpolation for labels: {y} {py} {basis} {period} {drill} */

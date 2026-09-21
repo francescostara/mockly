@@ -100,7 +100,6 @@ const spec = {
           subtitle: 'benchmark mid-market 21%',
           bind: { measure: 'winRate', target: 0.21, targetLabel: 'benchmark', max: 0.4 } },
         { type: 'colline', span: 2, h: 156, title: 'Chiuso mensile e win rate — {y} vs {py}',
-          legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
           bind: { measure: 'vinto', line: 'winRate' } }
       ] },
       { flex: true, visuals: [{

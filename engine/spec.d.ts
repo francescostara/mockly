@@ -227,7 +227,9 @@ export interface Visual {
   subtitle?: string;
   /** right-aligned hint in the card header */
   note?: string;
-  legend?: LegendItem[];
+  /** NO legend field: the engine draws the legend of trend and colline from what it draws
+   *  (a hand-written one guessed the prior-year style wrong three times). Declaring one is rejected. */
+  legend?: never;
   centreLabel?: string;
   bind: Bind;
 }

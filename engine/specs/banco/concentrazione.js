@@ -118,7 +118,6 @@ const spec = {
     rows: [
       { visuals: [
         { type: 'trend', span: 2, h: 150, title: 'Fatturato mensile — {y} vs {py}',
-          legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
           bind: { measure: 'fatturato' } },
         /* IL DONUT DELLA CONCENTRAZIONE: i primi tre piu la coda, e al centro la QUOTA. */
         { type: 'donut', span: 2, h: 150, title: 'Quanto pesano i primi tre clienti',

@@ -8,7 +8,6 @@ const trend = {
   type: 'trend', span: 3, h: 206,
   title: 'Fatturato mensile', subtitle: '{y} vs {py} · anno intero',
   note: 'i filtri Trim./Mese non toccano la timeline',
-  legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
   bind: { measure: 'rev' }
 };
 

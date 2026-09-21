@@ -134,7 +134,6 @@ const spec = {
         { type: 'delta-card', span: 1, h: 210, title: 'MRR', bind: { measure: 'mrrFine' } },
         { type: 'trend', span: 2, h: 210, title: 'MRR mensile — {y} vs {py}',
           subtitle: 'la linea tratteggiata e l\'anno precedente',
-          legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
           bind: { measure: 'mrr' } }
       ] },
       /* LA CHIUSURA: supporto, non dettaglio. Due riquadri che spiegano il numero grande —

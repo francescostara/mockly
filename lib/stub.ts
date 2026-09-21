@@ -95,7 +95,6 @@ export const STUB_RESPONSE = JSON.stringify({
             {
               type: 'trend', span: 3, h: 206, title: 'Fatturato mensile', subtitle: '{y} vs {py}',
               note: 'i filtri Trim./Mese non toccano la timeline',
-              legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
               bind: { measure: 'rev' }
             },
             {
@@ -136,7 +135,6 @@ export const STUB_RESPONSE = JSON.stringify({
           visuals: [
             {
               type: 'trend', span: 3, h: 210, title: 'Andamento mensile', subtitle: '{drill} · {y} vs {py}',
-              legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
               bind: { measure: 'rev' }
             },
             {

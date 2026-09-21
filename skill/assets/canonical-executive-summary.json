@@ -231,16 +231,6 @@
                 "h": 210,
                 "title": "MRR mensile — {y} vs {py}",
                 "subtitle": "la linea tratteggiata e l'anno precedente",
-                "legend": [
-                  {
-                    "l": "{y}",
-                    "c": "var(--c2)"
-                  },
-                  {
-                    "l": "{py}",
-                    "dash": true
-                  }
-                ],
                 "bind": {
                   "measure": "mrr"
                 }

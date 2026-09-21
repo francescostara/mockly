@@ -166,7 +166,6 @@ const spec = {
         { visuals: [
           { type: 'colline', span: 3, h: 150, title: 'Provvigioni mensili e take rate — {y} vs {py}',
             note: 'La linea e il take rate, sul suo asse',
-            legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
             bind: { measure: 'prov', line: 'takeRate' } },
           { type: 'hbar', span: 2, h: 150, title: 'Provvigioni per tipologia', subtitle: 'ordinate per valore',
             bind: { dim: 'tipo', measure: 'prov', top: 5 } }

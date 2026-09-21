@@ -150,7 +150,6 @@ const spec = {
           {
             type: 'colline', span: 3, h: 206, title: 'Net sales by month', subtitle: '{y} vs {py} · return rate on the right axis',
             note: 'quarter/month filters do not touch the timeline',
-            legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', c: 'var(--c5)' }],
             bind: { measure: 'gross', line: 'retRate' }
           },
           {
@@ -202,7 +201,6 @@ const spec = {
         visuals: [
           {
             type: 'trend', span: 3, h: 210, title: 'Net sales by month', subtitle: '{drill} · {y} vs {py}',
-            legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
             bind: { measure: 'gross' }
           },
           {

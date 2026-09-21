@@ -110,7 +110,6 @@ const spec = {
     rows: [
       { visuals: [
         { type: 'trend', span: 2, h: 148, title: 'Impression mensili — {y} vs {py}',
-          legend: [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }],
           bind: { measure: 'impressions' } },
         { type: 'donut', span: 2, h: 148, title: 'Spesa paid per piattaforma',
           subtitle: 'sotto "Organico" questa spesa non esiste', centreLabel: 'Spesa',
