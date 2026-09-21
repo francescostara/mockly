@@ -332,6 +332,22 @@ const INTERVENTI = [
     dove: "donut",
     fatto: "La causa: il vuoto stava IN MEZZO fra anello e legenda, non ai bordi. Anello e legenda ora sono un blocco unico centrato nella card (gate: test/donut.test.js misura che il margine sinistro dell’anello e quello destro della legenda siano uguali). In piu, la fetta \"Altri\" e staccata di 3px e ha un grigio neutro fuori dalla scala categoriale (token `altri`, almeno 3:1 sulla card in tutte le 13 famiglie).",
     stato: "aperto"
+  },
+  {
+    id: "locale/app-lingue",
+    versione: 1,
+    commento: "(Tim, primo tester esterno, 16 set 2026) The overal shape is nice but I wish it had some industry standard product app KPIs / Also maybe a section about client- client interaction( imagine there are chatrooms) / And more language specific metrics( for each language)",
+    dove: "niches.md · contenuto · scheda · validate",
+    fatto: "La causa stava nella libreria: nessuna voce per le app consumer, e il modello ripiegava sul SaaS. Nuova voce \"App consumer / EdTech\" in niches.md con i KPI di prodotto obbligatori (DAU/MAU, retention D1/D7/D30 sui nuovi, activation, trial-to-paid, conversione, ARPPU, churn), la pagina community, i contenuti specifici per lingua e le ancore. Rigenerando sono usciti due difetti del motore, ognuno col suo gate: un flusso diviso uno stock (\"Paid conversion 68,9%\" invece del 6,3%, test/flusso-stock.test.js) e la scheda inglese che diceva \"click una riga\" (test/lingua.test.js). Commit 27b56b6.",
+    stato: "fatto"
+  },
+  {
+    id: "locale/app-lingue",
+    versione: 2,
+    commento: "(Tim, secondo giro, 21 set 2026) Visually its way beter more room to breathe! / sz cz rz sounds as most practiced topics i love it! Thats stuff like this really separates it from a generic dashboard. This part can be deep dived to see which topics drive each language. / the community is a bit vague. Community is supposed to have ( if i was gonna design the app, god willing) chatrooms, games, voice call rooms. Just a place for people to meet and have fun. Go install hello talk, you probably know the app. It has alot of cool features i would add to a language app. Then it could definitely help with retention. / We are in a good direction thanks! Also lets add some AI methods of learning a language ( i have to give thought to it)",
+    dove: "detail · community · contenuto",
+    fatto: "Da fare. Due scoperte prima di toccare il mockup: (1) le quote dei topic nel dettaglio erano CASUALI — \"sz / cz / rz\" era il piu praticato per caso, e nessun topic poteva essere piu difficile di un altro, perche il dettaglio divideva ogni misura con la stessa quota; (2) la community era un blocco unico, mentre Tim la pensa come tre o quattro feature diverse (chat, giochi, voice room, scambio linguistico). I metodi di apprendimento con l'AI restano fuori finche Tim non ci ha pensato.",
+    stato: "aperto"
   }
 ];
 

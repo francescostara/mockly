@@ -1,0 +1,1273 @@
+{
+ "spec": {
+  "meta": {
+   "title": "Product, learning and community",
+   "subtitle": "Do new learners stay, what do they find hard, and does the community keep them · {y} vs {py}",
+   "brand": {
+    "name": "Language App",
+    "tagline": "Poland · Ukraine · Israel · Turkey"
+   },
+   "locale": "en-US",
+   "currency": "$",
+   "months": [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+   ],
+   "strings": {
+    "fullYear": "Full year",
+    "all": "All",
+    "allM": "All",
+    "compare": "Compare",
+    "qtr": "Qtr",
+    "month": "Month",
+    "varShort": "Var",
+    "pyShort": "PY",
+    "cyShort": "CY",
+    "prevShort": "Prev.",
+    "curShort": "Cur.",
+    "reset": "Reset filters",
+    "period": "Period",
+    "conv": "conv."
+   },
+   "updated": "Updated 2 Sep 2026",
+   "source": "App events · lesson & quiz logs · store subscriptions · community rooms",
+   "watermark": "Demo mockup · synthetic data · not real user activity"
+  },
+  "aesthetic": "agency-modern",
+  "skin": {
+   "shell": "top",
+   "palette": "jewel-desaturati",
+   "tipografia": "grottesco",
+   "densita": "medio",
+   "banda": "box"
+  },
+  "archetype": "scorecard",
+  "grid": {
+   "contentWidth": 1248,
+   "gutter": 12,
+   "columns": 4
+  },
+  "model": {
+   "sums": [
+    "lessons",
+    "attempts",
+    "errBase",
+    "mistakes",
+    "mau",
+    "dau",
+    "newUsers",
+    "activated",
+    "retD1",
+    "retD7",
+    "newComm",
+    "commRet30",
+    "nonComm",
+    "nonRet30",
+    "ret30",
+    "trials",
+    "paidNew",
+    "subs",
+    "revenue",
+    "cancels",
+    "chatters",
+    "messages",
+    "voiceUsers",
+    "voiceMin"
+   ],
+   "measures": [
+    {
+     "id": "mauLast",
+     "label": "MAU",
+     "agg": "last",
+     "field": "mau",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "dauLast",
+     "label": "DAU",
+     "agg": "last",
+     "field": "dau",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "stickiness",
+     "label": "Stickiness (DAU/MAU)",
+     "agg": "ratio",
+     "num": "dau",
+     "den": "mau",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "newUsers",
+     "label": "New users",
+     "agg": "sum",
+     "field": "newUsers",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "activation",
+     "label": "Activation rate",
+     "agg": "ratio",
+     "num": "activated",
+     "den": "newUsers",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "d1",
+     "label": "D1 retention",
+     "agg": "ratio",
+     "num": "retD1",
+     "den": "newUsers",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "d7",
+     "label": "D7 retention",
+     "agg": "ratio",
+     "num": "retD7",
+     "den": "newUsers",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "d30",
+     "label": "D30 retention",
+     "agg": "ratio",
+     "num": "ret30",
+     "den": "newUsers",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "trialToPaid",
+     "label": "Trial-to-paid",
+     "agg": "ratio",
+     "num": "paidNew",
+     "den": "trials",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "paidConv",
+     "label": "Paid conversion (of MAU)",
+     "agg": "ratio",
+     "num": "subs",
+     "den": "mau",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "subsLast",
+     "label": "Paying subscribers",
+     "agg": "last",
+     "field": "subs",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "revenue",
+     "label": "Subscription revenue",
+     "agg": "sum",
+     "field": "revenue",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "arppu",
+     "label": "ARPPU / month",
+     "agg": "ratio",
+     "num": "revenue",
+     "den": "subs",
+     "unit": "money",
+     "format": "eurF"
+    },
+    {
+     "id": "churn",
+     "label": "Subscriber churn (monthly)",
+     "agg": "ratio",
+     "num": "cancels",
+     "den": "subs",
+     "unit": "pct",
+     "format": "pc",
+     "inv": true
+    },
+    {
+     "id": "lessons",
+     "label": "Lessons completed",
+     "agg": "sum",
+     "field": "lessons",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "lessonsPerMau",
+     "label": "Lessons per MAU / month",
+     "agg": "ratio",
+     "num": "lessons",
+     "den": "mau",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "mistakeRate",
+     "label": "Mistake rate",
+     "agg": "ratio",
+     "num": "mistakes",
+     "den": "attempts",
+     "unit": "pct",
+     "format": "pc",
+     "inv": true
+    },
+    {
+     "id": "communityLast",
+     "label": "Community members active",
+     "agg": "last",
+     "field": "chatters",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "communityReach",
+     "label": "Community reach (% of MAU)",
+     "agg": "ratio",
+     "num": "chatters",
+     "den": "mau",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "msgsPerMember",
+     "label": "Messages per member / month",
+     "agg": "ratio",
+     "num": "messages",
+     "den": "chatters",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "voiceMinPerUser",
+     "label": "Voice minutes per voice user / month",
+     "agg": "ratio",
+     "num": "voiceMin",
+     "den": "voiceUsers",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "commD30",
+     "label": "D30 retention · joined community",
+     "agg": "ratio",
+     "num": "commRet30",
+     "den": "newComm",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "nonD30",
+     "label": "D30 retention · no community",
+     "agg": "ratio",
+     "num": "nonRet30",
+     "den": "nonComm",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "commLift",
+     "label": "Community retention lift",
+     "agg": "diff",
+     "a": "commD30",
+     "b": "nonD30",
+     "unit": "pp",
+     "format": "pp"
+    }
+   ]
+  },
+  "filters": {
+   "date": {
+    "levels": [
+     "year",
+     "quarter",
+     "month"
+    ],
+    "default": {
+     "y": 2025,
+     "q": null,
+     "m": null
+    }
+   },
+   "dims": [
+    {
+     "id": "language",
+     "label": "Language",
+     "control": "dropdown",
+     "allLabel": "All languages",
+     "pill": "Lang."
+    }
+   ]
+  },
+  "kpiBand": [
+   {
+    "id": "mau",
+    "label": "MAU",
+    "measure": "mauLast",
+    "span": 1
+   },
+   {
+    "id": "stickiness",
+    "label": "Stickiness (DAU/MAU)",
+    "measure": "stickiness",
+    "span": 1
+   },
+   {
+    "id": "d30",
+    "label": "D30 retention (new users)",
+    "measure": "d30",
+    "span": 1
+   },
+   {
+    "id": "paidConv",
+    "label": "Paid conversion",
+    "measure": "paidConv",
+    "span": 1
+   }
+  ],
+  "pages": [
+   {
+    "id": "product",
+    "title": "Product health",
+    "nav": "Product",
+    "subtitle": "Russian acquires and keeps worst; Ukrainian and Polish learners stick best",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 2,
+        "h": 176,
+        "title": "New users and activation — {y} vs {py}",
+        "note": "The line is the activation rate",
+        "legend": [
+         {
+          "l": "{y}",
+          "c": "var(--c2)"
+         },
+         {
+          "l": "{py}",
+          "dash": true
+         }
+        ],
+        "bind": {
+         "measure": "newUsers",
+         "line": "activation"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 1,
+        "h": 176,
+        "title": "D30 retention by language",
+        "subtitle": "new users still active after 30 days",
+        "bind": {
+         "dim": "language",
+         "measure": "d30",
+         "top": 6
+        }
+       },
+       {
+        "type": "delta-card",
+        "span": 1,
+        "h": 176,
+        "title": "Stickiness (DAU/MAU)",
+        "bind": {
+         "measure": "stickiness"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 4,
+        "title": "Languages — product KPIs · {period}",
+        "subtitle": "right-click a row for the language detail",
+        "bind": {
+         "dim": "language",
+         "label": "Language",
+         "sort": "mauLast",
+         "drill": true,
+         "totalsLabel": "All languages",
+         "columns": [
+          {
+           "measure": "mauLast",
+           "label": "MAU"
+          },
+          {
+           "measure": "stickiness",
+           "label": "DAU/MAU",
+           "kind": "heat",
+           "scale": [
+            0.2,
+            0.34
+           ]
+          },
+          {
+           "measure": "activation",
+           "label": "Activation"
+          },
+          {
+           "measure": "d1",
+           "label": "D1"
+          },
+          {
+           "measure": "d7",
+           "label": "D7"
+          },
+          {
+           "measure": "d30",
+           "label": "D30",
+           "kind": "heat",
+           "scale": [
+            0.07,
+            0.15
+           ]
+          },
+          {
+           "measure": "trialToPaid",
+           "label": "Trial→paid"
+          },
+          {
+           "measure": "paidConv",
+           "label": "Paid conv."
+          },
+          {
+           "measure": "arppu",
+           "label": "ARPPU"
+          },
+          {
+           "measure": "churn",
+           "label": "Churn",
+           "kind": "heat",
+           "scale": [
+            0.045,
+            0.1
+           ],
+           "inv": true
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "learning",
+    "title": "Learning by language",
+    "nav": "Learning",
+    "subtitle": "Cases in Polish, Russian and Ukrainian and roots in Hebrew are where mistakes pile up",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "heatmap",
+        "span": 2,
+        "h": 176,
+        "title": "Mistake rate by language and category · {y}",
+        "subtitle": "darker = harder; click a cell to filter the language",
+        "bind": {
+         "dim": "language",
+         "measure": "mistakeRate",
+         "by": "category",
+         "scale": [
+          0.08,
+          0.42
+         ]
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 176,
+        "title": "Most practised topics — specific to each language",
+        "subtitle": "filter a language to see only its topics",
+        "bind": {
+         "dim": "topic",
+         "measure": "lessons",
+         "detail": true,
+         "top": 10,
+         "parent": "language"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 4,
+        "title": "Languages — learning · {period}",
+        "subtitle": "right-click a row for the language detail",
+        "bind": {
+         "dim": "language",
+         "label": "Language",
+         "sort": "lessons",
+         "drill": true,
+         "totalsLabel": "All languages",
+         "columns": [
+          {
+           "measure": "lessons",
+           "label": "Lessons"
+          },
+          {
+           "measure": "lessons",
+           "label": "{basis}",
+           "kind": "var"
+          },
+          {
+           "measure": "lessonsPerMau",
+           "label": "Lessons / MAU"
+          },
+          {
+           "measure": "mistakeRate",
+           "label": "Mistake rate",
+           "kind": "heat",
+           "scale": [
+            0.12,
+            0.3
+           ],
+           "inv": true
+          },
+          {
+           "measure": "d7",
+           "label": "D7"
+          },
+          {
+           "measure": "d30",
+           "label": "D30"
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "community",
+    "title": "Community — chat and voice rooms",
+    "nav": "Community",
+    "subtitle": "Learners who join a room in week one are more than twice as likely to still be here at day 30",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "scatter",
+        "span": 2,
+        "h": 176,
+        "title": "Community reach against retention lift",
+        "subtitle": "by language, bubble = MAU",
+        "bind": {
+         "dim": "language",
+         "x": "communityReach",
+         "y": "commLift",
+         "size": "mauLast"
+        }
+       },
+       {
+        "type": "gauge",
+        "span": 1,
+        "h": 176,
+        "title": "D30 retention · joined community",
+        "subtitle": "goal 20% for room joiners",
+        "bind": {
+         "measure": "commD30",
+         "target": 0.2,
+         "targetLabel": "goal",
+         "max": 0.4
+        }
+       },
+       {
+        "type": "delta-card",
+        "span": 1,
+        "h": 176,
+        "title": "Community reach (% of MAU)",
+        "bind": {
+         "measure": "communityReach"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 4,
+        "title": "Languages — community · {period}",
+        "subtitle": "right-click a row for the language detail",
+        "bind": {
+         "dim": "language",
+         "label": "Language",
+         "sort": "communityLast",
+         "drill": true,
+         "totalsLabel": "All languages",
+         "columns": [
+          {
+           "measure": "communityLast",
+           "label": "Members active"
+          },
+          {
+           "measure": "communityReach",
+           "label": "Reach",
+           "kind": "heat",
+           "scale": [
+            0.1,
+            0.25
+           ]
+          },
+          {
+           "measure": "msgsPerMember",
+           "label": "Msgs / member"
+          },
+          {
+           "measure": "voiceMinPerUser",
+           "label": "Voice min / user"
+          },
+          {
+           "measure": "commD30",
+           "label": "D30 · community"
+          },
+          {
+           "measure": "nonD30",
+           "label": "D30 · others"
+          },
+          {
+           "measure": "commLift",
+           "label": "Lift"
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "drill": {
+   "dim": "language",
+   "page": {
+    "id": "__drill__",
+    "title": "{drill}",
+    "drillHeader": "{drill} · {period}",
+    "backLabel": "Back to all languages",
+    "subtitle": "Activity and difficulty for the selected language",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "trend",
+        "span": 2,
+        "h": 160,
+        "title": "MAU — {drill}",
+        "bind": {
+         "measure": "mauLast"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 160,
+        "title": "Topics — {drill}",
+        "bind": {
+         "dim": "topic",
+         "measure": "lessons",
+         "detail": true,
+         "top": 4
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 4,
+        "title": "Categories — {drill}",
+        "bind": {
+         "dim": "category",
+         "label": "Category",
+         "sort": "lessons",
+         "drill": false,
+         "totalsLabel": "All categories",
+         "columns": [
+          {
+           "measure": "lessons",
+           "label": "Lessons"
+          },
+          {
+           "measure": "lessons",
+           "label": "{basis}",
+           "kind": "var"
+          },
+          {
+           "measure": "mistakeRate",
+           "label": "Mistake rate",
+           "kind": "heat",
+           "scale": [
+            0.08,
+            0.42
+           ],
+           "inv": true
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "dataParams": {
+  "seed": 48213,
+  "years": [
+   2024,
+   2025
+  ],
+  "seasonality": [
+   1.22,
+   1.1,
+   1.02,
+   0.96,
+   0.92,
+   0.86,
+   0.8,
+   0.84,
+   1.1,
+   1.06,
+   1.02,
+   1.1
+  ],
+  "dims": {
+   "language": {
+    "members": [
+     {
+      "id": "en",
+      "n": "English",
+      "base": 120000,
+      "growth": 0.1,
+      "attrs": {
+       "qPer": 12,
+       "errL": 0.14,
+       "lpm": 22,
+       "stick": 0.3,
+       "newS": 0.22,
+       "act": 0.68,
+       "d1": 0.4,
+       "d7": 0.21,
+       "joinC": 0.26,
+       "cRet": 0.26,
+       "nRet": 0.1,
+       "trial": 0.14,
+       "t2p": 0.48,
+       "prem": 0.065,
+       "arppu": 9.8,
+       "churn": 0.06,
+       "chat": 0.2,
+       "msgs": 140,
+       "voice": 0.08,
+       "vmin": 70
+      }
+     },
+     {
+      "id": "pl",
+      "n": "Polish",
+      "base": 52000,
+      "growth": 0.34,
+      "attrs": {
+       "qPer": 12,
+       "errL": 0.25,
+       "lpm": 24,
+       "stick": 0.33,
+       "newS": 0.26,
+       "act": 0.7,
+       "d1": 0.42,
+       "d7": 0.23,
+       "joinC": 0.28,
+       "cRet": 0.28,
+       "nRet": 0.11,
+       "trial": 0.15,
+       "t2p": 0.5,
+       "prem": 0.07,
+       "arppu": 8.4,
+       "churn": 0.055,
+       "chat": 0.22,
+       "msgs": 160,
+       "voice": 0.09,
+       "vmin": 85
+      }
+     },
+     {
+      "id": "tr",
+      "n": "Turkish",
+      "base": 36000,
+      "growth": 0.22,
+      "attrs": {
+       "qPer": 12,
+       "errL": 0.21,
+       "lpm": 21,
+       "stick": 0.27,
+       "newS": 0.25,
+       "act": 0.64,
+       "d1": 0.37,
+       "d7": 0.19,
+       "joinC": 0.22,
+       "cRet": 0.24,
+       "nRet": 0.09,
+       "trial": 0.12,
+       "t2p": 0.42,
+       "prem": 0.055,
+       "arppu": 7.6,
+       "churn": 0.07,
+       "chat": 0.17,
+       "msgs": 120,
+       "voice": 0.07,
+       "vmin": 60
+      }
+     },
+     {
+      "id": "ru",
+      "n": "Russian",
+      "base": 38000,
+      "growth": -0.18,
+      "attrs": {
+       "qPer": 12,
+       "errL": 0.22,
+       "lpm": 18,
+       "stick": 0.22,
+       "newS": 0.18,
+       "act": 0.58,
+       "d1": 0.31,
+       "d7": 0.14,
+       "joinC": 0.15,
+       "cRet": 0.2,
+       "nRet": 0.065,
+       "trial": 0.1,
+       "t2p": 0.36,
+       "prem": 0.045,
+       "arppu": 7.2,
+       "churn": 0.095,
+       "chat": 0.12,
+       "msgs": 95,
+       "voice": 0.05,
+       "vmin": 45
+      }
+     },
+     {
+      "id": "uk",
+      "n": "Ukrainian",
+      "base": 32000,
+      "growth": 0.28,
+      "attrs": {
+       "qPer": 12,
+       "errL": 0.2,
+       "lpm": 23,
+       "stick": 0.31,
+       "newS": 0.28,
+       "act": 0.71,
+       "d1": 0.41,
+       "d7": 0.22,
+       "joinC": 0.3,
+       "cRet": 0.29,
+       "nRet": 0.11,
+       "trial": 0.15,
+       "t2p": 0.49,
+       "prem": 0.07,
+       "arppu": 8,
+       "churn": 0.05,
+       "chat": 0.24,
+       "msgs": 170,
+       "voice": 0.1,
+       "vmin": 90
+      }
+     },
+     {
+      "id": "he",
+      "n": "Hebrew",
+      "base": 30000,
+      "growth": 0.15,
+      "attrs": {
+       "qPer": 12,
+       "errL": 0.27,
+       "lpm": 20,
+       "stick": 0.26,
+       "newS": 0.21,
+       "act": 0.62,
+       "d1": 0.35,
+       "d7": 0.17,
+       "joinC": 0.19,
+       "cRet": 0.23,
+       "nRet": 0.08,
+       "trial": 0.12,
+       "t2p": 0.44,
+       "prem": 0.06,
+       "arppu": 11.2,
+       "churn": 0.07,
+       "chat": 0.15,
+       "msgs": 110,
+       "voice": 0.06,
+       "vmin": 55
+      }
+     }
+    ]
+   },
+   "category": {
+    "members": [
+     {
+      "id": "voc",
+      "n": "Vocabulary & idioms",
+      "base": 1,
+      "attrs": {
+       "errC": 0.65
+      }
+     },
+     {
+      "id": "gra",
+      "n": "Grammar & cases",
+      "base": 1,
+      "attrs": {
+       "errC": 1.55
+      }
+     },
+     {
+      "id": "spk",
+      "n": "Speaking & listening",
+      "base": 1,
+      "attrs": {
+       "errC": 0.95
+      }
+     }
+    ]
+   }
+  },
+  "facts": {
+   "dim": "language",
+   "split": {
+    "dim": "category",
+    "shares": [
+     0.42,
+     0.34,
+     0.24
+    ]
+   },
+   "fields": [
+    {
+     "id": "lessons",
+     "kind": "seasonal",
+     "jitter": [
+      0.94,
+      1.06
+     ]
+    },
+    {
+     "id": "attempts",
+     "kind": "share",
+     "of": "lessons",
+     "attr": "qPer",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "errBase",
+     "kind": "share",
+     "of": "attempts",
+     "attr": "errL",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "mistakes",
+     "kind": "share",
+     "of": "errBase",
+     "attr": "errC",
+     "jitter": [
+      0.93,
+      1.07
+     ],
+     "attrFrom": "split"
+    },
+    {
+     "id": "mau",
+     "kind": "divide",
+     "of": "lessons",
+     "attr": "lpm",
+     "jitter": [
+      0.96,
+      1.04
+     ],
+     "min": 1
+    },
+    {
+     "id": "dau",
+     "kind": "share",
+     "of": "mau",
+     "attr": "stick",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "newUsers",
+     "kind": "share",
+     "of": "mau",
+     "attr": "newS",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "activated",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "act",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "retD1",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "d1",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "retD7",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "d7",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "newComm",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "joinC",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "commRet30",
+     "kind": "share",
+     "of": "newComm",
+     "attr": "cRet",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "nonComm",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "joinC",
+     "jitter": [
+      0.98,
+      1.02
+     ],
+     "complement": true
+    },
+    {
+     "id": "nonRet30",
+     "kind": "share",
+     "of": "nonComm",
+     "attr": "nRet",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "ret30",
+     "kind": "combine",
+     "plus": [
+      "commRet30",
+      "nonRet30"
+     ]
+    },
+    {
+     "id": "trials",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "trial",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "paidNew",
+     "kind": "share",
+     "of": "trials",
+     "attr": "t2p",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "subs",
+     "kind": "share",
+     "of": "mau",
+     "attr": "prem",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "revenue",
+     "kind": "share",
+     "of": "subs",
+     "attr": "arppu",
+     "jitter": [
+      0.98,
+      1.02
+     ]
+    },
+    {
+     "id": "cancels",
+     "kind": "share",
+     "of": "subs",
+     "attr": "churn",
+     "jitter": [
+      0.85,
+      1.15
+     ]
+    },
+    {
+     "id": "chatters",
+     "kind": "share",
+     "of": "mau",
+     "attr": "chat",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "messages",
+     "kind": "share",
+     "of": "chatters",
+     "attr": "msgs",
+     "jitter": [
+      0.9,
+      1.1
+     ]
+    },
+    {
+     "id": "voiceUsers",
+     "kind": "share",
+     "of": "mau",
+     "attr": "voice",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "voiceMin",
+     "kind": "share",
+     "of": "voiceUsers",
+     "attr": "vmin",
+     "jitter": [
+      0.9,
+      1.1
+     ]
+    }
+   ]
+  },
+  "detail": {
+   "dim": "topic",
+   "parentDim": "language",
+   "members": {
+    "en": [
+     "Phrasal verbs",
+     "Tenses & aspect",
+     "Pronunciation drills",
+     "Business English"
+    ],
+    "pl": [
+     "Seven noun cases",
+     "Verb aspect pairs",
+     "Gender agreement",
+     "sz / cz / rz sounds"
+    ],
+    "tr": [
+     "Vowel harmony",
+     "Suffix chains",
+     "Case endings",
+     "Evidential -mis"
+    ],
+    "ru": [
+     "Six noun cases",
+     "Verbs of motion",
+     "Aspect pairs",
+     "Stress patterns"
+    ],
+    "uk": [
+     "Seven noun cases",
+     "Vocative case",
+     "Aspect pairs",
+     "Soft consonants"
+    ],
+    "he": [
+     "Root patterns (binyanim)",
+     "Gender in verbs",
+     "Reading without vowels",
+     "Guttural sounds"
+    ]
+   },
+   "fields": [
+    "lessons",
+    "attempts",
+    "mistakes"
+   ]
+  }
+ }
+}
