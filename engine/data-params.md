@@ -178,7 +178,7 @@ to their parent exactly.
   "dim": "mod",
   "parentDim": "cat",
   "members": {
-    "per": ["Tabriz 200×300", "Kashan medaglione", "Heriz antico"],
+    "per": [{ "n": "Tabriz 200×300", "w": 2 }, "Kashan medaglione", { "n": "Heriz antico", "w": 0.6 }],
     "mod": ["Astratto grigio", "Shaggy panna", "Optical B/N"]
   },
   "fields": ["rev"],
@@ -186,9 +186,15 @@ to their parent exactly.
 }
 ```
 
-- `members` — child names per parent id (3–6 each). The builder assigns ids and inherits the
-  parent's colour.
-- `fields` — which measures split proportionally.
+- `members` — children per parent id (3–6 each). The builder assigns ids and inherits the
+  parent's colour. A child is either a plain name, or an object that declares its character:
+  `{ "n": "Seven noun cases", "w": 2.2, "mult": { "mistakes": 1.6 } }`.
+  - `w` — the child's weight against its siblings: its share of the parent's volume. Declare it
+    whenever "which child leads" is part of the story; plain names get a random share.
+  - `mult` — per-field multiplier, for a child whose RATE must differ from the parent's (a harder
+    topic makes more mistakes per attempt). The engine renormalises inside each parent, so the
+    children of every fact row still sum to it exactly.
+- `fields` — which measures split across the children (by `w`, times `mult` where declared).
 - `counts` — an integer field split by largest remainder so it still sums to the parent.
 
 Use `detail` whenever the drill-through page needs a finer grain than the matrix rows.

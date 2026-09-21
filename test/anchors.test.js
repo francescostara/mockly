@@ -51,7 +51,10 @@ ok('le voci starter portano la riga di ancore', () => {
   ['Palestre', 'E-commerce moda', 'SaaS', 'App consumer'].forEach(voce => {
     const i = src.indexOf('### ' + voce);
     assert.ok(i > 0, 'voce starter "' + voce + '" non trovata');
-    const blocco = src.slice(i, i + 4000);   /* le voci nuove sono piu lunghe: la riga delle ancore sta in fondo */
+    /* la voce finisce dove comincia la successiva: una finestra a caratteri fissi andava allargata
+       a ogni voce che cresceva, ed e gia successo due volte */
+    const fine = src.indexOf(String.fromCharCode(10) + '### ', i + 4);
+    const blocco = src.slice(i, fine > 0 ? fine : undefined);
     assert.ok(/ÀNCORE DI GRANDEZZA/.test(blocco), voce + ': manca la riga delle ancore');
   });
 });

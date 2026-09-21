@@ -353,11 +353,22 @@ export interface FactsSpec {
   fields: NonEmpty<FieldSpec>;
 }
 
+export interface DetailChild {
+  n: string;
+  /** share of the parent's volume, relative to the siblings (default: random) */
+  w?: number;
+  /** per-field multiplier on the child's share, e.g. { mistakes: 1.6 } for a harder topic */
+  mult?: Record<string, number>;
+}
+
 export interface DetailSpec {
   dim: string;
   parentDim?: string;
-  /** child names per parent id — one entry per member of the parent dimension */
-  members: Record<string, NonEmpty<string>>;
+  /** children per parent id — one entry per member of the parent dimension. A child is a plain
+   *  name (random share) or declares its character: `w` = weight against its siblings, `mult` =
+   *  per-field multiplier for a child whose rate differs from the parent's (renormalised, so the
+   *  children still tie out to the parent). */
+  members: Record<string, NonEmpty<string | DetailChild>>;
   fields?: string[];
   counts?: { field: string; from?: string };
 }

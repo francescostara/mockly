@@ -203,7 +203,7 @@ function build(dp) {
     const d = dp.detail;
     const parentDim = d.parentDim || dimId;
     const parents = dims[parentDim] || fail(`detail.parentDim "${parentDim}" is not a fact dimension`);
-    const kids = [], groups = {};
+    const kids = [], groups = {}, dichiarati = {}, mult = {};
     parents.forEach(p => {
       const names = (d.members || {})[p.id] || [];
       if (!names.length) {
@@ -211,17 +211,54 @@ function build(dp) {
           `membro di "${parentDim}" vuole i suoi figli, es. "members": { "${p.id}": ["Figlio A", ` +
           `"Figlio B", "Figlio C"] }. Genitori da coprire: ${parents.map(x => x.id).join(', ')}.`);
       }
-      groups[p.id] = names.map(n => p.id + ':' + n);
-      names.forEach(n => kids.push({ id: p.id + ':' + n, n: n, c: p.c, parent: p.id, parentDim: parentDim }));
+      /* Un figlio e un nome, oppure dichiara il suo carattere: `w` e il suo peso fra i fratelli,
+         `mult` il moltiplicatore per campo quando il suo TASSO deve differire da quello del
+         genitore. Senza, la quota e casuale e ogni misura si divide con la stessa quota — cosi
+         "il topic piu praticato" era un caso e nessun topic poteva essere piu difficile di un
+         altro. Il primo tester esterno ha lodato proprio uno di quei primati casuali. */
+      const voci = names.map(x => (typeof x === 'string') ? { n: x } : x);
+      voci.forEach(v => { if (!v || !v.n) fail(`dataParams.detail.members["${p.id}"]: ogni figlio e un nome o un oggetto con "n"`); });
+      groups[p.id] = voci.map(v => p.id + ':' + v.n);
+      voci.forEach(v => {
+        const id = p.id + ':' + v.n;
+        kids.push({ id, n: v.n, c: p.c, parent: p.id, parentDim: parentDim });
+        if (v.w !== undefined) {
+          if (!(v.w > 0)) fail(`dataParams.detail: il peso "w" di "${v.n}" deve essere un numero positivo`);
+          dichiarati[id] = v.w;
+        }
+        Object.keys(v.mult || {}).forEach(fl => {
+          if (!(v.mult[fl] > 0)) fail(`dataParams.detail: mult.${fl} di "${v.n}" deve essere un numero positivo`);
+          (mult[fl] = mult[fl] || {})[id] = v.mult[fl];
+        });
+      });
     });
     dims[d.dim] = kids;
+    /* le quote casuali si estraggono comunque per tutti, cosi il seme produce gli stessi numeri
+       di prima per ogni spec che non dichiara pesi; poi i pesi dichiarati prendono il loro posto */
     const shares = DM.shareVector(groups, j);
+    Object.keys(groups).forEach(gid => {
+      const ids = groups[gid];
+      if (!ids.some(id => dichiarati[id] !== undefined)) return;
+      /* un fratello senza peso, accanto a fratelli pesati, vale la media dei pesati */
+      const noti = ids.filter(id => dichiarati[id] !== undefined).map(id => dichiarati[id]);
+      const medio = noti.reduce((a, b) => a + b, 0) / noti.length;
+      const ws = ids.map(id => dichiarati[id] !== undefined ? dichiarati[id] : medio);
+      const tot = ws.reduce((a, b) => a + b, 0);
+      ids.forEach((id, k) => shares[id] = ws[k] / tot);
+    });
     detailModel = {
       dim: d.dim, parentDim: parentDim,
       fields: (d.fields && d.fields.length) ? d.fields : [prim.id],
       shares: Object.keys(shares).reduce((o, k) => (o[k] = Math.round(shares[k] * 1e5) / 1e5, o), {})
     };
     if (d.counts && d.counts.field) detailModel.counts = { field: d.counts.field, from: d.counts.from || d.counts.field };
+    /* il moltiplicatore vale solo su un campo che il dettaglio divide davvero: dichiararlo su un
+       altro sarebbe un campo accettato e ignorato in silenzio */
+    Object.keys(mult).forEach(fl => {
+      if (detailModel.fields.indexOf(fl) < 0) fail(`dataParams.detail: "mult.${fl}" su un campo che il dettaglio non divide. ` +
+        `Aggiungi "${fl}" a detail.fields, oppure togli il moltiplicatore.`);
+    });
+    if (Object.keys(mult).length) detailModel.mult = mult;
   }
 
   /* ---- 4.5 LA STORIA LONTANA COSTA, E NON LA GUARDA NESSUNO PER MESE ----

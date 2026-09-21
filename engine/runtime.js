@@ -187,10 +187,19 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       if (!kids.length) return;
       var ws = kids.map(k => dm.shares[k.id] || 0), s = ws.reduce((a, b) => a + b, 0) || 1;
       var counts = dm.counts ? M.allocInt(ws, r[dm.counts.from] || 0) : null;
+      /* un figlio piu difficile dei fratelli porta un moltiplicatore sul campo (mult): la quota
+         si rinormalizza dentro il genitore, cosi i figli sommano ancora esattamente alla riga */
+      var perCampo = {};
+      dm.fields.forEach(function (fl) {
+        var mm = dm.mult && dm.mult[fl];
+        if (!mm) return;
+        var w2 = kids.map((k, i) => ws[i] * (mm[k.id] || 1)), s2 = w2.reduce((a, b) => a + b, 0) || 1;
+        perCampo[fl] = w2.map(w => w / s2);
+      });
       kids.forEach(function (k, i) {
         var o = { y: r.y, m: r.m };
         o[dm.dim] = k.id; o[dm.parentDim] = k.parent;
-        dm.fields.forEach(fl => o[fl] = (r[fl] || 0) * ws[i] / s);
+        dm.fields.forEach(fl => o[fl] = (r[fl] || 0) * (perCampo[fl] ? perCampo[fl][i] : ws[i] / s));
         if (counts) o[dm.counts.field] = counts[i];
         out.push(o);
       });

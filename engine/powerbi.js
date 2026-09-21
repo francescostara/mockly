@@ -41,7 +41,7 @@ const T = {
       'dimensione, un calendario. Tutte le relazioni sono uno-a-molti, direzione singola (dalla dimensione ai fatti).',
     tabella: 'Tabella', colonne: 'Colonne', ruolo: 'Ruolo', fatti: 'fatti — grano: un mese per',
     dimensione: 'dimensione', calendario: 'calendario — segnala come tabella data (Strumenti tabella → Segna come tabella data)',
-    relazioni: 'Relazioni', dettaglio: 'fatti di dettaglio — grano: un mese per',
+    relazioni: 'Relazioni', dettaglio: 'fatti di dettaglio — grano: un mese per', peso: 'peso', piuDi: 'rispetto alla media dei fratelli',
     s3: '3. Le misure DAX', s3a: 'Crea una tabella vuota "_Misure" (Immetti dati → carica senza righe) e ' +
       'mettici tutte le misure: il modello resta leggibile e le misure non si perdono fra le colonne.',
     base: 'Misure di base', tempo: 'Confronto col periodo precedente',
@@ -110,7 +110,7 @@ const T = {
       'calendar. Every relationship is one-to-many, single direction (from the dimension to the facts).',
     tabella: 'Table', colonne: 'Columns', ruolo: 'Role', fatti: 'facts — grain: one month per',
     dimensione: 'dimension', calendario: 'calendar — mark as date table (Table tools → Mark as date table)',
-    relazioni: 'Relationships', dettaglio: 'detail facts — grain: one month per',
+    relazioni: 'Relationships', dettaglio: 'detail facts — grain: one month per', peso: 'weight', piuDi: 'against the siblings’ average',
     s3: '3. The DAX measures', s3a: 'Create an empty "_Measures" table (Enter data → load with no rows) and put every ' +
       'measure in it: the model stays readable and measures do not get lost among the columns.',
     base: 'Base measures', tempo: 'Prior-period comparison',
@@ -459,7 +459,12 @@ function promptDataset(spec, dp, data, L) {
   });
   if (dp.detail && dp.detail.members) {
     righe.push('- ' + nomeDim(spec, dp.detail.dim) + ':');
-    Object.keys(dp.detail.members).forEach(p => righe.push('    ' + nomeMembro(dp.detail.parentDim || facts.dim, p) + ': ' + dp.detail.members[p].join(', ')));
+    /* un figlio puo dichiarare peso e difficolta: la GenAI che genera il dataset deve saperlo,
+       o ricostruisce topic tutti uguali e il drill del report vero non dice niente */
+    const figlio = x => (typeof x === 'string') ? x : x.n +
+      (x.w !== undefined || x.mult ? ' (' + [x.w !== undefined ? L.peso + ' ' + x.w : null]
+        .concat(Object.keys(x.mult || {}).map(k => k + ' ×' + x.mult[k] + ' ' + L.piuDi)).filter(Boolean).join(', ') + ')' : '');
+    Object.keys(dp.detail.members).forEach(p => righe.push('    ' + nomeMembro(dp.detail.parentDim || facts.dim, p) + ': ' + dp.detail.members[p].map(figlio).join(', ')));
   }
   if (dp.seasonality) righe.push('', L.stag + ': ' + dp.seasonality.join(', '));
   righe.push('', L.derivate);
