@@ -349,6 +349,14 @@ const INTERVENTI = [
     fatto: "I TOPIC: ora dichiarano peso e difficolta (engine/data-builder.js, `w` e `mult` sul dettaglio; gate test/dettaglio.test.js) — \"sz / cz / rz\" e il piu praticato del polacco perche lo si e deciso, e i sette casi sono il topic piu difficile. La card dei topic ha due viste, Most practised e Hardest, e il drill su ogni lingua si chiama \"What drives <lingua>\": i suoi topic per pratica e per tasso di errore. LA COMMUNITY: quattro feature invece di un blocco — giochi, chat room, voice room e scambio 1:1 alla HelloTalk (partner e correzioni) — con adozione, intensita e retention D30 per feature; la storia e che lo scambio 1:1 e la feature meno usata e quella che trattiene di piu. Il motore regge due dimensioni per tabella, quindi le feature sono famiglie di campi e si confrontano in una card di testo costruita dalle misure e in una matrice a due viste. Tre difetti del motore trovati costruendola, ognuno col suo gate: le quote casuali del dettaglio, l arrotondamento che riscriveva i tassi dei segmenti piccoli (test/conteggi.test.js) e le intestazioni della heatmap tagliate a sei lettere anche con spazio (test/geometria.test.js, che ha trovato lo stesso difetto nell archetipo operativo gia approvato). I metodi di apprendimento con l AI restano fuori: Tim ci deve ancora pensare.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/app-lingue",
+    versione: 3,
+    commento: "nel grafico \"New users and activation — 2025 vs 2024\" la legenda di 2024 non è corretta.",
+    dove: "legenda · colline · grammatica",
+    fatto: "La legenda non si scrive piu: trend e colline la ricevono dal runtime, con lo stesso segno che disegnano (tratteggio grigio nel trend, colonna --c5 nel colline), e un campo legend nella spec viene rifiutato. Tolta da tutte le spec e dall esempio canonico che il modello copia. Gate generale in test/legenda.test.js: ogni segno della legenda deve esistere nel disegno. Corretto anche il kit Power BI, che per il colline diceva \"anno precedente tratteggiato\". Strada facendo: la stima dello spazio di una matrice nel drill contava tutti i figli invece di quelli del genitore (il drill di immobiliare stava nel canvas per caso).",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
