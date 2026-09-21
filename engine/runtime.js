@@ -1594,9 +1594,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var cw = iw / (cols.length || 1), ch = ih / (righe.length || 1), gap = 1.5;
     var s = '<svg width="' + w + '" height="' + h + '">';
 
+    /* L'intestazione di colonna si accorcia solo se non ci sta, e lo dice coi puntini. Era
+       tagliata a sei lettere comunque — pensata per "Gen" e "Lun" — e su tre colonne larghe
+       centottanta pixel "Vocabulary & idioms" diventava "Vocabu". */
     cols.forEach(function (c, ci) {
+      var et = String(c.n), spazio = cw - 4;
+      if (M.largh(et, 8.5) > spazio) {
+        while (et.length > 3 && M.largh(et + '…', 8.5) > spazio) et = et.slice(0, -1);
+        et = et.replace(/[\s&·,;:-]+$/, '') + '…';
+      }
       s += '<text x="' + (lw + cw * ci + cw / 2).toFixed(1) + '" y="10" text-anchor="middle" ' +
-        'font-size="8.5" fill="var(--muted)">' + M.esc(c.n).slice(0, 6) + '</text>';
+        'font-size="8.5" fill="var(--muted)">' + M.esc(et) + '</text>';
     });
 
     righe.forEach(function (r, ri) {

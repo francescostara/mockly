@@ -37,8 +37,11 @@ function casi() {
 }
 
 const renderizzati = casi().map(c => {
-  const dom = new JSDOM(render(c.caso.spec, c.caso.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
-  return { id: c.id, doc: dom.window.document, chiudi: () => dom.window.close() };
+  const data = c.caso.build();
+  const dom = new JSDOM(render(c.caso.spec, data), { runScripts: 'dangerously', pretendToBeVisual: true });
+  /* i nomi dei membri servono a riconoscere un'etichetta troncata: e un prefisso di un nome vero */
+  const nomi = [].concat(...Object.values(data.dims || {}).map(ms => ms.map(m => String(m.n))));
+  return { id: c.id, doc: dom.window.document, nomi, chiudi: () => dom.window.close() };
 });
 
 /** Ogni SVG dentro una card, col suo riquadro. */
@@ -227,6 +230,24 @@ ok('la heatmap ha almeno cinque gradini e scrive i suoi numeri', () => {
     });
   });
   assert.deepStrictEqual(problemi, [], problemi.join(' | '));
+});
+
+ok('le intestazioni della heatmap non si troncano se c e spazio', () => {
+  /* Il caso delle categorie dell'app di lingue: ogni intestazione era tagliata a sei lettere,
+     anche su colonne larghe centottanta pixel — "Vocabulary & idioms" usciva "Vocabu", senza
+     nemmeno i puntini a dire che mancava qualcosa. Un'etichetta accorciata deve dirlo. */
+  const tronche = [];
+  renderizzati.forEach(r => {
+    svgs(r.doc).forEach(s => {
+      if (s.el.querySelectorAll('rect[data-f][rx="1"]').length < 8) return;
+      [...s.el.querySelectorAll('text[y="10"]')].map(t => t.textContent).forEach(t => {
+        if (t.endsWith('…')) return;
+        const intero = r.nomi.find(n => n !== t && n.startsWith(t));
+        if (intero && !r.nomi.includes(t)) tronche.push(`${r.id} · "${s.titolo}": "${t}" al posto di "${intero}", senza puntini`);
+      });
+    });
+  });
+  assert.deepStrictEqual(tronche, [], tronche.join(' | '));
 });
 
 renderizzati.forEach(r => r.chiudi());
