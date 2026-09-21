@@ -169,13 +169,25 @@ function build(dp) {
     });
   }
 
-  /* ---- 3. the derived fields, in declared order ---- */
+  /* ---- 3. the derived fields, in declared order ----
+     UN CONTEGGIO SOTTILE DEVE TENERE IL SUO TASSO. Ogni campo e un intero, e arrotondare ogni
+     cella per conto suo e innocuo sulle celle grandi e falso su quelle piccole: 3 nuovi utenti
+     che trovano un partner, per una retention del 16%, fanno 0,48 — arrotondato, zero — e un
+     anno di celle cosi porta un 16% dichiarato a un 10% a schermo. Il resto dell'arrotondamento
+     viaggia quindi al mese successivo della stessa serie (stesso membro, stesso membro dello
+     split, stesso campo): il totale dell'anno, e ogni tasso costruito sopra, resta quello
+     dichiarato. Trovato sul segmento russo dell'app di lingue, dove lo scambio 1:1 usciva meno
+     efficace delle voice room per puro arrotondamento. */
+  const resti = {};
   years.forEach((y, yi) => {
     grain.filter(r => r.y === y).forEach(r => {
       const ctx = { j, yi, seas, years, dim: dimId };
+      const serie = r[dimId] + '|' + (splitCfg ? r[splitCfg.dim] : '') + '|';
       for (let i = 1; i < fields.length; i++) {
         const f = fields[i];
-        r[f.id] = Math.round(evalField(f, r, r.__own, r.__split, ctx));
+        const k = serie + f.id, v = evalField(f, r, r.__own, r.__split, ctx) + (resti[k] || 0);
+        r[f.id] = Math.round(v);
+        resti[k] = v - r[f.id];
         /* Un campo puo esistere SOLO per certi membri di una dimensione: la spesa paid non
            esiste sull'organico, il costo di spedizione non esiste sul ritiro in negozio.
            Senza dirlo, il generatore lo distribuisce ovunque e il filtro "Organico" lascia la
@@ -184,7 +196,7 @@ function build(dp) {
            il filtro lo azzera da solo perche e vero. */
         if (f.only && f.only.dim && Array.isArray(f.only.members)) {
           const mio = r[f.only.dim];
-          if (mio !== undefined && f.only.members.indexOf(mio) < 0) r[f.id] = 0;
+          if (mio !== undefined && f.only.members.indexOf(mio) < 0) { r[f.id] = 0; resti[k] = 0; }
         }
       }
     });

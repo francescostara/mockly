@@ -87,6 +87,15 @@ data has to MEAN it:
 
 Leave a child as a plain name only when its share genuinely does not matter to the story.
 
+**A thin count must keep its rate.** Counts are integers, and rounding each cell on its own is
+harmless when cells are large and silently wrong when they are small: 3 new learners who found a
+partner, times a 16% retention, is 0.48 — rounded, zero — and a year of such cells turns a 16%
+rate into 10%. Nothing looks broken; the number is simply false, and it lands exactly on the
+small segment the story is about. The engine therefore rounds with the remainder CARRIED to the
+next month of the same series, so the yearly total — and every rate built on it — stays what
+the model declared. You do not have to do anything about it, but it is why a small segment's
+rate can be trusted: do not inflate a segment to "protect" its rate.
+
 ## Build with a seed and structure, not flat randomness
 
 Layer real structure onto the seeded PRNG:
