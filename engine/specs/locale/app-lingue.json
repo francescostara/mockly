@@ -2,7 +2,7 @@
  "spec": {
   "meta": {
    "title": "Product, learning and community",
-   "subtitle": "Do new learners stay, what do they find hard, and does the community keep them · {y} vs {py}",
+   "subtitle": "Do new learners stay, which topics drive each language, and which community feature keeps them · {y} vs {py}",
    "brand": {
     "name": "Language App",
     "tagline": "Poland · Ukraine · Israel · Turkey"
@@ -37,10 +37,21 @@
     "curShort": "Cur.",
     "reset": "Reset filters",
     "period": "Period",
-    "conv": "conv."
+    "conv": "conv.",
+    "updatedLabel": "Last updated",
+    "others": "Others",
+    "target": "target",
+    "sopra": "above",
+    "sotto": "below",
+    "year": "Year",
+    "qtrLong": "Quarter",
+    "monthLong": "Month",
+    "spanLong": "How many years",
+    "noPrev": "no comparable previous period",
+    "trajectory": "monthly trajectory"
    },
    "updated": "Updated 2 Sep 2026",
-   "source": "App events · lesson & quiz logs · store subscriptions · community rooms",
+   "source": "App events · lesson & quiz logs · store subscriptions · community features (games, chat, voice, 1:1 exchange)",
    "watermark": "Demo mockup · synthetic data · not real user activity"
   },
   "aesthetic": "agency-modern",
@@ -69,10 +80,6 @@
     "activated",
     "retD1",
     "retD7",
-    "newComm",
-    "commRet30",
-    "nonComm",
-    "nonRet30",
     "ret30",
     "trials",
     "paidNew",
@@ -82,7 +89,21 @@
     "chatters",
     "messages",
     "voiceUsers",
-    "voiceMin"
+    "voiceMin",
+    "gameUsers",
+    "games",
+    "xchUsers",
+    "corrections",
+    "newGame",
+    "gameRet30",
+    "newChat",
+    "chatRet30",
+    "newVoice",
+    "voiceRet30",
+    "newXch",
+    "xchRet30",
+    "newNone",
+    "noneRet30"
    ],
    "measures": [
     {
@@ -235,23 +256,6 @@
      "inv": true
     },
     {
-     "id": "communityLast",
-     "label": "Community members active",
-     "agg": "last",
-     "field": "chatters",
-     "unit": "count",
-     "format": "N"
-    },
-    {
-     "id": "communityReach",
-     "label": "Community reach (% of MAU)",
-     "agg": "ratio",
-     "num": "chatters",
-     "den": "mau",
-     "unit": "pct",
-     "format": "pc"
-    },
-    {
      "id": "msgsPerMember",
      "label": "Messages per member / month",
      "agg": "ratio",
@@ -270,29 +274,119 @@
      "format": "N"
     },
     {
-     "id": "commD30",
-     "label": "D30 retention · joined community",
+     "id": "gameReach",
+     "label": "Games · % of MAU",
      "agg": "ratio",
-     "num": "commRet30",
-     "den": "newComm",
+     "num": "gameUsers",
+     "den": "mau",
      "unit": "pct",
      "format": "pc"
     },
     {
-     "id": "nonD30",
-     "label": "D30 retention · no community",
+     "id": "chatReach",
+     "label": "Chat rooms · % of MAU",
      "agg": "ratio",
-     "num": "nonRet30",
-     "den": "nonComm",
+     "num": "chatters",
+     "den": "mau",
      "unit": "pct",
      "format": "pc"
     },
     {
-     "id": "commLift",
-     "label": "Community retention lift",
+     "id": "voiceReach",
+     "label": "Voice rooms · % of MAU",
+     "agg": "ratio",
+     "num": "voiceUsers",
+     "den": "mau",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "xchReach",
+     "label": "1:1 exchange · % of MAU",
+     "agg": "ratio",
+     "num": "xchUsers",
+     "den": "mau",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "gamesPerPlayer",
+     "label": "Games per player / month",
+     "agg": "ratio",
+     "num": "games",
+     "den": "gameUsers",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "corrPerPair",
+     "label": "Corrections per exchange learner / month",
+     "agg": "ratio",
+     "num": "corrections",
+     "den": "xchUsers",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "gameD30",
+     "label": "D30 · played games",
+     "agg": "ratio",
+     "num": "gameRet30",
+     "den": "newGame",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "chatD30",
+     "label": "D30 · joined chat rooms",
+     "agg": "ratio",
+     "num": "chatRet30",
+     "den": "newChat",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "voiceD30",
+     "label": "D30 · joined voice rooms",
+     "agg": "ratio",
+     "num": "voiceRet30",
+     "den": "newVoice",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "xchD30",
+     "label": "D30 · found a 1:1 partner",
+     "agg": "ratio",
+     "num": "xchRet30",
+     "den": "newXch",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "noneD30",
+     "label": "D30 · used no community feature",
+     "agg": "ratio",
+     "num": "noneRet30",
+     "den": "newNone",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "xchLift",
+     "label": "1:1 exchange lift",
      "agg": "diff",
-     "a": "commD30",
-     "b": "nonD30",
+     "a": "xchD30",
+     "b": "noneD30",
+     "unit": "pp",
+     "format": "pp"
+    },
+    {
+     "id": "gameLift",
+     "label": "Games lift",
+     "agg": "diff",
+     "a": "gameD30",
+     "b": "noneD30",
      "unit": "pp",
      "format": "pp"
     }
@@ -482,7 +576,7 @@
     "id": "learning",
     "title": "Learning by language",
     "nav": "Learning",
-    "subtitle": "Cases in Polish, Russian and Ukrainian and roots in Hebrew are where mistakes pile up",
+    "subtitle": "Every language has its own stumbling block: cases in Polish, Russian and Ukrainian, reading without vowels in Hebrew",
     "rows": [
      {
       "visuals": [
@@ -503,18 +597,38 @@
         }
        },
        {
-        "type": "hbar",
         "span": 2,
         "h": 176,
-        "title": "Most practised topics — specific to each language",
-        "subtitle": "filter a language to see only its topics",
-        "bind": {
-         "dim": "topic",
-         "measure": "lessons",
-         "detail": true,
-         "top": 10,
-         "parent": "language"
-        }
+        "id": "topic-lenti",
+        "motivo": "due-lenti",
+        "viste": [
+         {
+          "etichetta": "Most practised",
+          "type": "hbar",
+          "title": "Topics that drive each language — practice",
+          "subtitle": "lessons completed; filter a language to see only its topics",
+          "bind": {
+           "dim": "topic",
+           "measure": "lessons",
+           "detail": true,
+           "top": 10,
+           "parent": "language"
+          }
+         },
+         {
+          "etichetta": "Hardest",
+          "type": "hbar",
+          "title": "Topics that drive each language — difficulty",
+          "subtitle": "mistake rate per attempt; filter a language to see only its topics",
+          "bind": {
+           "dim": "topic",
+           "measure": "mistakeRate",
+           "detail": true,
+           "top": 10,
+           "parent": "language"
+          }
+         }
+        ]
        }
       ]
      },
@@ -573,99 +687,161 @@
    },
    {
     "id": "community",
-    "title": "Community — chat and voice rooms",
+    "title": "Community — play, chat, talk, exchange",
     "nav": "Community",
-    "subtitle": "Learners who join a room in week one are more than twice as likely to still be here at day 30",
+    "subtitle": "1:1 language exchange is the least used feature and the one that keeps new learners longest",
     "rows": [
      {
       "visuals": [
        {
-        "type": "scatter",
+        "type": "narrative",
         "span": 2,
-        "h": 176,
-        "title": "Community reach against retention lift",
-        "subtitle": "by language, bubble = MAU",
+        "h": 164,
+        "title": "Which feature keeps new learners",
         "bind": {
          "dim": "language",
-         "x": "communityReach",
-         "y": "commLift",
-         "size": "mauLast"
+         "primary": "xchD30",
+         "template": "Of new learners who find a 1:1 partner in week one, {m:xchD30} are still here at day 30 — against {m:voiceD30} for voice rooms, {m:chatD30} for chat rooms, {m:gameD30} for games and {m:noneD30} for learners who use no community feature. Games reach {m:gameReach} of MAU, 1:1 exchange only {m:xchReach}: the feature that keeps learners is the one fewest people find."
         }
        },
        {
-        "type": "gauge",
-        "span": 1,
-        "h": 176,
-        "title": "D30 retention · joined community",
-        "subtitle": "goal 20% for room joiners",
+        "type": "hbar",
+        "span": 2,
+        "h": 164,
+        "title": "Where 1:1 exchange lifts retention most",
+        "subtitle": "D30 of exchange learners minus D30 of learners with no feature",
         "bind": {
-         "measure": "commD30",
-         "target": 0.2,
-         "targetLabel": "goal",
-         "max": 0.4
-        }
-       },
-       {
-        "type": "delta-card",
-        "span": 1,
-        "h": 176,
-        "title": "Community reach (% of MAU)",
-        "bind": {
-         "measure": "communityReach"
+         "dim": "language",
+         "measure": "xchLift",
+         "top": 6
         }
        }
       ]
      },
      {
-      "flex": true,
       "visuals": [
        {
-        "type": "matrix",
         "span": 4,
-        "title": "Languages — community · {period}",
-        "subtitle": "right-click a row for the language detail",
-        "bind": {
-         "dim": "language",
-         "label": "Language",
-         "sort": "communityLast",
-         "drill": true,
-         "totalsLabel": "All languages",
-         "columns": [
-          {
-           "measure": "communityLast",
-           "label": "Members active"
-          },
-          {
-           "measure": "communityReach",
-           "label": "Reach",
-           "kind": "heat",
-           "scale": [
-            0.1,
-            0.25
+        "id": "feature-lenti",
+        "motivo": "due-lenti",
+        "viste": [
+         {
+          "etichetta": "Adoption & activity",
+          "type": "matrix",
+          "title": "Languages — who uses each feature, and how much · {period}",
+          "subtitle": "right-click a row for the language detail",
+          "bind": {
+           "dim": "language",
+           "label": "Language",
+           "sort": "mauLast",
+           "drill": true,
+           "totalsLabel": "All languages",
+           "columns": [
+            {
+             "measure": "gameReach",
+             "label": "Games",
+             "kind": "heat",
+             "scale": [
+              0.15,
+              0.3
+             ]
+            },
+            {
+             "measure": "gamesPerPlayer",
+             "label": "Games / player"
+            },
+            {
+             "measure": "chatReach",
+             "label": "Chat",
+             "kind": "heat",
+             "scale": [
+              0.1,
+              0.25
+             ]
+            },
+            {
+             "measure": "msgsPerMember",
+             "label": "Msgs / member"
+            },
+            {
+             "measure": "voiceReach",
+             "label": "Voice",
+             "kind": "heat",
+             "scale": [
+              0.03,
+              0.11
+             ]
+            },
+            {
+             "measure": "voiceMinPerUser",
+             "label": "Voice min / user"
+            },
+            {
+             "measure": "xchReach",
+             "label": "1:1 exchange",
+             "kind": "heat",
+             "scale": [
+              0.025,
+              0.075
+             ]
+            },
+            {
+             "measure": "corrPerPair",
+             "label": "Corrections / learner"
+            }
            ]
-          },
-          {
-           "measure": "msgsPerMember",
-           "label": "Msgs / member"
-          },
-          {
-           "measure": "voiceMinPerUser",
-           "label": "Voice min / user"
-          },
-          {
-           "measure": "commD30",
-           "label": "D30 · community"
-          },
-          {
-           "measure": "nonD30",
-           "label": "D30 · others"
-          },
-          {
-           "measure": "commLift",
-           "label": "Lift"
           }
-         ]
-        }
+         },
+         {
+          "etichetta": "Retention",
+          "type": "matrix",
+          "title": "Languages — does each feature keep new learners? · {period}",
+          "subtitle": "D30 retention of new learners, by the feature they used in week one",
+          "bind": {
+           "dim": "language",
+           "label": "Language",
+           "sort": "mauLast",
+           "drill": true,
+           "totalsLabel": "All languages",
+           "columns": [
+            {
+             "measure": "gameD30",
+             "label": "Games"
+            },
+            {
+             "measure": "chatD30",
+             "label": "Chat"
+            },
+            {
+             "measure": "voiceD30",
+             "label": "Voice"
+            },
+            {
+             "measure": "xchD30",
+             "label": "1:1 exchange",
+             "kind": "heat",
+             "scale": [
+              0.15,
+              0.25
+             ]
+            },
+            {
+             "measure": "noneD30",
+             "label": "No feature"
+            },
+            {
+             "measure": "gameLift",
+             "label": "Games lift"
+            },
+            {
+             "measure": "xchLift",
+             "label": "1:1 lift"
+            }
+           ]
+          }
+         }
+        ],
+        "h": 236
        }
       ]
      }
@@ -676,32 +852,37 @@
    "dim": "language",
    "page": {
     "id": "__drill__",
-    "title": "{drill}",
+    "title": "What drives {drill}",
     "drillHeader": "{drill} · {period}",
     "backLabel": "Back to all languages",
-    "subtitle": "Activity and difficulty for the selected language",
+    "subtitle": "The topics this language practises most, and where its learners stumble",
     "rows": [
      {
       "visuals": [
        {
-        "type": "trend",
+        "type": "hbar",
         "span": 2,
-        "h": 160,
-        "title": "MAU — {drill}",
+        "h": 170,
+        "title": "Most practised topics — {drill}",
+        "subtitle": "lessons completed",
         "bind": {
-         "measure": "mauLast"
+         "dim": "topic",
+         "measure": "lessons",
+         "detail": true,
+         "top": 5
         }
        },
        {
         "type": "hbar",
         "span": 2,
-        "h": 160,
-        "title": "Topics — {drill}",
+        "h": 170,
+        "title": "Hardest topics — {drill}",
+        "subtitle": "mistake rate per attempt",
         "bind": {
          "dim": "topic",
-         "measure": "lessons",
+         "measure": "mistakeRate",
          "detail": true,
-         "top": 4
+         "top": 5
         }
        }
       ]
@@ -785,9 +966,6 @@
        "act": 0.68,
        "d1": 0.4,
        "d7": 0.21,
-       "joinC": 0.26,
-       "cRet": 0.26,
-       "nRet": 0.1,
        "trial": 0.14,
        "t2p": 0.48,
        "prem": 0.065,
@@ -796,7 +974,22 @@
        "chat": 0.2,
        "msgs": 140,
        "voice": 0.08,
-       "vmin": 70
+       "vmin": 70,
+       "d30": 0.118,
+       "game": 0.24,
+       "gpp": 34,
+       "xch": 0.05,
+       "corr": 26,
+       "jGame": 0.31,
+       "rGame": 0.125,
+       "jChat": 0.21,
+       "rChat": 0.15,
+       "jVoice": 0.08,
+       "rVoice": 0.18,
+       "jXch": 0.06,
+       "rXch": 0.215,
+       "jNone": 0.52,
+       "rNone": 0.072
       }
      },
      {
@@ -813,9 +1006,6 @@
        "act": 0.7,
        "d1": 0.42,
        "d7": 0.23,
-       "joinC": 0.28,
-       "cRet": 0.28,
-       "nRet": 0.11,
        "trial": 0.15,
        "t2p": 0.5,
        "prem": 0.07,
@@ -824,7 +1014,22 @@
        "chat": 0.22,
        "msgs": 160,
        "voice": 0.09,
-       "vmin": 85
+       "vmin": 85,
+       "d30": 0.131,
+       "game": 0.26,
+       "gpp": 38,
+       "xch": 0.062,
+       "corr": 31,
+       "jGame": 0.33,
+       "rGame": 0.14,
+       "jChat": 0.23,
+       "rChat": 0.165,
+       "jVoice": 0.09,
+       "rVoice": 0.195,
+       "jXch": 0.072,
+       "rXch": 0.235,
+       "jNone": 0.49,
+       "rNone": 0.08
       }
      },
      {
@@ -841,9 +1046,6 @@
        "act": 0.64,
        "d1": 0.37,
        "d7": 0.19,
-       "joinC": 0.22,
-       "cRet": 0.24,
-       "nRet": 0.09,
        "trial": 0.12,
        "t2p": 0.42,
        "prem": 0.055,
@@ -852,7 +1054,22 @@
        "chat": 0.17,
        "msgs": 120,
        "voice": 0.07,
-       "vmin": 60
+       "vmin": 60,
+       "d30": 0.11,
+       "game": 0.23,
+       "gpp": 32,
+       "xch": 0.045,
+       "corr": 24,
+       "jGame": 0.3,
+       "rGame": 0.118,
+       "jChat": 0.18,
+       "rChat": 0.14,
+       "jVoice": 0.07,
+       "rVoice": 0.17,
+       "jXch": 0.052,
+       "rXch": 0.2,
+       "jNone": 0.55,
+       "rNone": 0.068
       }
      },
      {
@@ -869,9 +1086,6 @@
        "act": 0.58,
        "d1": 0.31,
        "d7": 0.14,
-       "joinC": 0.15,
-       "cRet": 0.2,
-       "nRet": 0.065,
        "trial": 0.1,
        "t2p": 0.36,
        "prem": 0.045,
@@ -880,7 +1094,22 @@
        "chat": 0.12,
        "msgs": 95,
        "voice": 0.05,
-       "vmin": 45
+       "vmin": 45,
+       "d30": 0.084,
+       "game": 0.19,
+       "gpp": 27,
+       "xch": 0.03,
+       "corr": 19,
+       "jGame": 0.25,
+       "rGame": 0.092,
+       "jChat": 0.13,
+       "rChat": 0.11,
+       "jVoice": 0.05,
+       "rVoice": 0.135,
+       "jXch": 0.034,
+       "rXch": 0.16,
+       "jNone": 0.63,
+       "rNone": 0.053
       }
      },
      {
@@ -897,9 +1126,6 @@
        "act": 0.71,
        "d1": 0.41,
        "d7": 0.22,
-       "joinC": 0.3,
-       "cRet": 0.29,
-       "nRet": 0.11,
        "trial": 0.15,
        "t2p": 0.49,
        "prem": 0.07,
@@ -908,7 +1134,22 @@
        "chat": 0.24,
        "msgs": 170,
        "voice": 0.1,
-       "vmin": 90
+       "vmin": 90,
+       "d30": 0.134,
+       "game": 0.27,
+       "gpp": 39,
+       "xch": 0.066,
+       "corr": 33,
+       "jGame": 0.34,
+       "rGame": 0.142,
+       "jChat": 0.25,
+       "rChat": 0.168,
+       "jVoice": 0.1,
+       "rVoice": 0.2,
+       "jXch": 0.075,
+       "rXch": 0.24,
+       "jNone": 0.48,
+       "rNone": 0.081
       }
      },
      {
@@ -925,9 +1166,6 @@
        "act": 0.62,
        "d1": 0.35,
        "d7": 0.17,
-       "joinC": 0.19,
-       "cRet": 0.23,
-       "nRet": 0.08,
        "trial": 0.12,
        "t2p": 0.44,
        "prem": 0.06,
@@ -936,7 +1174,22 @@
        "chat": 0.15,
        "msgs": 110,
        "voice": 0.06,
-       "vmin": 55
+       "vmin": 55,
+       "d30": 0.103,
+       "game": 0.21,
+       "gpp": 30,
+       "xch": 0.04,
+       "corr": 22,
+       "jGame": 0.28,
+       "rGame": 0.11,
+       "jChat": 0.16,
+       "rChat": 0.132,
+       "jVoice": 0.06,
+       "rVoice": 0.16,
+       "jXch": 0.046,
+       "rXch": 0.19,
+       "jNone": 0.57,
+       "rNone": 0.064
       }
      }
     ]
@@ -1082,55 +1335,6 @@
      ]
     },
     {
-     "id": "newComm",
-     "kind": "share",
-     "of": "newUsers",
-     "attr": "joinC",
-     "jitter": [
-      0.95,
-      1.05
-     ]
-    },
-    {
-     "id": "commRet30",
-     "kind": "share",
-     "of": "newComm",
-     "attr": "cRet",
-     "jitter": [
-      0.95,
-      1.05
-     ]
-    },
-    {
-     "id": "nonComm",
-     "kind": "share",
-     "of": "newUsers",
-     "attr": "joinC",
-     "jitter": [
-      0.98,
-      1.02
-     ],
-     "complement": true
-    },
-    {
-     "id": "nonRet30",
-     "kind": "share",
-     "of": "nonComm",
-     "attr": "nRet",
-     "jitter": [
-      0.95,
-      1.05
-     ]
-    },
-    {
-     "id": "ret30",
-     "kind": "combine",
-     "plus": [
-      "commRet30",
-      "nonRet30"
-     ]
-    },
-    {
      "id": "trials",
      "kind": "share",
      "of": "newUsers",
@@ -1219,6 +1423,156 @@
       0.9,
       1.1
      ]
+    },
+    {
+     "id": "ret30",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "d30",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "gameUsers",
+     "kind": "share",
+     "of": "mau",
+     "attr": "game",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "games",
+     "kind": "share",
+     "of": "gameUsers",
+     "attr": "gpp",
+     "jitter": [
+      0.9,
+      1.1
+     ]
+    },
+    {
+     "id": "xchUsers",
+     "kind": "share",
+     "of": "mau",
+     "attr": "xch",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "corrections",
+     "kind": "share",
+     "of": "xchUsers",
+     "attr": "corr",
+     "jitter": [
+      0.9,
+      1.1
+     ]
+    },
+    {
+     "id": "newGame",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "jGame",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "gameRet30",
+     "kind": "share",
+     "of": "newGame",
+     "attr": "rGame",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "newChat",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "jChat",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "chatRet30",
+     "kind": "share",
+     "of": "newChat",
+     "attr": "rChat",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "newVoice",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "jVoice",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "voiceRet30",
+     "kind": "share",
+     "of": "newVoice",
+     "attr": "rVoice",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "newXch",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "jXch",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "xchRet30",
+     "kind": "share",
+     "of": "newXch",
+     "attr": "rXch",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "newNone",
+     "kind": "share",
+     "of": "newUsers",
+     "attr": "jNone",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "noneRet30",
+     "kind": "share",
+     "of": "newNone",
+     "attr": "rNone",
+     "jitter": [
+      0.95,
+      1.05
+     ]
     }
    ]
   },
@@ -1227,40 +1581,226 @@
    "parentDim": "language",
    "members": {
     "en": [
-     "Phrasal verbs",
-     "Tenses & aspect",
-     "Pronunciation drills",
-     "Business English"
+     {
+      "n": "Phrasal verbs",
+      "w": 2.6,
+      "mult": {
+       "mistakes": 1.3
+      }
+     },
+     {
+      "n": "Tenses & aspect",
+      "w": 2,
+      "mult": {
+       "mistakes": 1.15
+      }
+     },
+     {
+      "n": "Articles a / an / the",
+      "w": 1.4,
+      "mult": {
+       "mistakes": 1.2
+      }
+     },
+     {
+      "n": "Pronunciation drills",
+      "w": 1.6,
+      "mult": {
+       "mistakes": 0.8
+      }
+     },
+     {
+      "n": "Business English",
+      "w": 1.2,
+      "mult": {
+       "mistakes": 0.9
+      }
+     }
     ],
     "pl": [
-     "Seven noun cases",
-     "Verb aspect pairs",
-     "Gender agreement",
-     "sz / cz / rz sounds"
+     {
+      "n": "sz / cz / rz sounds",
+      "w": 2.8,
+      "mult": {
+       "mistakes": 0.7
+      }
+     },
+     {
+      "n": "Seven noun cases",
+      "w": 2.4,
+      "mult": {
+       "mistakes": 1.6
+      }
+     },
+     {
+      "n": "Verb aspect pairs",
+      "w": 1.5,
+      "mult": {
+       "mistakes": 1.3
+      }
+     },
+     {
+      "n": "Gender agreement",
+      "w": 1,
+      "mult": {
+       "mistakes": 1.1
+      }
+     },
+     {
+      "n": "Numerals and case",
+      "w": 0.8,
+      "mult": {
+       "mistakes": 1.5
+      }
+     }
     ],
     "tr": [
-     "Vowel harmony",
-     "Suffix chains",
-     "Case endings",
-     "Evidential -mis"
+     {
+      "n": "Vowel harmony",
+      "w": 2.6,
+      "mult": {
+       "mistakes": 0.9
+      }
+     },
+     {
+      "n": "Suffix chains",
+      "w": 2,
+      "mult": {
+       "mistakes": 1.4
+      }
+     },
+     {
+      "n": "Case endings",
+      "w": 1.6,
+      "mult": {
+       "mistakes": 1.2
+      }
+     },
+     {
+      "n": "Word order (SOV)",
+      "w": 1.2,
+      "mult": {
+       "mistakes": 0.8
+      }
+     },
+     {
+      "n": "Evidential -mış",
+      "w": 0.9,
+      "mult": {
+       "mistakes": 1.5
+      }
+     }
     ],
     "ru": [
-     "Six noun cases",
-     "Verbs of motion",
-     "Aspect pairs",
-     "Stress patterns"
+     {
+      "n": "Six noun cases",
+      "w": 2.2,
+      "mult": {
+       "mistakes": 1.5
+      }
+     },
+     {
+      "n": "Stress patterns",
+      "w": 1.8,
+      "mult": {
+       "mistakes": 0.8
+      }
+     },
+     {
+      "n": "Verbs of motion",
+      "w": 1.6,
+      "mult": {
+       "mistakes": 1.6
+      }
+     },
+     {
+      "n": "Aspect pairs",
+      "w": 1.4,
+      "mult": {
+       "mistakes": 1.3
+      }
+     },
+     {
+      "n": "Reading Cyrillic",
+      "w": 1,
+      "mult": {
+       "mistakes": 0.6
+      }
+     }
     ],
     "uk": [
-     "Seven noun cases",
-     "Vocative case",
-     "Aspect pairs",
-     "Soft consonants"
+     {
+      "n": "Seven noun cases",
+      "w": 2.2,
+      "mult": {
+       "mistakes": 1.5
+      }
+     },
+     {
+      "n": "Soft consonants",
+      "w": 1.6,
+      "mult": {
+       "mistakes": 0.8
+      }
+     },
+     {
+      "n": "Aspect pairs",
+      "w": 1.4,
+      "mult": {
+       "mistakes": 1.3
+      }
+     },
+     {
+      "n": "Letters і, ї, є, ґ",
+      "w": 1.2,
+      "mult": {
+       "mistakes": 0.7
+      }
+     },
+     {
+      "n": "Vocative case",
+      "w": 1,
+      "mult": {
+       "mistakes": 1.2
+      }
+     }
     ],
     "he": [
-     "Root patterns (binyanim)",
-     "Gender in verbs",
-     "Reading without vowels",
-     "Guttural sounds"
+     {
+      "n": "Reading without vowels",
+      "w": 2.6,
+      "mult": {
+       "mistakes": 1.5
+      }
+     },
+     {
+      "n": "Root patterns (binyanim)",
+      "w": 2,
+      "mult": {
+       "mistakes": 1.6
+      }
+     },
+     {
+      "n": "Right-to-left script",
+      "w": 1.6,
+      "mult": {
+       "mistakes": 0.6
+      }
+     },
+     {
+      "n": "Gender in verbs",
+      "w": 1.4,
+      "mult": {
+       "mistakes": 1.2
+      }
+     },
+     {
+      "n": "Guttural sounds",
+      "w": 1.1,
+      "mult": {
+       "mistakes": 0.8
+      }
+     }
     ]
    },
    "fields": [

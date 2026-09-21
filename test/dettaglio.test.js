@@ -29,9 +29,18 @@ const PL = [
   { n: 'Seven noun cases', w: 2.4, mult: { mistakes: 1.6 } },
   { n: 'Verb aspect pairs', w: 1.5, mult: { mistakes: 1.3 } },
   { n: 'Gender agreement', w: 1.0, mult: { mistakes: 1.1 } },
-  { n: 'sz / cz / rz sounds', w: 2.8, mult: { mistakes: 0.7 } }
+  { n: 'sz / cz / rz sounds', w: 2.8, mult: { mistakes: 0.7 } },
+  { n: 'Numerals and case', w: 0.8, mult: { mistakes: 1.5 } }
 ];
-const conCarattere = () => { const dp = clona(caso.dataParams); dp.detail.members.pl = PL; return dp; };
+/* stesso numero di figli del caso: la quota casuale si estrae per ogni figlio, e il seme resta
+   allineato solo se i figli sono gli stessi */
+/* il "prima": gli stessi topic ridotti a nomi soli, com'erano nella v2 giudicata da Tim */
+const senzaCarattere = () => {
+  const dp = clona(caso.dataParams);
+  Object.keys(dp.detail.members).forEach(k => { dp.detail.members[k] = dp.detail.members[k].map(x => typeof x === 'string' ? x : x.n); });
+  return dp;
+};
+const conCarattere = () => { const dp = senzaCarattere(); dp.detail.members.pl = PL; return dp; };
 
 /* le righe di dettaglio sommate per figlio, sull'ultimo anno */
 function perFiglio(data) {
@@ -45,7 +54,7 @@ function perFiglio(data) {
 }
 
 ok('un figlio senza carattere si comporta come prima: stesso seme, stessi numeri', () => {
-  const prima = builder.build(clona(caso.dataParams));
+  const prima = builder.build(senzaCarattere());
   const dopo = builder.build(conCarattere());
   /* il polacco cambia perche lo si e dichiarato; le altre lingue devono restare identiche */
   Object.keys(prima.detailModel.shares).filter(k => !k.startsWith('pl:')).forEach(k =>
@@ -71,7 +80,7 @@ ok('il moltiplicatore rende un topic piu difficile, e i figli sommano ancora al 
     'i casi (' + (tasso('Seven noun cases') * 100).toFixed(1) + '%) devono essere ben piu difficili dei suoni (' +
     (tasso('sz / cz / rz sounds') * 100).toFixed(1) + '%)');
   /* senza carattere i tassi erano copie: lo si verifica sul caso vecchio */
-  const vecchio = perFiglio(builder.build(clona(caso.dataParams)));
+  const vecchio = perFiglio(builder.build(senzaCarattere()));
   const tv = Object.keys(vecchio).filter(k => k.startsWith('pl:')).map(k => vecchio[k].mistakes / vecchio[k].attempts);
   assert.ok(Math.max(...tv) - Math.min(...tv) < 1e-9, 'il caso di prova doveva avere tassi identici');
   ['lessons', 'attempts', 'mistakes'].forEach(f => assert.strictEqual(d.tieOut[f + '_delta'], 0, f + ': il dettaglio non quadra col genitore'));
