@@ -12,7 +12,7 @@ const evals = JSON.parse(fs.readFileSync(path.join(root, 'skill', 'evals', 'eval
 
 let failed = 0;
 ['runtime.smoke.js', 'data-model.test.js', 'canonical-equivalence.test.js', 'app-fallback.test.js',
-  'data-contract.test.js', 'design-tokens.test.js', 'no-raw-color.test.js', 'anchors.test.js', 'ribbon-crossing.test.js', 'gauge.test.js', 'delta-card.test.js', 'anti-generic.test.js', 'env-names.test.js', 'palette.test.js', 'tipografia.test.js', 'geometria.test.js', 'tempo.test.js', 'bookmark.test.js', 'intervista.test.js', 'donut.test.js', 'incolla.test.js', 'powerbi.test.js', 'lingua.test.js', 'flusso-stock.test.js', 'video.test.js', 'dettaglio.test.js', 'conteggi.test.js', 'legenda.test.js'].forEach(f => {
+  'data-contract.test.js', 'design-tokens.test.js', 'no-raw-color.test.js', 'anchors.test.js', 'ribbon-crossing.test.js', 'gauge.test.js', 'delta-card.test.js', 'anti-generic.test.js', 'env-names.test.js', 'palette.test.js', 'tipografia.test.js', 'geometria.test.js', 'tempo.test.js', 'bookmark.test.js', 'intervista.test.js', 'donut.test.js', 'incolla.test.js', 'powerbi.test.js', 'lingua.test.js', 'flusso-stock.test.js', 'video.test.js', 'dettaglio.test.js', 'conteggi.test.js', 'legenda.test.js', 'video-export.test.js'].forEach(f => {
   try {
     process.stdout.write(execFileSync(process.execPath, [path.join(__dirname, f)], { encoding: 'utf8' }));
   } catch (err) {

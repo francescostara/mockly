@@ -53,6 +53,14 @@ export default function Page() {
   const [copiato, setCopiato] = useState(false);
   /* il kit Power BI arriva col mockup: guida, tema e dati, tre file da scaricare */
   const [kitPbi, setKitPbi] = useState<{ guida: string; tema: string; csv: string } | null>(null);
+  /* L'esportazione video e attiva solo dove funziona davvero (lib/video-export.js): la route dice
+     se su questa macchina ci sono Chrome, Playwright e ffmpeg. Altrove il bottone resta spento e
+     lo dice, come "Condividi" — mai un bottone che fallisce o che finge. */
+  const [videoOk, setVideoOk] = useState(false);
+  const [videoBusy, setVideoBusy] = useState(false);
+  useEffect(() => {
+    fetch('/api/video').then(r => r.json()).then(d => setVideoOk(!!d.ok)).catch(() => setVideoOk(false));
+  }, []);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const t = STRINGS[lang];
@@ -163,6 +171,27 @@ export default function Page() {
   function download() {
     if (!html) return;
     salvaFile(html, 'pruva-report.html', 'text/html');
+  }
+
+  async function esportaVideo() {
+    if (!html || videoBusy) return;
+    setVideoBusy(true);
+    setError(null);
+    try {
+      const r = await fetch('/api/video', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ html }) });
+      if (!r.ok) throw new Error(String(r.status));
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pruva-demo.mp4';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError(t.videoFailed);
+    } finally {
+      setVideoBusy(false);
+    }
   }
 
   async function copiaMessaggio() {
@@ -397,6 +426,10 @@ export default function Page() {
             <button className="btn-ghost btn-sm" disabled={!kitPbi}
               onClick={() => kitPbi && salvaFile(kitPbi.csv, 'pruva-dati.csv', 'text/csv')}>
               {lang === 'it' ? 'Dati CSV' : 'Data CSV'}
+            </button>
+            <button className="btn-ghost btn-sm" disabled={!html || !videoOk || videoBusy} onClick={esportaVideo}
+              title={videoOk ? undefined : t.videoUnavailable} aria-busy={videoBusy}>
+              {videoBusy ? t.exportingVideo : t.exportVideo}
             </button>
             <button className="btn-ghost btn-sm" disabled={!html} title={lang === 'it' ? 'Non ancora attivo' : 'Not wired yet'}>{t.share}</button>
             <button className="btn-ghost btn-sm" onClick={() => generate()} disabled={busy || !briefText().trim()}>{t.regenerate}</button>

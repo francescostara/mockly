@@ -34,7 +34,7 @@ const TELA = { width: 1280, height: 720 };
 
 /* ---------- argomenti ---------- */
 const argv = process.argv.slice(2);
-const opt = { velocita: 1, passi: null, out: null, tieni: false };
+const opt = { velocita: 1, passi: null, out: null, tieni: false, dest: null };
 const liberi = [];
 argv.forEach(a => {
   const m = a.match(/^--([a-z]+)(?:=(.*))?$/);
@@ -42,6 +42,8 @@ argv.forEach(a => {
   if (m[1] === 'velocita') opt.velocita = Math.max(0.25, Math.min(4, parseFloat(m[2]) || 1));
   else if (m[1] === 'passi') opt.passi = m[2].split(',').map(s => s.trim()).filter(Boolean);
   else if (m[1] === 'out') opt.out = m[2];
+  /* --dest: percorso assoluto dell'mp4, per chi chiama lo script da fuori (il bottone dell'app) */
+  else if (m[1] === 'dest') opt.dest = m[2];
   else if (m[1] === 'tieni') opt.tieni = true;
   /* --feed: la versione corta per il feed, tre passi soli, senza toccare le pause */
   else if (m[1] === 'feed') opt.passi = VIDEO.FEED.slice();
@@ -233,7 +235,8 @@ function ffmpeg(da, a) {
   catch { console.error('manca playwright: npm i -D playwright'); process.exit(1); }
 
   fs.mkdirSync(OUT, { recursive: true });
-  const tmp = path.join(OUT, '.grezzo');
+  /* una cartella di lavoro per giro: due esportazioni insieme non si rubano il webm */
+  const tmp = path.join(OUT, '.grezzo-' + process.pid);
   fs.mkdirSync(tmp, { recursive: true });
 
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
@@ -286,7 +289,7 @@ function ffmpeg(da, a) {
 
   const grezzo = fs.readdirSync(tmp).filter(f => f.endsWith('.webm')).map(f => path.join(tmp, f))
     .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
-  const finale = path.join(OUT, opt.out || (src.nome + '.mp4'));
+  const finale = opt.dest || path.join(OUT, opt.out || (src.nome + '.mp4'));
   const fatto = ffmpeg(grezzo, finale);
   if (fatto) {
     fs.rmSync(tmp, { recursive: true, force: true });

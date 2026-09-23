@@ -34,6 +34,10 @@ export type Strings = {
   restart: string;
   download: string;
   share: string;
+  exportVideo: string;
+  exportingVideo: string;
+  videoUnavailable: string;
+  videoFailed: string;
   regenerate: string;
   freeText: string;
   freeTextExtra: string;
@@ -78,6 +82,10 @@ const it: Strings = {
   restart: 'Ricomincia',
   download: 'Scarica',
   share: 'Condividi',
+  exportVideo: 'Esporta video',
+  exportingVideo: 'Registro il video…',
+  videoUnavailable: 'Esportazione video disponibile solo nella versione locale (serve Chrome e ffmpeg sulla macchina)',
+  videoFailed: 'La registrazione del video non è riuscita. Il mockup non è cambiato: riprova.',
   regenerate: 'Rigenera',
   freeText: 'Descrivi il report…',
   freeTextExtra: 'Vuoi aggiungere qualcosa al brief?',
@@ -122,6 +130,10 @@ const en: Strings = {
   restart: 'Start over',
   download: 'Download',
   share: 'Share',
+  exportVideo: 'Export video',
+  exportingVideo: 'Recording video…',
+  videoUnavailable: 'Video export works only in the local version for now (it needs Chrome and ffmpeg on the machine)',
+  videoFailed: 'The video recording failed. The mockup is unchanged: try again.',
   regenerate: 'Regenerate',
   freeText: 'Describe the report…',
   freeTextExtra: 'Anything to add to the brief?',
