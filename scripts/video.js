@@ -102,51 +102,91 @@ function preparaSorgente() {
 /* Gira dentro la pagina, prima del contenuto. Non tocca nessun evento: pointer-events none su
    tutto, e z-index sopra qualunque cosa il mockup disegni. */
 function overlay() {
+  if (window !== window.top) return;
   const monta = () => {
     const st = document.createElement('style');
     st.textContent = `
-      @keyframes pruvaOnda { from { transform: translate(-50%,-50%) scale(.3); opacity: .6 }
-                             to   { transform: translate(-50%,-50%) scale(1);  opacity: 0 } }
       #pruvaCur { position: fixed; left: 0; top: 0; width: 16px; height: 16px; margin: -8px 0 0 -8px;
         border-radius: 50%; background: rgba(224,32,27,.88); box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(0,0,0,.35);
-        z-index: 999999; pointer-events: none; opacity: 0; transition: transform 30ms linear, opacity 180ms linear }
-      .pruvaOnda { position: fixed; width: 48px; height: 48px; border-radius: 50%; pointer-events: none;
-        border: 2px solid rgba(224,32,27,.9); background: rgba(224,32,27,.16); z-index: 999998;
-        animation: pruvaOnda 520ms ease-out forwards }
+        z-index: 999999; pointer-events: none; opacity: 0 }
+      #pruvaOnda { position: fixed; width: 48px; height: 48px; border-radius: 50%; pointer-events: none;
+        border: 2px solid rgba(224,32,27,.9); background: rgba(224,32,27,.16); z-index: 999998; opacity: 0 }
       * { cursor: none !important }`;
     document.head.appendChild(st);
     const cur = document.createElement('div');
     cur.id = 'pruvaCur';
     document.body.appendChild(cur);
+    const onda = document.createElement('div');
+    onda.id = 'pruvaOnda';
+    document.body.appendChild(onda);
     document.addEventListener('mousemove', e => {
       cur.style.opacity = '1';
       cur.style.transform = 'translate(' + e.clientX + 'px,' + e.clientY + 'px)';
     }, true);
-    document.addEventListener('mousedown', e => {
-      const o = document.createElement('div');
-      o.className = 'pruvaOnda';
-      o.style.left = e.clientX + 'px'; o.style.top = e.clientY + 'px';
-      document.body.appendChild(o);
-      setTimeout(() => o.remove(), 600);
-    }, true);
+    /* Il cerchio del clic si disegna a mano, un fotogramma alla volta: il video non e piu una
+       registrazione in tempo reale ma una sequenza di scatti, e un'animazione CSS correrebbe
+       col suo orologio invece che con quello del video. */
+    window.__pruvaOnda = (x, y, p) => {
+      if (p < 0 || p > 1) { onda.style.opacity = '0'; return; }
+      const e = 1 - Math.pow(1 - p, 2);
+      onda.style.left = x + 'px'; onda.style.top = y + 'px';
+      onda.style.transform = 'translate(-50%,-50%) scale(' + (0.3 + 0.7 * e) + ')';
+      onda.style.opacity = String(0.6 * (1 - p));
+    };
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', monta);
   else monta();
 }
 
-/* ---------- movimento del mouse ---------- */
-const dormi = ms => new Promise(r => setTimeout(r, ms));
+/* ---------- la regia: un fotogramma alla volta ----------
+   LA QUALITA. Prima il video era la registrazione di Playwright: 1280x720, codificata in VP8 a
+   bassa qualita e poi ricodificata — il testo piccolo del report usciva impastato, e un report e
+   fatto di testo piccolo. Ora ogni fotogramma e uno screenshot a densita doppia (2560x1440), e
+   l'mp4 si fa rimpicciolendo con lanczos: e lo stesso motivo per cui un PDF stampato a 300 dpi si
+   legge meglio di uno a 72. Il tempo lo decide la regia, non l'orologio: un movimento di 700ms
+   sono 21 fotogrammi, qualunque sia la velocita della macchina. */
+const FPS = 30;
+const DPR = 2;
+const facile = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-async function muovi(page, da, a, durata) {
-  const n = Math.max(10, Math.round(durata / 14));
-  for (let i = 1; i <= n; i++) {
-    const t = i / n;
-    /* accelera e rallenta: un movimento a velocita costante sembra una macchina */
-    const e = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    await page.mouse.move(da.x + (a.x - da.x) * e, da.y + (a.y - da.y) * e);
-    await dormi(durata / n);
-  }
-  return a;
+function regista(page, cartella) {
+  let n = 0, onda = null;
+  const nome = k => path.join(cartella, String(k).padStart(5, '0') + '.jpg');
+  const r = {
+    get fotogrammi() { return n; },
+    /* uno scatto vero; se c'e un cerchio del clic in corso, lo si disegna al punto giusto */
+    async scatta() {
+      if (onda) {
+        const p = (n - onda.da) / (0.52 * FPS);
+        await page.evaluate(([x, y, q]) => window.__pruvaOnda && window.__pruvaOnda(x, y, q), [onda.x, onda.y, p]);
+        if (p > 1) onda = null;
+      }
+      await page.screenshot({ path: nome(n++), type: 'jpeg', quality: 95 });
+    },
+    /* una pausa: scatti veri finche il cerchio del clic si muove, poi copie dell'ultimo */
+    async tieni(ms) {
+      let k = Math.round(ms / 1000 * FPS);
+      while (k > 0 && onda) { await r.scatta(); k--; }
+      const ult = nome(n - 1);
+      for (; k > 0; k--) fs.copyFileSync(ult, nome(n++));
+    },
+    async muovi(da, a, ms) {
+      const passi = Math.max(6, Math.round(ms / 1000 * FPS));
+      for (let i = 1; i <= passi; i++) {
+        const e = facile(i / passi);
+        await page.mouse.move(da.x + (a.x - da.x) * e, da.y + (a.y - da.y) * e);
+        await r.scatta();
+      }
+      return a;
+    },
+    async clic(c, destro) {
+      if (destro) await page.mouse.click(c.x, c.y, { button: 'right' });
+      else { await page.mouse.down(); await page.mouse.up(); }
+      onda = { x: c.x, y: c.y, da: n };
+      await r.scatta();
+    }
+  };
+  return r;
 }
 
 /** Il centro del bersaglio: dentro la card indicata, l'elemento piu grande che corrisponde. */
@@ -213,15 +253,18 @@ async function sceneggiaturaDaDom(page) {
   return s;
 }
 
-/* ---------- ffmpeg: da webm a mp4 ---------- */
-function ffmpeg(da, a) {
+/* ---------- ffmpeg: dai fotogrammi all'mp4 ---------- */
+function ffmpeg(cartella, a) {
   const prova = spawnSync('ffmpeg', ['-version'], { encoding: 'utf8' });
   if (prova.error) {
-    console.error('\nffmpeg non e nel PATH: il webm resta in ' + da);
+    console.error('\nffmpeg non e nel PATH: i fotogrammi restano in ' + cartella);
     return null;
   }
-  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', da, '-r', '30',
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', a],
+  /* rimpicciolire da 2560 a 1280 con lanczos e il punto: il testo resta nitido. crf 16 e
+     -tune stillimage perche un report e fatto di superfici ferme e bordi netti, non di movimento */
+  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(cartella, '%05d.jpg'),
+    '-vf', 'scale=' + TELA.width + ':' + TELA.height + ':flags=lanczos', '-c:v', 'libx264', '-preset', 'slow',
+    '-crf', '16', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', a],
     { encoding: 'utf8' });
   if (r.status !== 0) { console.error(r.stderr); return null; }
   return a;
@@ -235,15 +278,12 @@ function ffmpeg(da, a) {
   catch { console.error('manca playwright: npm i -D playwright'); process.exit(1); }
 
   fs.mkdirSync(OUT, { recursive: true });
-  /* una cartella di lavoro per giro: due esportazioni insieme non si rubano il webm */
+  /* una cartella di lavoro per giro: due esportazioni insieme non si rubano i fotogrammi */
   const tmp = path.join(OUT, '.grezzo-' + process.pid);
   fs.mkdirSync(tmp, { recursive: true });
 
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  const ctx = await browser.newContext({
-    viewport: TELA, deviceScaleFactor: 1,
-    recordVideo: { dir: tmp, size: TELA }
-  });
+  const ctx = await browser.newContext({ viewport: TELA, deviceScaleFactor: DPR });
   await ctx.addInitScript(overlay);
   const page = await ctx.newPage();
   await page.goto('file:///' + src.file.replace(/\\/g, '/'));
@@ -254,43 +294,44 @@ function ffmpeg(da, a) {
   console.log('mockup: ' + bersaglio + '   sceneggiatura: ' + (src.fonte === 'scheda' ? 'dalla scheda di interazione' : 'dal DOM'));
   console.log('durata stimata: ' + VIDEO.durata(passi, v) + 's a velocita ' + v + '\n');
 
+  const R = regista(page, tmp);
   /* si parte da un angolo: il cursore entra in scena invece di comparire sul bersaglio */
   let da = { x: 40, y: TELA.height - 40 };
   await page.mouse.move(da.x, da.y);
+  await page.evaluate(() => { const c = document.getElementById('pruvaCur'); if (c) c.style.opacity = '0'; });
 
   for (const p of passi) {
-    const t0 = Date.now();
+    const f0 = R.fotogrammi;
     process.stdout.write('  · ' + p.etichetta);
+    if (!R.fotogrammi) await R.scatta();
     if (p.tipo !== 'pausa') {
       const quale = p.tipo === 'destro' ? 'primo' : 'grande';
       const c = await centro(page, p.sel, p.dentro, quale);
       if (!c) { console.log('   — bersaglio non trovato (' + p.sel + '), passo saltato'); continue; }
-      da = await muovi(page, da, c, 700 / v);
-      await dormi(260 / v);                       /* l'occhio arriva prima della mano */
-      if (p.tipo === 'destro') await page.mouse.click(c.x, c.y, { button: 'right' });
-      else { await page.mouse.down(); await page.mouse.up(); }
+      /* un movimento sotto il secondo, a fotogrammi esatti, sembra uno scatto: 950ms si seguono */
+      da = await R.muovi(da, c, 950 / v);
+      await R.tieni(260 / v);                     /* l'occhio arriva prima della mano */
+      await R.clic(c, p.tipo === 'destro');
       if (p.tipo === 'periodo' && p.bersaglio) {
-        await dormi(500 / v);
+        await R.tieni(500 / v);
         const b = await centro(page, p.bersaglio, null, 'primo');
-        if (b) { da = await muovi(page, da, b, 520 / v); await dormi(220 / v); await page.mouse.down(); await page.mouse.up(); }
+        if (b) { da = await R.muovi(da, b, 700 / v); await R.tieni(220 / v); await R.clic(b); }
         /* il pannello resta aperto dopo la scelta e coprirebbe mezza pagina per tutto il resto
            del video — e anche il tasto "indietro" del drill. Si richiude, come farebbe una persona. */
-        await dormi(420 / v);
+        await R.tieni(420 / v);
         const chiudi = await centro(page, p.sel, null, 'primo');
-        if (chiudi) { da = await muovi(page, da, chiudi, 420 / v); await dormi(160 / v); await page.mouse.down(); await page.mouse.up(); }
+        if (chiudi) { da = await R.muovi(da, chiudi, 560 / v); await R.tieni(160 / v); await R.clic(chiudi); }
       }
     }
-    await dormi(p.attesa / v);
-    console.log('   [' + ((Date.now() - t0) / 1000).toFixed(1) + 's]');
+    await R.tieni(p.attesa / v);
+    console.log('   [' + ((R.fotogrammi - f0) / FPS).toFixed(1) + 's]');
   }
 
   await ctx.close();
   await browser.close();
 
-  const grezzo = fs.readdirSync(tmp).filter(f => f.endsWith('.webm')).map(f => path.join(tmp, f))
-    .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
   const finale = opt.dest || path.join(OUT, opt.out || (src.nome + '.mp4'));
-  const fatto = ffmpeg(grezzo, finale);
+  const fatto = ffmpeg(tmp, finale);
   if (fatto) {
     fs.rmSync(tmp, { recursive: true, force: true });
     if (!opt.tieni && src.fonte === 'scheda') fs.rmSync(src.file, { force: true });

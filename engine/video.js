@@ -114,7 +114,7 @@ function sceneggiatura(spec, data, opt) {
 function durata(passi, velocita) {
   const v = velocita || 1;
   /* ogni passo con un bersaglio porta con se il movimento del cursore e la pausa prima del clic */
-  const movimento = passi.filter(p => p.sel).length * (700 + 260);
+  const movimento = passi.filter(p => p.sel).length * (950 + 260);
   return Math.round((passi.reduce((a, p) => a + p.attesa, 0) + movimento) / v) / 1000;
 }
 
