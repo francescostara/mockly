@@ -53,7 +53,7 @@ console.log('export video dall app (attivo solo dove funziona davvero)');
       require('fs').writeFileSync(tmp, mp4);
       const p = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', tmp], { encoding: 'utf8' });
       require('fs').rmSync(tmp, { force: true });
-      assert.strictEqual(p.stdout.trim().split(',').slice(0, 2).join(','), '1280,720');
+      assert.strictEqual(p.stdout.trim().split(',').slice(0, 2).join(','), '2560,1440');
     });
   }
   console.log('  ' + n + ' checks');

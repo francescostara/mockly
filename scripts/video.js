@@ -34,7 +34,7 @@ const TELA = { width: 1280, height: 720 };
 
 /* ---------- argomenti ---------- */
 const argv = process.argv.slice(2);
-const opt = { velocita: 1, passi: null, out: null, tieni: false, dest: null };
+const opt = { velocita: 1, passi: null, out: null, tieni: false, dest: null, larghezza: null };
 const liberi = [];
 argv.forEach(a => {
   const m = a.match(/^--([a-z]+)(?:=(.*))?$/);
@@ -42,6 +42,8 @@ argv.forEach(a => {
   if (m[1] === 'velocita') opt.velocita = Math.max(0.25, Math.min(4, parseFloat(m[2]) || 1));
   else if (m[1] === 'passi') opt.passi = m[2].split(',').map(s => s.trim()).filter(Boolean);
   else if (m[1] === 'out') opt.out = m[2];
+  /* --larghezza=1280: rimpicciolisce l'mp4 (per un'anteprima leggera). Di norma NO: vedi ffmpeg() */
+  else if (m[1] === 'larghezza') opt.larghezza = Math.max(640, parseInt(m[2], 10) || 0) || null;
   /* --dest: percorso assoluto dell'mp4, per chi chiama lo script da fuori (il bottone dell'app) */
   else if (m[1] === 'dest') opt.dest = m[2];
   else if (m[1] === 'tieni') opt.tieni = true;
@@ -151,7 +153,7 @@ const facile = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 function regista(page, cartella) {
   let n = 0, onda = null;
-  const nome = k => path.join(cartella, String(k).padStart(5, '0') + '.jpg');
+  const nome = k => path.join(cartella, String(k).padStart(5, '0') + '.png');
   const r = {
     get fotogrammi() { return n; },
     /* uno scatto vero; se c'e un cerchio del clic in corso, lo si disegna al punto giusto */
@@ -161,7 +163,8 @@ function regista(page, cartella) {
         await page.evaluate(([x, y, q]) => window.__pruvaOnda && window.__pruvaOnda(x, y, q), [onda.x, onda.y, p]);
         if (p > 1) onda = null;
       }
-      await page.screenshot({ path: nome(n++), type: 'jpeg', quality: 95 });
+      /* PNG, non JPEG: il JPEG sporca proprio i bordi del testo, e un report e testo */
+      await page.screenshot({ path: nome(n++), type: 'png' });
     },
     /* una pausa: scatti veri finche il cerchio del clic si muove, poi copie dell'ultimo */
     async tieni(ms) {
@@ -260,11 +263,14 @@ function ffmpeg(cartella, a) {
     console.error('\nffmpeg non e nel PATH: i fotogrammi restano in ' + cartella);
     return null;
   }
-  /* rimpicciolire da 2560 a 1280 con lanczos e il punto: il testo resta nitido. crf 16 e
-     -tune stillimage perche un report e fatto di superfici ferme e bordi netti, non di movimento */
-  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(cartella, '%05d.jpg'),
-    '-vf', 'scale=' + TELA.width + ':' + TELA.height + ':flags=lanczos', '-c:v', 'libx264', '-preset', 'slow',
-    '-crf', '16', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', a],
+  /* NIENTE RIMPICCIOLIMENTO. Il video va sui social, e la qualita deve essere quella dei
+     fotogrammi: 2560x1440, un pixel del video per ogni pixel catturato. Rimpicciolire a 1280
+     era la prima versione, e sul feed il testo del report risultava morbido (commento
+     dell'autore). crf 12 e -tune stillimage: un report e fatto di superfici ferme e bordi netti. */
+  const vf = opt.larghezza ? ['-vf', 'scale=' + opt.larghezza + ':-2:flags=lanczos'] : [];
+  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(cartella, '%05d.png')]
+    .concat(vf).concat(['-c:v', 'libx264', '-preset', 'slow', '-crf', '12', '-tune', 'stillimage',
+      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', a]),
     { encoding: 'utf8' });
   if (r.status !== 0) { console.error(r.stderr); return null; }
   return a;
@@ -336,6 +342,7 @@ function ffmpeg(cartella, a) {
     fs.rmSync(tmp, { recursive: true, force: true });
     if (!opt.tieni && src.fonte === 'scheda') fs.rmSync(src.file, { force: true });
     const kb = Math.round(fs.statSync(fatto).size / 1024);
-    console.log('\nvideo: ' + path.relative(RADICE, fatto) + '   ' + TELA.width + 'x' + TELA.height + ' · 30fps · ' + kb + 'KB');
+    const lato = opt.larghezza ? opt.larghezza + 'x' + Math.round(opt.larghezza * 9 / 16) : (TELA.width * DPR) + 'x' + (TELA.height * DPR);
+    console.log('\nvideo: ' + path.relative(RADICE, fatto) + '   ' + lato + ' · 30fps · ' + kb + 'KB');
   }
 })().catch(e => { console.error(e); process.exit(1); });
