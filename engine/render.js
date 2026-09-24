@@ -901,7 +901,9 @@ ${tools ? `#tools{height:40px;flex:0 0 40px;background:var(--card);border-bottom
 .fgrp.chips .fitems{display:flex;align-items:center;gap:${W_GAP}px}
 .fgrp.chips .fitems>.catitem{border:1px solid var(--line);border-radius:${t.radius === "0px" ? "0" : "999px"};
   padding:4px 10px;font-size:11px;max-width:${W_CHIP}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fgrp.chips .fitems>.catitem.on{background:var(--c2);border-color:var(--c2);color:#fff}
+/* niente grassetto sul chip acceso della barra: il grassetto lo allarga e sposta tutto quello che
+   viene dopo — lo dice gia il fondo pieno */
+.fgrp.chips .fitems>.catitem.on{background:var(--c2);border-color:var(--c2);color:#fff;font-weight:inherit}
 .fgrp.chips .fitems>.catitem.on .dot{background:#fff!important}
 ` : ``}
 ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}` : ``}
@@ -937,8 +939,17 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
 #hdr .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
 #hdr .spacer{flex:1}
 .hnav{display:flex;gap:4px;margin-left:14px}
-.ctxwrap{display:flex;gap:6px}
-.ctxpill{font-size:10px;color:var(--ink2);background:var(--line2);border:1px solid var(--line);padding:4px 8px;border-radius:2px}
+/* LA BARRA NON SI MUOVE QUANDO SI FILTRA. Con un filtro attivo compaiono le pillole del contesto
+   nella stessa riga: se la riga non basta, i bottoni andavano a capo (da 26 a 40px) e i chip dei
+   filtri scivolavano sotto il cursore di chi stava cliccando. Ora nessun controllo va a capo e
+   nessuno si stringe, tranne il gruppo delle pillole: sono l'unica cosa che ripete un'informazione
+   gia visibile (il chip acceso dice gia il filtro, il selettore dice gia il trimestre), quindi sono
+   loro a cedere spazio. Cedono INTERE: quella che non ci sta va a una seconda riga nascosta, invece
+   di restare mozzata a "C..." — una pillola troncata non dice niente e sembra un errore. */
+.ctxwrap{display:flex;flex-wrap:wrap;gap:6px;min-width:0;max-height:26px;overflow:hidden;flex:0 1000 auto;align-items:center}
+.ctxpill{font-size:10px;color:var(--ink2);background:var(--line2);border:1px solid var(--line);padding:4px 8px;border-radius:2px;white-space:nowrap;flex:0 0 auto}
+.resetb{white-space:nowrap;flex:0 0 auto}
+#tools>.slgrp,#tools>.fgrp,#hdr>.updated,#hdr>.hnav,#hdr>.hbrand{flex:0 0 auto}
 .ctxpill b{font-weight:600;color:var(--c2)}
 .resetb{font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:5px 9px;border-radius:2px;cursor:pointer;font-family:var(--font)}
 .resetb:hover{color:var(--bad);border-color:var(--bad)}

@@ -357,6 +357,22 @@ const INTERVENTI = [
     fatto: "La legenda non si scrive piu: trend e colline la ricevono dal runtime, con lo stesso segno che disegnano (tratteggio grigio nel trend, colonna --c5 nel colline), e un campo legend nella spec viene rifiutato. Tolta da tutte le spec e dall esempio canonico che il modello copia. Gate generale in test/legenda.test.js: ogni segno della legenda deve esistere nel disegno. Corretto anche il kit Power BI, che per il colline diceva \"anno precedente tratteggiato\". Strada facendo: la stima dello spazio di una matrice nel drill contava tutti i figli invece di quelli del genitore (il drill di immobiliare stava nel canvas per caso).",
     stato: "fatto"
   }
+  ,{
+    id: "banco/filtro-organico",
+    versione: 6,
+    commento: "(trovato registrando il video del sito) Il clic del registratore sulla ciambella cade nel buco: cliccava il centro del riquadro della fetta, (915,314), e nessun filtro si applicava.",
+    dove: "registratore video",
+    fatto: "scripts/bersaglio.js sceglie il punto con elementFromPoint: se il centro del riquadro non colpisce la forma, il punto piu vicino al centro che la colpisce (archi, anelli, nastri). Prima di ogni clic il registratore ricontrolla che sotto il cursore ci sia il bersaglio, e se no il passo fallisce invece di registrare un clic a vuoto. Gate: test/bersaglio.test.js, in Chrome.",
+    stato: "fatto"
+  },
+  {
+    id: "banco/filtro-organico",
+    versione: 7,
+    commento: "(trovato registrando il video del sito) Con un filtro attivo le pillole del contesto entrano nella riga dei filtri, la riga non basta piu e i bottoni vanno a capo (da 26 a 40px); i chip dei filtri scivolano a sinistra mentre si clicca.",
+    dove: "barra dei filtri · shell top e intestazione",
+    fatto: "Nessun controllo della barra va a capo o si stringe; cede spazio solo il gruppo delle pillole, che ripete un'informazione gia visibile, e una pillola che non ci sta sparisce intera invece di restare mozzata. Il chip acceso non diventa piu grassetto: allargandosi spostava di un pixel tutto quello che veniva dopo. Gate: test/barra.test.js, in Chrome, su ogni mockup in italiano e in inglese con tutti i filtri attivi insieme. Il gate ha trovato lo stesso difetto anche in archetipi/canonical-executive-summary in italiano.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
