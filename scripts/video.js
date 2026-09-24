@@ -27,6 +27,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const VIDEO = require('../engine/video.js');
+const BERSAGLIO = require('./bersaglio.js');
 
 const RADICE = path.join(__dirname, '..');
 const OUT = path.join(RADICE, 'out', 'video');
@@ -183,6 +184,10 @@ function regista(page, cartella) {
       return a;
     },
     async clic(c, destro) {
+      /* IL GATE: sotto il cursore deve esserci il bersaglio scelto. Un clic a vuoto in un video
+         di vendita e peggio di un passo in meno: il passo fallisce, e si vede perche. */
+      if (!(await page.evaluate(BERSAGLIO.ancoraLui, { x: c.x, y: c.y })))
+        throw new Error('il clic in (' + c.x + ',' + c.y + ') cadrebbe a vuoto: sotto il cursore manca il bersaglio');
       if (destro) await page.mouse.click(c.x, c.y, { button: 'right' });
       else { await page.mouse.down(); await page.mouse.up(); }
       onda = { x: c.x, y: c.y, da: n };
@@ -192,33 +197,12 @@ function regista(page, cartella) {
   return r;
 }
 
-/** Il centro del bersaglio: dentro la card indicata, l'elemento piu grande che corrisponde. */
+/** Il punto da cliccare: dentro la card indicata, sull'elemento giusto, e un punto che lo colpisce
+ *  davvero (scripts/bersaglio.js — il centro del riquadro di una fetta di ciambella e nel foro). */
 async function centro(page, sel, dentro, quale) {
-  return page.evaluate(({ sel, dentro, quale }) => {
-    let ambito = document;
-    if (dentro) {
-      const card = [...document.querySelectorAll('#page .card')]
-        .find(c => ((c.querySelector('.ch h3') || {}).textContent || '').indexOf(dentro) === 0);
-      if (card) ambito = card;
-    }
-    let el = [...ambito.querySelectorAll(sel)].filter(e => { const r = e.getBoundingClientRect(); return r.width > 4 && r.height > 4; });
-    if (!el.length) return null;
-    /* Se un filtro e attivo, si clicca la voce SELEZIONATA, non una attenuata: un drill su
-       "English" con il filtro su "Ukrainian" e un video incoerente, anche se il mockup lo
-       permette. E' una scelta della ripresa, non del mockup. */
-    const accese = el.filter(e => /(^|\s)sel(\s|$)/.test(e.getAttribute('class') || ''));
-    if (accese.length) el = accese;
-    else el = el.filter(e => !/(^|\s)(dim|dimd)(\s|$)/.test(e.getAttribute('class') || '')).concat(
-      el.filter(e => /(^|\s)(dim|dimd)(\s|$)/.test(e.getAttribute('class') || '')));
-    /* per un clic si prende il bersaglio piu grande: e quello che un umano colpirebbe; per il
-       tasto destro si prende la prima riga, che e la piu alta e la piu leggibile */
-    el = quale === 'primo' ? el : el.sort((a, b) => {
-      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-      return rb.width * rb.height - ra.width * ra.height;
-    });
-    const r = el[0].getBoundingClientRect();
-    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
-  }, { sel, dentro, quale: quale || 'grande' });
+  const r = await page.evaluate(BERSAGLIO.trova, { sel, dentro, quale: quale || 'grande' });
+  if (r && r.errore) throw new Error('bersaglio irraggiungibile: ' + r.errore);
+  return r;
 }
 
 /* ---------- la sceneggiatura ricavata dal DOM, per un HTML senza spec ---------- */
