@@ -56,9 +56,16 @@ function members(dp, dimId, what) {
 }
 
 /* one field's value for one row */
-function evalField(f, row, own, split, ctx) {
+function evalField(f, row, own, split, ctx, splits) {
   const j = ctx.j, yi = ctx.yi;
-  const attrsOf = f.attrFrom === 'split' ? (split && split.attrs) || {} : own.attrs || {};
+  /* `attrFrom`: "split" legge il primo split (la forma storica); il NOME di una dimensione dei
+     fatti legge i membri di quella — serve quando gli split sono due e il campo dipende dal
+     secondo (lo sconto dalla regione, la quota del segmento dal segmento). */
+  const daSplit = f.attrFrom === 'split' ? split
+    : f.attrFrom && f.attrFrom !== ctx.dim ? (splits || {})[f.attrFrom] : null;
+  if (f.attrFrom && f.attrFrom !== 'split' && f.attrFrom !== ctx.dim && splits && !(f.attrFrom in splits))
+    fail(`field "${f.id}": attrFrom "${f.attrFrom}" non e una dimensione dei fatti (usa "split", o il nome di facts.dim o di uno split)`);
+  const attrsOf = daSplit ? daSplit.attrs || {} : own.attrs || {};
   switch (f.kind) {
     case 'seasonal': {
       const jit = f.jitter || [.93, 1.07];
@@ -72,7 +79,7 @@ function evalField(f, row, own, split, ctx) {
       const base = row[f.of];
       if (base === undefined) fail(`field "${f.id}" reads "${f.of}" before it is declared`);
       let rate = attrsOf[f.attr];
-      if (rate === undefined) fail(`field "${f.id}" needs attrs.${f.attr} on the members of ${f.attrFrom === 'split' ? 'the split dim' : ctx.dim}`);
+      if (rate === undefined) fail(`field "${f.id}" needs attrs.${f.attr} on the members of ${f.attrFrom && f.attrFrom !== ctx.dim ? (f.attrFrom === 'split' ? 'the split dim' : f.attrFrom) : ctx.dim}`);
       if (f.growthFactor && yi === ctx.years.length - 1) rate *= f.growthFactor;
       const jit = f.jitter || [.9, 1.1];
       rate *= j(jit[0], jit[1]);
@@ -96,6 +103,10 @@ function evalField(f, row, own, split, ctx) {
       fail(`field "${f.id}": unknown kind "${f.kind}" (seasonal | share | divide | combine)`);
   }
 }
+
+/** Gli split di facts, sempre come elenco: un oggetto e la forma storica, un array la nuova.
+ *  Chi legge facts.split fuori da qui passa da questa funzione, o vede solo il primo. */
+const splitsOf = facts => (facts && facts.split) ? (Array.isArray(facts.split) ? facts.split : [facts.split]) : [];
 
 function build(dp) {
   if (!dp || typeof dp !== 'object') fail('dataParams is missing');
@@ -122,13 +133,28 @@ function build(dp) {
   const own = members(dp, dimId, 'facts.dim');
   own.forEach((m, i) => { if (!m.c) m.c = RAMP[i % RAMP.length]; });
 
-  const splitCfg = facts.split || null;
-  let splitMembers = null;
-  if (splitCfg) {
-    splitMembers = members(dp, splitCfg.dim, 'facts.split.dim');
-    splitMembers.forEach((m, i) => { if (!m.c) m.c = RAMP[i % RAMP.length]; });
-    if (own.length * splitMembers.length > 60) fail('the joint grain is too large: keep members(dim) x members(split) under 60');
-  }
+  /* LE DIMENSIONI DELLO SPLIT: una o due. Il brief di Parsa (27 set 2026) chiedeva quattro
+     filtri — data, regione, categoria, segmento cliente — e il generatore ne reggeva due: il
+     segmento era finito in tre colonne di una matrice, un filtro chiesto e non dato. Il runtime
+     filtra gia su qualunque colonna dei fatti; mancava solo chi le scrive.
+     `split` e un oggetto (una dimensione) o un array di due (due dimensioni). Ognuna si adatta
+     alla dimensione principale con la sua IPF, indipendente dall'altra: il mix dei segmenti
+     dipende dalla categoria, non dalla regione. Con una sola dimensione la sequenza casuale e
+     identica a prima — i mockup gia consegnati non cambiano di un byte. */
+  const splitList = splitsOf(facts);
+  if (splitList.length > 2) fail('facts.split: al massimo due dimensioni (tre filtri in tutto con facts.dim): oltre, il grano dei fatti moltiplica le righe che viaggiano dentro il file HTML');
+  const splitCfg = splitList[0] || null;
+  const splitsM = splitList.map((sc, k) => {
+    if (!sc || !sc.dim) fail(`facts.split${splitList.length > 1 ? '[' + k + ']' : ''}.dim is missing`);
+    if (sc.dim === dimId || splitList.some((o, h) => h < k && o.dim === sc.dim)) fail(`facts.split: la dimensione "${sc.dim}" compare due volte`);
+    const ms = members(dp, sc.dim, 'facts.split.dim');
+    ms.forEach((m, i) => { if (!m.c) m.c = RAMP[i % RAMP.length]; });
+    return ms;
+  });
+  const splitMembers = splitsM[0] || null;
+  if (splitCfg && own.length * splitMembers.length > 60) fail('the joint grain is too large: keep members(dim) x members(split) under 60');
+  const celle = splitsM.reduce((a, ms) => a * ms.length, own.length);
+  if (splitList.length > 1 && celle > 120) fail(`the joint grain is too large: ${celle} celle (membri di facts.dim x quelli di ogni split) — tienilo sotto 120, accorpa i membri minori`);
 
   /* ---- 1. the primary measure at the facts.dim grain ---- */
   const prim = fields[0];
@@ -136,38 +162,53 @@ function build(dp) {
   years.forEach((y, yi) => own.forEach(mb => {
     for (let m = 0; m < 12; m++) {
       const ctx = { j, yi, seas, years, dim: dimId };
-      const r = { y, m, [dimId]: mb.id, __own: mb };
+      const r = { y, m, [dimId]: mb.id, __own: mb, __splits: {} };
       r[prim.id] = Math.round(evalField(prim, r, mb, null, ctx));
       rows.push(r);
     }
   }));
 
-  /* ---- 2. optional second dimension: one joint grain fitted with IPF ---- */
+  /* ---- 2. optional second (and third) dimension: each one a joint grain fitted with IPF ---- */
   let grain = rows;
-  if (splitCfg) {
+  splitList.forEach((sc, k) => {
+    const sms = splitsM[k];
     const ownTot = own.map(mb => ({ id: mb.id, v: DM.sum(rows.filter(r => r[dimId] === mb.id), prim.id) }));
     const grand = ownTot.reduce((a, o) => a + o.v, 0);
-    const shares = splitCfg.shares && splitCfg.shares.length === splitMembers.length
-      ? splitCfg.shares
-      : splitMembers.map(() => 1 / splitMembers.length);
-    const splitTot = splitMembers.map((mb, i) => ({ id: mb.id, v: grand * shares[i] }));
-    const joint = DM.jointRows(dimId, splitCfg.dim, ownTot, splitTot, prim.id, () => 1 + j(0, 1.2));
+    const shares = sc.shares && sc.shares.length === sms.length
+      ? sc.shares
+      : sms.map(() => 1 / sms.length);
+    const splitTot = sms.map((mb, i) => ({ id: mb.id, v: grand * shares[i] }));
+    const joint = DM.jointRows(dimId, sc.dim, ownTot, splitTot, prim.id, () => 1 + j(0, 1.2));
     const mix = {};
     own.forEach(mb => {
       const mine = joint.filter(r => r[dimId] === mb.id), s = DM.sum(mine, prim.id) || 1;
-      mix[mb.id] = splitMembers.map(sm => (mine.filter(r => r[splitCfg.dim] === sm.id)[0] || {})[prim.id] / s || 0);
+      mix[mb.id] = sms.map(sm => (mine.filter(r => r[sc.dim] === sm.id)[0] || {})[prim.id] / s || 0);
     });
-    grain = [];
-    rows.forEach(r => {
-      const parts = splitMembers.map((sm, k) => ({ sm: sm, [prim.id]: r[prim.id] * mix[r[dimId]][k] }));
+    /* LA CRESCITA DI UN MEMBRO DELLO SPLIT. Senza, le quote dello split sono ferme negli anni
+       e ogni regione cresce come il totale: "la regione che cresce ma perde margine" non si
+       distingue da quella che cresce e basta. Con `growth` sul membro la sua quota si inclina
+       anno dopo anno — (1+growth)^anno, rinormalizzata — e `shares` descrive il primo anno.
+       Nessun membro di split del corpus la dichiarava: per loro non cambia niente. */
+    const inclina = (quote, yi) => {
+      if (!sms.some(sm => sm.growth)) return quote;
+      const t = quote.map((q, i) => q * Math.pow(1 + (sms[i].growth || 0), yi));
+      const somma = t.reduce((a, x) => a + x, 0) || 1;
+      return t.map(x => x / somma);
+    };
+    const prossimo = [];
+    grain.forEach(r => {
+      const q = inclina(mix[r[dimId]], years.indexOf(r.y));
+      const parts = sms.map((sm, h) => ({ sm: sm, [prim.id]: r[prim.id] * q[h] }));
       DM.rescaleInt(parts, prim.id, r[prim.id], { min: 0 });   /* the split ties to its parent month */
       parts.forEach(p => {
-        const o = { y: r.y, m: r.m, [dimId]: r[dimId], [splitCfg.dim]: p.sm.id, __own: r.__own, __split: p.sm };
+        const o = Object.assign({}, r, { [sc.dim]: p.sm.id, __splits: Object.assign({}, r.__splits, { [sc.dim]: p.sm }) });
+        if (k === 0) o.__split = p.sm;
         o[prim.id] = p[prim.id];
-        grain.push(o);
+        prossimo.push(o);
       });
     });
-  }
+    grain = prossimo;
+  });
 
   /* ---- 3. the derived fields, in declared order ----
      UN CONTEGGIO SOTTILE DEVE TENERE IL SUO TASSO. Ogni campo e un intero, e arrotondare ogni
@@ -182,10 +223,10 @@ function build(dp) {
   years.forEach((y, yi) => {
     grain.filter(r => r.y === y).forEach(r => {
       const ctx = { j, yi, seas, years, dim: dimId };
-      const serie = r[dimId] + '|' + (splitCfg ? r[splitCfg.dim] : '') + '|';
+      const serie = r[dimId] + '|' + splitList.map(sc => r[sc.dim]).join('|') + '|';
       for (let i = 1; i < fields.length; i++) {
         const f = fields[i];
-        const k = serie + f.id, v = evalField(f, r, r.__own, r.__split, ctx) + (resti[k] || 0);
+        const k = serie + f.id, v = evalField(f, r, r.__own, r.__split, ctx, r.__splits) + (resti[k] || 0);
         r[f.id] = Math.round(v);
         resti[k] = v - r[f.id];
         /* Un campo puo esistere SOLO per certi membri di una dimensione: la spesa paid non
@@ -208,7 +249,7 @@ function build(dp) {
      quei colori con la scala verificata della palette, che qui sarebbe la cosa sbagliata. */
   const cm = m => Object.assign({ id: m.id, n: m.n, c: m.c }, m.brand ? { brand: true } : {});
   const dims = { [dimId]: own.map(cm) };
-  if (splitCfg) dims[splitCfg.dim] = splitMembers.map(cm);
+  splitList.forEach((sc, k) => { dims[sc.dim] = splitsM[k].map(cm); });
 
   let detailModel = null;
   if (dp.detail && dp.detail.dim) {
@@ -283,7 +324,7 @@ function build(dp) {
      Il report lo sa (`data.mensili`) e si comporta di conseguenza: su una finestra che pesca
      nella storia lontana il trend passa a un punto per anno e i controlli del mese spariscono,
      invece di disegnare undici mesi a zero e un picco a gennaio. */
-  const factDims = splitCfg ? [dimId, splitCfg.dim] : [dimId];
+  const factDims = [dimId].concat(splitList.map(sc => sc.dim));
   const profondita = Math.max(2, dp.dettaglioMesi === undefined ? 3 : dp.dettaglioMesi);
   const mensili = years.slice(-profondita);
   if (mensili.length < years.length) {
@@ -329,4 +370,4 @@ function build(dp) {
   return data;
 }
 
-module.exports = { build };
+module.exports = { build, splitsOf };

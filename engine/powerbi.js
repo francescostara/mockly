@@ -26,7 +26,13 @@
  *   - la lingua e quella del report, come ogni altra parola che il cliente legge.
  */
 'use strict';
+
+/* Una percentuale varia di punti: la stessa regola di A.punti nel runtime, in un posto solo
+   anche qui. Il kit ne aveva tre copie, e una guardava solo il formato: una misura dichiarata
+   unit:"pct" senza format:"pc" definiva la misura "Var pp" e la matrice chiamava "Var %". */
+const inPunti = m => !!m && (m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc');
 const SKIN = require('./skin.js');
+const { splitsOf } = require('./data-builder.js');
 
 /* ------------------------------------------------------------------ le parole, in due lingue */
 const T = {
@@ -88,11 +94,12 @@ const T = {
     },
     campi: 'Campi', impostazioni: 'Impostazioni',
     ordina: 'Ordina per valore decrescente.', mediane: 'Riquadro Analisi: linea mediana su X e su Y (i quattro quadranti).',
+    bottomn: (n) => 'Filtri del visual: Primi N → Ultimi ' + n + ' per la misura (i ' + n + ' piu deboli); ordina per valore crescente.',
     topn: (n) => 'Filtri del visual: Primi N = ' + n + ' per la misura; il resto si raccoglie in "Altri" con un gruppo (tasto destro sul campo → Nuovo gruppo).',
     heatCF: (m, lo, hi) => 'Formattazione condizionale → Colore di sfondo su ' + m + ': sfumatura' + (lo !== undefined ? ' da ' + lo + ' a ' + hi : '') + '.',
     varCF: 'Formattazione condizionale → Icone (▲ ▼) sulla colonna di variazione.',
     totali: 'Totali di riga attivi.', target: (t) => 'Valore di destinazione: ' + t + '.',
-    linea: (m) => 'Asse Y secondario: ' + m + '.', legendaAnni: 'Legenda: ’Date’[Year] (anno corrente pieno, anno precedente tratteggiato).', legendaColonne: 'Legenda: ’Date’[Year] (anno corrente e anno precedente come due colonne affiancate, l’anno precedente nel colore secondario del tema).',
+    linea: (m) => 'Asse Y secondario: ' + m + '.', legendaAnni: 'Legenda: ’Date’[Year] (anno corrente pieno, anno precedente tratteggiato).', legendaColonne: 'Legenda: ’Date’[Year] (anno corrente e anno precedente come due colonne affiancate, l’anno precedente in grigio neutro: Formato → Colonne → colore della serie, mai un colore dei dati).',
     colore: (d) => 'Colore per categoria: legenda = ' + d + ' (lo stesso colore su ogni pagina).',
     alert: (m) => 'Evidenzia in rosso lo spicchio "' + m + '" (colore dati → formattazione condizionale).',
     deltaCard: (m) => 'Valore principale: ' + m + '; etichetta di riferimento: periodo precedente → periodo corrente; aggiungi la sparkline mensile.',
@@ -157,11 +164,12 @@ const T = {
     },
     campi: 'Fields', impostazioni: 'Settings',
     ordina: 'Sort descending by value.', mediane: 'Analytics pane: median line on X and on Y (the four quadrants).',
+    bottomn: (n) => 'Visual filters: Top N → Bottom ' + n + ' by the measure (the weakest ' + n + '); sort ascending.',
     topn: (n) => 'Visual filters: Top N = ' + n + ' by the measure; group the rest into "Other" (right-click the field → New group).',
     heatCF: (m, lo, hi) => 'Conditional formatting → Background colour on ' + m + ': gradient' + (lo !== undefined ? ' from ' + lo + ' to ' + hi : '') + '.',
     varCF: 'Conditional formatting → Icons (▲ ▼) on the change column.',
     totali: 'Row totals on.', target: (t) => 'Target value: ' + t + '.',
-    linea: (m) => 'Secondary Y axis: ' + m + '.', legendaAnni: 'Legend: ’Date’[Year] (current year solid, prior year dashed).', legendaColonne: 'Legend: ’Date’[Year] (current and prior year as two columns side by side, the prior year in the theme’s secondary colour).',
+    linea: (m) => 'Secondary Y axis: ' + m + '.', legendaAnni: 'Legend: ’Date’[Year] (current year solid, prior year dashed).', legendaColonne: 'Legend: ’Date’[Year] (current and prior year as two columns side by side, the prior year in neutral grey: Format → Columns → series colour, never a data colour).',
     colore: (d) => 'Colour by category: legend = ' + d + ' (the same colour on every page).',
     alert: (m) => 'Highlight the "' + m + '" slice in red (data colours → conditional formatting).',
     deltaCard: (m) => 'Main value: ' + m + '; reference label: prior period → current period; add the monthly sparkline.',
@@ -200,7 +208,7 @@ const q = s => "'" + String(s).replace(/'/g, "''") + "'";
 
 function modello(spec, dp) {
   const facts = (dp && dp.facts) || {};
-  const dimsFatti = [facts.dim].concat(facts.split ? [facts.split.dim] : []).filter(Boolean);
+  const dimsFatti = [facts.dim].concat(splitsOf(facts).map(sc => sc.dim)).filter(Boolean);
   const campi = (facts.fields || []).map(f => f.id);
   const tabelle = [];
   tabelle.push({ nome: 'Date', ruolo: 'calendario', colonne: ['Date', 'Year', 'Quarter', 'MonthNo', 'Month', 'YearMonth'] });
@@ -260,7 +268,7 @@ function misure(spec, dp) {
   });
   const tempo = [];
   conConfronto.forEach(id => {
-    const m = perId[id], n = N[id], punti = m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc';
+    const m = perId[id], n = N[id], punti = inPunti(m);
     tempo.push({ nome: n + ' PY', formato: formatoPbi(m),
       expr: 'IF (\n    HASONEVALUE ( \'Date\'[MonthNo] ),\n    CALCULATE ( [' + n + '], DATEADD ( \'Date\'[Date], -1, MONTH ) ),\n    CALCULATE ( [' + n + '], SAMEPERIODLASTYEAR ( \'Date\'[Date] ) )\n)' });
     tempo.push(punti
@@ -317,7 +325,7 @@ function descriviVisual(spec, v, L, N) {
     case 'trend': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); righe.push(L.legendaAnni, L.esenzione); break;
     case 'colline': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); if (b.line) righe.push(L.linea(m(b.line))); righe.push(L.legendaColonne); break;   /* nel colline l'anno prima e una colonna, non un tratteggio */
     case 'donut': campi.push('Legend: ' + dim(b.dim), 'Values: ' + m(b.measure)); if (b.topN) righe.push(L.topn(b.topN)); if (b.alert) righe.push(L.alert(b.alert)); break;
-    case 'hbar': campi.push('Y: ' + dim(b.dim), 'X: ' + m(b.measure)); righe.push(L.ordina); if (b.top) righe.push(L.topn(b.top)); if (b.parent) righe.push(L.colore(dim(b.parent))); break;
+    case 'hbar': campi.push('Y: ' + dim(b.dim), 'X: ' + m(b.measure)); if (b.order !== 'asc') righe.push(L.ordina); if (b.top) righe.push(b.order === 'asc' ? L.bottomn(b.top) : L.topn(b.top)); if (b.parent) righe.push(L.colore(dim(b.parent))); break;
     case 'stack100': campi.push('Y: ' + dim(b.dim), 'Legend: ' + dim(b.by), 'X: ' + m(b.measure)); break;
     case 'ribbon': campi.push("X: " + dim(b.by || 'q'), 'Legend: ' + dim(b.dim), 'Y: ' + m(b.measure)); break;
     case 'funnel': campi.push('Category: Stages[Stage]', 'Values: [Stage value]'); righe.push(L.stadi); break;
@@ -328,7 +336,7 @@ function descriviVisual(spec, v, L, N) {
       righe.push(L.heatCF(m(b.measure), b.scale && b.scale[0], b.scale && b.scale[1])); break;
     case 'delta-card': {
       const mm = ((spec.model && spec.model.measures) || []).filter(x => x.id === b.measure)[0] || {};
-      const pp = mm.unit === 'pct' || mm.unit === 'pp' || mm.format === 'pc';
+      const pp = inPunti(mm);
       const nomeVar = '[' + (N[b.measure] || b.measure) + (pp ? ' Var pp]' : ' Var %]');
       campi.push('Value: ' + nomeVar);
       righe.push(L.deltaCard(nomeVar), L.esenzione);
@@ -340,7 +348,7 @@ function descriviVisual(spec, v, L, N) {
       campi.push('Rows: ' + dim(b.dim));
       (b.columns || []).forEach(c => {
         const nm = N[c.measure] || c.measure;
-        const col = c.kind === 'var' ? '[' + nm + (/(pc|pp)/.test(((spec.model.measures || []).filter(x => x.id === c.measure)[0] || {}).format || '') ? ' Var pp]' : ' Var %]')
+        const col = c.kind === 'var' ? '[' + nm + (inPunti((spec.model.measures || []).filter(x => x.id === c.measure)[0]) ? ' Var pp]' : ' Var %]')
           : c.kind === 'share' ? '[' + nm + ' % ' + nomeDim(spec, b.dim).replace(/^Dim /, '') + ']' : '[' + nm + ']';
         campi.push('Values: ' + col + (c.label && !/\{/.test(c.label) ? '  → "' + c.label + '"' : ''));
         if (c.kind === 'heat') righe.push(L.heatCF('[' + nm + ']', c.scale && c.scale[0], c.scale && c.scale[1]));
@@ -453,7 +461,8 @@ function promptDataset(spec, dp, data, L) {
       const attrs = Object.keys(m.attrs || {}).map(k => k + ' ' + (+m.attrs[k].toFixed(4))).join(', ');
       righe.push('    ' + m.n + (d === facts.dim ? ' — ' + L.primaria + ' ' + Math.round(m.base).toLocaleString('en-US') +
         ', ' + L.crescita + ' ' + (m.growth >= 0 ? '+' : '') + Math.round((m.growth || 0) * 100) + '%' : '') +
-        (d === (facts.split || {}).dim ? ' — ' + Math.round(((facts.split.shares || [])[((dp.dims[d] || {}).members || []).indexOf(m)] || 0) * 100) + '%' : '') +
+        (splitsOf(facts).filter(sc => sc.dim === d).map(sc => ' — ' + Math.round(((sc.shares || [])[((dp.dims[d] || {}).members || []).indexOf(m)] || 0) * 100) + '%' +
+          (m.growth ? ', ' + L.crescita + ' ' + (m.growth >= 0 ? '+' : '') + Math.round(m.growth * 100) + '%' : '')).join('')) +
         (attrs ? ' — ' + attrs : ''));
     });
   });
@@ -469,7 +478,8 @@ function promptDataset(spec, dp, data, L) {
   if (dp.seasonality) righe.push('', L.stag + ': ' + dp.seasonality.join(', '));
   righe.push('', L.derivate);
   (facts.fields || []).forEach(f => {
-    const sp = f.attrFrom === 'split' ? nomeDim(spec, (facts.split || {}).dim).replace(/^Dim /, '') : null;
+    const dimAttr = f.attrFrom === 'split' ? (splitsOf(facts)[0] || {}).dim : (f.attrFrom && f.attrFrom !== facts.dim ? f.attrFrom : null);
+    const sp = dimAttr ? nomeDim(spec, dimAttr).replace(/^Dim /, '') : null;
     let s = f.kind === 'seasonal' ? L.formula.seasonal(f.id)
       : f.kind === 'share' ? L.formula.share(f.id, f.of, f.attr, sp) + (f.complement ? L.formula.complemento : '')
         : f.kind === 'divide' ? L.formula.divide(f.id, f.of, f.attr, sp)

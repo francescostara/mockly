@@ -647,7 +647,7 @@ function componi(risposte) {
   const leve = [
     () => { dp.dettaglioMesi = 2; tirate.push('dettaglio mensile sugli ultimi due anni'); },
     () => {
-      const sp = dp.facts.split;
+      const sp = builder.splitsOf(dp.facts)[0];   /* anche quando gli split sono due */
       if (!sp || !dp.dims[sp.dim] || dp.dims[sp.dim].members.length <= 3) return false;
       dp.dims[sp.dim].members = dp.dims[sp.dim].members.slice(0, 3);
       if (sp.shares) sp.shares = [0.5, 0.3, 0.2];
