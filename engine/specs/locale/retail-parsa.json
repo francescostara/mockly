@@ -1,0 +1,941 @@
+{
+  "spec": {
+    "meta": {
+      "title": "Sales & Profitability",
+      "subtitle": "Management overview · {y} vs {py}",
+      "brand": {
+        "name": "Meridian Retail",
+        "tagline": "Management report"
+      },
+      "locale": "en-US",
+      "currency": "$",
+      "months": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "updated": "Data as of Dec 31, 2025",
+      "source": "Source: POS, ERP and sales targets",
+      "watermark": "Demo mockup · synthetic data"
+    },
+    "aesthetic": "corporate-sober",
+    "skin": {
+      "shell": "rail",
+      "palette": "navy-corporate",
+      "tipografia": "neutro-ui",
+      "densita": "medio",
+      "banda": "blocco"
+    },
+    "archetype": "scorecard",
+    "grid": {
+      "contentWidth": 1044,
+      "gutter": 12,
+      "columns": 5
+    },
+    "model": {
+      "sums": [
+        "rev",
+        "cogs",
+        "disc",
+        "promo",
+        "cdisc",
+        "mdn",
+        "profit",
+        "orders",
+        "tgt"
+      ],
+      "measures": [
+        {
+          "id": "rev",
+          "label": "Revenue",
+          "agg": "sum",
+          "field": "rev",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "profit",
+          "label": "Gross profit",
+          "agg": "sum",
+          "field": "profit",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "gm",
+          "label": "Gross margin",
+          "agg": "ratio",
+          "num": "profit",
+          "den": "rev",
+          "unit": "pct",
+          "format": "pc"
+        },
+        {
+          "id": "orders",
+          "label": "Orders",
+          "agg": "sum",
+          "field": "orders",
+          "unit": "count",
+          "format": "N"
+        },
+        {
+          "id": "aov",
+          "label": "Avg order value",
+          "agg": "ratio",
+          "num": "rev",
+          "den": "orders",
+          "unit": "money",
+          "format": "eurF"
+        },
+        {
+          "id": "mdn",
+          "label": "Markdowns",
+          "agg": "sum",
+          "field": "mdn",
+          "unit": "money",
+          "format": "eur",
+          "inv": true
+        },
+        {
+          "id": "mdr",
+          "label": "Markdown rate",
+          "agg": "ratio",
+          "num": "mdn",
+          "den": "rev",
+          "unit": "pct",
+          "format": "pc",
+          "inv": true
+        },
+        {
+          "id": "tgt",
+          "label": "Sales target",
+          "agg": "sum",
+          "field": "tgt",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "att",
+          "label": "Target attainment",
+          "agg": "ratio",
+          "num": "rev",
+          "den": "tgt",
+          "unit": "pct",
+          "format": "pc"
+        }
+      ]
+    },
+    "filters": {
+      "date": {
+        "levels": [
+          "year",
+          "quarter",
+          "month"
+        ],
+        "default": {
+          "y": 2025,
+          "q": null,
+          "m": null
+        }
+      },
+      "dims": [
+        {
+          "id": "region",
+          "label": "Region",
+          "control": "list",
+          "allLabel": "All regions",
+          "pill": "Region"
+        },
+        {
+          "id": "segment",
+          "label": "Segment",
+          "control": "list",
+          "allLabel": "All segments",
+          "pill": "Segment"
+        },
+        {
+          "id": "cat",
+          "label": "Category",
+          "control": "dropdown",
+          "allLabel": "All categories",
+          "pill": "Category"
+        }
+      ]
+    },
+    "kpiBand": [
+      {
+        "id": "rev",
+        "label": "Revenue",
+        "measure": "rev",
+        "span": 1
+      },
+      {
+        "id": "profit",
+        "label": "Gross profit",
+        "measure": "profit",
+        "span": 1
+      },
+      {
+        "id": "gm",
+        "label": "Gross margin",
+        "measure": "gm",
+        "span": 1
+      },
+      {
+        "id": "orders",
+        "label": "Orders",
+        "measure": "orders",
+        "span": 1
+      },
+      {
+        "id": "aov",
+        "label": "Avg order value",
+        "measure": "aov",
+        "span": 1
+      }
+    ],
+    "pages": [
+      {
+        "id": "overview",
+        "title": "Business performance",
+        "subtitle": "Revenue grows, margin slips: Furniture shrinks, markdowns rise in the West, Corporate deals cost margin",
+        "nav": "Overview",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "type": "colline",
+                "span": 3,
+                "h": 196,
+                "title": "Monthly revenue vs {py}, with gross margin",
+                "bind": {
+                  "measure": "rev",
+                  "line": "gm"
+                }
+              },
+              {
+                "id": "target-profit",
+                "span": 2,
+                "h": 196,
+                "motivo": "pagina-sprecata",
+                "viste": [
+                  {
+                    "type": "gauge",
+                    "etichetta": "vs target",
+                    "span": 2,
+                    "title": "Sales vs target — {period}",
+                    "bind": {
+                      "measure": "att",
+                      "target": 1,
+                      "targetLabel": "Target"
+                    }
+                  },
+                  {
+                    "type": "trend",
+                    "etichetta": "Profit",
+                    "span": 2,
+                    "title": "Monthly gross profit, {y} vs {py}",
+                    "bind": {
+                      "measure": "profit"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "matrix",
+                "span": 5,
+                "title": "Categories — which ones drive the result · {period}",
+                "bind": {
+                  "dim": "cat",
+                  "label": "Category",
+                  "sort": "rev",
+                  "drill": true,
+                  "totalsLabel": "Total company",
+                  "columns": [
+                    {
+                      "measure": "rev",
+                      "label": "Revenue"
+                    },
+                    {
+                      "measure": "rev",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "profit",
+                      "label": "Gross profit"
+                    },
+                    {
+                      "measure": "profit",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "gm",
+                      "label": "Gross margin",
+                      "kind": "heat",
+                      "scale": [
+                        0.2,
+                        0.55
+                      ]
+                    },
+                    {
+                      "measure": "gm",
+                      "label": "Margin {basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "orders",
+                      "label": "Orders"
+                    },
+                    {
+                      "measure": "aov",
+                      "label": "AOV"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "regions",
+        "title": "Regions, segments and products",
+        "subtitle": "The West grows fastest and beats its target while its margin falls: markdowns are buying the growth",
+        "nav": "Regions & products",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "type": "heatmap",
+                "span": 3,
+                "h": 176,
+                "title": "Gross margin by region and customer segment · {period}",
+                "subtitle": "darker = higher margin; click a cell to filter the region",
+                "bind": {
+                  "dim": "region",
+                  "measure": "gm",
+                  "by": "segment"
+                }
+              },
+              {
+                "id": "products",
+                "span": 2,
+                "h": 176,
+                "motivo": "due-lenti",
+                "viste": [
+                  {
+                    "type": "hbar",
+                    "etichetta": "Best",
+                    "span": 2,
+                    "title": "Top products by gross profit",
+                    "bind": {
+                      "dim": "prod",
+                      "measure": "profit",
+                      "detail": true,
+                      "parent": "cat",
+                      "top": 6,
+                      "subMeasure": "gm",
+                      "subUnit": " margin"
+                    }
+                  },
+                  {
+                    "type": "hbar",
+                    "etichetta": "Need attention",
+                    "span": 2,
+                    "title": "Products with the lowest gross profit",
+                    "bind": {
+                      "dim": "prod",
+                      "measure": "profit",
+                      "detail": true,
+                      "parent": "cat",
+                      "top": 6,
+                      "order": "asc",
+                      "subMeasure": "gm",
+                      "subUnit": " margin"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "matrix",
+                "span": 5,
+                "title": "Regions — growth, margin and target · {period}",
+                "bind": {
+                  "dim": "region",
+                  "label": "Region",
+                  "sort": "rev",
+                  "drill": false,
+                  "totalsLabel": "Total company",
+                  "columns": [
+                    {
+                      "measure": "rev",
+                      "label": "Revenue"
+                    },
+                    {
+                      "measure": "rev",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "profit",
+                      "label": "Gross profit"
+                    },
+                    {
+                      "measure": "gm",
+                      "label": "Gross margin",
+                      "kind": "heat",
+                      "scale": [
+                        0.3,
+                        0.38
+                      ]
+                    },
+                    {
+                      "measure": "gm",
+                      "label": "Margin {basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "mdr",
+                      "label": "Markdown rate",
+                      "inv": true
+                    },
+                    {
+                      "measure": "att",
+                      "label": "vs target",
+                      "kind": "heat",
+                      "scale": [
+                        0.9,
+                        1.05
+                      ]
+                    },
+                    {
+                      "measure": "orders",
+                      "label": "Orders"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "drill": {
+      "dim": "cat",
+      "page": {
+        "id": "__drill__",
+        "title": "{drill}",
+        "drillHeader": "{period} · {basis}",
+        "backLabel": "Back to all categories",
+        "subtitle": "Products and monthly trend of the category",
+        "rows": [
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "hbar",
+                "span": 3,
+                "h": 300,
+                "title": "Products by revenue, with gross margin",
+                "bind": {
+                  "dim": "prod",
+                  "measure": "rev",
+                  "detail": true,
+                  "parent": "cat",
+                  "top": 8,
+                  "subMeasure": "gm",
+                  "subUnit": " margin"
+                }
+              },
+              {
+                "type": "colline",
+                "span": 2,
+                "h": 300,
+                "title": "Monthly revenue vs {py}, with gross margin",
+                "bind": {
+                  "measure": "rev",
+                  "line": "gm"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "dataParams": {
+    "seed": 40917,
+    "years": [
+      2024,
+      2025
+    ],
+    "seasonality": [
+      0.86,
+      0.8,
+      0.92,
+      0.94,
+      0.98,
+      0.95,
+      0.93,
+      1,
+      0.95,
+      1,
+      1.22,
+      1.45
+    ],
+    "dims": {
+      "cat": {
+        "members": [
+          {
+            "id": "ele",
+            "n": "Electronics",
+            "base": 2400000,
+            "growth": 0.06,
+            "attrs": {
+              "gm": 0.22,
+              "aov": 245
+            }
+          },
+          {
+            "id": "hom",
+            "n": "Home & Kitchen",
+            "base": 1600000,
+            "growth": 0.11,
+            "attrs": {
+              "gm": 0.41,
+              "aov": 72
+            }
+          },
+          {
+            "id": "fur",
+            "n": "Furniture",
+            "base": 1300000,
+            "growth": -0.07,
+            "attrs": {
+              "gm": 0.42,
+              "aov": 430
+            }
+          },
+          {
+            "id": "app",
+            "n": "Apparel",
+            "base": 1100000,
+            "growth": 0.09,
+            "attrs": {
+              "gm": 0.55,
+              "aov": 86
+            }
+          },
+          {
+            "id": "spo",
+            "n": "Sports & Outdoors",
+            "base": 750000,
+            "growth": 0.15,
+            "attrs": {
+              "gm": 0.37,
+              "aov": 112
+            }
+          }
+        ]
+      },
+      "region": {
+        "members": [
+          {
+            "id": "ne",
+            "n": "Northeast",
+            "base": 1,
+            "growth": 0,
+            "attrs": {
+              "disc": 0.016,
+              "promo": 0.01,
+              "att": 0.99
+            }
+          },
+          {
+            "id": "se",
+            "n": "Southeast",
+            "base": 1,
+            "growth": 0.035,
+            "attrs": {
+              "disc": 0.018,
+              "promo": 0.01,
+              "att": 1.03
+            }
+          },
+          {
+            "id": "mw",
+            "n": "Midwest",
+            "base": 1,
+            "growth": -0.04,
+            "attrs": {
+              "disc": 0.021,
+              "promo": 0.01,
+              "att": 0.92
+            }
+          },
+          {
+            "id": "we",
+            "n": "West",
+            "base": 1,
+            "growth": 0.06,
+            "attrs": {
+              "disc": 0.019,
+              "promo": 0.011,
+              "att": 1.05
+            }
+          }
+        ]
+      },
+      "segment": {
+        "members": [
+          {
+            "id": "con",
+            "n": "Consumer",
+            "base": 1,
+            "growth": 0,
+            "attrs": {
+              "cd": 0
+            }
+          },
+          {
+            "id": "smb",
+            "n": "Small business",
+            "base": 1,
+            "growth": 0.09,
+            "attrs": {
+              "cd": 0.012
+            }
+          },
+          {
+            "id": "cor",
+            "n": "Corporate",
+            "base": 1,
+            "growth": -0.05,
+            "attrs": {
+              "cd": 0.04
+            }
+          }
+        ]
+      }
+    },
+    "facts": {
+      "dim": "cat",
+      "split": [
+        {
+          "dim": "region",
+          "shares": [
+            0.31,
+            0.24,
+            0.2,
+            0.25
+          ]
+        },
+        {
+          "dim": "segment",
+          "shares": [
+            0.58,
+            0.25,
+            0.17
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "id": "rev",
+          "kind": "seasonal",
+          "jitter": [
+            0.94,
+            1.06
+          ]
+        },
+        {
+          "id": "cogs",
+          "kind": "share",
+          "of": "rev",
+          "attr": "gm",
+          "complement": true,
+          "jitter": [
+            0.98,
+            1.02
+          ]
+        },
+        {
+          "id": "disc",
+          "kind": "share",
+          "of": "rev",
+          "attr": "disc",
+          "attrFrom": "region",
+          "jitter": [
+            0.9,
+            1.1
+          ]
+        },
+        {
+          "id": "promo",
+          "kind": "share",
+          "of": "rev",
+          "attr": "promo",
+          "attrFrom": "region",
+          "growthFactor": 3.8,
+          "jitter": [
+            0.9,
+            1.1
+          ],
+          "only": {
+            "dim": "region",
+            "members": [
+              "we"
+            ]
+          }
+        },
+        {
+          "id": "cdisc",
+          "kind": "share",
+          "of": "rev",
+          "attr": "cd",
+          "attrFrom": "segment",
+          "jitter": [
+            0.9,
+            1.1
+          ]
+        },
+        {
+          "id": "mdn",
+          "kind": "combine",
+          "plus": [
+            "disc",
+            "promo",
+            "cdisc"
+          ]
+        },
+        {
+          "id": "profit",
+          "kind": "combine",
+          "plus": [
+            "rev"
+          ],
+          "minus": [
+            "cogs",
+            "disc",
+            "promo",
+            "cdisc"
+          ]
+        },
+        {
+          "id": "orders",
+          "kind": "divide",
+          "of": "rev",
+          "attr": "aov",
+          "jitter": [
+            0.93,
+            1.07
+          ],
+          "min": 1
+        },
+        {
+          "id": "tgt",
+          "kind": "divide",
+          "of": "rev",
+          "attr": "att",
+          "attrFrom": "region",
+          "jitter": [
+            0.98,
+            1.02
+          ]
+        }
+      ]
+    },
+    "detail": {
+      "dim": "prod",
+      "parentDim": "cat",
+      "members": {
+        "ele": [
+          {
+            "n": "Smartphones",
+            "w": 3.2,
+            "mult": {
+              "profit": 0.9
+            }
+          },
+          {
+            "n": "Laptops",
+            "w": 3,
+            "mult": {
+              "profit": 0.85
+            }
+          },
+          {
+            "n": "TVs & Home Theater",
+            "w": 2,
+            "mult": {
+              "profit": 0.45
+            }
+          },
+          {
+            "n": "Headphones & Audio",
+            "w": 1.2,
+            "mult": {
+              "profit": 1.7
+            }
+          },
+          {
+            "n": "Smart Home Devices",
+            "w": 0.8,
+            "mult": {
+              "profit": 1.4
+            }
+          }
+        ],
+        "hom": [
+          {
+            "n": "Small Appliances",
+            "w": 2.2,
+            "mult": {
+              "profit": 0.8
+            }
+          },
+          {
+            "n": "Bedding & Bath",
+            "w": 1.8,
+            "mult": {
+              "profit": 1.25
+            }
+          },
+          {
+            "n": "Cookware Sets",
+            "w": 1.5,
+            "mult": {
+              "profit": 1.15
+            }
+          },
+          {
+            "n": "Storage & Organization",
+            "w": 1,
+            "mult": {
+              "profit": 1.05
+            }
+          }
+        ],
+        "fur": [
+          {
+            "n": "Sofas & Sectionals",
+            "w": 2.5,
+            "mult": {
+              "profit": 0.85
+            }
+          },
+          {
+            "n": "Dining Sets",
+            "w": 1.5,
+            "mult": {
+              "profit": 0.45
+            }
+          },
+          {
+            "n": "Office Chairs",
+            "w": 1.2,
+            "mult": {
+              "profit": 1.45
+            }
+          },
+          {
+            "n": "Bookcases & Shelving",
+            "w": 0.8,
+            "mult": {
+              "profit": 0.9
+            }
+          }
+        ],
+        "app": [
+          {
+            "n": "Footwear",
+            "w": 1.8,
+            "mult": {
+              "profit": 0.9
+            }
+          },
+          {
+            "n": "Outerwear",
+            "w": 1.6,
+            "mult": {
+              "profit": 1.2
+            }
+          },
+          {
+            "n": "Denim",
+            "w": 1.4,
+            "mult": {
+              "profit": 1
+            }
+          },
+          {
+            "n": "Activewear",
+            "w": 1.3,
+            "mult": {
+              "profit": 1.1
+            }
+          }
+        ],
+        "spo": [
+          {
+            "n": "Fitness Equipment",
+            "w": 1.6,
+            "mult": {
+              "profit": 0.7
+            }
+          },
+          {
+            "n": "Bikes & Accessories",
+            "w": 1.4,
+            "mult": {
+              "profit": 0.95
+            }
+          },
+          {
+            "n": "Camping Gear",
+            "w": 1.2,
+            "mult": {
+              "profit": 1.25
+            }
+          },
+          {
+            "n": "Team Sports",
+            "w": 0.7,
+            "mult": {
+              "profit": 1.1
+            }
+          }
+        ]
+      },
+      "fields": [
+        "rev",
+        "profit"
+      ],
+      "counts": {
+        "field": "orders",
+        "from": "orders"
+      }
+    }
+  }
+}
