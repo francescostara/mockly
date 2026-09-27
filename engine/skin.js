@@ -179,6 +179,13 @@ function palette(id, opz) {
     muted: mix(ink, card, 0.46),
     muted2: mix(ink, card, 0.56),
     muted3: mix(ink, card, 0.68),
+    /* IL PERIODO PRECEDENTE E GRIGIO, in ogni grafico e in ogni palette. E' il termine di
+       paragone, non un dato: colorarlo gli da un significato che non ha. Il colline lo
+       disegnava nel quinto colore della scala, che nel navy-corporate e un verde pieno — e il
+       2024 in verde accanto al 2025 in ocra si leggeva come "l'anno buono" (Parsa, 27 set
+       2026). Un token solo per il trend tratteggiato e per la colonna del colline; il gate
+       test/periodo-precedente.test.js lo vuole neutro in tutte e tredici le famiglie. */
+    prior: mix(ink, card, 0.58),
     /* flab e l'etichetta dei filtri: 8,5px, maiuscoletto, spaziata — la dimensione piu
        piccola dell'intera cornice. Un grigio da "testo secondario" li non basta, e il gate
        dell'harness lo misura: sotto 4,5:1 la riga dei filtri diventa decorazione. */

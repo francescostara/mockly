@@ -90,4 +90,43 @@ ok('il gauge su un tasso si muove col filtro e tiene il suo bersaglio', () => {
   dom.window.close();
 });
 
+/* Il gauge di Parsa (27 set 2026): "100.0%, 0.0 pp below Target" con l'arco rosso — uno scarto
+   che il formato non sa scrivere non e "sotto". E il gauge Prime cost della storia del gauge:
+   su una misura dove meno e meglio, stare sotto il bersaglio e il risultato buono. Si prova
+   sul primo gauge del caso, spostando il bersaglio sul valore e ribaltando il verso. */
+const gauge = (spec) => {
+  const dom = new JSDOM(render(spec, data), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const card = [...dom.window.document.querySelectorAll('.card')].find(c => c.querySelector('.gnote'));
+  const out = { nota: card.querySelector('.gnote').textContent.replace(/\s+/g, ' ').trim(),
+    colori: [...card.querySelectorAll('path')].map(p => p.getAttribute('stroke')).filter(Boolean) };
+  dom.window.close();
+  return out;
+};
+const valoreDelPrimo = () => {
+  const dom = new JSDOM(render(caso.spec, data), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const t = dom.window.document.querySelector('.gnote').textContent;
+  dom.window.close();
+  return parseFloat(t.match(/([\d.,]+)\s?%/)[1].replace(',', '.')) / 100;
+};
+
+ok('un valore in linea col bersaglio si dice in linea, e non e rosso', () => {
+  const s = clona(caso.spec);
+  const v = s.pages[0].rows[0].visuals.find(x => x.type === 'gauge') || s.pages[0].rows[0].visuals[0];
+  v.bind.target = valoreDelPrimo() + 0.0002;                 /* uno scarto sotto la risoluzione */
+  const g = gauge(s);
+  assert.match(g.nota, /in linea con|in line with/, g.nota);
+  assert.ok(!/sotto|below/.test(g.nota), 'uno scarto che non si scrive non e "sotto": ' + g.nota);
+  assert.ok(g.colori.indexOf('var(--bad)') < 0, 'in linea non e rosso');
+});
+
+ok('su una misura dove meno e meglio (inv), stare sotto il bersaglio e verde', () => {
+  const s = clona(caso.spec);
+  const v = s.pages[0].rows[0].visuals.find(x => x.type === 'gauge') || s.pages[0].rows[0].visuals[0];
+  const m = s.model.measures.find(x => x.id === v.bind.measure);
+  m.inv = true;
+  v.bind.target = Math.min(1, valoreDelPrimo() + 0.1);       /* il valore sta sotto il bersaglio */
+  const g = gauge(s);
+  assert.ok(g.colori.indexOf('var(--good)') >= 0 && g.colori.indexOf('var(--bad)') < 0, 'sotto il bersaglio con inv deve essere verde: ' + g.colori.join(','));
+});
+
 console.log('  ' + n + ' checks');

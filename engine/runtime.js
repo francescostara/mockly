@@ -199,6 +199,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       kids.forEach(function (k, i) {
         var o = { y: r.y, m: r.m };
         o[dm.dim] = k.id; o[dm.parentDim] = k.parent;
+        /* IL FIGLIO EREDITA TUTTE LE DIMENSIONI DELLA SUA RIGA, non solo il genitore. Senza, un
+           filtro sulla regione o sul segmento passava accanto ai prodotti: nel mockup di Parsa
+           (27 set 2026) "Corporate" muoveva KPI e matrice, e la lista dei prodotti peggiori
+           restava identica al dollaro. C'era gia con due dimensioni. Gate:
+           test/filtri-visual.test.js. */
+        for (var dk in dims) if (r[dk] !== undefined && o[dk] === undefined) o[dk] = r[dk];
         dm.fields.forEach(fl => o[fl] = (r[fl] || 0) * (perCampo[fl] ? perCampo[fl][i] : ws[i] / s));
         if (counts) o[dm.counts.field] = counts[i];
         out.push(o);
@@ -457,6 +463,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     A.mv = (id, a) => a[id] || 0;
     A.mfmt = function (id, v) { var m = A.meas(id); return f.apply(m.format || 'N', v); };
     A.delta = (c, p) => (p && isFinite(p) && Math.abs(p) > 1e-9) ? (c - p) / Math.abs(p) : 0;
+    /* UNA VARIAZIONE SI SCRIVE IN UN POSTO SOLO. Una percentuale non varia "del 9%": varia di
+       punti. La card KPI e la delta-card lo sapevano, ciascuna con la sua copia della regola;
+       la colonna "var" della matrice no, e il margine del West sceso dal 33,8% al 30,6% usciva
+       "▼ −9,4%" accanto a una card che diceva "−0,8 pp" (Parsa, 27 set 2026). Da qui in poi
+       ogni variazione a schermo passa da A.varia, e un test vieta A.delta fuori da qui. */
+    A.punti = ms => { var m = A.meas(ms); return m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc'; };
+    A.varia = function (ms, c, p) {
+      if (A.punti(ms)) { var dif = c - p; return { d: dif, t: f.pp(dif), piatto: Math.abs(dif) < 5e-4, punti: true }; }
+      var rel = A.delta(c, p);
+      return { d: rel, t: f.sgp(rel), piatto: Math.abs(rel) < .002, punti: false };
+    };
     /* per-member aggregate of a dimension (own filter ignored, PBI highlight semantics) */
     A.byDim = function (dim, o) {
       o = o || {};
@@ -500,15 +517,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var a = A.kpiState, c = a.cur, p = a.prev;
       var cv = A.mv(k.measure, c), pv = A.mv(k.measure, p);
       var m = A.meas(k.measure);
-      var d = A.delta(cv, pv);
       /* Una percentuale non varia "del 10%": varia di punti. Un margine sceso dal 35,9% al
          32,3% e sceso di 3,6 punti; dire "▼ 10,0%" e aritmeticamente vero e si legge come
-         un calo del dieci per cento del fatturato. La riga di dettaglio sotto lo diceva gia
-         in punti, quindi la card contraddiceva se stessa a due centimetri di distanza. */
-      var punti = m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc';
+         un calo del dieci per cento del fatturato. La regola sta in A.varia. */
+      var va = A.varia(k.measure, cv, pv), d = va.d, punti = va.punti;
       var dif = cv - pv;
-      var piatto = punti ? Math.abs(dif) < 5e-4 : Math.abs(d) < .002;
-      var su = punti ? dif > 0 : d > 0;
+      var piatto = va.piatto;
+      var su = d > 0;
       var cls = piatto ? 'fl' : (su ? (k.inv ? 'dn' : 'up') : (k.inv ? 'up' : 'dn'));
       var ar = piatto ? '—' : (su ? '▲' : '▼');
       var ent = punti ? f.pp(Math.abs(dif)).slice(1) : f.pc(Math.abs(d));
@@ -579,12 +594,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         head + (A.legendaAuto(v) ? A.legend(A.legendaAuto(v)) : '') + body + '</div>';
     };
     /* LA LEGENDA LA DISEGNA CHI DISEGNA IL GRAFICO. Nel trend l'anno prima e una linea grigia
-       tratteggiata; nel colline e una seconda colonna nel colore --c5. Quando la scriveva la
+       tratteggiata; nel colline e una seconda colonna grigia (--prior). Quando la scriveva la
        spec, il modello copiava quella del trend dentro un colline: "2024 = tratteggio" sopra due
        serie di barre colorate, in tre mockup, due gia approvati. */
     A.legendaAuto = function (v) {
       if (v.type === 'trend') return [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }];
-      if (v.type === 'colline') return [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', c: 'var(--c5)' }];
+      if (v.type === 'colline') return [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', c: 'var(--prior)' }];
       return null;
     };
     A.legend = voci => '<div class="lgd">' + voci.map(function (l) {
@@ -849,12 +864,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* Una percentuale non varia "del 18%": varia di punti. Il numero grande cambia natura
        con l'unita della misura, o si finisce col dire che un margine del 12% cresciuto al
        14% e cresciuto "del 16,7%" — vero e illeggibile. */
-    var punti = m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc';
+    var va = A.varia(ms, cv, pv), punti = va.punti;
     var conf = isFinite(pv) && Math.abs(pv) > 1e-9;
-    var dif = cv - pv, rel = A.delta(cv, pv);
-    var piatto = punti ? Math.abs(dif) < 5e-4 : Math.abs(rel) < .002;
+    var dif = cv - pv, rel = va.d;
+    var piatto = va.piatto;
     var cls = (!conf || piatto) ? 'fl' : ((dif > 0) === !v.inv ? 'up' : 'dn');
-    var grande = !conf ? '—' : punti ? f.pp(dif) : f.sgp(rel);
+    var grande = !conf ? '—' : va.t;
     /* Senza un periodo precedente confrontabile la variazione non esiste. Stampare "+0,0%"
        sarebbe un numero inventato: si dice che il confronto manca e si mostra il livello. */
     var det = conf
@@ -1066,12 +1081,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     cur.forEach((val, i) => pa += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(val).toFixed(1));
     prev.forEach((val, i) => pb += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(val).toFixed(1));
     s += '<path d="' + pa + 'L' + X(11).toFixed(1) + ',' + (mgn.t + ih) + 'L' + mgn.l + ',' + (mgn.t + ih) + 'Z" fill="var(--c2)" opacity=".06"/>';
-    s += '<path d="' + pb + '" fill="none" stroke="var(--muted2)" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    s += '<path d="' + pb + '" fill="none" stroke="var(--prior)" stroke-width="1.5" stroke-dasharray="4 3"/>';
     s += '<path d="' + pa + '" fill="none" stroke="var(--c2)" stroke-width="2"/>';
     cur.forEach(function (val, i) {
       s += '<circle class="hit" cx="' + X(i).toFixed(1) + '" cy="' + Y(val).toFixed(1) + '" r="3" fill="var(--card)" stroke="var(--c2)" stroke-width="1.7" data-tip="<b>' +
         A.MON[i] + ' ' + S.y + '</b><br>' + A.mfmt(ms, val) + '<br>' + (S.y - 1) + ': ' + A.mfmt(ms, prev[i]) + '<br>' +
-        (A.T.varShort || 'Var') + ': ' + f.sgp(A.delta(val, prev[i])) + '"/>';
+        (A.T.varShort || 'Var') + ': ' + A.varia(ms, val, prev[i]).t + '"/>';
       s += '<text x="' + X(i).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
     });
     return A.card(v, s + '</svg>');
@@ -1213,15 +1228,23 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       return {
         id: id, l: mb.n, v: A.mv(ms, a), cat: par,
         c: par ? A.color(b.parent, par) : mb.c,
-        sub: (par ? A.dimLabel(b.parent, par) + ' · ' : '') + (b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : '')
+        sub: (par ? A.dimLabel(b.parent, par) + ' · ' : '') + (b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : ''),
+        subv: b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : ''
       };
-    }).sort((x, y) => y.v - x.v).slice(0, b.top || 8);
+    /* `order: "asc"` e la lista dei PEGGIORI: stessa misura, verso opposto. Il brief di Parsa
+       chiedeva i prodotti migliori E quelli "che hanno bisogno di attenzione", e l'hbar sapeva
+       solo i primi. Una coda della classifica e una domanda vera quanto la testa. */
+    }).sort((x, y) => b.order === 'asc' ? x.v - y.v : y.v - x.v).slice(0, b.top || 8);
     /* La colonna delle etichette vale quanto le etichette, non una frazione della card: con
        nomi corti — "Ads", "Fiere" — il 42% fisso lasciava un terzo del grafico vuoto a
        sinistra, e le barre partivano da meta riquadro senza motivo. Il tetto resta, perche un
        nome lunghissimo non deve mangiarsi il grafico. */
     var lw = M.colonnaEtichette(data.map(d => d.l), 9.5, Math.min(158, w * .42), 10);
-    var m = { t: 5, r: 46, b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r - M.PAD;
+    /* LA MISURA SECONDARIA SI VEDE, accanto al valore. Stava solo nel tooltip, e un titolo come
+       "Products by revenue, with gross margin" prometteva un margine che a schermo non c'era
+       (Parsa, 27 set 2026). Lo spazio a destra si allarga di quanto serve alla scritta piu lunga. */
+    var subW = b.subMeasure ? Math.max.apply(null, data.map(d => M.largh(' · ' + d.subv, 9))) : 0;
+    var m = { t: 5, r: 46 + (subW ? subW + 4 : 0), b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r - M.PAD;
     var max = Math.max.apply(null, data.map(d => d.v)) || 1, rh = ih / (data.length || 1), bh = Math.min(13, rh * .56);
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d, i) {
@@ -1238,7 +1261,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         '<rect x="0" y="' + (y - rh / 2).toFixed(1) + '" width="' + w + '" height="' + rh.toFixed(1) + '" fill="transparent"/>' +
         '<text x="' + (lw - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--ink2)">' + M.esc(d.l) + '</text>' +
         '<rect x="' + lw + '" y="' + (y - bh / 2).toFixed(1) + '" width="' + bl.toFixed(1) + '" height="' + bh + '" rx="1" fill="' + (d.c || 'var(--c2)') + '"/>' +
-        '<text x="' + (lw + bl + 7).toFixed(1) + '" y="' + (y + 3.5).toFixed(1) + '" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) + '</text></g>';
+        '<text x="' + (lw + bl + 7).toFixed(1) + '" y="' + (y + 3.5).toFixed(1) + '" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) +
+        (d.subv ? '<tspan fill="var(--muted2)"> · ' + M.esc(d.subv) + '</tspan>' : '') + '</text></g>';
     });
     return A.card(v, '<div style="flex:1;display:flex;align-items:center;padding-bottom:6px">' + s + '</svg></div>', { flex: true });
   };
@@ -1265,7 +1289,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       if (i === '__nome') return null;
       var c = cols[i];
       if (!c) return 0;
-      if (c.kind === 'var') return A.delta(A.mv(c.measure, r.a), A.mv(c.measure, r.b));
+      if (c.kind === 'var') return A.varia(c.measure, A.mv(c.measure, r.a), A.mv(c.measure, r.b)).d;
       return A.mv(c.measure, r.a);
     };
     if (ord) {
@@ -1293,8 +1317,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var cell = function (c, a, p, base) {
       var cv = A.mv(c.measure, a), pv = A.mv(c.measure, p);
       if (c.kind === 'var') {
-        var d = A.delta(cv, pv), up = c.inv ? d < 0 : d >= 0;
-        return '<td class="tnum ' + (up ? 'up' : 'dn') + '">' + (d >= 0 ? '▲ ' : '▼ ') + f.sgp(d) + '</td>';
+        var va = A.varia(c.measure, cv, pv), d = va.d, up = c.inv ? d < 0 : d >= 0;
+        /* una variazione nulla e piatta: "▼ −0,0 pp" in rosso dice un calo che non c'e */
+        if (va.piatto) return '<td class="tnum fl">— ' + A.varia(c.measure, 0, 0).t.replace(/^[+−-]/, '') + '</td>';
+        return '<td class="tnum ' + (up ? 'up' : 'dn') + '">' + (d >= 0 ? '▲ ' : '▼ ') + va.t + '</td>';
       }
       if (c.kind === 'share') return '<td class="tnum">' + f.pc(base ? cv / base : 0, 0) + '</td>';
       if (c.kind === 'heat') {                    /* conditional formatting — house signature */
@@ -1354,7 +1380,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     for (var i = 0; i < 12; i++) {
       var x0 = mgn.l + cw * i + cw / 2;
       s += '<rect class="hit" x="' + (x0 - bw - 1).toFixed(1) + '" y="' + Y(pri[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(pri[i])).toFixed(1) +
-        '" fill="var(--c5)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel(S.y - nAmp, S.y0 - nAmp) + '</b><br>' + A.mfmt(ms, pri[i]) + '"/>';
+        '" fill="var(--prior)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel(S.y - nAmp, S.y0 - nAmp) + '</b><br>' + A.mfmt(ms, pri[i]) + '"/>';
       s += '<rect class="hit" x="' + (x0 + 1).toFixed(1) + '" y="' + Y(cur[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(cur[i])).toFixed(1) +
         '" fill="var(--c2)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel() + '</b><br>' + A.mfmt(ms, cur[i]) + (ln ? '<br>' + A.meas(ln).label + ': ' + A.mfmt(ln, line[i]) : '') + '"/>';
       s += '<text x="' + x0.toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
@@ -1471,8 +1497,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var s0 = P(t0), s1 = P(t1);
       return 'M' + s0[0].toFixed(1) + ',' + s0[1].toFixed(1) + ' A' + r + ',' + r + ' 0 0 1 ' + s1[0].toFixed(1) + ',' + s1[1].toFixed(1);
     };
-    var sotto = target > 0 && val < target;
-    var colore = target > 0 ? (sotto ? 'var(--bad)' : 'var(--good)') : 'var(--c2)';
+    /* IN LINEA E' IN LINEA. Uno scarto che il formato non riesce a scrivere non e "sotto": il
+       gauge di Parsa diceva "100.0%, 0.0 pp below Target" con l'arco rosso (27 set 2026). E su
+       una misura dove meno e meglio (inv: il costo del personale sul fatturato) stare sotto il
+       bersaglio e il risultato buono: il colore lo leggeva al contrario — il gauge Prime cost,
+       rosso sul numero giusto, difetto aperto dalla storia del gauge. */
+    var inv = !!(A.meas(ms).inv || v.inv);
+    var inLinea = target > 0 && (pct ? Math.abs(val - target) < 5e-4 : Math.abs(val - target) < Math.abs(target) * 0.002);
+    var male = target > 0 && !inLinea && (inv ? val > target : val < target);
+    var colore = target > 0 ? (male ? 'var(--bad)' : 'var(--good)') : 'var(--c2)';
 
     var s = '<svg width="' + w + '" height="' + h + '">';
     s += '<path d="' + arc(0, 1) + '" fill="none" stroke="var(--line)" stroke-width="' + sw + '" stroke-linecap="round"/>';
@@ -1531,7 +1564,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var scarto = val - target, ass = Math.abs(scarto);
       var testo = pct ? A.f.pp(ass).replace(/^[+−-]\s*/, '') : A.mfmt(ms, ass);
       nota = '<div class="gnote">' + M.esc(A.meas(ms).label || ms) + ' ' + A.mfmt(ms, val) + ', ' +
-        testo + ' ' + (scarto >= 0 ? (A.T.sopra || 'sopra') : (A.T.sotto || 'sotto')) + ' ' +
+        (inLinea ? (A.T.inLinea || 'in linea con') : testo + ' ' + (scarto >= 0 ? (A.T.sopra || 'sopra') : (A.T.sotto || 'sotto'))) + ' ' +
         M.esc(A.tpl(b.targetLabel || 'target')) + '</div>';
     }
     return A.card(v, s + nota);
@@ -1627,7 +1660,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var liv = 0;
         while (liv < soglie.length && x >= soglie[liv]) liv++;
         var col = ['var(--heat1)', 'var(--heat2)', 'var(--heat3)', 'var(--heat4)', 'var(--heat5)'][liv];
-        var dimd = S.f[dim] && S.f[dim] !== r.id;
+        /* un filtro sulla dimensione delle COLONNE segna la sua colonna come quello sulle righe
+           segna la sua riga: prima la heatmap restava identica davanti al filtro "Corporate" */
+        var dimd = (S.f[dim] && S.f[dim] !== r.id) ||
+          (cols[ci].pin !== undefined && S.f[b.by] && S.f[b.by] !== cols[ci].pin);
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (lw + cw * ci + gap / 2).toFixed(1) +
           '" y="' + (y + gap / 2).toFixed(1) + '" width="' + Math.max(1, cw - gap).toFixed(1) +
           '" height="' + Math.max(1, ch - gap).toFixed(1) + '" rx="1" fill="' + col +
@@ -1830,7 +1866,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         fill = bar.d >= 0 ? 'var(--good)' : 'var(--bad)';
         tipv = (bar.d >= 0 ? '+' : '−') + A.mfmt(ms, Math.abs(bar.d));
       }
-      s += '<rect class="hit" ' + (bar.id ? 'data-f="' + dim + ':' + bar.id + '"' : '') + ' x="' + x.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + bw.toFixed(1) +
+      /* il membro filtrato resta pieno, gli altri si attenuano — come in ogni altro visual per
+         dimensione: prima il bridge restava identico davanti al filtro sul suo segmento */
+      var dimd = bar.id && A.S.f[dim] && A.S.f[dim] !== bar.id;
+      s += '<rect class="hit' + (dimd ? ' dimd' : '') + '" ' + (bar.id ? 'data-f="' + dim + ':' + bar.id + '"' : '') + ' x="' + x.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + bw.toFixed(1) +
         '" height="' + Math.max(1, y1 - y0).toFixed(1) + '" fill="' + fill + '" data-tip="<b>' + M.esc(bar.l) + '</b><br>' + tipv + '"/>';
       s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8" fill="var(--muted)">' + M.esc(bar.l.length > 12 ? bar.l.slice(0, 11) + '…' : bar.l) + '</text>';
     });
@@ -1904,16 +1943,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var rows, best, worst;
       if (kind === 'm') return A.mfmt(arg, A.mv(arg, cur));
       if (kind === 'p') return A.mfmt(arg, A.mv(arg, prev));
-      if (kind === 'var') return '<span class="' + (A.delta(A.mv(arg, cur), A.mv(arg, prev)) >= 0 ? 'up' : 'dn') + '">' + f.sgp(A.delta(A.mv(arg, cur), A.mv(arg, prev))) + '</span>';
+      if (kind === 'var') { var va = A.varia(arg, A.mv(arg, cur), A.mv(arg, prev)); return '<span class="' + (va.d >= 0 ? 'up' : 'dn') + '">' + va.t + '</span>'; }
       if (kind === 'bps') return f.bps(A.mv(arg, cur) - A.mv(arg, prev));
       if (kind === 'basis') return A.basis();
       if (kind === 'top' || kind === 'drag') {
-        rows = A.byDim(b.dim, {}).map(r => ({ n: r.m.n, d: A.delta(A.mv(b.primary, r.a), A.mv(b.primary, r.b)) }))
+        rows = A.byDim(b.dim, {}).map(r => { var va = A.varia(b.primary, A.mv(b.primary, r.a), A.mv(b.primary, r.b)); return { n: r.m.n, d: va.d, t: va.t }; })
           .sort((x, y) => y.d - x.d);
         if (!rows.length) return '—';
         best = rows[0]; worst = rows[rows.length - 1];
         var pick = kind === 'top' ? best : worst;
-        return arg === 'var' ? '<span class="' + (pick.d >= 0 ? 'up' : 'dn') + '">' + f.sgp(pick.d) + '</span>' : M.esc(pick.n);
+        return arg === 'var' ? '<span class="' + (pick.d >= 0 ? 'up' : 'dn') + '">' + pick.t + '</span>' : M.esc(pick.n);
       }
       return '';
     });

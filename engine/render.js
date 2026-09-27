@@ -473,7 +473,15 @@ function gateArchetipo(spec, e) {
   }
 }
 
-function validate(spec, data) {
+function validate(specIn, data) {
+  /* Si valida SEMPRE la spec appianata, qualunque sia il chiamante. Prima l'appianamento lo
+     faceva chi chiamava — render e lint si, lib/validate.ts (cioe l'app) no — e l'app leggeva
+     una card a piu viste come un visual "undefined": "scorecard apre con trend o colline… la
+     prima riga e [undefined:3, gauge:2]" su una colline messa come prima vista (Parsa, 27 set
+     2026). Il gate test/viste-validazione.test.js avvolge ogni visual del corpus in una card a
+     viste e pretende lo stesso verdetto. */
+  const spec = JSON.parse(JSON.stringify(specIn));
+  espandiViste(spec);
   const e = [], warn = [];
   /* Il bookmark ha una dottrina, e sta in engine/viste.js: i suoi rifiuti entrano qui dentro
      insieme agli altri, perche una card che nasconde meta del suo contenuto senza dire perche
@@ -538,6 +546,13 @@ function validate(spec, data) {
     }
   });
 
+  /* IL NOME DELL'ENTITA NEL DRILL LO SCRIVE IL MOTORE, accanto al tasto indietro, col suo
+     colore. `{drill}` dentro drillHeader lo ripeteva una riga sotto: "Furniture" nel titolo,
+     "■ Furniture" e poi "Furniture · 2025 · vs YoY" (Parsa, 27 set 2026). drillHeader dice il
+     contesto — periodo, confronto — non chi. */
+  if (spec.drill && spec.drill.page && /\{drill\}/.test(spec.drill.page.drillHeader || '')) {
+    e.push(`drill.page.drillHeader "${spec.drill.page.drillHeader}" contiene {drill}: il nome dell'entita lo scrive gia il motore sopra la riga, accanto al tasto indietro. drillHeader dice il contesto (es. "{period} · vs {basis}"), non chi.`);
+  }
   const pages = spec.pages.concat(spec.drill ? [spec.drill.page] : []);
   const types = new Set();
   pages.forEach(pg => {
@@ -572,6 +587,8 @@ function validate(spec, data) {
         const b = v.bind || {};
         if (b.measure && !known.has(b.measure)) e.push(`page "${pg.id}" ${v.type}: unknown measure "${b.measure}"`);
         if (b.dim && !(data.dims || {})[b.dim]) e.push(`page "${pg.id}" ${v.type}: unknown dim "${b.dim}"`);
+        if (b.order !== undefined && (v.type !== 'hbar' || ['asc', 'desc'].indexOf(b.order) < 0))
+          e.push(`page "${pg.id}" ${v.type}: order "${b.order}" non ammesso — solo sull'hbar, "desc" (i migliori, default) o "asc" (i peggiori)`);
         /* advisory, not a gate: chart-selection.md wants 2-5 slices, but the canonical ships a
            6-category donut. Judgement belongs to the spec author; the engine reports it. */
         if (v.type === 'donut' && b.dim && data.dims[b.dim].length > 5 && !b.topN)
@@ -783,7 +800,7 @@ function validate(spec, data) {
   gateArchetipo(spec, e);
 
   const tb = toolbarBudget(spec, data);
-  if (tb.overflow) e.push(`toolbar controls sum to ${tb.used}px > content width ${tb.available}px (QA Gate 6)`);
+  if (tb.overflow) e.push(toolbarErrore(spec, tb));
 
   if (e.length) throw new Error('spec validation failed:\n  - ' + e.join('\n  - '));
   return { types: [...types], advisories: warn };
@@ -822,6 +839,30 @@ function toolbarBudget(spec, data) {
     items.push({ id: fd.id, control: fd.control || 'list', members: n, w });
   });
   return { used: Math.round(used), available, overflow: used > available, items, axis: onTop ? 'top' : 'rail' };
+}
+
+/* UN ERRORE DI SPAZIO DICE QUANTO COSTA OGNI COSA. Il messaggio diceva solo il totale ("1254px
+   > 1020px"), e il modello riparava alla cieca: nel giro di Parsa (27 set 2026) ha messo una
+   dimensione a tendina, e' sceso a 1022px — due pixel oltre — e il secondo rifiuto ha mandato
+   l'utente sul mockup di ripiego. Qui ogni controllo ha il suo costo, e ogni via d'uscita quanto
+   libera: la riparazione diventa un conto, non un tentativo. */
+function toolbarErrore(spec, tb) {
+  const over = tb.used - tb.available;
+  const costi = ['data ' + W_DATE + 'px'].concat(tb.items.map(it =>
+    it.id + ' (' + it.control + (it.control === 'list' ? ', ' + it.members + ' voci' : '') + ') ' + Math.round(it.w) + 'px'));
+  const uscite = tb.items.filter(it => it.control === 'list').map(it => {
+    const fd = spec.filters.dims.find(d => d.id === it.id) || {};
+    const lab = 14 + String(fd.label || '').length * 6.2;
+    return { testo: '"' + it.id + '" a control:"dropdown" libera ' + Math.round(it.w - (W_DROPDOWN + lab)) + 'px', px: it.w - (W_DROPDOWN + lab) };
+  }).filter(u => u.px > 0).sort((a, b) => b.px - a.px).map(u => u.testo);
+  uscite.push('etichette dei filtri piu corte (6px per lettera)');
+  const larghe = Object.keys(SKIN.SHELLS).filter(k => SKIN.SHELLS[k].tools && SKIN.SHELLS[k].contentWidth - W_RESET > tb.available)
+    .map(k => 'shell "' + k + '" (' + (SKIN.SHELLS[k].contentWidth - W_RESET) + 'px disponibili, grid.contentWidth ' + SKIN.SHELLS[k].contentWidth + ')');
+  const inRail = Object.keys(SKIN.SHELLS).filter(k => !SKIN.SHELLS[k].tools && SKIN.SHELLS[k].rail > 0).map(k => '"' + k + '"');
+  if (larghe.length) uscite.push(larghe.join(' o '));
+  if (inRail.length) uscite.push('shell ' + inRail.join(' o ') + ': i filtri stanno in colonna nella rail e la riga non ha piu un limite');
+  return `toolbar controls sum to ${tb.used}px > content width ${tb.available}px (QA Gate 6): sfora di ${over}px, ` +
+    `e ogni riparazione deve liberarne almeno tanti. Costi: ${costi.join(' · ')}. Per rientrare: ${uscite.join('; oppure ')}.`;
 }
 
 /* ---------- CSS ---------- */
@@ -1023,7 +1064,7 @@ tr.r:hover .dg{opacity:1}
 .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;vertical-align:middle}
 .lgd{display:flex;gap:12px;padding:0 13px 8px;font-size:9.5px;color:var(--muted)}
 .lgd i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
-.lgd .ln{display:inline-block;width:11px;height:0;border-top:2px dashed var(--muted2);margin-right:5px;vertical-align:3px}
+.lgd .ln{display:inline-block;width:11px;height:0;border-top:2px dashed var(--prior);margin-right:5px;vertical-align:3px}
 svg{display:block}svg .hit{cursor:pointer}svg .dimd{opacity:.3}.gnote{font-size:10.5px;color:var(--muted);text-align:center;padding:0 10px 8px;line-height:1.4}
 #tip{position:fixed;pointer-events:none;background:var(--c1);color:#fff;font-size:10.5px;padding:6px 9px;border-radius:2px;opacity:0;transition:opacity .1s;z-index:60;line-height:1.55;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 #tip b{font-weight:600}
@@ -1161,7 +1202,7 @@ const INGLESE = {
   all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var',
   spanUno: '1 year', spanTutti: 'All', anni: 'years', others: 'Others', target: 'target',
   conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory',
-  sopra: 'above', sotto: 'below'
+  sopra: 'above', sotto: 'below', inLinea: 'in line with'
 };
 
 /** Riempie le voci mancanti nella lingua del report. L'italiano non si tocca: le sue parole

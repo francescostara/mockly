@@ -198,7 +198,12 @@ ok('il bordo destro e lo stesso per tutte le righe', () => {
     const gaps = [...css.matchAll(/\.row\{[^}]*gap:([\d.]+)px/g)].map(m => parseFloat(m[1]));
     const gap = gaps.length ? gaps[gaps.length - 1] : null;
     if (gap === null) return;
-    const righe = [...r.doc.querySelectorAll('#page > .row')];
+    /* La banda a blocco unico (skin.banda "blocco") non da larghezze alle sue card: crescono in
+       proporzione allo span dentro l'unica superficie, quindi finiscono dove finisce la riga per
+       costruzione. Senza layout (jsdom) la loro larghezza e zero: la riga si esclude, non si
+       misura sbagliata. Il primo caso del corpus col blocco e stato retail-parsa (27 set 2026). */
+    const righe = [...r.doc.querySelectorAll('#page > .row')]
+      .filter(rw => ![...rw.children].some(x => !parseFloat(x.style.width) && /flex:/.test(x.getAttribute('style') || '')));
     const larghezze = righe.map(rw => {
       const c = [...rw.children].map(x => parseFloat(x.style.width) || 0);
       return Math.round((c.reduce((a, b) => a + b, 0) + gap * (c.length - 1)) * 10) / 10;

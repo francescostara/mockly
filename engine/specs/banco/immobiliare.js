@@ -218,7 +218,7 @@ const spec = {
   drill: {
     dim: 'area',
     page: {
-      id: '__drill__', title: '{drill}', drillHeader: 'Area {drill} · {period}',
+      id: '__drill__', title: '{drill}', drillHeader: 'Dettaglio area · {period}',
       backLabel: 'Torna a tutte le aree', subtitle: 'Agenti e tipologie dell area selezionata',
       rows: [
         { visuals: [
