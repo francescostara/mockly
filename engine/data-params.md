@@ -167,6 +167,33 @@ the builder fits a joint grain with IPF so both are real:
 `shares` are the split dimension's share of the grand total, in member order, summing to 1.
 Keep the joint grain small: `members(dim) × members(split) ≤ 24`, or the output file gets fat.
 
+**Three filterable dimensions: `split` as an array of two.** When the brief asks to filter by
+three dimensions (category, region AND customer segment), declare both extra dimensions — never
+push the third one into a family of fields shown as matrix columns: that is a filter asked for
+and not given.
+
+```jsonc
+"facts": {
+  "dim": "cat",
+  "split": [ { "dim": "region",  "shares": [0.31, 0.24, 0.20, 0.25] },
+             { "dim": "segment", "shares": [0.58, 0.25, 0.17] } ],
+  "fields": [ ... ]
+}
+```
+
+Each split is fitted to `facts.dim` on its own (the segment mix depends on the category, not on
+the region). Keep `members(dim) × Π members(split) ≤ 120` — 5 × 4 × 3 = 60 is comfortable.
+
+**Where a field reads its rate: `attrFrom`.** Omitted, a `share`/`divide` field reads the attrs of
+`facts.dim`'s members; `"split"` reads the first split's; the NAME of a fact dimension reads
+that dimension's members — with two splits, a discount rate that belongs to the region is
+`"attrFrom": "region"`.
+
+**A split member can grow faster than the others.** `growth` on a split member tilts its share
+year after year (`(1+growth)^year`, renormalised; `shares` then describes the first year). Without
+it every region grows exactly like the total, and "the region that grows while its margin falls"
+cannot be told apart from the one that simply grows.
+
 ## `detail` — the drill-down grain (optional)
 
 A child dimension (models within a category, formats within a platform). It ships as a share

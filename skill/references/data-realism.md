@@ -190,6 +190,12 @@ const REV = ipf(seedGrid, CHANNELS.map(c=>c.revenue), COUNTRIES.map(c=>c.revenue
 // channel value under a country filter:  S.country ? REV[ci][coIdx[S.country]] : CHANNELS[ci].revenue
 ```
 
+**Three axes work the same way.** When the brief slices by three dimensions (category, region,
+customer segment), `facts.split` takes an array of two: each extra dimension is fitted to the
+primary one, so all three filters are real and every roll-up reconciles. Give the split members
+their own `growth` when the story needs one of them to move differently (a region growing faster,
+a segment gaining share) — without it, every split member grows exactly like the total.
+
 ## Declaring a facts dimension means populating its members — always
 
 The single most common spec-generation failure: declaring a facts dimension and then leaving

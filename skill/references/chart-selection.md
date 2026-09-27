@@ -13,6 +13,7 @@ deliberately — this file is the decision guide.
 | Part-to-whole at a single moment | 100% stacked bar; treemap; donut **only if 2-5 slices** | Many-slice pie |
 | Composition changing over time | 100% stacked column/area; **ribbon** for rank flow | Stacked pie series |
 | Compare categories on one measure | Horizontal bar, **sorted by value** | Pie |
+| Best AND worst performers ("which products need attention?") | Two ranked bars: `top` N and the tail with `order:"asc"` — side by side, or one card with two views (`motivo:"due-lenti"`) | Only the top list: the weak tail is half the question |
 | Ranking, and how rank *changes* over time | **Ribbon chart** | Grouped bars (hide the crossings) |
 | Contribution to a total / Pareto 80-20 | Pareto (sorted bar + cumulative % line); donut to dramatise a 2-5 split | Flat table alone |
 | Are two measures related? | Scatter; or dual-axis column + line | |

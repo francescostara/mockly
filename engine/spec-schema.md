@@ -167,7 +167,7 @@ Common visual fields: `type`, `span`, `h`, `title`, `subtitle`, `note` (right-al
 | `trend` | `{measure}` | one measure over time. **Timeline-exempt**: always the full 12 months of the selected year vs prior, highlighting the selected span |
 | `colline` | `{measure, line}` | actual vs prior columns + a rate line on a secondary axis |
 | `donut` | `{dim, measure}` | part-to-whole. **2-5 members only** — above that use `hbar`/`stack100` |
-| `hbar` | `{dim, measure, top, parent, detail, subMeasure, subUnit}` | ranked list. `detail:true` reads the detail grain; `parent` colours by the parent dim and makes bars cross-filter it |
+| `hbar` | `{dim, measure, top, order, parent, detail, subMeasure, subUnit}` | ranked list. `detail:true` reads the detail grain; `parent` colours by the parent dim and makes bars cross-filter it; `order:"asc"` shows the TAIL — the `top` weakest members (products that "need attention") instead of the best |
 | `stack100` | `{dim, measure, by}` | composition across quarters (`by:"q"`) or another dim |
 | `ribbon` | `{dim, measure, by}` | rank change over periods |
 | `funnel` | `{stages:[{measure,label,c}]}` | stage-to-stage conversion |
@@ -190,7 +190,8 @@ Common visual fields: `type`, `span`, `h`, `title`, `subtitle`, `note` (right-al
   ] }
 ```
 
-`kind`: omitted = plain value · `var` = ▲/▼ vs the comparable prior window · `share` = % of the
+`kind`: omitted = plain value · `var` = ▲/▼ vs the comparable prior window (a percentage
+measure varies in **points**, `▼ −3.2 pp`, never in percent of itself — the engine does it) · `share` = % of the
 filtered total · `heat` = conditional formatting on a `[lo,hi]` scale (house signature). The
 totals row recomputes from the visible rows; every row carries cross-filter and drill-through.
 
@@ -200,6 +201,24 @@ Power BI visual and is rejected by convention. Tokens: `{m:id}` current value, `
 `{drag:}`/`{drag:var}` worst member (`dim` + `primary` in the bind pick the ranking).
 
 ---
+
+### Cards with several views (`viste`) — the bookmark
+
+A position in a row can hold two or three views behind tabs instead of one visual:
+
+```jsonc
+{ "id": "products", "span": 2, "h": 176, "motivo": "due-lenti", "viste": [
+  { "type": "hbar", "etichetta": "Best", "title": "Top products by profit", "bind": { "dim": "prod", "measure": "profit", "detail": true, "top": 6 } },
+  { "type": "hbar", "etichetta": "Worst", "title": "Products that need attention", "bind": { "dim": "prod", "measure": "profit", "detail": true, "top": 6, "order": "asc" } }
+] }
+```
+
+- `motivo` is **required** — why something hides behind a tab: `due-lenti` (two metrics on the
+  same question; the views share the measure or the dimension), `altro-taglio` (the same
+  question on another axis; same condition), `pagina-sprecata` (one more chart, the page is full,
+  and alone it does not deserve a page — the only reason that admits unrelated views).
+- every view has `type` and `etichetta` (the tab text); at most 3 views, 2 on the opening visual.
+- the FIRST view is what the reader sees on opening, and what the archetype is judged on.
 
 ## 6. `drill`
 
@@ -213,6 +232,10 @@ Power BI visual and is rejected by convention. Tokens: `{m:id}` current value, `
   }
 }
 ```
+
+`drillHeader` is the CONTEXT line (`"{period} · {basis}"`). Never put `{drill}` in it: the engine
+already prints the entity's name, with its colour, next to the back button, and rejects the
+repetition.
 
 Right-clicking any `matrix` row opens this page with the entity pinned on **every** visual of
 the page (the pin runs through the same shared slice layer), plus a back button that returns to

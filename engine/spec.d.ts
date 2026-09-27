@@ -62,7 +62,16 @@ export interface CardAVista {
   id?: string;
   span: number;
   h?: number;
-  viste: Array<Visual & { etichetta?: string }>;
+  /** OBBLIGATORIO — perche questa card nasconde qualcosa dietro una linguetta. Senza, il motore
+   *  rifiuta. `due-lenti`: la stessa domanda con due metriche che si contraddicono (ricavo e
+   *  margine per prodotto) — le viste condividono la misura o la dimensione. `altro-taglio`: la
+   *  stessa domanda su un altro asse (per coorte / per stagione) — idem. `pagina-sprecata`: serve
+   *  un grafico in piu, la pagina e piena, e da solo non merita una pagina — l'unico motivo che
+   *  ammette viste senza misura ne dimensione in comune. Massimo 3 viste, 2 sull'apertura. */
+  motivo: 'due-lenti' | 'altro-taglio' | 'pagina-sprecata';
+  /** ogni vista ha `type` ed `etichetta` (il testo della linguetta). La PRIMA vista e quella
+   *  che si vede aprendo il file, ed e su quella che il motore giudica l'archetipo. */
+  viste: Array<Visual & { etichetta: string }>;
 }
 
 export interface Skin {
@@ -93,9 +102,13 @@ export interface Meta {
   /** 12 month abbreviations in the report language */
   months?: string[];
   /** UI words in the report language */
+  /** UI words in the report language. Fuori dall'italiano, le parole che mancano le mette il
+   *  motore in inglese: dichiararle serve solo per un'altra lingua o per un tono diverso. */
   strings?: Partial<Record<
     'fullYear' | 'all' | 'allM' | 'compare' | 'qtr' | 'month' | 'varShort' |
-    'pyShort' | 'cyShort' | 'prevShort' | 'curShort' | 'reset' | 'period' | 'conv', string>>;
+    'pyShort' | 'cyShort' | 'prevShort' | 'curShort' | 'reset' | 'period' | 'conv' |
+    'spanLong' | 'year' | 'qtrLong' | 'monthLong' | 'updatedLabel' | 'report' | 'spanUno' |
+    'spanTutti' | 'anni' | 'others' | 'target' | 'noPrev' | 'trajectory' | 'sopra' | 'sotto' | 'inLinea', string>>;
   /** literal "last refreshed" string — never a live clock (determinism) */
   updated?: string;
   source?: string;
@@ -177,7 +190,10 @@ export type Bind =
   | { measure: string }                                                       // trend, sparkline
   | { measure: string; line?: string }                                        // colline
   | { dim: string; measure: string }                                          // donut
-  | { dim: string; measure: string; top?: number; parent?: string; detail?: boolean; subMeasure?: string; subUnit?: string } // hbar
+  /** hbar — classifica. `order: "asc"` mostra la CODA: i `top` peggiori per la misura (i prodotti
+   *  "che hanno bisogno di attenzione"), invece dei migliori. `subMeasure` si scrive accanto al
+   *  valore di ogni barra ("$6.0M · 40.0% margin", con `subUnit` in coda). */
+  | { dim: string; measure: string; top?: number; order?: 'desc' | 'asc'; parent?: string; detail?: boolean; subMeasure?: string; subUnit?: string } // hbar
   | { dim: string; measure: string; by?: 'q' | 'm' | string }                 // stack100, ribbon
   /** donut — il visual della CONCENTRAZIONE. `topN` aggrega la coda in "Altri" (e cio che
    *  rende leggibile una dimensione con dodici membri); `centre: "share"` mette al centro la
@@ -235,7 +251,7 @@ export interface Visual {
 }
 
 /** max 3 visuals; spans sum to grid.columns */
-export interface Row { flex?: boolean; visuals: Visual[]; }
+export interface Row { flex?: boolean; visuals: Array<Visual | CardAVista>; }
 
 export interface Page {
   id: string;
@@ -250,7 +266,9 @@ export interface Page {
    *  vengono verificate: sono approfondimenti, non la faccia del report. */
   archetype?: Archetype;
   rows: Row[];
-  /** drill page only */
+  /** drill page only — il CONTESTO della pagina di dettaglio ("{period} · {basis}"). Mai
+   *  `{drill}`: il nome dell'entita lo scrive il motore accanto al tasto indietro, e ripeterlo
+   *  qui viene rifiutato. */
   drillHeader?: string;
   backLabel?: string;
 }
@@ -331,8 +349,14 @@ export interface MemberSpec {
   /** the member's colour, reused in EVERY visual; the builder fills a ramp colour if omitted */
   c?: string;
   base: number;
-  /** compound growth per year; at least one member of a dimension must be negative */
+  /** compound growth per year; at least one member of a dimension must be negative.
+   *  Su un membro di uno SPLIT inclina la sua quota anno dopo anno (la regione che cresce piu
+   *  delle altre); `shares` descrive allora il primo anno. */
   growth?: number;
+  /** 12 moltiplicatori propri, che sostituiscono la stagionalita globale per questo membro */
+  seasonality?: number[];
+  /** la tinta del membro E' la sua identita (Instagram, TikTok): il motore non la sostituisce */
+  brand?: boolean;
   /** free numeric attributes the field formulas read (aov, margin, rates...) */
   attrs?: Record<string, number>;
 }
@@ -340,17 +364,31 @@ export interface MemberSpec {
 /** A dimension and its members, co-located. There is nowhere else to put them. */
 export interface DimSpec { members: NonEmpty<MemberSpec>; }
 
+/** Da quali membri un campo legge `attr`: omesso = facts.dim; "split" = il primo split; il
+ *  NOME di una dimensione dei fatti = i membri di quella (serve con due split). */
+export type AttrFrom = 'split' | string;
+
+/** Il campo esiste solo per questi membri di una dimensione dei fatti; altrove vale zero
+ *  (la spesa paid non esiste sull'organico). */
+export interface OnlyFor { dim: string; members: string[] }
+
 export type FieldSpec =
   | { id: string; kind: 'seasonal'; jitter?: [number, number] }
-  | { id: string; kind: 'share'; of: string; attr: string; attrFrom?: 'split'; complement?: boolean; cap?: number; growthFactor?: number; jitter?: [number, number] }
-  | { id: string; kind: 'divide'; of: string; attr: string; attrFrom?: 'split'; min?: number; jitter?: [number, number] }
-  | { id: string; kind: 'combine'; plus?: string[]; minus?: string[] };
+  | { id: string; kind: 'share'; of: string; attr: string; attrFrom?: AttrFrom; complement?: boolean; cap?: number; growthFactor?: number; jitter?: [number, number]; only?: OnlyFor }
+  | { id: string; kind: 'divide'; of: string; attr: string; attrFrom?: AttrFrom; min?: number; jitter?: [number, number]; only?: OnlyFor }
+  | { id: string; kind: 'combine'; plus?: string[]; minus?: string[]; only?: OnlyFor };
+
+/** Una dimensione dello split: `shares` = la sua quota del totale, in ordine dei membri. */
+export interface SplitSpec { dim: string; shares?: number[] }
 
 export interface FactsSpec {
   /** key of `dims` — the dimension the monthly loop runs over */
   dim: string;
-  /** a second filterable dimension fitted onto the same totals with IPF */
-  split?: { dim: string; shares?: number[] };
+  /** altre dimensioni filtrabili, adattate agli stessi totali con IPF: UNA (oggetto) o DUE
+   *  (array). Con due, il report ha tre filtri di dimensione — es. categoria (facts.dim) x
+   *  regione x segmento cliente. Celle: membri(dim) x membri(split) <= 60 per ogni split, e il
+   *  prodotto di tutti <= 120. */
+  split?: SplitSpec | [SplitSpec, SplitSpec];
   /** fields[0] must be the primary measure, kind:'seasonal' */
   fields: NonEmpty<FieldSpec>;
 }
@@ -381,6 +419,9 @@ export interface DataParams {
   years: [number, number];
   /** 12 multipliers averaging ~1.0 */
   seasonality?: number[];
+  /** quanti degli ultimi anni restano mensili (default 3, minimo 2); i piu vecchi diventano una
+   *  riga per membro — serve solo con molti anni, per il peso del file */
+  dettaglioMesi?: number;
   /** every dimension the report can filter, slice or drill by */
   dims: Record<string, DimSpec>;
   facts: FactsSpec;

@@ -112,6 +112,8 @@ Hard rules you cannot break (the engine rejects the spec otherwise):
 - meta.watermark is required and must say the data is synthetic.
 - Every measure referenced anywhere must be declared in model.measures.
 - Labels are plain text (no HTML). meta.updated is a fixed literal string, never today's date.
+- A card with several views ("viste") declares "motivo": due-lenti | altro-taglio | pagina-sprecata.
+- drillHeader never contains {drill}: the engine already prints the entity's name.
 
 Design rules that make the output good rather than merely valid:
 - Never assume a single page. Use FILTERS when the same structure repeats across a dimension
@@ -120,6 +122,10 @@ Design rules that make the output good rather than merely valid:
   business line). Do not split one story across two pages to pad.
 - Give the hero visual the wider span; pick one page split (e.g. 3|2) and reuse it in every row.
 - A donut only for 2-5 members; above that use hbar or stack100.
+- EVERY FILTER THE BRIEF ASKS FOR IS A FILTER. Up to three dimensions are filterable: facts.dim
+  plus facts.split as an array of two. Never turn a requested filter into matrix columns.
+- When the brief asks for the best AND the worst (top and bottom products, what "needs
+  attention"), show both: an hbar with order:"asc" is the tail of the ranking.
 - At least one genuine negative storyline in the data — a declining segment, a compressing
   margin, a rising cost. A report where everything is green reads as fake.
 - Numbers must be plausible to a domain expert: read the ranges in the realism guide.

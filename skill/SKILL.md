@@ -164,6 +164,9 @@ MoM. If any fails, fix it before finishing.
    When two dimensions both roll up to the same total and either is sliceable, build a joint
    matrix (IPF/RAS, see `data-realism.md`), not two independent tables. **Self-check:** click each
    filter and confirm a KPI card's *text* changes, not just a CSS class (`qa-checklist.md` Gate 5).
+   **Every filter the brief asks for is a filter** — never a family of fields shown as matrix
+   columns. Up to three dimensions filter the facts (`facts.dim` + `facts.split` as an array of
+   two, `data-params.md`); a fourth needs a conversation, not a silent workaround.
 5. **Toolbar width is budgeted like page height.** Any dimension with more than ~4-5 members is a
    dropdown, not a chip row; sum the fixed-width controls and keep them under the content width so
    the bar never silently clips (`qa-checklist.md` Gate 6).
