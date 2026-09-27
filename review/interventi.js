@@ -373,6 +373,94 @@ const INTERVENTI = [
     fatto: "Nessun controllo della barra va a capo o si stringe; cede spazio solo il gruppo delle pillole, che ripete un'informazione gia visibile, e una pillola che non ci sta sparisce intera invece di restare mozzata. Il chip acceso non diventa piu grassetto: allargandosi spostava di un pixel tutto quello che veniva dopo. Gate: test/barra.test.js, in Chrome, su ogni mockup in italiano e in inglese con tutti i filtri attivi insieme. Il gate ha trovato lo stesso difetto anche in archetipi/canonical-executive-summary in italiano.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "(brief di Parsa) Filtri per data, regione, categoria e segmento cliente: il segmento non era un filtro, solo tre colonne della matrice regioni.",
+    dove: "generatore dei dati · grammatica · skill",
+    fatto: "facts.split accetta un array di due dimensioni: tre filtri veri nei fatti, ognuno adattato con la sua IPF, totali che tornano su ogni asse, e con UNA dimensione il dato identico byte per byte a prima. Un membro dello split puo avere growth (la regione che cresce piu delle altre); attrFrom accetta il nome di una dimensione. Regola prima nella skill (SKILL.md, data-params.md, data-realism.md, prompt: ogni filtro chiesto e un filtro), poi nel motore e nel kit Power BI. Gate: test/dimensioni.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "(brief di Parsa) I prodotti migliori E quelli che hanno bisogno di attenzione: l'hbar sapeva mostrare solo i migliori.",
+    dove: "hbar · grammatica · kit Power BI",
+    fatto: "bind.order:\"asc\" sull'hbar mostra la coda della classifica; rifiutato fuori dall'hbar o con altri valori. chart-selection.md: migliori e peggiori sono una domanda sola. Kit: Bottom N. Gate: test/dimensioni.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "La colonna Margin YoY della matrice scriveva la variazione di un margine in percento (West −9,4%) mentre la card KPI diceva −0,8 pp.",
+    dove: "matrice · tooltip del trend · narrativa · kit Power BI",
+    fatto: "Ogni variazione a schermo passa da A.varia: una percentuale varia di punti, ovunque; una variazione nulla e piatta (— 0,0 pp), non una freccia rossa. Anche il kit aveva tre copie della regola e una guardava solo il formato: ora una. Gate: test/variazioni.test.js (A.delta e f.sgp vietati fuori da A.varia; ogni colonna var su un tasso in pp, su ogni mockup).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "(giro locale) Il primo tentativo del modello e stato rifiutato per \"motivo\" mancante su una card a piu viste: la grammatica non lo nominava.",
+    dove: "grammatica",
+    fatto: "motivo dichiarato obbligatorio in spec.d.ts con i tre valori, sezione sulle card a viste in spec-schema.md, riga nelle regole del prompt. Gate generale test/grammatica.test.js: ogni campo usato dal corpus deve essere dichiarato nei tipi — ha trovato subito altri dieci campi non dichiarati (le stringhe UI, dettaglioMesi, only, seasonality e brand sui membri).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "(giro locale) L'app ha rifiutato una pagina che apriva con una card a viste: \"la prima riga e [undefined:3, gauge:2]\".",
+    dove: "validazione",
+    fatto: "validate() appiana da se le card a viste, qualunque sia il chiamante: prima lo faceva solo il render, e lib/validate.ts (l'app) no. Gate: test/viste-validazione.test.js avvolge ogni visual del corpus in una card a due viste e pretende lo stesso verdetto da validate e render.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "Nel colline le colonne del 2024 erano verdi accanto al 2025 in ocra: l'anno prima si leggeva come l'anno buono.",
+    dove: "colline · trend · legenda · kit Power BI",
+    fatto: "Nuovo token --prior, un grigio neutro in tutte le tredici famiglie: colonne del colline, tratteggio del trend e legenda automatica lo usano; il kit dice grigio neutro. Gate: test/periodo-precedente.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "Nel drill il nome della categoria compariva tre volte: titolo, etichetta accanto al tasto indietro e \"Furniture · 2025 · vs YoY\".",
+    dove: "drill · grammatica",
+    fatto: "{drill} dentro drillHeader e rifiutato (il nome lo scrive gia il motore) e la grammatica lo dice; corretti i due casi del corpus che lo usavano. Gate: test/dimensioni.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "(giro locale) Con tre filtri la barra sforava; il messaggio diceva solo il totale, il modello ha riparato alla cieca, e' sceso a 2px oltre e il secondo rifiuto ha mandato l'utente sul mockup di ripiego.",
+    dove: "messaggi di riparazione · barra dei filtri",
+    fatto: "L'errore della barra dice di quanto sfora, quanto costa ogni controllo e quanto libera ogni via d'uscita (tendina, etichette, shell piu larghe o filtri nella rail): la riparazione e un conto. Gate: test/dimensioni.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 1,
+    commento: "Il gauge diceva \"100.0%, 0.0 pp below Target\" con l'arco rosso.",
+    dove: "gauge",
+    fatto: "Uno scarto sotto la risoluzione del formato si dice \"in line with\" e non e rosso; e inv sulla misura ora gira il colore (chiude il difetto aperto del gauge Prime cost, rosso sul numero giusto). Gate: test/gauge.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 2,
+    commento: "(controllo della v2) Col filtro Corporate le KPI e la matrice cambiavano, la lista dei prodotti peggiori restava identica al dollaro e la heatmap non segnava la colonna scelta.",
+    dove: "grano di dettaglio · heatmap · waterfall",
+    fatto: "I figli del dettaglio ereditano tutte le dimensioni della loro riga dei fatti, non solo il genitore: il difetto c'era gia con due dimensioni (immobiliare, provvigioni per agente col filtro tipo). La heatmap attenua le colonne fuori dal filtro sulla dimensione delle colonne, il waterfall le barre fuori dal filtro. Gate generale test/filtri-visual.test.js: su ogni pagina di ogni mockup ogni card risponde a ogni filtro di dimensione — ha trovato sette card ferme in cinque mockup, quattro gia consegnati o approvati.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/retail-parsa",
+    versione: 2,
+    commento: "(controllo della v2) \"Products by revenue, with gross margin\": il margine non compariva, stava solo nel tooltip.",
+    dove: "hbar · grammatica",
+    fatto: "subMeasure si scrive accanto al valore di ogni barra, e lo spazio a destra si allarga di quanto serve; la grammatica lo dice. Gate: test/dimensioni.test.js (la scritta c'e e resta dentro la card).",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
