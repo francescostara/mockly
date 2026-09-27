@@ -73,11 +73,14 @@ ok('un disco che non si puo scrivere non fa fallire la generazione', () => {
   assert.strictEqual(P.salvaScambio(vietato, { brief: 'x' }), null);
 });
 
-ok('la produzione non puo finire in modalita incolla per sbaglio', () => {
-  /* si attiva solo con PRUVA_STUB=incolla, una variabile del server: il browser non la sceglie */
+ok('nessuna sessione e nessun deploy spende per sbaglio: senza PRUVA_STUB=api si incolla', () => {
+  /* il modo lo sceglie una variabile del server, mai il browser; e il predefinito e l'incolla */
   const route = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'generate', 'route.ts'), 'utf8');
-  assert.ok(/const incolla = \(\) => env\('STUB'\) === MODO_INCOLLA/.test(route));
-  assert.ok(!/body\.(incolla|modo)/.test(route), 'il corpo della richiesta non deve poter accendere la modalita');
+  assert.ok(/const modo = \(\) => env\('STUB'\) \|\| MODO_INCOLLA/.test(route), 'senza variabile il modo deve essere incolla');
+  assert.ok(/const stubbed = \(\) => modo\(\) !== 'api'/.test(route), 'il modello a pagamento solo con PRUVA_STUB=api');
+  /* l'unica chiamata al modello e dietro a incolla(), che e falso solo per api, 1 e broken */
+  assert.strictEqual((route.match(/callModel\(/g) || []).length, 1);
+  assert.ok(!/body\.(incolla|modo|stub)/.test(route), 'il corpo della richiesta non deve poter scegliere il modo');
 });
 
 console.log('  ' + n + ' checks');

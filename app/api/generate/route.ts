@@ -26,8 +26,14 @@ export const runtime = 'nodejs';
 /* generation runs 20-60s; Vercel Hobby caps at 60, Pro at 300 */
 export const maxDuration = 300;
 
-const incolla = () => env('STUB') === MODO_INCOLLA;
-const stubbed = () => env('STUB') === '1' || env('STUB') === 'broken' || incolla();
+/* ZERO CREDITI PER COSTRUZIONE. Il modello a pagamento si chiama solo con PRUVA_STUB=api, scritto
+   apposta; senza variabile, o con un valore qualsiasi, l'app e in modalita incolla. Prima era il
+   contrario: bastava una chiave in .env.local o nelle variabili di Vercel, e una sessione avviata
+   con `npm run dev` — o il deploy — spendeva. Cosi online e in locale si comportano allo stesso
+   modo, e spendere e una scelta, non una dimenticanza. */
+const modo = () => env('STUB') || MODO_INCOLLA;
+const incolla = () => !['api', '1', 'broken'].includes(modo());
+const stubbed = () => modo() !== 'api';
 
 /* Nella modalita incolla (lib/incolla.js) il "modello" e una persona che porta il messaggio in
    una chat e ne riporta la risposta. Quando la risposta per questo tentativo non c'e ancora, la
@@ -165,7 +171,7 @@ export async function POST(req: NextRequest) {
     : null;
 
   const meta = {
-    model: stubbed() ? `stub:${env('STUB')}` : model,
+    model: stubbed() ? `stub:${incolla() ? MODO_INCOLLA : modo()}` : model,
     valid: !fallback,
     repairs,
     fallback,

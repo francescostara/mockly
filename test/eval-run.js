@@ -137,7 +137,7 @@ async function startServer(dry, logPath, broken) {
   /* un run vero non deve poter finire sullo stub, e vanno tolti ENTRAMBI i prefissi:
      il vecchio nome e ancora letto come ripiego, quindi lasciarlo li basterebbe a
      far passare per vero un giro che non ha chiamato nessun modello. */
-  else { delete env.PRUVA_STUB; delete env.MOCKLY_STUB; }
+  else { delete env.PRUVA_STUB; delete env.MOCKLY_STUB; env.PRUVA_STUB = 'api'; }   /* senza, l'app incolla */
 
   const child = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx',
     ['next', 'dev', '-p', String(PORT)],
