@@ -1,0 +1,1071 @@
+{
+  "spec": {
+    "meta": {
+      "title": "Campagne promozionali",
+      "subtitle": "Risultati e incremento delle promozioni · {y} contro {py}",
+      "brand": {
+        "name": "Elettrocasa Piemonte",
+        "tagline": "Promozioni"
+      },
+      "locale": "it-IT",
+      "currency": "€",
+      "months": [
+        "Gen",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mag",
+        "Giu",
+        "Lug",
+        "Ago",
+        "Set",
+        "Ott",
+        "Nov",
+        "Dic"
+      ],
+      "updated": "Dati al 31 dic 2025",
+      "source": "Fonte: casse dei punti vendita e calendario promozioni",
+      "watermark": "Mockup dimostrativo · dati sintetici"
+    },
+    "aesthetic": "corporate-sober",
+    "skin": {
+      "shell": "rail",
+      "palette": "slate-freddo",
+      "tipografia": "umanista",
+      "densita": "denso",
+      "banda": "blocco"
+    },
+    "archetype": "scorecard",
+    "grid": {
+      "contentWidth": 1044,
+      "gutter": 8,
+      "columns": 5
+    },
+    "model": {
+      "sums": [
+        "lordo",
+        "sconti",
+        "netto",
+        "costo",
+        "margine",
+        "promo",
+        "incr",
+        "promoGen",
+        "promoCat",
+        "scontrini",
+        "pezzi"
+      ],
+      "measures": [
+        {
+          "id": "lordo",
+          "label": "Vendite a listino",
+          "agg": "sum",
+          "field": "lordo",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "sconti",
+          "label": "Sconti concessi",
+          "agg": "sum",
+          "field": "sconti",
+          "unit": "money",
+          "format": "eur",
+          "inv": true
+        },
+        {
+          "id": "netto",
+          "label": "Fatturato netto",
+          "agg": "sum",
+          "field": "netto",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "margine",
+          "label": "Margine lordo",
+          "agg": "sum",
+          "field": "margine",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "mgpct",
+          "label": "Margine %",
+          "agg": "ratio",
+          "num": "margine",
+          "den": "netto",
+          "unit": "pct",
+          "format": "pc"
+        },
+        {
+          "id": "scontoPct",
+          "label": "Sconto medio",
+          "agg": "ratio",
+          "num": "sconti",
+          "den": "lordo",
+          "unit": "pct",
+          "format": "pc",
+          "inv": true
+        },
+        {
+          "id": "promo",
+          "label": "Vendite in promozione",
+          "agg": "sum",
+          "field": "promo",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "quotaPromo",
+          "label": "Quota in promozione",
+          "agg": "ratio",
+          "num": "promo",
+          "den": "netto",
+          "unit": "pct",
+          "format": "pc"
+        },
+        {
+          "id": "incr",
+          "label": "Vendite incrementali",
+          "agg": "sum",
+          "field": "incr",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "basePromo",
+          "label": "Vendite attese in promozione",
+          "agg": "diff",
+          "a": "promo",
+          "b": "incr",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "uplift",
+          "label": "Uplift",
+          "agg": "ratio",
+          "num": "incr",
+          "den": "basePromo",
+          "unit": "pct",
+          "format": "pc"
+        },
+        {
+          "id": "promoGen",
+          "label": "Promo generali",
+          "agg": "sum",
+          "field": "promoGen",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "promoCat",
+          "label": "Promo di categoria",
+          "agg": "sum",
+          "field": "promoCat",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "scontrini",
+          "label": "Scontrini",
+          "agg": "sum",
+          "field": "scontrini",
+          "unit": "count",
+          "format": "N"
+        },
+        {
+          "id": "scontrino",
+          "label": "Scontrino medio",
+          "agg": "ratio",
+          "num": "netto",
+          "den": "scontrini",
+          "unit": "money",
+          "format": "eurF"
+        },
+        {
+          "id": "pezzi",
+          "label": "Pezzi venduti",
+          "agg": "sum",
+          "field": "pezzi",
+          "unit": "count",
+          "format": "N"
+        }
+      ]
+    },
+    "filters": {
+      "date": {
+        "levels": [
+          "year",
+          "quarter",
+          "month"
+        ],
+        "default": {
+          "y": 2025,
+          "q": null,
+          "m": null
+        }
+      },
+      "dims": [
+        {
+          "id": "campagna",
+          "label": "Campagna",
+          "control": "dropdown",
+          "allLabel": "Tutte",
+          "pill": "Campagna"
+        },
+        {
+          "id": "cat",
+          "label": "Categoria",
+          "control": "list",
+          "allLabel": "Tutte",
+          "pill": "Categoria"
+        },
+        {
+          "id": "sede",
+          "label": "Punto vendita",
+          "control": "dropdown",
+          "allLabel": "Tutti",
+          "pill": "Sede"
+        }
+      ]
+    },
+    "kpiBand": [
+      {
+        "id": "netto",
+        "label": "Fatturato netto",
+        "measure": "netto",
+        "span": 1
+      },
+      {
+        "id": "incr",
+        "label": "Vendite incrementali",
+        "measure": "incr",
+        "span": 1
+      },
+      {
+        "id": "uplift",
+        "label": "Uplift delle campagne",
+        "measure": "uplift",
+        "span": 1
+      },
+      {
+        "id": "scontoPct",
+        "label": "Sconto medio",
+        "measure": "scontoPct",
+        "span": 1,
+        "inv": true
+      },
+      {
+        "id": "mgpct",
+        "label": "Margine %",
+        "measure": "mgpct",
+        "span": 1
+      }
+    ],
+    "pages": [
+      {
+        "id": "campagne",
+        "title": "Le campagne",
+        "subtitle": "Black Friday porta piu vendite in piu di tutte; i Saldi estivi ripetuti scontano cio che si sarebbe venduto comunque",
+        "nav": "Campagne",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "type": "colline",
+                "span": 3,
+                "h": 190,
+                "title": "Fatturato netto per mese, {y} contro {py}, con la quota in promozione",
+                "bind": {
+                  "measure": "netto",
+                  "line": "quotaPromo"
+                }
+              },
+              {
+                "type": "hbar",
+                "span": 2,
+                "h": 190,
+                "title": "Vendite incrementali per campagna · {period}",
+                "bind": {
+                  "dim": "campagna",
+                  "measure": "incr",
+                  "subMeasure": "uplift",
+                  "subUnit": " uplift",
+                  "top": 5
+                }
+              }
+            ]
+          },
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "matrix",
+                "span": 5,
+                "title": "Campagne a confronto · {period}",
+                "bind": {
+                  "dim": "campagna",
+                  "label": "Campagna",
+                  "sort": "netto",
+                  "drill": true,
+                  "totalsLabel": "Totale",
+                  "columns": [
+                    {
+                      "measure": "netto",
+                      "label": "Fatturato netto"
+                    },
+                    {
+                      "measure": "netto",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "incr",
+                      "label": "Vendite incrementali"
+                    },
+                    {
+                      "measure": "uplift",
+                      "label": "Uplift",
+                      "kind": "heat",
+                      "scale": [
+                        0.1,
+                        0.6
+                      ]
+                    },
+                    {
+                      "measure": "scontoPct",
+                      "label": "Sconto medio",
+                      "inv": true
+                    },
+                    {
+                      "measure": "mgpct",
+                      "label": "Margine %",
+                      "kind": "heat",
+                      "scale": [
+                        0.05,
+                        0.28
+                      ]
+                    },
+                    {
+                      "measure": "mgpct",
+                      "label": "Margine {basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "scontrini",
+                      "label": "Scontrini"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "prodotti",
+        "title": "Prodotti e punti vendita",
+        "subtitle": "Asciugatrici, robot aspirapolvere e TV OLED si vendono soprattutto in offerta",
+        "nav": "Prodotti e sedi",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "id": "offerta",
+                "span": 2,
+                "h": 200,
+                "motivo": "due-lenti",
+                "viste": [
+                  {
+                    "type": "hbar",
+                    "etichetta": "Piu in offerta",
+                    "span": 2,
+                    "title": "Prodotti con la quota in promozione piu alta",
+                    "bind": {
+                      "dim": "prod",
+                      "measure": "quotaPromo",
+                      "detail": true,
+                      "parent": "cat",
+                      "top": 6,
+                      "subMeasure": "netto"
+                    }
+                  },
+                  {
+                    "type": "hbar",
+                    "etichetta": "Meno in offerta",
+                    "span": 2,
+                    "title": "Prodotti che si vendono a prezzo pieno",
+                    "bind": {
+                      "dim": "prod",
+                      "measure": "quotaPromo",
+                      "detail": true,
+                      "parent": "cat",
+                      "top": 6,
+                      "order": "asc",
+                      "subMeasure": "netto"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "heatmap",
+                "span": 3,
+                "h": 200,
+                "title": "Fatturato per punto vendita e campagna · {period}",
+                "subtitle": "piu scuro = sede piu forte in quella campagna; clicca per filtrare la sede",
+                "bind": {
+                  "dim": "sede",
+                  "measure": "netto",
+                  "by": "campagna",
+                  "per": "colonna"
+                }
+              }
+            ]
+          },
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "matrix",
+                "span": 5,
+                "title": "Categorie · {period}",
+                "bind": {
+                  "dim": "cat",
+                  "label": "Categoria",
+                  "sort": "netto",
+                  "drill": false,
+                  "totalsLabel": "Totale",
+                  "columns": [
+                    {
+                      "measure": "netto",
+                      "label": "Fatturato netto"
+                    },
+                    {
+                      "measure": "netto",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "quotaPromo",
+                      "label": "Quota in promozione",
+                      "kind": "heat",
+                      "scale": [
+                        0.1,
+                        0.45
+                      ]
+                    },
+                    {
+                      "measure": "promoGen",
+                      "label": "Promo generali"
+                    },
+                    {
+                      "measure": "promoCat",
+                      "label": "Promo di categoria"
+                    },
+                    {
+                      "measure": "scontoPct",
+                      "label": "Sconto medio",
+                      "inv": true
+                    },
+                    {
+                      "measure": "mgpct",
+                      "label": "Margine %"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "drill": {
+      "dim": "campagna",
+      "page": {
+        "id": "__drill__",
+        "title": "{drill}",
+        "drillHeader": "{period} · {basis}",
+        "backLabel": "Torna alle campagne",
+        "subtitle": "Categorie e punti vendita della campagna",
+        "rows": [
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "hbar",
+                "span": 2,
+                "h": 300,
+                "title": "Fatturato per categoria",
+                "bind": {
+                  "dim": "cat",
+                  "measure": "netto",
+                  "subMeasure": "scontoPct",
+                  "subUnit": " sconto"
+                }
+              },
+              {
+                "type": "hbar",
+                "span": 3,
+                "h": 300,
+                "title": "Fatturato per punto vendita",
+                "bind": {
+                  "dim": "sede",
+                  "measure": "netto",
+                  "subMeasure": "mgpct",
+                  "subUnit": " margine"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "dataParams": {
+    "seed": 71942,
+    "years": [
+      2024,
+      2025
+    ],
+    "seasonality": [
+      0.8,
+      0.75,
+      0.9,
+      0.9,
+      1,
+      1.15,
+      1.2,
+      0.85,
+      0.95,
+      1,
+      1.1,
+      1.4
+    ],
+    "dims": {
+      "campagna": {
+        "members": [
+          {
+            "id": "fuori",
+            "n": "Fuori promozione",
+            "base": 1250000,
+            "growth": 0.03,
+            "attrs": {
+              "sconto": 0.02,
+              "inPromo": 0,
+              "gen": 0,
+              "catg": 0,
+              "quotaIncr": 0
+            }
+          },
+          {
+            "id": "bf",
+            "n": "Black Friday",
+            "base": 183000,
+            "growth": 0.22,
+            "attrs": {
+              "sconto": 0.18,
+              "inPromo": 1,
+              "gen": 1,
+              "catg": 0,
+              "quotaIncr": 0.38
+            },
+            "seasonality": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0
+            ]
+          },
+          {
+            "id": "saldi",
+            "n": "Saldi estivi",
+            "base": 117000,
+            "growth": -0.09,
+            "attrs": {
+              "sconto": 0.13,
+              "inPromo": 1,
+              "gen": 1,
+              "catg": 0,
+              "quotaIncr": 0.19
+            },
+            "seasonality": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "bianco",
+            "n": "Settimana del bianco",
+            "base": 75000,
+            "growth": 0.1,
+            "attrs": {
+              "sconto": 0.15,
+              "inPromo": 1,
+              "gen": 0,
+              "catg": 1,
+              "quotaIncr": 0.34
+            },
+            "seasonality": [
+              0,
+              0,
+              12,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "mix": {
+              "cat": {
+                "grandi": 1
+              }
+            }
+          },
+          {
+            "id": "clima",
+            "n": "Clima Days",
+            "base": 58000,
+            "growth": 0.34,
+            "attrs": {
+              "sconto": 0.2,
+              "inPromo": 1,
+              "gen": 0,
+              "catg": 1,
+              "quotaIncr": 0.42
+            },
+            "seasonality": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "mix": {
+              "cat": {
+                "clima": 1
+              }
+            }
+          },
+          {
+            "id": "festa",
+            "n": "Festa dei 20 anni",
+            "base": 80000,
+            "anni": [
+              2025
+            ],
+            "attrs": {
+              "sconto": 0.1,
+              "inPromo": 1,
+              "gen": 1,
+              "catg": 0,
+              "quotaIncr": 0.28
+            },
+            "seasonality": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "cat": {
+        "members": [
+          {
+            "id": "grandi",
+            "n": "Grandi elettrodomestici",
+            "base": 1,
+            "attrs": {
+              "costo": 0.72,
+              "scontrino": 540,
+              "prezzo": 480
+            }
+          },
+          {
+            "id": "piccoli",
+            "n": "Piccoli elettrodomestici",
+            "base": 1,
+            "attrs": {
+              "costo": 0.64,
+              "scontrino": 95,
+              "prezzo": 78
+            }
+          },
+          {
+            "id": "tv",
+            "n": "TV e audio",
+            "base": 1,
+            "attrs": {
+              "costo": 0.83,
+              "scontrino": 520,
+              "prezzo": 440
+            }
+          },
+          {
+            "id": "clima",
+            "n": "Clima",
+            "base": 1,
+            "attrs": {
+              "costo": 0.74,
+              "scontrino": 640,
+              "prezzo": 520
+            }
+          }
+        ]
+      },
+      "sede": {
+        "members": [
+          {
+            "id": "pn",
+            "n": "Torino Porta Nuova",
+            "base": 1,
+            "growth": 0.02
+          },
+          {
+            "id": "cr",
+            "n": "Torino Crocetta",
+            "base": 1,
+            "growth": 0.04
+          },
+          {
+            "id": "va",
+            "n": "Torino Vanchiglia",
+            "base": 1,
+            "growth": 0.01
+          },
+          {
+            "id": "mo",
+            "n": "Moncalieri",
+            "base": 1,
+            "growth": 0.07
+          },
+          {
+            "id": "ri",
+            "n": "Rivoli",
+            "base": 1,
+            "growth": 0.05
+          },
+          {
+            "id": "ch",
+            "n": "Chieri",
+            "base": 1,
+            "growth": -0.05
+          }
+        ]
+      }
+    },
+    "facts": {
+      "dim": "campagna",
+      "split": [
+        {
+          "dim": "cat",
+          "shares": [
+            0.42,
+            0.18,
+            0.26,
+            0.14
+          ]
+        },
+        {
+          "dim": "sede",
+          "shares": [
+            0.17,
+            0.16,
+            0.13,
+            0.22,
+            0.19,
+            0.13
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "id": "lordo",
+          "kind": "seasonal",
+          "jitter": [
+            0.94,
+            1.06
+          ]
+        },
+        {
+          "id": "sconti",
+          "kind": "share",
+          "of": "lordo",
+          "attr": "sconto",
+          "jitter": [
+            0.95,
+            1.05
+          ]
+        },
+        {
+          "id": "netto",
+          "kind": "combine",
+          "plus": [
+            "lordo"
+          ],
+          "minus": [
+            "sconti"
+          ]
+        },
+        {
+          "id": "costo",
+          "kind": "share",
+          "of": "lordo",
+          "attr": "costo",
+          "attrFrom": "cat",
+          "jitter": [
+            0.98,
+            1.02
+          ]
+        },
+        {
+          "id": "margine",
+          "kind": "combine",
+          "plus": [
+            "netto"
+          ],
+          "minus": [
+            "costo"
+          ]
+        },
+        {
+          "id": "promo",
+          "kind": "share",
+          "of": "netto",
+          "attr": "inPromo",
+          "jitter": [
+            1,
+            1
+          ]
+        },
+        {
+          "id": "incr",
+          "kind": "share",
+          "of": "promo",
+          "attr": "quotaIncr",
+          "jitter": [
+            0.94,
+            1.06
+          ]
+        },
+        {
+          "id": "promoGen",
+          "kind": "share",
+          "of": "netto",
+          "attr": "gen",
+          "jitter": [
+            1,
+            1
+          ]
+        },
+        {
+          "id": "promoCat",
+          "kind": "share",
+          "of": "netto",
+          "attr": "catg",
+          "jitter": [
+            1,
+            1
+          ]
+        },
+        {
+          "id": "scontrini",
+          "kind": "divide",
+          "of": "netto",
+          "attr": "scontrino",
+          "attrFrom": "cat",
+          "jitter": [
+            0.95,
+            1.05
+          ],
+          "min": 0
+        },
+        {
+          "id": "pezzi",
+          "kind": "divide",
+          "of": "netto",
+          "attr": "prezzo",
+          "attrFrom": "cat",
+          "jitter": [
+            0.95,
+            1.05
+          ],
+          "min": 0
+        }
+      ]
+    },
+    "detail": {
+      "dim": "prod",
+      "parentDim": "cat",
+      "members": {
+        "grandi": [
+          {
+            "n": "Lavatrici",
+            "w": 3,
+            "mult": {
+              "promo": 1.5
+            }
+          },
+          {
+            "n": "Frigoriferi",
+            "w": 2.6,
+            "mult": {
+              "promo": 0.7
+            }
+          },
+          {
+            "n": "Lavastoviglie",
+            "w": 1.8,
+            "mult": {
+              "promo": 1.2
+            }
+          },
+          {
+            "n": "Asciugatrici",
+            "w": 1.2,
+            "mult": {
+              "promo": 2.1
+            }
+          }
+        ],
+        "piccoli": [
+          {
+            "n": "Macchine da caffe",
+            "w": 2,
+            "mult": {
+              "promo": 1.5
+            }
+          },
+          {
+            "n": "Robot aspirapolvere",
+            "w": 1.6,
+            "mult": {
+              "promo": 2.2
+            }
+          },
+          {
+            "n": "Friggitrici ad aria",
+            "w": 1.8,
+            "mult": {
+              "promo": 1
+            }
+          },
+          {
+            "n": "Ferri da stiro",
+            "w": 0.8,
+            "mult": {
+              "promo": 0.5
+            }
+          }
+        ],
+        "tv": [
+          {
+            "n": "TV OLED",
+            "w": 1.5,
+            "mult": {
+              "promo": 2.3
+            }
+          },
+          {
+            "n": "TV LED",
+            "w": 2.5,
+            "mult": {
+              "promo": 0.9
+            }
+          },
+          {
+            "n": "Soundbar",
+            "w": 1,
+            "mult": {
+              "promo": 1.3
+            }
+          },
+          {
+            "n": "Proiettori",
+            "w": 0.4,
+            "mult": {
+              "promo": 0.6
+            }
+          }
+        ],
+        "clima": [
+          {
+            "n": "Condizionatori",
+            "w": 3,
+            "mult": {
+              "promo": 1.2
+            }
+          },
+          {
+            "n": "Deumidificatori",
+            "w": 1.2,
+            "mult": {
+              "promo": 0.9
+            }
+          },
+          {
+            "n": "Stufe e termoventilatori",
+            "w": 1,
+            "mult": {
+              "promo": 0.4
+            }
+          },
+          {
+            "n": "Purificatori d'aria",
+            "w": 0.8,
+            "mult": {
+              "promo": 1
+            }
+          }
+        ]
+      },
+      "fields": [
+        "netto",
+        "promo"
+      ],
+      "counts": {
+        "field": "pezzi",
+        "from": "pezzi"
+      }
+    }
+  }
+}
