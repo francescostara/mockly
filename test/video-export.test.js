@@ -37,6 +37,7 @@ console.log('export video dall app (attivo solo dove funziona davvero)');
     const a = V.argomenti('m.html', 'out.mp4');
     assert.ok(/scripts[\\/]video\.js$/.test(a[0]), 'deve usare il registratore esistente');
     assert.ok(a.includes('--feed') && a.includes('--dest=out.mp4'));
+    assert.ok(!a.some(x => /^--passi/.test(x)), 'il bottone registra sempre la versione breve intera, senza restringere i passi');
   });
 
   const d = V.disponibile();
@@ -45,8 +46,10 @@ console.log('export video dall app (attivo solo dove funziona davvero)');
   } else {
     await okAsync('dove e attivo, un clic produce un mp4 vero del mockup', async () => {
       const c = require('../engine/templates/index.js')['canonical-funnel'];
-      const mp4 = await V.esporta(render(c.spec, c.build()));
-      assert.ok(mp4.length > 100 * 1024, 'un video di pochi KB non e un video: ' + mp4.length);
+      /* un blocco solo (il reset): stesso registratore, stessa risoluzione e codifica del
+         bottone, un video di tre secondi e mezzo invece di venti — mezzo minuto in meno a giro */
+      const mp4 = await V.esporta(render(c.spec, c.build()), { passi: ['reset'] });
+      assert.ok(mp4.length > 30 * 1024, 'un video di pochi KB non e un video: ' + mp4.length);
       /* "ftyp" nei primi byte: e davvero un mp4, non un messaggio d'errore salvato come file */
       assert.strictEqual(mp4.slice(4, 8).toString('ascii'), 'ftyp');
       const tmp = require('path').join(require('os').tmpdir(), 'pruva-video-test.mp4');
