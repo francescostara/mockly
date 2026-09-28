@@ -1,0 +1,746 @@
+{
+  "spec": {
+    "meta": {
+      "title": "Sales Performance",
+      "subtitle": "Revenue, trends and growth · {y} vs {py}",
+      "brand": {
+        "name": "Trailhead Sports",
+        "tagline": "Sales report"
+      },
+      "locale": "en-US",
+      "currency": "$",
+      "months": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "updated": "Data as of Dec 31, 2025",
+      "source": "Source: POS and e-commerce orders",
+      "watermark": "Demo mockup · synthetic data"
+    },
+    "aesthetic": "corporate-sober",
+    "skin": {
+      "shell": "top",
+      "palette": "salvia",
+      "tipografia": "umanista",
+      "densita": "arioso",
+      "banda": "box"
+    },
+    "archetype": "scorecard",
+    "grid": {
+      "contentWidth": 1248,
+      "gutter": 16,
+      "columns": 4
+    },
+    "model": {
+      "sums": [
+        "rev",
+        "orders",
+        "units"
+      ],
+      "measures": [
+        {
+          "id": "rev",
+          "label": "Revenue",
+          "agg": "sum",
+          "field": "rev",
+          "unit": "money",
+          "format": "eur"
+        },
+        {
+          "id": "orders",
+          "label": "Orders",
+          "agg": "sum",
+          "field": "orders",
+          "unit": "count",
+          "format": "N"
+        },
+        {
+          "id": "units",
+          "label": "Units sold",
+          "agg": "sum",
+          "field": "units",
+          "unit": "count",
+          "format": "N"
+        },
+        {
+          "id": "aov",
+          "label": "Avg order value",
+          "agg": "ratio",
+          "num": "rev",
+          "den": "orders",
+          "unit": "money",
+          "format": "eurF"
+        },
+        {
+          "id": "upo",
+          "label": "Units per order",
+          "agg": "ratio",
+          "num": "units",
+          "den": "orders",
+          "unit": "x",
+          "format": "x"
+        }
+      ]
+    },
+    "filters": {
+      "date": {
+        "levels": [
+          "year",
+          "quarter",
+          "month"
+        ],
+        "default": {
+          "y": 2025,
+          "q": null,
+          "m": null
+        }
+      },
+      "dims": [
+        {
+          "id": "cat",
+          "label": "Category",
+          "control": "dropdown",
+          "allLabel": "All categories",
+          "pill": "Category"
+        },
+        {
+          "id": "region",
+          "label": "Region",
+          "control": "list",
+          "allLabel": "All regions",
+          "pill": "Region"
+        }
+      ]
+    },
+    "kpiBand": [
+      {
+        "id": "rev",
+        "label": "Total revenue",
+        "measure": "rev",
+        "span": 1
+      },
+      {
+        "id": "orders",
+        "label": "Orders",
+        "measure": "orders",
+        "span": 1
+      },
+      {
+        "id": "aov",
+        "label": "Avg order value",
+        "measure": "aov",
+        "span": 1
+      },
+      {
+        "id": "units",
+        "label": "Units sold",
+        "measure": "units",
+        "span": 1
+      }
+    ],
+    "pages": [
+      {
+        "id": "overview",
+        "title": "Sales overview",
+        "subtitle": "Growth comes from the Southwest and Cycling; Fitness and the Midwest are shrinking",
+        "nav": "Overview",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "type": "trend",
+                "span": 3,
+                "h": 190,
+                "title": "Monthly revenue, {y} vs {py}",
+                "bind": {
+                  "measure": "rev"
+                }
+              },
+              {
+                "type": "delta-card",
+                "span": 1,
+                "h": 190,
+                "title": "Revenue growth",
+                "bind": {
+                  "measure": "rev"
+                }
+              }
+            ]
+          },
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "matrix",
+                "span": 4,
+                "title": "Sales by region · {period}",
+                "bind": {
+                  "dim": "region",
+                  "label": "Region",
+                  "sort": "rev",
+                  "drill": false,
+                  "totalsLabel": "Total",
+                  "columns": [
+                    {
+                      "measure": "rev",
+                      "label": "Revenue"
+                    },
+                    {
+                      "measure": "rev",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "rev",
+                      "label": "Share",
+                      "kind": "share"
+                    },
+                    {
+                      "measure": "orders",
+                      "label": "Orders"
+                    },
+                    {
+                      "measure": "orders",
+                      "label": "Orders {basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "aov",
+                      "label": "AOV"
+                    },
+                    {
+                      "measure": "upo",
+                      "label": "Units / order"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "products",
+        "title": "Categories and products",
+        "subtitle": "Each category peaks in its own season: the ranking changes month by month",
+        "nav": "Categories & products",
+        "rows": [
+          {
+            "visuals": [
+              {
+                "type": "ribbon",
+                "span": 3,
+                "h": 200,
+                "title": "Revenue rank by category, month by month · {y}",
+                "subtitle": "a band that climbs is a category taking the lead",
+                "bind": {
+                  "dim": "cat",
+                  "measure": "rev",
+                  "by": "m"
+                }
+              },
+              {
+                "id": "products",
+                "span": 1,
+                "h": 200,
+                "motivo": "due-lenti",
+                "viste": [
+                  {
+                    "type": "hbar",
+                    "etichetta": "Top",
+                    "span": 1,
+                    "title": "Top products",
+                    "bind": {
+                      "dim": "prod",
+                      "measure": "rev",
+                      "detail": true,
+                      "parent": "cat",
+                      "top": 6
+                    }
+                  },
+                  {
+                    "type": "hbar",
+                    "etichetta": "Bottom",
+                    "span": 1,
+                    "title": "Weakest products",
+                    "bind": {
+                      "dim": "prod",
+                      "measure": "rev",
+                      "detail": true,
+                      "parent": "cat",
+                      "top": 6,
+                      "order": "asc"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "matrix",
+                "span": 4,
+                "title": "Categories · {period}",
+                "bind": {
+                  "dim": "cat",
+                  "label": "Category",
+                  "sort": "rev",
+                  "drill": true,
+                  "totalsLabel": "Total",
+                  "columns": [
+                    {
+                      "measure": "rev",
+                      "label": "Revenue"
+                    },
+                    {
+                      "measure": "rev",
+                      "label": "{basis}",
+                      "kind": "var"
+                    },
+                    {
+                      "measure": "rev",
+                      "label": "Share",
+                      "kind": "share"
+                    },
+                    {
+                      "measure": "units",
+                      "label": "Units"
+                    },
+                    {
+                      "measure": "aov",
+                      "label": "AOV"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "drill": {
+      "dim": "cat",
+      "page": {
+        "id": "__drill__",
+        "title": "{drill}",
+        "drillHeader": "{period} · {basis}",
+        "backLabel": "Back to all categories",
+        "subtitle": "Products and monthly revenue of the category",
+        "rows": [
+          {
+            "flex": true,
+            "visuals": [
+              {
+                "type": "hbar",
+                "span": 2,
+                "h": 300,
+                "title": "Products by revenue",
+                "bind": {
+                  "dim": "prod",
+                  "measure": "rev",
+                  "detail": true,
+                  "parent": "cat",
+                  "top": 8,
+                  "subMeasure": "units",
+                  "subUnit": " units"
+                }
+              },
+              {
+                "type": "trend",
+                "span": 2,
+                "h": 300,
+                "title": "Monthly revenue, {y} vs {py}",
+                "bind": {
+                  "measure": "rev"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "dataParams": {
+    "seed": 52803,
+    "years": [
+      2024,
+      2025
+    ],
+    "seasonality": [
+      0.85,
+      0.8,
+      0.95,
+      1,
+      1.05,
+      1.05,
+      1.05,
+      1.05,
+      0.95,
+      0.95,
+      1.05,
+      1.25
+    ],
+    "dims": {
+      "cat": {
+        "members": [
+          {
+            "id": "foot",
+            "n": "Footwear",
+            "base": 1300000,
+            "growth": 0.06,
+            "attrs": {
+              "aov": 96,
+              "price": 58
+            },
+            "seasonality": [
+              0.85,
+              0.8,
+              0.9,
+              0.95,
+              1,
+              0.95,
+              1.05,
+              1.25,
+              1.1,
+              0.95,
+              1.05,
+              1.15
+            ]
+          },
+          {
+            "id": "app",
+            "n": "Apparel",
+            "base": 1100000,
+            "growth": 0.04,
+            "attrs": {
+              "aov": 72,
+              "price": 31
+            },
+            "seasonality": [
+              0.8,
+              0.75,
+              0.95,
+              1,
+              1,
+              0.95,
+              0.9,
+              1,
+              1.05,
+              1.1,
+              1.2,
+              1.3
+            ]
+          },
+          {
+            "id": "camp",
+            "n": "Camping & Hiking",
+            "base": 800000,
+            "growth": 0.09,
+            "attrs": {
+              "aov": 138,
+              "price": 46
+            },
+            "seasonality": [
+              0.5,
+              0.55,
+              0.8,
+              1.1,
+              1.4,
+              1.6,
+              1.65,
+              1.4,
+              1,
+              0.75,
+              0.6,
+              0.65
+            ]
+          },
+          {
+            "id": "cyc",
+            "n": "Cycling",
+            "base": 700000,
+            "growth": 0.14,
+            "attrs": {
+              "aov": 315,
+              "price": 120
+            },
+            "seasonality": [
+              0.55,
+              0.6,
+              0.95,
+              1.3,
+              1.45,
+              1.5,
+              1.4,
+              1.2,
+              0.95,
+              0.75,
+              0.6,
+              0.75
+            ]
+          },
+          {
+            "id": "fit",
+            "n": "Fitness",
+            "base": 600000,
+            "growth": -0.09,
+            "attrs": {
+              "aov": 176,
+              "price": 64
+            },
+            "seasonality": [
+              1.7,
+              1.35,
+              1.1,
+              0.9,
+              0.8,
+              0.7,
+              0.7,
+              0.75,
+              0.9,
+              0.95,
+              1.05,
+              1.1
+            ]
+          },
+          {
+            "id": "wat",
+            "n": "Water Sports",
+            "base": 500000,
+            "growth": 0.03,
+            "attrs": {
+              "aov": 205,
+              "price": 82
+            },
+            "seasonality": [
+              0.3,
+              0.35,
+              0.6,
+              0.9,
+              1.4,
+              1.9,
+              2.1,
+              1.8,
+              1.1,
+              0.6,
+              0.45,
+              0.5
+            ]
+          }
+        ]
+      },
+      "region": {
+        "members": [
+          {
+            "id": "ne",
+            "n": "Northeast",
+            "base": 1,
+            "growth": 0.02
+          },
+          {
+            "id": "se",
+            "n": "Southeast",
+            "base": 1,
+            "growth": 0.07
+          },
+          {
+            "id": "mw",
+            "n": "Midwest",
+            "base": 1,
+            "growth": -0.05
+          },
+          {
+            "id": "sw",
+            "n": "Southwest",
+            "base": 1,
+            "growth": 0.12
+          },
+          {
+            "id": "we",
+            "n": "West",
+            "base": 1,
+            "growth": 0.04
+          }
+        ]
+      }
+    },
+    "facts": {
+      "dim": "cat",
+      "split": {
+        "dim": "region",
+        "shares": [
+          0.24,
+          0.2,
+          0.18,
+          0.16,
+          0.22
+        ]
+      },
+      "fields": [
+        {
+          "id": "rev",
+          "kind": "seasonal",
+          "jitter": [
+            0.94,
+            1.06
+          ]
+        },
+        {
+          "id": "orders",
+          "kind": "divide",
+          "of": "rev",
+          "attr": "aov",
+          "jitter": [
+            0.95,
+            1.05
+          ],
+          "min": 1
+        },
+        {
+          "id": "units",
+          "kind": "divide",
+          "of": "rev",
+          "attr": "price",
+          "jitter": [
+            0.95,
+            1.05
+          ],
+          "min": 1
+        }
+      ]
+    },
+    "detail": {
+      "dim": "prod",
+      "parentDim": "cat",
+      "members": {
+        "foot": [
+          {
+            "n": "Trail running shoes",
+            "w": 2.6
+          },
+          {
+            "n": "Hiking boots",
+            "w": 2
+          },
+          {
+            "n": "Sandals",
+            "w": 0.9
+          },
+          {
+            "n": "Court shoes",
+            "w": 0.7
+          }
+        ],
+        "app": [
+          {
+            "n": "Rain jackets",
+            "w": 2.1
+          },
+          {
+            "n": "Base layers",
+            "w": 1.6
+          },
+          {
+            "n": "Fleece",
+            "w": 1.4
+          },
+          {
+            "n": "Swimwear",
+            "w": 0.6
+          }
+        ],
+        "camp": [
+          {
+            "n": "Tents",
+            "w": 2.4
+          },
+          {
+            "n": "Backpacks",
+            "w": 2.2
+          },
+          {
+            "n": "Sleeping bags",
+            "w": 1.3
+          },
+          {
+            "n": "Camp stoves",
+            "w": 0.6
+          }
+        ],
+        "cyc": [
+          {
+            "n": "E-bikes",
+            "w": 2.8
+          },
+          {
+            "n": "Road bikes",
+            "w": 1.6
+          },
+          {
+            "n": "Helmets",
+            "w": 0.9
+          },
+          {
+            "n": "Bike lights",
+            "w": 0.5
+          }
+        ],
+        "fit": [
+          {
+            "n": "Treadmills",
+            "w": 1.9
+          },
+          {
+            "n": "Dumbbells & weights",
+            "w": 1.5
+          },
+          {
+            "n": "Yoga mats",
+            "w": 0.8
+          },
+          {
+            "n": "Rowing machines",
+            "w": 0.7
+          }
+        ],
+        "wat": [
+          {
+            "n": "Paddle boards",
+            "w": 2.2
+          },
+          {
+            "n": "Kayaks",
+            "w": 1.7
+          },
+          {
+            "n": "Wetsuits",
+            "w": 1
+          },
+          {
+            "n": "Snorkel sets",
+            "w": 0.5
+          }
+        ]
+      },
+      "fields": [
+        "rev"
+      ],
+      "counts": {
+        "field": "units",
+        "from": "units"
+      }
+    }
+  }
+}

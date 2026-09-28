@@ -154,7 +154,8 @@ const spec = {
           subtitle: 'due categorie, il totale al centro', centreLabel: 'Fatturato',
           bind: { dim: 'natura', measure: 'fatturato', alert: 'prog' } },
         { type: 'hbar', span: 2, h: 190, title: 'Margine per cliente — {period}',
-          bind: { dim: 'cliente', measure: 'margine' } }
+          /* top 6: la palette ha sei colori distinti, e un cliente non puo avere il colore di un altro */
+          bind: { dim: 'cliente', measure: 'margine', top: 6 } }
       ] },
       { flex: true, visuals: [{
         type: 'matrix', span: 4, title: 'Natura del fatturato — {period}',

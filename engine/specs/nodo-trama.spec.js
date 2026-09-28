@@ -73,7 +73,9 @@ module.exports = {
           type: 'donut', span: 2, h: 238,
           title: 'Mix per categoria', subtitle: 'quota fatturato · clicca per filtrare',
           centreLabel: 'Fatturato',
-          bind: { dim: 'cat', measure: 'rev' }
+          /* topN 4: sei categorie e cinque colori distinti — due fette dello stesso colore. Con le
+             prime quattro piu "Altri" ogni fetta ha il suo */
+          bind: { dim: 'cat', measure: 'rev', topN: 4 }
         }]
       },
       {
