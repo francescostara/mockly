@@ -161,8 +161,23 @@ const FAMIGLIE = {
   }
 };
 
-/** Da otto valori dichiarati alla scala completa dei token. */
+/* UNA PALETTE SI CALCOLA UNA VOLTA. La scala categoriale passa per le simulazioni delle tre
+   dicromazie e del grigio: una ventina di millisecondi a famiglia. Il controllo "un colore per
+   membro" consulta tutte e tredici le famiglie per dire quali ne hanno sei, e ogni validazione
+   costava cosi cinquanta millisecondi — la meta del tempo della suite di test. La palette e una
+   funzione pura del nome: si ricorda, e si restituisce una copia, perche chi la riceve possa
+   modificarla senza sporcare la memoria. */
+const MEMO_PALETTE = {};
 function palette(id, opz) {
+  if (opz) return calcolaPalette(id, opz);
+  if (!MEMO_PALETTE[id]) MEMO_PALETTE[id] = calcolaPalette(id);
+  const t = Object.assign({}, MEMO_PALETTE[id]);
+  if (t.serie) t.serie = t.serie.slice();
+  return t;
+}
+
+/** Da otto valori dichiarati alla scala completa dei token. */
+function calcolaPalette(id, opz) {
   const f = FAMIGLIE[id];
   if (!f) throw new Error('palette sconosciuta: "' + id + '"');
   const { card, ink, canvas, rail, scuro } = f;

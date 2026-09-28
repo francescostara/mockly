@@ -90,7 +90,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* useGrouping esplicito: la regola "auto" dell'ICU omette il separatore sotto le cinquemila,
        quindi in una colonna di importi "9.870" finisce accanto a "3351" e la colonna si legge
        male. In un report il raggruppamento e sempre desiderato. */
-    var num = v => Math.round(v).toLocaleString(lang, { useGrouping: true });
+    /* UN FORMATTATORE SOLO. toLocaleString con le opzioni ne costruisce uno nuovo a ogni numero:
+       era la funzione piu cara dell'intero runtime (un sesto del tempo della suite di test) e
+       rallentava anche il mockup, a ogni filtro, per ogni cifra ridisegnata. Stesso risultato. */
+    var nf = new Intl.NumberFormat(lang, { useGrouping: true, maximumFractionDigits: 0 });
+    var num = v => nf.format(Math.round(v));
     var f = {};
     /* compact currency, K/M — canonical eur() */
     f.eur = function (v, k) {
@@ -665,7 +669,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     };
 
     /* ---------- render ---------- */
-    var $ = s => doc.querySelector(s);
+    /* le ricerche sono tutte per id: getElementById fa lo stesso lavoro senza passare dal motore dei
+       selettori, che a ogni ridisegno costava un quinto del tempo del render (misurato nei test) */
+    var $ = s => /^#[\w-]+$/.test(s) ? doc.getElementById(s.slice(1)) : doc.querySelector(s);
     A.render = function () {
       /* date slicer */
       if ($('#slCur')) {
