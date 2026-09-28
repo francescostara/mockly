@@ -217,7 +217,7 @@ function palette(id, opz) {
   t.amber = COL.aggiusta(COL.STATI.attenzione, card, 4.5);
 
   /* La scala categoriale: scelta da una base misurata e verificata, mai inventata. */
-  const serie = COL.serieCVD(BASI[f.base], card, 6, { minimo });
+  const serie = COL.serieCVD(BASI[f.base], card, 6, { minimo, senzaRosso: true });
   serie.forEach((c, i) => { t['c' + (i + 1)] = c; });
   /* i visual chiedono fino a sei colori: la coda si ripete invece di inventare tinte nuove che
      nessuno ha verificato */

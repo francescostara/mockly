@@ -256,4 +256,7 @@ function pannello(spec, data, esc) {
   };
 }
 
-module.exports = { piano, testo, pannello, CLICCABILI, ESENTI_TIMELINE };
+/** Il testo del bottone che apre la scheda: serve al conto della barra, che lo deve pesare. */
+const titoloAiuto = spec => T[lingua(spec)].titolo;
+
+module.exports = { piano, testo, pannello, titoloAiuto, CLICCABILI, ESENTI_TIMELINE };

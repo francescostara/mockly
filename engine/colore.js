@@ -170,11 +170,29 @@ function aggiusta(c, superficie, minimo) {
  * quindi la separazione in grigio vale quanto le altre — qui si sceglie in modo GOLOSO il
  * colore che massimizza la distanza minima da quelli gia presi, contando anche il grigio.
  */
+/* IL ROSSO APPARTIENE AL PROBLEMA. Una scala categoriale che lo contiene lo spende su una
+   categoria qualunque: nel mockup di Nitish (28 set 2026) "Water Sports" era rosso pieno mentre
+   la categoria in calo, Fitness, era blu — il lettore guarda il rosso e trova la voce sbagliata.
+   Succedeva in due famiglie, warm-taupe e terroso: il vermiglione della base, scurito per il
+   contrasto, diventava un rosso vero. Qui si riconosce la famiglia del rosso (tinta vicina allo
+   zero, satura, di luminosita media) e la scala non la prende mai. */
+function rosso(hex) {
+  const x = String(hex).replace('#', '');
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(x.slice(i, i + 2), 16) / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (!d) return false;
+  let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h *= 60; if (h < 0) h += 360;
+  const sat = d / (1 - Math.abs(2 * l - 1));
+  return (h >= 345 || h <= 15) && sat > 0.45 && l > 0.2 && l < 0.72;
+}
+
 function serieCVD(base, superficie, n, opz) {
   opz = opz || {};
   const minimo = opz.minimo || 3;
   const cand = base.map(c => aggiusta(c, superficie, minimo))
-    .filter(c => contrasto(c, superficie) >= minimo);
+    .filter(c => contrasto(c, superficie) >= minimo)
+    .filter(c => !opz.senzaRosso || !rosso(c));
   if (!cand.length) return [];
   const dist = (a, b) => {
     const s = separati(a, b);
@@ -270,6 +288,7 @@ function separaPerLuminanza(serie, superficie, minimo, passo) {
 }
 
 module.exports = {
+  rosso,
   aggiusta, serieCVD, separaPerLuminanza, versoL,
   hex2rgb, rgb2hex, lum, contrasto, lab, deltaE, simula, grigio, separati,
   OKABE_ITO, TOL_BRIGHT, TOL_MUTED, TOL_LIGHT, BREWER_DARK2, BREWER_PAIRED,

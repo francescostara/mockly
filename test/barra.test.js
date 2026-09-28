@@ -16,7 +16,8 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { render } = require('../engine/render.js');
+const { render, toolbarBudget, destraBarra } = require('../engine/render.js');
+const builder = require('../engine/data-builder.js');
 const { disponibile } = require('../lib/video-export.js');
 
 let n = 0;
@@ -108,6 +109,44 @@ function tuttiIFiltri() {
     }
     assert.ok(viste >= 20, 'solo ' + viste + ' barre misurate');
     assert.deepStrictEqual([...new Set(guasti)], [], [...new Set(guasti)].join(String.fromCharCode(10) + '       '));
+  });
+
+  /* IL CONTO DEL MOTORE NON E MAI PIU OTTIMISTA DELLA BARRA VERA. Il motore decide se una barra
+     ci sta prima di disegnarla; se la sua stima e sotto la misura reale, approva barre che poi
+     escono dal bordo — nel mockup di Nitish (28 set 2026) il bottone di destra sforava di 6px
+     con una stima che diceva "ci sta". Qui ogni gruppo di filtri e i bottoni di destra, misurati
+     in Chrome, devono stare dentro la stima. */
+  await okAsync('la stima della barra non e mai sotto la barra vera: gruppi di filtri e bottoni di destra', async () => {
+    const guasti = [];
+    let misure = 0;
+    for (const c of casi()) {
+      for (const lingua of ['propria', 'en-US']) {
+        const spec = clona(c.caso.spec);
+        if (lingua !== 'propria') spec.meta.locale = lingua;
+        const data = c.caso.build();
+        const tb = toolbarBudget(spec, data);
+        if (tb.axis !== 'top') continue;
+        await page.setContent(render(spec, data), { waitUntil: 'load' });
+        await page.waitForTimeout(100);
+        const vero = await page.evaluate(() => {
+          const gruppi = [...document.querySelectorAll('.fgrp')].map(g => ({ id: (g.querySelector('[data-f]') || {}).getAttribute ? g.querySelector('[data-f]').getAttribute('data-f').split(':')[0] : null, w: g.getBoundingClientRect().width }));
+          const r = document.getElementById('btnReset'), h = document.getElementById('btnHow');
+          const dx = (r ? r.getBoundingClientRect().width : 0) + (h ? h.getBoundingClientRect().width : 0);
+          return { gruppi, dx };
+        });
+        const dove = c.id + ' (' + (lingua === 'propria' ? (spec.meta.locale || 'it') : lingua) + ')';
+        vero.gruppi.forEach(g => {
+          const it = tb.items.find(x => x.id === g.id);
+          if (!it) return;
+          misure++;
+          if (it.w + 2 < g.w) guasti.push(dove + ': filtro ' + g.id + ' stimato ' + Math.round(it.w) + 'px, vero ' + Math.round(g.w) + 'px');
+        });
+        const dx = destraBarra(spec);
+        if (dx + 2 < vero.dx) guasti.push(dove + ': bottoni di destra stimati ' + dx + 'px, veri ' + Math.round(vero.dx) + 'px');
+      }
+    }
+    assert.ok(misure >= 10, 'solo ' + misure + ' gruppi misurati');
+    assert.deepStrictEqual(guasti, [], guasti.join(String.fromCharCode(10) + '       '));
   });
 
   await browser.close();

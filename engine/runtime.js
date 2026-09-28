@@ -733,17 +733,25 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* ---------- interactions ---------- */
     A.mount = function () {
       var tip = $('#tip');
-      doc.addEventListener('mouseover', function (e) {
-        var t = e.target.closest && e.target.closest('[data-tip]');
-        if (!t) { if (tip) tip.style.opacity = 0; return; }
-        if (tip) { tip.innerHTML = t.getAttribute('data-tip'); tip.style.opacity = 1; }
-      });
-      doc.addEventListener('mousemove', function (e) {
-        if (!tip || tip.style.opacity !== '1') return;
+      /* IL TOOLTIP NASCE GIA AL SUO POSTO. Prendeva il contenuto al mouseover e la posizione solo
+         al mousemove: quando un grafico si ridisegna sotto un cursore fermo (il drill, un filtro)
+         il mousemove non arriva, e il tooltip compariva nell'angolo in alto a sinistra, sopra il
+         marchio — visto nei mockup di Parsa e di Nitish (28 set 2026), e dentro un video
+         registrato sarebbe stato peggio. Ora si posiziona nello stesso istante in cui compare. */
+      var colloca = function (e) {
         var x = e.clientX + 14, y = e.clientY + 16, w = doc.defaultView;
         if (x + tip.offsetWidth > w.innerWidth - 8) x = e.clientX - tip.offsetWidth - 14;
         if (y + tip.offsetHeight > w.innerHeight - 8) y = e.clientY - tip.offsetHeight - 14;
         tip.style.left = x + 'px'; tip.style.top = y + 'px';
+      };
+      doc.addEventListener('mouseover', function (e) {
+        var t = e.target.closest && e.target.closest('[data-tip]');
+        if (!t) { if (tip) tip.style.opacity = 0; return; }
+        if (tip) { tip.innerHTML = t.getAttribute('data-tip'); colloca(e); tip.style.opacity = 1; }
+      });
+      doc.addEventListener('mousemove', function (e) {
+        if (!tip || tip.style.opacity !== '1') return;
+        colloca(e);
       });
       doc.addEventListener('mouseout', function (e) {
         if (tip && (!e.relatedTarget || !(e.relatedTarget.closest && e.relatedTarget.closest('[data-tip]')))) tip.style.opacity = 0;

@@ -639,6 +639,29 @@ function componi(risposte) {
        1. la profondita mensile (gli anni lontani si sommano per anno: i totali non cambiano);
        2. la seconda dimensione, quella dello spacchettamento interno, portata a tre voci.
      Se non basta, non si taglia di nascosto cio che e stato chiesto: si consegna e lo si dice. */
+  /* UN COLORE PER MEMBRO, anche qui. Il motore rifiuta un visual dove il colore distingue i
+     membri e i membri superano i colori distinti della palette (Nitish, 28 set 2026): il
+     compositore non chiede niente a nessuno, quindi deve rispettarlo da se. Barre e ciambelle
+     mostrano i primi tanti quanti i colori; un ribbon o un 100% che li vuole tutti prende la
+     prima famiglia della nicchia che ne ha abbastanza. */
+  const distinti = f => new Set(SKIN.palette(f).serie).size;
+  const membriDi = d => ((dp.dims[d] || {}).members || []).length;
+  const visuali = () => spec.pages.concat(spec.drill ? [spec.drill.page] : [])
+    .reduce((a, pg) => a.concat((pg.rows || []).reduce((b, r) => b.concat(r.visuals.reduce((c, v) => c.concat(v.viste || [v]), [])), [])), []);
+  const nColori = () => distinti(spec.skin.palette);
+  visuali().forEach(v => {
+    const b = v.bind || {}, n = membriDi(b.dim);
+    if ((v.type === 'ribbon' || v.type === 'stack100') && n > nColori()) {
+      const alt = nic.palette.concat(Object.keys(SKIN.FAMIGLIE)).find(f => SKIN.FAMIGLIE[f] && distinti(f) >= n);
+      if (alt) spec.skin.palette = alt;
+    }
+  });
+  visuali().forEach(v => {
+    const b = v.bind || {}, n = membriDi(b.dim), k = nColori();
+    if (v.type === 'hbar' && !b.parent && !b.detail && Math.min(n, b.top || 8) > k) b.top = k;
+    if (v.type === 'donut' && (b.topN && n > b.topN + 1 ? b.topN + 1 : n) > k) b.topN = k - 1;
+  });
+
   const misuraPeso = () => {
     try { return Buffer.byteLength(RENDER().render(spec, builder.build(dp))); }
     catch (e) { return 0; }        /* se non renderizza, il peso non e il problema di adesso */

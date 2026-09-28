@@ -553,6 +553,30 @@ function validate(specIn, data) {
   if (spec.drill && spec.drill.page && /\{drill\}/.test(spec.drill.page.drillHeader || '')) {
     e.push(`drill.page.drillHeader "${spec.drill.page.drillHeader}" contiene {drill}: il nome dell'entita lo scrive gia il motore sopra la riga, accanto al tasto indietro. drillHeader dice il contesto (es. "{period} · vs {basis}"), non chi.`);
   }
+  /* UN COLORE, UNA CATEGORIA. I colori dei membri vengono dalla scala verificata della palette,
+     per indice; quando i membri sono piu dei colori, la scala ricominciava da capo e due
+     categorie diverse uscivano dello stesso colore. Nel ribbon di Nitish (28 set 2026) Water
+     Sports era dello stesso colore di Footwear: in un visual dove il colore e l'unico modo di
+     riconoscere la categoria, e un'informazione falsa. Dove il colore identifica il membro, i
+     membri a schermo non possono superare i colori distinti. */
+  const coloriDistinti = (() => { try { return new Set(pelle(spec).tokens.serie || []).size; } catch (x) { return 0; } })();
+  if (coloriDistinti && !(spec.meta || {}).brandColors) {
+    const conPiuColori = Object.keys(SKIN.FAMIGLIE).filter(f => { try { return new Set(SKIN.palette(f).serie).size >= 6; } catch (x) { return false; } });
+    spec.pages.concat(spec.drill ? [spec.drill.page] : []).forEach(pg => (pg.rows || []).forEach(row => row.visuals.forEach(v => {
+      (v.viste || [v]).forEach(vv => {
+        const b = vv.bind || {}, n = ((data.dims || {})[b.dim] || []).length;
+        if (!n || (data.dims[b.dim] || []).some(m => m.brand)) return;
+        const aSchermo = vv.type === 'ribbon' || vv.type === 'stack100' ? n
+          : vv.type === 'donut' ? (b.topN && n > b.topN + 1 ? b.topN + 1 : n)
+            : vv.type === 'hbar' && !b.parent && !b.detail ? Math.min(n, b.top || 8) : 0;
+        if (aSchermo > coloriDistinti) {
+          e.push(`page "${pg.id}" ${vv.type} su "${b.dim}": ${aSchermo} membri a schermo e la palette ha ${coloriDistinti} colori distinti — due categorie uscirebbero dello stesso colore, in un visual dove il colore e cio che le distingue. ` +
+            `Scegli una palette con piu colori (${conPiuColori.join(', ')}), oppure accorpa i membri minori (${aSchermo - coloriDistinti} in meno)` +
+            (vv.type === 'donut' ? ', oppure abbassa topN' : vv.type === 'hbar' ? ', oppure abbassa top' : '') + '.');
+        }
+      });
+    })));
+  }
   const pages = spec.pages.concat(spec.drill ? [spec.drill.page] : []);
   const types = new Set();
   pages.forEach(pg => {
@@ -822,18 +846,34 @@ const lint = (spec, data) => {
 };
 
 /* ---------- Gate 6: toolbar width budget (jsdom computes no layout, so budget it here) ---------- */
-const W_DATE = 190, W_DROPDOWN = 168, W_CHIP = 92, W_GAP = 8, W_RESET = 96;
+const W_DATE = 190, W_DROPDOWN = 168, W_CHIP = 92, W_GAP = 8;   /* W_CHIP: tetto di un chip nel CSS e nella rail, non piu stima della barra */
+const RT = require('./runtime.js');
+/* LA BARRA SI MISURA SUI SUOI TESTI. Il conto usava 92px per ogni chip e 96px per tutto cio
+   che sta a destra: sbagliava in tutte e due le direzioni. Un chip "West" e largo 62px, uno
+   "Southwest" 89; e a destra, dopo "Azzera filtri", e arrivato "Come si usa questo mockup",
+   che nessuno aveva messo nel conto. Nel mockup di Nitish (28 set 2026) il motore diceva che la
+   barra ci stava, e il bottone di destra usciva dal bordo di 6px. Ora ogni chip vale il suo
+   nome e i bottoni di destra il loro testo, con la stessa misura (largh) che usa il runtime; il
+   gate che guarda la barra vera in Chrome e test/barra.test.js. */
+const chipLargo = n => Math.min(W_CHIP, RT.largh(n, 11) + 35);   /* come il CSS: 11px, padding, tetto W_CHIP */
+function destraBarra(spec) {
+  const it = /^it/i.test((spec.meta || {}).locale || 'it');
+  const T = Object.assign({}, it ? {} : INGLESE, (spec.meta || {}).strings || {});
+  const reset = T.reset || 'Azzera filtri';
+  const aiuto = SCHEDA.titoloAiuto(spec);
+  return Math.round(RT.largh(reset, 10) + 20 + RT.largh(aiuto, 10) + 20 + 3 * W_GAP);
+}
 function toolbarBudget(spec, data) {
   const sh = pelle(spec).shell;
   const onTop = sh.tools;                      /* i filtri stanno sulla riga, non nella rail */
-  const available = onTop ? spec.grid.contentWidth - W_RESET : sh.rail - 32;
+  const available = onTop ? spec.grid.contentWidth - destraBarra(spec) : sh.rail - 32;
   let used = onTop ? W_DATE : 0;
   const items = [];
   (spec.filters.dims || []).forEach(fd => {
-    const n = (data.dims[fd.id] || []).length;
+    const mem = data.dims[fd.id] || [], n = mem.length;
     /* sulla toolbar ogni gruppo porta anche la sua etichetta (8.5px maiuscolo) */
     const lab = onTop ? 14 + String(fd.label || '').length * 6.2 : 0;
-    const w = (fd.control === 'dropdown' ? W_DROPDOWN : n * (W_CHIP + W_GAP)) + lab;
+    const w = (fd.control === 'dropdown' ? W_DROPDOWN : mem.reduce((a, m) => a + chipLargo(m.n), 0) + (n - 1) * W_GAP) + lab;
     if (onTop) used += w + W_GAP;
     else used = Math.max(used, fd.control === 'dropdown' ? W_DROPDOWN : W_CHIP);   /* rail stacks vertically */
     items.push({ id: fd.id, control: fd.control || 'list', members: n, w });
@@ -856,8 +896,9 @@ function toolbarErrore(spec, tb) {
     return { testo: '"' + it.id + '" a control:"dropdown" libera ' + Math.round(it.w - (W_DROPDOWN + lab)) + 'px', px: it.w - (W_DROPDOWN + lab) };
   }).filter(u => u.px > 0).sort((a, b) => b.px - a.px).map(u => u.testo);
   uscite.push('etichette dei filtri piu corte (6px per lettera)');
-  const larghe = Object.keys(SKIN.SHELLS).filter(k => SKIN.SHELLS[k].tools && SKIN.SHELLS[k].contentWidth - W_RESET > tb.available)
-    .map(k => 'shell "' + k + '" (' + (SKIN.SHELLS[k].contentWidth - W_RESET) + 'px disponibili, grid.contentWidth ' + SKIN.SHELLS[k].contentWidth + ')');
+  const destra = destraBarra(spec);
+  const larghe = Object.keys(SKIN.SHELLS).filter(k => SKIN.SHELLS[k].tools && SKIN.SHELLS[k].contentWidth - destra > tb.available)
+    .map(k => 'shell "' + k + '" (' + (SKIN.SHELLS[k].contentWidth - destra) + 'px disponibili, grid.contentWidth ' + SKIN.SHELLS[k].contentWidth + ')');
   const inRail = Object.keys(SKIN.SHELLS).filter(k => !SKIN.SHELLS[k].tools && SKIN.SHELLS[k].rail > 0).map(k => '"' + k + '"');
   if (larghe.length) uscite.push(larghe.join(' o '));
   if (inRail.length) uscite.push('shell ' + inRail.join(' o ') + ': i filtri stanno in colonna nella rail e la riga non ha piu un limite');
@@ -1298,4 +1339,4 @@ MK.__A=MK.boot(SPEC,DATA,document);
 `;
 }
 
-module.exports = { render, validate, lint, toolbarBudget, bundle, css, AESTHETICS, fitSpec, measurePage, pageBudget, rowHeight, INGLESE };
+module.exports = { render, validate, lint, toolbarBudget, destraBarra, bundle, css, AESTHETICS, fitSpec, measurePage, pageBudget, rowHeight, INGLESE };
