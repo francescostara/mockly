@@ -473,6 +473,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        "▼ −9,4%" accanto a una card che diceva "−0,8 pp" (Parsa, 27 set 2026). Da qui in poi
        ogni variazione a schermo passa da A.varia, e un test vieta A.delta fuori da qui. */
     A.punti = ms => { var m = A.meas(ms); return m.unit === 'pct' || m.unit === 'pp' || m.format === 'pc'; };
+    /* UN TASSO SENZA BASE NON E UN NUMERO. Un rapporto il cui denominatore e zero o negativo — l'uplift
+       di "Fuori promozione", che non ha vendite in promozione — usciva "0,0%" o "−100,0%" e si leggeva
+       come una campagna andata male (Fra, 28 set 2026). Si scrive "—", non applicabile. */
+    A.definita = function (ms, a) { var m = A.meas(ms); return m.agg !== 'ratio' || (a[m.den] || 0) > 0; };
+    /* UNA VOCE NUOVA NON VARIA: e nuova. Vale anche per le percentuali: il margine della campagna
+       fatta per la prima volta usciva "+17,2 pp" contro un anno in cui non esisteva. Si guarda la
+       base: il denominatore di un rapporto, la misura stessa per una somma. */
+    A.nuova = function (ms, ac, ap) {
+      var m = A.meas(ms), k = m.agg === 'ratio' ? m.den : ms;
+      return !(ap[k] || 0) && !!(ac[k] || 0);
+    };
     A.varia = function (ms, c, p) {
       if (A.punti(ms)) { var dif = c - p; return { d: dif, t: f.pp(dif), piatto: Math.abs(dif) < 5e-4, punti: true }; }
       var rel = A.delta(c, p);
@@ -531,14 +542,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var cls = piatto ? 'fl' : (su ? (k.inv ? 'dn' : 'up') : (k.inv ? 'up' : 'dn'));
       var ar = piatto ? '—' : (su ? '▲' : '▼');
       var ent = punti ? f.pp(Math.abs(dif)).slice(1) : f.pc(Math.abs(d));
+      var defin = A.definita(k.measure, c), nuova = A.nuova(k.measure, c, p);
+      if (nuova || !defin || !A.definita(k.measure, p)) { cls = 'fl'; ar = ''; ent = nuova ? (A.T.nuova || 'nuova') : '—'; }
       /* Nel blocco unico le card non hanno una larghezza propria: crescono in proporzione
          allo span dentro l'unica superficie, cosi i separatori cadono dove cade la griglia. */
       var kb = (SPEC.__pelle || {}).banda === 'blocco';
       var geo = kb ? 'flex:' + (k.span || 1) + ' 1 0;min-width:0' : 'width:' + g.span(k.span || 1) + 'px';
       return '<div class="card kpi" style="' + geo + '">' +
         '<div><div class="k">' + M.esc(k.label) + '</div><div class="vr">' +
-        '<div class="v tnum">' + A.mfmt(k.measure, cv) + '</div>' +
-        '<div class="d ' + cls + ' tnum">' + ar + ' ' + ent + ' ' + A.basis() + '</div></div></div>' +
+        '<div class="v tnum">' + (defin ? A.mfmt(k.measure, cv) : '—') + '</div>' +
+        '<div class="d ' + cls + ' tnum">' + (ar ? ar + ' ' : '') + ent + (ent === '—' || nuova ? '' : ' ' + A.basis()) + '</div></div></div>' +
         '<div class="det tnum">' + A.detail(k, cv, pv) + '</div></div>';
     };
     /* Riga descrittore: nomina i due periodi confrontati invece di abbreviarli.
@@ -1331,11 +1344,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var cell = function (c, a, p, base) {
       var cv = A.mv(c.measure, a), pv = A.mv(c.measure, p);
       if (c.kind === 'var') {
+        /* una voce che l'anno prima non c'era non "cresce dello zero per cento": e nuova. Senza,
+           la campagna fatta per la prima volta usciva "— 0,0%" accanto alle altre (Fra, 28 set 2026) */
+        if (A.nuova(c.measure, a, p)) return '<td class="tnum fl">' + M.esc(A.T.nuova || 'nuova') + '</td>';
+        if (!A.definita(c.measure, a) || !A.definita(c.measure, p)) return '<td class="tnum fl">—</td>';
         var va = A.varia(c.measure, cv, pv), d = va.d, up = c.inv ? d < 0 : d >= 0;
         /* una variazione nulla e piatta: "▼ −0,0 pp" in rosso dice un calo che non c'e */
         if (va.piatto) return '<td class="tnum fl">— ' + A.varia(c.measure, 0, 0).t.replace(/^[+−-]/, '') + '</td>';
         return '<td class="tnum ' + (up ? 'up' : 'dn') + '">' + (d >= 0 ? '▲ ' : '▼ ') + va.t + '</td>';
       }
+      if (!A.definita(c.measure, a)) return '<td class="tnum fl">—</td>';
       if (c.kind === 'share') return '<td class="tnum">' + f.pc(base ? cv / base : 0, 0) + '</td>';
       if (c.kind === 'heat') {                    /* conditional formatting — house signature */
         var lim = c.scale || [0, 1], t = Math.max(0, Math.min(1, (cv - lim[0]) / ((lim[1] - lim[0]) || 1)));
@@ -1631,7 +1649,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        coorte, dove tutte le celle finivano nello stesso secchio. Cinque e il massimo che
        l'occhio distingue su una superficie velata, e sono i quintili dei valori osservati —
        quindi la mappa si adatta ai dati invece di sperare che i dati si distribuiscano bene. */
-    var soglie;
+    var soglie, soglieCol = null;
+    /* PER COLONNA: i gradini si calcolano dentro ogni colonna. Quando una colonna vale dieci volte
+       le altre (le vendite fuori promozione accanto alle campagne) i quintili di tutta la mappa la
+       colorano scura e lasciano tutte le altre sullo stesso gradino chiaro: la domanda "quale sede
+       risponde meglio a questa campagna" non si legge piu (Fra, 28 set 2026). */
+    if (b.per === 'colonna') {
+      soglieCol = cols.map(function (_c, ci) {
+        var col = celle.map(function (f) { return f[ci]; }).sort(function (p, q) { return p - q; });
+        return col.length ? [1, 2, 3, 4].map(function (k) { return col[Math.floor(col.length * k / 5)]; }) : [0, 0.25, 0.5, 0.75];
+      });
+    }
     if (b.scale) {
       var sp0 = (b.scale[1] - b.scale[0]) || 1;
       soglie = [1, 2, 3, 4].map(function (k) { return b.scale[0] + sp0 * k / 5; });
@@ -1671,8 +1699,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         /* Il gradino della cella, dal piu freddo al piu caldo. Sono velature della rampa
            sequenziale (Viridis o Cividis), quindi la scala sale in luminanza in modo monotono e
            resta leggibile anche in stampa e sotto le tre dicromazie. */
-        var liv = 0;
-        while (liv < soglie.length && x >= soglie[liv]) liv++;
+        var liv = 0, sg = soglieCol ? soglieCol[ci] : soglie;
+        while (liv < sg.length && x >= sg[liv]) liv++;
         var col = ['var(--heat1)', 'var(--heat2)', 'var(--heat3)', 'var(--heat4)', 'var(--heat5)'][liv];
         /* un filtro sulla dimensione delle COLONNE segna la sua colonna come quello sulle righe
            segna la sua riga: prima la heatmap restava identica davanti al filtro "Corporate" */

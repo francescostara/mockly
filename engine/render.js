@@ -611,6 +611,8 @@ function validate(specIn, data) {
         const b = v.bind || {};
         if (b.measure && !known.has(b.measure)) e.push(`page "${pg.id}" ${v.type}: unknown measure "${b.measure}"`);
         if (b.dim && !(data.dims || {})[b.dim]) e.push(`page "${pg.id}" ${v.type}: unknown dim "${b.dim}"`);
+        if (b.per !== undefined && (v.type !== 'heatmap' || b.per !== 'colonna'))
+          e.push(`page "${pg.id}" ${v.type}: per "${b.per}" non ammesso — solo sulla heatmap, e solo "colonna" (i gradini si calcolano dentro ogni colonna)`);
         if (b.order !== undefined && (v.type !== 'hbar' || ['asc', 'desc'].indexOf(b.order) < 0))
           e.push(`page "${pg.id}" ${v.type}: order "${b.order}" non ammesso — solo sull'hbar, "desc" (i migliori, default) o "asc" (i peggiori)`);
         /* advisory, not a gate: chart-selection.md wants 2-5 slices, but the canonical ships a
@@ -1019,6 +1021,10 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
 #hdr{height:58px;flex:0 0 58px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:14px}
 #hdr .ttl{font-family:var(--fontDisp);font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
 #hdr .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+/* il titolo non cede spazio: le pillole del contesto crescono quando si filtra, e un blocco che si
+   stringe anche di mezzo pixel mandava a capo il sottotitolo — l'intestazione cambiava forma sotto
+   la mano (Fra, 28 set 2026). Larghezza propria, con un tetto fisso: la sua forma non dipende dai filtri. */
+#hdr .htit{flex:0 0 auto;max-width:56%;min-width:0}
 #hdr .spacer{flex:1}
 .hnav{display:flex;gap:4px;margin-left:14px}
 /* LA BARRA NON SI MUOVE QUANDO SI FILTRA. Con un filtro attivo compaiono le pillole del contesto
@@ -1158,7 +1164,7 @@ function header(spec, ctxQui, marchioQui, aiuto, navQui) {
   const nav = navQui ? navButtons(spec) : '';
   return `<div id="hdr">
       ${inlineBrand ? `<div class="hbrand">${esc((b.name || m.title).toUpperCase())}</div>` : ''}
-      <div><div class="ttl" id="hTtl"></div><div class="sub" id="hSub"></div></div>
+      <div class="htit"><div class="ttl" id="hTtl"></div><div class="sub" id="hSub"></div></div>
       ${nav ? `<div class="hnav">${nav}</div>` : ''}
       <div class="spacer"></div>
       ${rail ? `<div class="ctxwrap" id="hCtx"></div>
@@ -1243,7 +1249,7 @@ const INGLESE = {
   all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var',
   spanUno: '1 year', spanTutti: 'All', anni: 'years', others: 'Others', target: 'target',
   conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory',
-  sopra: 'above', sotto: 'below', inLinea: 'in line with'
+  sopra: 'above', sotto: 'below', inLinea: 'in line with', nuova: 'new'
 };
 
 /** Riempie le voci mancanti nella lingua del report. L'italiano non si tocca: le sue parole
@@ -1320,7 +1326,7 @@ function render(specIn, data) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(spec.meta.brand && spec.meta.brand.name ? spec.meta.brand.name + ' — ' + spec.meta.title : spec.meta.title)}</title>
 <style>
-${css(spec, compact).split('\n').map(l => l.trim()).filter(Boolean).join('\n')}
+${css(spec, compact).replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.trim()).filter(Boolean).join('\n')}
 </style>
 </head>
 <body>

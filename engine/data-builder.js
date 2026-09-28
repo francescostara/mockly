@@ -153,7 +153,12 @@ function build(dp) {
   });
   const splitMembers = splitsM[0] || null;
   if (splitCfg && own.length * splitMembers.length > 60) fail('the joint grain is too large: keep members(dim) x members(split) under 60');
-  const celle = splitsM.reduce((a, ms) => a * ms.length, own.length);
+  /* le celle EFFETTIVE: un membro con una composizione dichiarata (mix) occupa solo le voci che
+     nomina — una campagna su una categoria sola non vale quattro celle, ne vale una */
+  const celle = own.reduce((a, mb) => a + splitList.reduce((b, sc, k) => {
+    const dich = mb.mix && mb.mix[sc.dim];
+    return b * (dich ? Math.max(1, Object.keys(dich).filter(id => +dich[id] > 0).length) : splitsM[k].length);
+  }, 1), 0);
   if (splitList.length > 1 && celle > 120) fail(`the joint grain is too large: ${celle} celle (membri di facts.dim x quelli di ogni split) — tienilo sotto 120, accorpa i membri minori`);
 
   /* ---- 1. the primary measure at the facts.dim grain ---- */
@@ -164,6 +169,12 @@ function build(dp) {
       const ctx = { j, yi, seas, years, dim: dimId };
       const r = { y, m, [dimId]: mb.id, __own: mb, __splits: {} };
       r[prim.id] = Math.round(evalField(prim, r, mb, null, ctx));
+      /* UN MEMBRO PUO ESISTERE SOLO IN ALCUNI ANNI: una campagna fatta una volta, un negozio
+         aperto l'anno scorso. Senza `anni` ogni membro compariva in tutti gli anni, e il brief
+         "le campagne degli ultimi due anni, tra cui quelle ripetute" non era esprimibile: erano
+         ripetute tutte (Fra, 28 set 2026). Fuori dai suoi anni il membro vale zero; il valore
+         casuale si calcola lo stesso, perche la sequenza degli altri non cambi. */
+      if (Array.isArray(mb.anni) && mb.anni.indexOf(y) < 0) r[prim.id] = 0;
       rows.push(r);
     }
   }));
@@ -183,6 +194,20 @@ function build(dp) {
     own.forEach(mb => {
       const mine = joint.filter(r => r[dimId] === mb.id), s = DM.sum(mine, prim.id) || 1;
       mix[mb.id] = sms.map(sm => (mine.filter(r => r[sc.dim] === sm.id)[0] || {})[prim.id] / s || 0);
+      /* LA COMPOSIZIONE DICHIARATA VINCE SU QUELLA ADATTATA. L'IPF da a ogni membro un mix dello
+         split vicino a quello medio, con un po' di rumore: va bene per una regione o un canale,
+         e falso per una campagna su una categoria sola — "Clima Days" vendeva il 54% di grandi
+         elettrodomestici e il 13% di clima (Fra, 28 set 2026). Con `mix` il membro dice la sua
+         composizione — { "cat": { "clima": 1 } } — e quella si usa cosi com'e, normalizzata.
+         Le quote totali dello split non tornano piu esatte a `shares`: e il prezzo della verita. */
+      const dich = mb.mix && mb.mix[sc.dim];
+      if (dich) {
+        const ignoti = Object.keys(dich).filter(id => !sms.some(sm => sm.id === id));
+        if (ignoti.length) fail(`dataParams.dims["${dimId}"] membro "${mb.id}": mix.${sc.dim} nomina ${ignoti.join(', ')}, che non sono membri di "${sc.dim}" (${sms.map(sm => sm.id).join(', ')})`);
+        const v = sms.map(sm => Math.max(0, +dich[sm.id] || 0)), tot = v.reduce((a, x) => a + x, 0);
+        if (!(tot > 0)) fail(`dataParams.dims["${dimId}"] membro "${mb.id}": mix.${sc.dim} deve avere almeno un peso positivo`);
+        mix[mb.id] = v.map(x => x / tot);
+      }
     });
     /* LA CRESCITA DI UN MEMBRO DELLO SPLIT. Senza, le quote dello split sono ferme negli anni
        e ogni regione cresce come il totale: "la regione che cresce ma perde margine" non si
@@ -325,6 +350,11 @@ function build(dp) {
      nella storia lontana il trend passa a un punto per anno e i controlli del mese spariscono,
      invece di disegnare undici mesi a zero e un picco a gennaio. */
   const factDims = [dimId].concat(splitList.map(sc => sc.dim));
+  /* LE RIGHE TUTTE A ZERO NON VIAGGIANO. Una campagna vale zero undici mesi su dodici, una
+     composizione dichiarata azzera le voci che non nomina: righe che non entrano in nessun totale
+     e che pesavano sul file. Si tolgono dopo i conti — gli arrotondamenti sono gia fatti — e
+     solo se TUTTI i campi sono zero. */
+  grain = grain.filter(r => fields.some(f => r[f.id] !== 0));
   const profondita = Math.max(2, dp.dettaglioMesi === undefined ? 3 : dp.dettaglioMesi);
   const mensili = years.slice(-profondita);
   if (mensili.length < years.length) {
