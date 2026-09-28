@@ -183,6 +183,35 @@ Vendite di un negozio o catena. Ricavata da ricerca sui KPI/design retail e vali
   reparto è in calo YoY ed erode il risultato. È l'aggancio: "questa sede/categoria ti sta
   costando". (Combinabile con la tensione ricavo-vs-margine quando i dati la reggono.)
 
+## Se il brief parla di PROMOZIONI o CAMPAGNE (voce nata dal brief di un negozio di elettrodomestici)
+- **La domanda vera e l'incremento, non il fatturato della campagna.** "Ha funzionato?" vuol
+  dire: quanto si e venduto IN PIU di quanto si sarebbe venduto comunque, e a che prezzo di
+  margine. KPI: fatturato in promozione, **vendite incrementali** e **uplift %** (contro una base
+  attesa), sconti concessi e **sconto medio**, **margine % in promozione contro fuori**, quota delle
+  vendite in promozione, scontrino medio. Per le campagne ripetute: lo stesso evento anno su anno.
+- **La campagna e un evento nel tempo:** un membro di `facts.dim` con la stagionalita concentrata
+  nel suo mese, piu un membro "Fuori promozione" con la stagionalita normale (data-params.md).
+  Una campagna fatta una volta sola dichiara `anni`; le ripetute no.
+- **Sconto generale contro sconto di categoria:** la campagna di categoria dichiara la sua
+  composizione (`mix`: `{ "cat": { "clima": 1 } }`) — senza, il generatore le fa vendere di tutto.
+  Il tipo (generale / categoria) si confronta con due campi, uno per tipo, letti in una tabella.
+- **L'incremento si modella sulle vendite IN PROMOZIONE, non sul netto:** `incrementali` = quota
+  delle vendite in promozione che non ci sarebbe stata senza la campagna (attributo della
+  campagna, 0,20–0,45: piu la campagna e forte, piu alta la quota); la base attesa e la misura
+  `diff` promozione − incrementali, e l'uplift e incrementali / base attesa. Fuori promozione le
+  vendite in promozione sono zero, quindi l'incremento e zero PER COSTRUZIONE. Non derivarlo dal
+  netto con un attributo "1" per il fuori promozione: basta la variazione casuale del campo per
+  inventare un incremento dove non ce n'e (e successo nel primo giro: €118K "incrementali" e un
+  uplift di −100% sulle vendite a prezzo pieno).
+- **"Certi prodotti si vendono molto di piu in offerta?"** e una domanda sul dettaglio: la quota in
+  promozione per prodotto (`mult` sul campo delle vendite in promozione), mostrata come hbar dei
+  piu e dei meno venduti in offerta.
+- **Storia negativa tipica:** una campagna ripetuta che rende meno dell'anno prima, oppure una
+  campagna con molto fatturato e uplift basso — si vende a sconto cio che si sarebbe venduto a
+  prezzo pieno, e il margine lo paga.
+- **Ancore:** sconto medio in campagna 10–25% (elettronica ed elettrodomestici), uplift 15–60%,
+  quota delle vendite in promozione sul totale 15–35%.
+
 ## Realismo dati (retail)
 - **Margine lordo varia molto per sotto-settore:** alimentari ~25-30%, fashion ~50-60%,
   elettronica ~15-25%, arredo ~40-45%. Adeguare al settore del brief, non un valore unico.

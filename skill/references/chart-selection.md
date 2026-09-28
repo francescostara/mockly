@@ -119,6 +119,10 @@ manifattura (matrice cliente x prodotto).
 matrice. A schermo somiglia, ma congela la seconda dimensione dentro i campi — niente filtro,
 niente cross-filter, niente drill. E' un filtro decorativo travestito da heatmap.
 
+**Quando una colonna schiaccia le altre** (le vendite fuori promozione accanto alle campagne, il
+negozio principale accanto ai piccoli) e la domanda e "chi risponde meglio dentro ogni colonna",
+`per: "colonna"` calcola i gradini colonna per colonna: ogni colonna si legge da sola.
+
 Perche la mappa dica qualcosa serve una **stagionalita per membro** nei dataParams: con quella
 globale tutte le righe hanno lo stesso profilo e la heatmap diventa un muro di un colore solo.
 

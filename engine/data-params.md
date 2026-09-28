@@ -184,6 +184,23 @@ and not given.
 Each split is fitted to `facts.dim` on its own (the segment mix depends on the category, not on
 the region). Keep `members(dim) × Π members(split) ≤ 120` — 5 × 4 × 3 = 60 is comfortable.
 
+**A member can declare its own composition: `mix`.** The split is fitted with IPF, which gives
+every member of `facts.dim` a mix close to the average: right for a region or a channel, false for
+a campaign that applies to one category only. Declare it on the member and it is used as is:
+
+```jsonc
+{ "id": "clima", "n": "Clima Days", "base": 58000, "mix": { "cat": { "clima": 1 } }, ... }
+```
+
+The split's total shares then no longer match `shares` exactly — that is the price of the truth.
+
+**A member can exist only in some years: `anni`.** A campaign run once, a store opened last year:
+`"anni": [2025]`. Outside those years it is zero, and a matrix `var` column reads "nuova".
+
+**Events located in time.** A campaign, a launch, a sale is a member of `facts.dim` whose own
+`seasonality` is concentrated in its month (`[0,0,0,0,0,0,0,0,0,0,12,0]` for Black Friday): the
+twelve multipliers still average 1, so `base` is its monthly average and `base × 12` its year.
+
 **Where a field reads its rate: `attrFrom`.** Omitted, a `share`/`divide` field reads the attrs of
 `facts.dim`'s members; `"split"` reads the first split's; the NAME of a fact dimension reads
 that dimension's members — with two splits, a discount rate that belongs to the region is

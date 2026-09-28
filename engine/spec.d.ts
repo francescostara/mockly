@@ -114,7 +114,7 @@ export interface Meta {
     'fullYear' | 'all' | 'allM' | 'compare' | 'qtr' | 'month' | 'varShort' |
     'pyShort' | 'cyShort' | 'prevShort' | 'curShort' | 'reset' | 'period' | 'conv' |
     'spanLong' | 'year' | 'qtrLong' | 'monthLong' | 'updatedLabel' | 'report' | 'spanUno' |
-    'spanTutti' | 'anni' | 'others' | 'target' | 'noPrev' | 'trajectory' | 'sopra' | 'sotto' | 'inLinea', string>>;
+    'spanTutti' | 'anni' | 'others' | 'target' | 'noPrev' | 'trajectory' | 'sopra' | 'sotto' | 'inLinea' | 'nuova', string>>;
   /** literal "last refreshed" string — never a live clock (determinism) */
   updated?: string;
   source?: string;
@@ -212,7 +212,10 @@ export type Bind =
    *  seconda dimensione sulle colonne: la `matrix` ci mette le MISURE, quindi fascia-oraria x
    *  giorno, cliente x SKU e coorte x mese non erano esprimibili. `scale` fissa i due estremi
    *  della rampa; senza, si usano il minimo e il massimo osservati. */
-  | { dim: string; measure: string; by: string; scale?: [number, number] }     // heatmap
+  /** `per: "colonna"`: i gradini si calcolano dentro ogni colonna — quando una colonna vale dieci
+   *  volte le altre (fuori promozione accanto alle campagne) e la domanda e "chi risponde meglio
+   *  DENTRO ogni colonna". */
+  | { dim: string; measure: string; by: string; scale?: [number, number]; per?: 'colonna' }     // heatmap
   /** delta-card - una sola misura, nessuna dimensione: mostra DI QUANTO e cambiata fra i due
    *  periodi confrontati. Con `unit: "pct"` la variazione esce in punti percentuali. */
   | { measure: string }                                                       // delta-card
@@ -363,6 +366,13 @@ export interface MemberSpec {
   seasonality?: number[];
   /** la tinta del membro E' la sua identita (Instagram, TikTok): il motore non la sostituisce */
   brand?: boolean;
+  /** solo per i membri di facts.dim: la SUA composizione di uno split, che vince sull'adattamento
+   *  automatico — { "cat": { "clima": 1 } } per una campagna che vale su una categoria sola,
+   *  { "cat": { "tv": 2, "piccoli": 1 } } per una che pesa di piu su alcune. Pesi, normalizzati. */
+  mix?: Record<string, Record<string, number>>;
+  /** gli anni in cui il membro esiste (una campagna fatta una volta, un negozio aperto da poco);
+   *  fuori vale zero, e nella matrice la sua variazione si legge "nuova" */
+  anni?: number[];
   /** free numeric attributes the field formulas read (aov, margin, rates...) */
   attrs?: Record<string, number>;
 }
