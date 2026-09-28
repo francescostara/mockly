@@ -493,6 +493,46 @@ const INTERVENTI = [
     fatto: "Il tooltip prendeva il contenuto al mouseover e la posizione solo al mousemove: quando il grafico si ridisegna sotto un cursore fermo, restava nell'angolo. Ora si posiziona nello stesso istante in cui compare. Gate: test/tooltip.test.js, su ogni mockup — fallisce su tutti col codice di prima.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/promo-elettrodomestici",
+    versione: 1,
+    commento: "(brief di Fra) Campagne con sconti su tipologie di prodotti: \"Clima Days\" vendeva il 54% di grandi elettrodomestici e il 13% di clima, la \"Settimana del bianco\" il 23% di TV.",
+    dove: "generatore dei dati · grammatica · skill",
+    fatto: "Un membro di facts.dim puo dichiarare la sua composizione di uno split (mix: { cat: { clima: 1 } }), che vince sull'adattamento IPF. Il tetto delle celle conta quelle effettive e le righe tutte a zero non viaggiano piu nel file (il mockup e sceso da 168 a 107KB). La voce retail della skill spiega come si modella una campagna. Gate: test/eventi.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/promo-elettrodomestici",
+    versione: 1,
+    commento: "(brief di Fra) \"Le campagne degli ultimi due anni, tra cui quelle ripetute\": tutte le campagne comparivano per forza in entrambi gli anni.",
+    dove: "generatore dei dati · matrice · KPI",
+    fatto: "anni: [2025] su un membro: fuori dai suoi anni vale zero. La variazione di una voce che l'anno prima non c'era si legge \"nuova\", nella matrice e nelle KPI, anche per le percentuali. Gate: test/eventi.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/promo-elettrodomestici",
+    versione: 1,
+    commento: "(controllo della v1) La heatmap sedi x campagne: la colonna \"Fuori promozione\" vale dieci volte le altre e le schiacciava tutte sullo stesso colore chiaro.",
+    dove: "heatmap · grammatica",
+    fatto: "per: \"colonna\" sulla heatmap: i gradini si calcolano dentro ogni colonna. Rifiutato fuori dalla heatmap. Gate: test/eventi.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/promo-elettrodomestici",
+    versione: 2,
+    commento: "(controllo della v2) \"Fuori promozione\" con €118K di vendite incrementali e un uplift di −100%.",
+    dove: "skill (ricetta dell'incremento) · matrice · KPI",
+    fatto: "La ricetta nella skill derivava l'incremento dal netto con un attributo 1 per il fuori promozione, e la variazione casuale del campo inventava un incremento: ora l'incremento e una quota delle vendite in promozione, zero per costruzione dove la promozione non c'e. E un tasso con base zero o negativa si scrive \"—\" invece di un numero. Gate: test/eventi.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/promo-elettrodomestici",
+    versione: 2,
+    commento: "(controllo della v2) Filtrando una campagna il sottotitolo della pagina andava a capo e il titolo si alzava.",
+    dove: "intestazione",
+    fatto: "Il blocco del titolo si stringeva di mezzo pixel quando le pillole del contesto crescevano: ora ha larghezza propria con un tetto fisso. Il gate in Chrome (test/barra.test.js) misura anche titolo e sottotitolo con tutti i filtri attivi, e sul codice di prima ha trovato lo stesso difetto nel mockup di Parsa in inglese.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

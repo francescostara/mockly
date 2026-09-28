@@ -108,12 +108,19 @@ function tuttiIFiltri() {
         if (dx + 2 < vero.dx) guastiStima.push(dove0 + ': bottoni di destra stimati ' + dx + 'px, veri ' + Math.round(vero.dx) + 'px');
       }
 
-      /* CON TUTTI I FILTRI ATTIVI niente va a capo, i chip restano fermi, niente esce */
+      /* CON TUTTI I FILTRI ATTIVI niente va a capo, i chip restano fermi, niente esce — e
+         nemmeno il titolo della pagina cambia forma (il sottotitolo andava a capo quando le
+         pillole del contesto crescevano: Fra, 28 set 2026) */
+      const titolo = () => page.evaluate(() => ['hTtl', 'hSub'].map(id => { const e = document.getElementById(id); if (!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.height)]; }));
+      const titoloPrima = await titolo();
       const prima = await page.evaluate(misura);
       if (!prima) continue;
       const nDim = await page.evaluate(tuttiIFiltri);
       await layout();
       const dopo = await page.evaluate(misura);
+      const titoloDopo = await titolo();
+      if (JSON.stringify(titoloPrima) !== JSON.stringify(titoloDopo))
+        guastiCapo.push(dove0 + ': il titolo della pagina cambia forma coi filtri attivi (' + JSON.stringify(titoloPrima) + ' → ' + JSON.stringify(titoloDopo) + ')');
       viste++;
       const dove = c.id + ' (' + (lingua === 'propria' ? (spec.meta.locale || 'it') : lingua) + ', ' + nDim + ' filtri + trimestre)';
       /* una pillola nuova deve essere alta come quelle che c'erano gia */

@@ -61,7 +61,8 @@ ok('ogni colonna "var" su una misura percentuale mostra punti in ogni cella, su 
             const td = tr.children[ci + 1];
             if (td && /[▲▼]\s*[+−-]?0[.,]0/.test(td.textContent))
               guasti.push(c.id + ' · ' + pg.id + ' · "' + (col.label || col.measure) + '": "' + td.textContent.trim() + '" (una variazione nulla e piatta, non una freccia)');
-            if (td && td.textContent.trim() && !/pp\s*$/.test(td.textContent.trim()))
+            /* "nuova" (la voce non c'era) e "—" (tasso senza base) sono risposte, non variazioni */
+            if (td && td.textContent.trim() && !/pp\s*$/.test(td.textContent.trim()) && !/^(nuova|new|—)$/.test(td.textContent.trim()))
               guasti.push(c.id + ' · ' + pg.id + ' · "' + (col.label || col.measure) + '": "' + td.textContent.trim() + '"');
           });
         });

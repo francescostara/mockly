@@ -31,7 +31,7 @@ const dichiarato = k => new RegExp('\\b' + esc(k) + '\\??:').test(DTS) || DTS.in
 /* Contenitori le cui CHIAVI sono dati dell'autore, non nomi della grammatica: gli id delle
    dimensioni, i genitori del dettaglio, gli attributi liberi, i moltiplicatori per campo. */
 const mappa = (percorso, dp) => (dp && percorso === '.dims') || /\.detail\.members$/.test(percorso) ||
-  /\.(attrs|mult|targets)$/.test(percorso);
+  /\.(attrs|mult|targets|mix)$/.test(percorso) || /\.mix\.[^.]+$/.test(percorso);   /* mix: dimensione -> membri, tutti dati */
 
 function nomi(o, percorso, dp, out) {
   if (Array.isArray(o)) { o.forEach(x => nomi(x, percorso, dp, out)); return out; }
