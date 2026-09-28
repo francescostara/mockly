@@ -201,6 +201,12 @@ galleggia sul fondo senza separazione lascia il lettore a indovinare dove finisc
 comincia quello accanto. La scelta fra riquadri e blocco unico vale per l'INTERA pagina — meta
 e meta e l'unico modo di sbagliarla.
 
+**Quanti colori ha una palette.** Dove il colore identifica il membro (ribbon, stack100, donut,
+hbar per membro), i membri a schermo non superano i colori distinti della famiglia: sei per
+slate-freddo, dark-agency, dark-tecnico, salvia, jewel-desaturati e pastello-sobrio; cinque per
+le altre. Con sei categorie colorate in una pelle da cinque si sceglie una famiglia da sei, si
+accorpa un membro, o si usa `topN`/`top`. Nessuna scala contiene il rosso: e del problema.
+
 **I colori dei dati non si scrivono nella spec.** La scala categoriale la assegna il motore
 dalla famiglia scelta, verificata su contrasto, DeltaE76, le tre dicromazie e la scala di
 grigi. L'unica eccezione e dichiarata dal dato: `brand: true` su un membro tiene il colore di

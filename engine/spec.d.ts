@@ -9,7 +9,13 @@ export type Aesthetic = 'corporate-sober' | 'agency-modern' | 'executive-minimal
  *  rail 1044 · rail-slim 1116 · top 1248 · bare 1248. */
 export type Shell = 'rail' | 'rail-slim' | 'top' | 'bare';
 
-/** Le famiglie di colore. Ognuna porta la sua scala categoriale da sei e il suo raggio. */
+/** Le famiglie di colore. Ognuna porta la sua scala categoriale e il suo raggio.
+ *  COLORI DISTINTI PER CATEGORIA — dove il colore identifica il membro (ribbon, stack100, donut,
+ *  hbar per membro) i membri a schermo non possono superarli, e il motore rifiuta:
+ *    6 colori: slate-freddo, dark-agency, dark-tecnico, salvia, jewel-desaturati, pastello-sobrio
+ *    5 colori: navy-corporate, warm-taupe, carta-inchiostro, terroso, monocromo-accento,
+ *              alto-contrasto, blu-ghiaccio
+ *  Nessuna scala contiene il rosso: e riservato al problema. */
 export type PaletteFamily =
   | 'navy-corporate' | 'slate-freddo' | 'warm-taupe' | 'carta-inchiostro' | 'dark-agency'
   | 'dark-tecnico' | 'terroso' | 'salvia' | 'jewel-desaturati' | 'monocromo-accento'
