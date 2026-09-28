@@ -21,23 +21,14 @@ const okAsync = async (label, fn) => { await fn(); n++; console.log('  ok  ' + l
 
 console.log('bersaglio del clic (in Chrome: il punto colpisce davvero la forma)');
 
-function casi() {
-  const out = [];
-  const agg = (fonte, m) => Object.keys(m).filter(k => k[0] !== '_').forEach(k => out.push({ id: fonte + '/' + k, caso: m[k] }));
-  agg('archetipi', require('../engine/templates/index.js'));
-  agg('banco', require('../engine/specs/banco/index.js'));
-  agg('eval', require('../engine/specs/index.js'));
-  const dir = path.join(__dirname, '..', 'engine', 'specs', 'locale');
-  fs.readdirSync(dir).filter(f => f.endsWith('.js') && f !== 'index.js').forEach(f => out.push({ id: 'locale/' + f.replace(/\.js$/, ''), caso: require(path.join(dir, f)) }));
-  return out;
-}
+const { casi, renderCaso } = require('./corpus.js');
 
 (async () => {
   if (!disponibile().ok) { console.log('  --  saltato: qui non c e un Chrome da guidare'); console.log('  0 checks'); return; }
   const { chromium } = require('playwright');
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
-  const apri = async html => { await page.setContent(html, { waitUntil: 'load' }); await page.waitForTimeout(150); };
+  const apri = async html => { await page.setContent(html, { waitUntil: 'load' }); await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); };   /* layout fatto: due fotogrammi, non un'attesa fissa */
 
   const fo = require('../engine/specs/banco/filtro-organico.js');
   await apri(render(fo.spec, fo.build()));
@@ -65,7 +56,7 @@ function casi() {
     const guasti = [];
     for (const c of casi()) {
       const data = c.caso.build();
-      await apri(render(c.caso.spec, data));
+      await apri(renderCaso(c));
       const prima = c.caso.spec.pages[0].id;
       for (const x of SCHEDA.piano(c.caso.spec, data).cross.filter(k => k.page === prima)) {
         const r = await page.evaluate(B.trova, { sel: x.sel, dentro: x.titolo, quale: x.tipo === 'matrix' ? 'primo' : 'grande' });

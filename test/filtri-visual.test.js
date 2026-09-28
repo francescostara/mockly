@@ -15,7 +15,7 @@
 'use strict';
 const assert = require('assert');
 const { JSDOM } = require('jsdom');
-const { casi } = require('./corpus.js');
+const { casi, renderCaso } = require('./corpus.js');
 const { render } = require('../engine/render.js');
 
 let n = 0;
@@ -28,7 +28,7 @@ ok('su ogni pagina di ogni mockup, ogni filtro di dimensione cambia ogni card', 
   let prove = 0;
   casi().forEach(c => {
     const spec = c.caso.spec;
-    const dom = new JSDOM(render(spec, c.caso.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
+    const dom = new JSDOM(renderCaso(c, spec), { runScripts: 'dangerously', pretendToBeVisual: true });
     const doc = dom.window.document, win = dom.window;
     const clic = el => el.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
     const pagine = spec.pages.map(p => p.id);
@@ -44,6 +44,9 @@ ok('su ogni pagina di ogni mockup, ogni filtro di dimensione cambia ogni card', 
         const mosse = prima.map(() => false);
         const membri = [...doc.querySelectorAll('[data-f^="' + fd.id + ':"]:not([data-f="' + fd.id + ':"])')].map(e => e.getAttribute('data-f'));
         [...new Set(membri)].forEach(df => {
+          /* ci si ferma appena ogni card si e mossa: di solito basta il primo membro, e provarli
+             tutti costava meta del tempo della suite senza provare niente in piu */
+          if (mosse.every(Boolean)) return;
           const el = doc.querySelector('[data-f="' + df + '"]');
           if (!el) return;
           clic(el);

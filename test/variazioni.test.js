@@ -17,7 +17,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
-const { casi } = require('./corpus.js');
+const { casi, renderCaso } = require('./corpus.js');
 const { render } = require('../engine/render.js');
 
 let n = 0;
@@ -42,7 +42,7 @@ ok('ogni colonna "var" su una misura percentuale mostra punti in ogni cella, su 
   let colonne = 0;
   casi().forEach(c => {
     const spec = c.caso.spec;
-    const dom = new JSDOM(render(spec, c.caso.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
+    const dom = new JSDOM(renderCaso(c, spec), { runScripts: 'dangerously', pretendToBeVisual: true });
     const doc = dom.window.document, win = dom.window;
     const pagine = [...doc.querySelectorAll('.navbtn')].map(b => b.dataset.page);
     (pagine.length ? pagine : [null]).forEach(p => {

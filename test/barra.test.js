@@ -16,7 +16,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { render, toolbarBudget, destraBarra } = require('../engine/render.js');
+const { toolbarBudget, destraBarra } = require('../engine/render.js');
 const builder = require('../engine/data-builder.js');
 const { disponibile } = require('../lib/video-export.js');
 
@@ -26,16 +26,7 @@ const clona = o => JSON.parse(JSON.stringify(o));
 
 console.log('barra dei filtri (in Chrome: niente va a capo con tutti i filtri attivi)');
 
-function casi() {
-  const out = [];
-  const agg = (fonte, m) => Object.keys(m).filter(k => k[0] !== '_').forEach(k => out.push({ id: fonte + '/' + k, caso: m[k] }));
-  agg('archetipi', require('../engine/templates/index.js'));
-  agg('banco', require('../engine/specs/banco/index.js'));
-  agg('eval', require('../engine/specs/index.js'));
-  const dir = path.join(__dirname, '..', 'engine', 'specs', 'locale');
-  fs.readdirSync(dir).filter(f => f.endsWith('.js') && f !== 'index.js').forEach(f => out.push({ id: 'locale/' + f.replace(/\.js$/, ''), caso: require(path.join(dir, f)) }));
-  return out;
-}
+const { casi, renderCaso } = require('./corpus.js');
 
 /* Gira nella pagina: la fotografia della barra che contiene "Azzera filtri" (la riga dei filtri
    nella shell top, l'intestazione nelle altre) — altezza di ogni controllo, posizione dei chip. */
@@ -79,74 +70,72 @@ function tuttiIFiltri() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
 
-  await okAsync('con tutti i filtri attivi nessun controllo va a capo, i chip restano fermi, niente esce dalla barra', async () => {
-    const guasti = [];
-    let viste = 0;
-    for (const c of casi()) {
-      for (const lingua of ['propria', 'en-US']) {
-        const spec = clona(c.caso.spec);
-        if (lingua !== 'propria') spec.meta.locale = lingua;
-        await page.setContent(render(spec, c.caso.build()), { waitUntil: 'load' });
-        await page.waitForTimeout(120);
-        const prima = await page.evaluate(misura);
-        if (!prima) continue;
-        const nDim = await page.evaluate(tuttiIFiltri);
-        await page.waitForTimeout(120);
-        const dopo = await page.evaluate(misura);
-        viste++;
-        const dove = c.id + ' (' + (lingua === 'propria' ? (spec.meta.locale || 'it') : lingua) + ', ' + nDim + ' filtri + trimestre)';
-        /* una pillola nuova deve essere alta come quelle che c'erano gia */
-        const pillola = (prima.controlli.find(k => /^ctxpill/.test(k.k)) || {}).h;
-        dopo.controlli.forEach(k => {
-          const era = prima.controlli.find(p => p.k === k.k);
-          if (era && era.h !== k.h) guasti.push(dove + ': ' + k.chi + ' da ' + era.h + 'px a ' + k.h + 'px (va a capo)');
-          if (!era && pillola && /^ctxpill/.test(k.k) && k.h !== pillola) guasti.push(dove + ': ' + k.chi + ' alta ' + k.h + 'px invece di ' + pillola + ' (va a capo)');
-          if (k.fuori) guasti.push(dove + ': ' + k.chi + ' esce dalla barra');
-        });
-        if (JSON.stringify(prima.chip) !== JSON.stringify(dopo.chip)) guasti.push(dove + ': i chip dei filtri si spostano (' + prima.chip + ' → ' + dopo.chip + ')');
-        if (dopo.trabocca) guasti.push(dove + ': la barra trabocca');
-      }
-    }
-    assert.ok(viste >= 20, 'solo ' + viste + ' barre misurate');
-    assert.deepStrictEqual([...new Set(guasti)], [], [...new Set(guasti)].join(String.fromCharCode(10) + '       '));
-  });
+  /* UN SOLO GIRO. I due controlli qui sotto caricavano ogni mockup due volte, in due lingue, con
+     un'attesa fissa di 120ms dopo ogni passo: mezzo minuto a ogni suite. Ora ogni mockup si
+     carica una volta per lingua (dalla cache dei render), si misura la barra ferma, si confronta
+     con la stima del motore, si accendono tutti i filtri e si rimisura. L'attesa e quella vera:
+     due fotogrammi, cioe il layout fatto — non un numero di millisecondi scelto a occhio. */
+  const layout = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const guastiCapo = [], guastiStima = [];
+  let viste = 0, misure = 0;
+  for (const c of casi()) {
+    const data = c.caso.build();
+    for (const lingua of ['propria', 'en-US']) {
+      const spec = clona(c.caso.spec);
+      if (lingua !== 'propria') spec.meta.locale = lingua;
+      await page.setContent(renderCaso(c, spec), { waitUntil: 'load' });
+      await layout();
+      const dove0 = c.id + ' (' + (lingua === 'propria' ? (spec.meta.locale || 'it') : lingua) + ')';
 
-  /* IL CONTO DEL MOTORE NON E MAI PIU OTTIMISTA DELLA BARRA VERA. Il motore decide se una barra
-     ci sta prima di disegnarla; se la sua stima e sotto la misura reale, approva barre che poi
-     escono dal bordo — nel mockup di Nitish (28 set 2026) il bottone di destra sforava di 6px
-     con una stima che diceva "ci sta". Qui ogni gruppo di filtri e i bottoni di destra, misurati
-     in Chrome, devono stare dentro la stima. */
-  await okAsync('la stima della barra non e mai sotto la barra vera: gruppi di filtri e bottoni di destra', async () => {
-    const guasti = [];
-    let misure = 0;
-    for (const c of casi()) {
-      for (const lingua of ['propria', 'en-US']) {
-        const spec = clona(c.caso.spec);
-        if (lingua !== 'propria') spec.meta.locale = lingua;
-        const data = c.caso.build();
-        const tb = toolbarBudget(spec, data);
-        if (tb.axis !== 'top') continue;
-        await page.setContent(render(spec, data), { waitUntil: 'load' });
-        await page.waitForTimeout(100);
+      /* IL CONTO DEL MOTORE NON E MAI PIU OTTIMISTA DELLA BARRA VERA. Il motore decide se una
+         barra ci sta prima di disegnarla; se la sua stima e sotto la misura reale, approva barre
+         che poi escono dal bordo — nel mockup di Nitish (28 set 2026) il bottone di destra
+         sforava di 6px con una stima che diceva "ci sta". */
+      const tb = toolbarBudget(spec, data);
+      if (tb.axis === 'top') {
         const vero = await page.evaluate(() => {
-          const gruppi = [...document.querySelectorAll('.fgrp')].map(g => ({ id: (g.querySelector('[data-f]') || {}).getAttribute ? g.querySelector('[data-f]').getAttribute('data-f').split(':')[0] : null, w: g.getBoundingClientRect().width }));
+          const gruppi = [...document.querySelectorAll('.fgrp')].map(g => { const f = g.querySelector('[data-f]'); return { id: f ? f.getAttribute('data-f').split(':')[0] : null, w: g.getBoundingClientRect().width }; });
           const r = document.getElementById('btnReset'), h = document.getElementById('btnHow');
-          const dx = (r ? r.getBoundingClientRect().width : 0) + (h ? h.getBoundingClientRect().width : 0);
-          return { gruppi, dx };
+          return { gruppi, dx: (r ? r.getBoundingClientRect().width : 0) + (h ? h.getBoundingClientRect().width : 0) };
         });
-        const dove = c.id + ' (' + (lingua === 'propria' ? (spec.meta.locale || 'it') : lingua) + ')';
         vero.gruppi.forEach(g => {
           const it = tb.items.find(x => x.id === g.id);
           if (!it) return;
           misure++;
-          if (it.w + 2 < g.w) guasti.push(dove + ': filtro ' + g.id + ' stimato ' + Math.round(it.w) + 'px, vero ' + Math.round(g.w) + 'px');
+          if (it.w + 2 < g.w) guastiStima.push(dove0 + ': filtro ' + g.id + ' stimato ' + Math.round(it.w) + 'px, vero ' + Math.round(g.w) + 'px');
         });
         const dx = destraBarra(spec);
-        if (dx + 2 < vero.dx) guasti.push(dove + ': bottoni di destra stimati ' + dx + 'px, veri ' + Math.round(vero.dx) + 'px');
+        if (dx + 2 < vero.dx) guastiStima.push(dove0 + ': bottoni di destra stimati ' + dx + 'px, veri ' + Math.round(vero.dx) + 'px');
       }
+
+      /* CON TUTTI I FILTRI ATTIVI niente va a capo, i chip restano fermi, niente esce */
+      const prima = await page.evaluate(misura);
+      if (!prima) continue;
+      const nDim = await page.evaluate(tuttiIFiltri);
+      await layout();
+      const dopo = await page.evaluate(misura);
+      viste++;
+      const dove = c.id + ' (' + (lingua === 'propria' ? (spec.meta.locale || 'it') : lingua) + ', ' + nDim + ' filtri + trimestre)';
+      /* una pillola nuova deve essere alta come quelle che c'erano gia */
+      const pillola = (prima.controlli.find(k => /^ctxpill/.test(k.k)) || {}).h;
+      dopo.controlli.forEach(k => {
+        const era = prima.controlli.find(p => p.k === k.k);
+        if (era && era.h !== k.h) guastiCapo.push(dove + ': ' + k.chi + ' da ' + era.h + 'px a ' + k.h + 'px (va a capo)');
+        if (!era && pillola && /^ctxpill/.test(k.k) && k.h !== pillola) guastiCapo.push(dove + ': ' + k.chi + ' alta ' + k.h + 'px invece di ' + pillola + ' (va a capo)');
+        if (k.fuori) guastiCapo.push(dove + ': ' + k.chi + ' esce dalla barra');
+      });
+      if (JSON.stringify(prima.chip) !== JSON.stringify(dopo.chip)) guastiCapo.push(dove + ': i chip dei filtri si spostano (' + prima.chip + ' → ' + dopo.chip + ')');
+      if (dopo.trabocca) guastiCapo.push(dove + ': la barra trabocca');
     }
+  }
+
+  await okAsync('con tutti i filtri attivi nessun controllo va a capo, i chip restano fermi, niente esce dalla barra', async () => {
+    assert.ok(viste >= 20, 'solo ' + viste + ' barre misurate');
+    assert.deepStrictEqual([...new Set(guastiCapo)], [], [...new Set(guastiCapo)].join(String.fromCharCode(10) + '       '));
+  });
+  await okAsync('la stima della barra non e mai sotto la barra vera: gruppi di filtri e bottoni di destra', async () => {
     assert.ok(misure >= 10, 'solo ' + misure + ' gruppi misurati');
-    assert.deepStrictEqual(guasti, [], guasti.join(String.fromCharCode(10) + '       '));
+    assert.deepStrictEqual(guastiStima, [], guastiStima.join(String.fromCharCode(10) + '       '));
   });
 
   await browser.close();

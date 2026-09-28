@@ -22,23 +22,11 @@ const ok = (label, fn) => { fn(); n++; console.log('  ok  ' + label); };
 
 console.log('geometria del disegno (il gate nato dalla revisione)');
 
-/* Gli stessi mockup che finiscono in revisione. */
-function casi() {
-  const out = [];
-  const agg = (fonte, m) => Object.keys(m).filter(k => k[0] !== '_')
-    .forEach(k => out.push({ id: fonte + '/' + k, caso: m[k] }));
-  agg('archetipi', require('../engine/templates/index.js'));
-  agg('banco', require('../engine/specs/banco/index.js'));
-  agg('eval', require('../engine/specs/index.js'));
-  const dir = path.join(__dirname, '..', 'engine', 'specs', 'locale');
-  fs.readdirSync(dir).filter(f => f.endsWith('.js') && f !== 'index.js')
-    .forEach(f => out.push({ id: 'locale/' + f.replace(/\.js$/, ''), caso: require(path.join(dir, f)) }));
-  return out;
-}
+const { casi, renderCaso } = require('./corpus.js');
 
 const renderizzati = casi().map(c => {
   const data = c.caso.build();
-  const dom = new JSDOM(render(c.caso.spec, data), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
   /* i nomi dei membri servono a riconoscere un'etichetta troncata: e un prefisso di un nome vero */
   const nomi = [].concat(...Object.values(data.dims || {}).map(ms => ms.map(m => String(m.n))));
   return { id: c.id, doc: dom.window.document, nomi, chiudi: () => dom.window.close() };

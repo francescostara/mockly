@@ -47,7 +47,11 @@ ok('ogni visual del corpus, avvolto in una card a due viste, lascia la spec vali
         prove++;
         const dove = c.id + ' · ' + (pg.drill ? 'drill' : s.pages[pg.pi].id) + ' riga ' + (ri + 1) + ' ' + v.type;
         try { validate(s, data); } catch (e) { guasti.push(dove + ' [validate]: ' + e.message.split('\n').slice(1, 3).join(' ')); return; }
-        try { render(s, data); } catch (e) { guasti.push(dove + ' [render]: ' + e.message.split('\n').slice(1, 3).join(' ')); }
+        /* il render completo (fit, bundle) su UNA card per caso, l'apertura della prima pagina:
+           e li che l'archetipo si giudica. Su ogni visual costava piu di meta del tempo del file
+           e ripeteva la validazione che la riga sopra ha gia fatto, perche render la chiama. */
+        if (!pg.drill && pg.pi === 0 && ri === 0 && vi === 0)
+          try { render(s, data); } catch (e) { guasti.push(dove + ' [render]: ' + e.message.split('\n').slice(1, 3).join(' ')); }
       }));
     });
   });

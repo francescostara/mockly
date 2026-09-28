@@ -319,18 +319,24 @@ function runCase(id, fixture, evalCase) {
         [null, qv === null ? 7 : qv * 3 + 1].forEach(mv => {
           B.clk(mv === null ? '[data-m="all"]' : `[data-m="${mv}"]`);
           scan(`${pid}/${y}/q${qv}/m${mv}`);
-          dims.forEach(fd => data.dims[fd.id].forEach(mb => {
-            B.clk(`[data-f="${fd.id}:${mb.id}"]`);
-            scan(`${pid}/${y}/q${qv}/m${mv}/${fd.id}:${mb.id}`);
-            /* drill through from this very state, then come back */
-            const target = B.q('#page [data-drill]');
-            if (target) {
-              B.rmb(target);
-              scan(`${pid}/${y}/q${qv}/m${mv}/${fd.id}:${mb.id}/drill`);
-              B.clk('#btnBack');
-            }
-            B.clk(`[data-f="${fd.id}:${mb.id}"]`);   /* toggle off */
-          }));
+          /* Un membro dopo l'altro SENZA spegnere il filtro in mezzo: cliccare un altro membro lo
+             sostituisce gia (runtime), e il clic di spegnimento era un ridisegno in piu per ogni
+             stato — un terzo del tempo della suite. Gli stati visitati sono gli stessi. */
+          dims.forEach(fd => {
+            data.dims[fd.id].forEach(mb => {
+              B.clk(`[data-f="${fd.id}:${mb.id}"]`);
+              scan(`${pid}/${y}/q${qv}/m${mv}/${fd.id}:${mb.id}`);
+              /* drill through from this very state, then come back */
+              const target = B.q('#page [data-drill]');
+              if (target) {
+                B.rmb(target);
+                scan(`${pid}/${y}/q${qv}/m${mv}/${fd.id}:${mb.id}/drill`);
+                B.clk('#btnBack');
+              }
+            });
+            const ultimo = data.dims[fd.id][data.dims[fd.id].length - 1];
+            if (ultimo) B.clk(`[data-f="${fd.id}:${ultimo.id}"]`);   /* toggle off, una volta */
+          });
         });
       });
     });

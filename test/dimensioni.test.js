@@ -18,7 +18,7 @@ const assert = require('assert');
 const { JSDOM } = require('jsdom');
 const builder = require('../engine/data-builder.js');
 const { render, validate } = require('../engine/render.js');
-const { casi } = require('./corpus.js');
+const { casi, renderCaso } = require('./corpus.js');
 
 let n = 0;
 const ok = (label, fn) => { fn(); n++; console.log('  ok  ' + label); };
@@ -119,7 +119,7 @@ ok('hbar con order:"asc" mostra per primo il membro piu debole', () => {
   let pi = 0, v;
   s.pages.forEach((p, i) => p.rows.forEach(r => r.visuals.forEach(x => { if (!v && x.type === 'hbar' && !x.bind.detail) { v = x; pi = i; } })));
   const etichette = spec => {
-    const dom = new JSDOM(render(spec, c.caso.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
+    const dom = new JSDOM(renderCaso(c, spec), { runScripts: 'dangerously', pretendToBeVisual: true });
     const doc = dom.window.document;
     if (pi) doc.querySelector('.navbtn[data-page="' + spec.pages[pi].id + '"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
     const card = [...doc.querySelectorAll('#page .card')].find(k => ((k.querySelector('.ch h3') || {}).textContent || '').indexOf(v.title.replace(/\{.*$/, '').trim()) === 0);
@@ -167,7 +167,7 @@ ok('l\'errore della barra dice di quanto sfora e quanto libera ogni via d\'uscit
 
 ok('la misura secondaria di un hbar si legge accanto al valore, e resta dentro la card', () => {
   const c = casi().find(x => x.id === 'locale/retail-parsa');
-  const dom = new JSDOM(render(c.caso.spec, c.caso.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
   const doc = dom.window.document;
   doc.querySelector('.navbtn[data-page="regions"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   const card = [...doc.querySelectorAll('#page .card')].find(k => /products/i.test((k.querySelector('.ch h3') || {}).textContent || ''));

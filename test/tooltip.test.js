@@ -9,7 +9,7 @@
 'use strict';
 const assert = require('assert');
 const { JSDOM } = require('jsdom');
-const { casi } = require('./corpus.js');
+const { casi, renderCaso } = require('./corpus.js');
 const { render } = require('../engine/render.js');
 
 let n = 0;
@@ -20,7 +20,7 @@ console.log('tooltip (compare accanto al cursore gia al primo evento)');
 ok('su ogni mockup un solo mouseover mette il tooltip accanto al cursore', () => {
   const guasti = [];
   casi().forEach(c => {
-    const dom = new JSDOM(render(c.caso.spec, c.caso.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
+    const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
     const doc = dom.window.document;
     const el = doc.querySelector('#page [data-tip]');
     if (!el) { dom.window.close(); return; }
