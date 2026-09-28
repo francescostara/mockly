@@ -461,6 +461,38 @@ const INTERVENTI = [
     fatto: "subMeasure si scrive accanto al valore di ogni barra, e lo spazio a destra si allarga di quanto serve; la grammatica lo dice. Gate: test/dimensioni.test.js (la scritta c'e e resta dentro la card).",
     stato: "fatto"
   }
+  ,{
+    id: "locale/vendite-nitish",
+    versione: 1,
+    commento: "(controllo della v1) La barra dei filtri usciva dal bordo destro di 6px e \"Compare YoY\" spariva, mentre il motore diceva che la barra ci stava.",
+    dove: "barra dei filtri · conto dello spazio",
+    fatto: "Il conto usava 92px per ogni chip e 96px per tutto cio che sta a destra, dove oltre ad \"Azzera filtri\" e arrivato \"Come si usa questo mockup\" (circa 200px in tutto). Ora ogni chip vale il suo nome e i bottoni di destra il loro testo, con la stessa misura del runtime e i numeri del CSS. Gate in Chrome (test/barra.test.js): la stima di ogni gruppo di filtri e dei bottoni di destra non e mai sotto la misura vera, su ogni mockup in due lingue.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/vendite-nitish",
+    versione: 1,
+    commento: "(controllo della v1) Nel ribbon \"Water Sports\" era rosso pieno, mentre la categoria in calo, Fitness, era blu.",
+    dove: "palette · scala categoriale",
+    fatto: "Due famiglie (warm-taupe, terroso) mettevano un rosso vero nella scala: il vermiglione della base scurito per il contrasto. La scala categoriale ora esclude la famiglia del rosso, riservato al problema. Gate: test/colori-categorie.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/vendite-nitish",
+    versione: 1,
+    commento: "(controllo della v1) Sei categorie e cinque colori distinti: la sesta riprendeva il colore della prima.",
+    dove: "colori dei membri · grammatica · skill",
+    fatto: "Dove il colore identifica il membro (ribbon, stack100, donut, hbar per membro) i membri a schermo non possono superare i colori distinti: il motore rifiuta e dice quali famiglie ne hanno sei. La grammatica e layout-archetypes.md elencano le famiglie da sei e da cinque, e un test le tiene allineate alla realta. Il controllo ha trovato lo stesso difetto in due casi gia nel corpus (un donut a sei fette con cinque colori, un hbar a otto barre con sei), corretti; e nel compositore a menu, che ora rispetta la regola da se (barre e ciambelle mostrano tanti membri quanti i colori, un ribbon prende una famiglia che ne ha abbastanza). Gate: test/colori-categorie.test.js, test/intervista.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/vendite-nitish",
+    versione: 1,
+    commento: "(controllo della v1) Nel drill un tooltip restava nell'angolo in alto a sinistra, sopra il marchio (visto anche nel drill di Parsa).",
+    dove: "tooltip",
+    fatto: "Il tooltip prendeva il contenuto al mouseover e la posizione solo al mousemove: quando il grafico si ridisegna sotto un cursore fermo, restava nell'angolo. Ora si posiziona nello stesso istante in cui compare. Gate: test/tooltip.test.js, su ogni mockup — fallisce su tutti col codice di prima.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
