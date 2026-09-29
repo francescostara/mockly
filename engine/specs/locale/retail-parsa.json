@@ -213,42 +213,44 @@
           {
             "visuals": [
               {
-                "type": "colline",
-                "span": 3,
-                "h": 196,
-                "title": "Monthly revenue vs {py}, with gross margin",
-                "bind": {
-                  "measure": "rev",
-                  "line": "gm"
-                }
-              },
-              {
-                "id": "target-profit",
-                "span": 2,
+                "id": "trends",
+                "span": 4,
                 "h": 196,
                 "motivo": "pagina-sprecata",
                 "viste": [
                   {
-                    "type": "gauge",
-                    "etichetta": "vs target",
-                    "span": 2,
-                    "title": "Sales vs target — {period}",
+                    "type": "colline",
+                    "span": 4,
+                    "h": 196,
+                    "title": "Monthly revenue vs {py}, with gross margin",
                     "bind": {
-                      "measure": "att",
-                      "target": 1,
-                      "targetLabel": "Target"
-                    }
+                      "measure": "rev",
+                      "line": "gm"
+                    },
+                    "etichetta": "Revenue"
                   },
                   {
                     "type": "trend",
-                    "etichetta": "Profit",
-                    "span": 2,
+                    "span": 4,
                     "title": "Monthly gross profit, {y} vs {py}",
                     "bind": {
                       "measure": "profit"
-                    }
+                    },
+                    "h": 196,
+                    "etichetta": "Profit"
                   }
                 ]
+              },
+              {
+                "type": "gauge",
+                "span": 1,
+                "title": "Sales vs target — {period}",
+                "bind": {
+                  "measure": "att",
+                  "target": 1,
+                  "targetLabel": "Target"
+                },
+                "h": 196
               }
             ]
           },

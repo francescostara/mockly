@@ -145,9 +145,14 @@ const spec = {
         { type: 'hbar', span: 2, h: 168, title: 'MRR per piano — {period}',
           subtitle: 'Starter perde piu di quanto aggiunga',
           bind: { dim: 'piano', measure: 'mrrFine' } },
-        { type: 'gauge', span: 1, h: 168, title: 'NRR contro il 100%',
-          subtitle: 'sotto il 100% il fatturato si erode da solo',
-          bind: { measure: 'nrr', target: 1.0, targetLabel: 'pareggio', max: 1.3 } }
+        /* due gauge nella stessa card: uno da solo in 408px occupava lo spazio di un grafico per
+           dare un numero solo (la regola del gauge, 29 set 2026) */
+        { type: 'gauge', span: 1, h: 168, title: 'Ritenzione contro i suoi metri',
+          subtitle: 'NRR sotto il 100% e il fatturato che si erode da solo',
+          bind: { misure: [
+            { measure: 'nrr', target: 1.0, targetLabel: 'pareggio', max: 1.3 },
+            { measure: 'churnPc', target: 0.015, targetLabel: 'tetto', max: 0.05 }
+          ] } }
       ] }
     ]
   }, {
