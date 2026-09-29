@@ -747,6 +747,19 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       /* page nav */
       A.doc.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('on', b.getAttribute('data-page') === S.page));
       $('#page').innerHTML = A.buildPage(pg);
+      A.stringiTabelle();
+    };
+    /* UNA TABELLA NON SI TAGLIA. Il conto dello spazio si fa prima del disegno, con altezze
+       stimate: giuste per le righe, sbagliate di qualche pixel su intestazioni e titoli che
+       cambiano col carattere — e l'ultima riga, il totale, usciva mozzata di 2-17px (cinque pagine
+       del corpus e il mockup di Muttahar, 29 set 2026). Dopo il disegno si misura: una tabella che
+       non entra nel suo riquadro stringe le righe, in due gradini, finche entra. Dove non c'e
+       layout (i test in jsdom) le misure sono zero e non cambia niente. */
+    A.stringiTabelle = function () {
+      [].forEach.call(A.doc.querySelectorAll('#page .mx'), function (c) {
+        if (!c.querySelector('table')) return;
+        ['mxs', 'mxss'].forEach(function (cls) { if (c.scrollHeight > c.clientHeight + 1) c.classList.add(cls); });
+      });
     };
 
     /* ---------- interactions ---------- */
@@ -1494,9 +1507,25 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
    non negli effetti. Il colore segue la regola di casa — rosso solo quando c'e un problema,
    cioe solo quando si sta sotto il bersaglio. */
 (function (M) {
+  /* PIU GAUGE IN UNA CARD. Un gauge dice un numero contro un bersaglio: da solo in una card larga
+     meta pagina occupa lo spazio di un grafico per dare l'informazione di una KPI (Fra, 29 set
+     2026, su due mockup di fila). Con `misure` la card affianca due o tre gauge — OTIF, puntualita,
+     fill rate, ognuno col suo bersaglio — e lo spazio torna a valere quello che mostra. */
   M.V.gauge = function (A, v, w, h) {
-    var b = v.bind || {}, ms = b.measure, tg = b.target;
+    var b = v.bind || {};
     h = v.h || h || 180;
+    if (!b.misure || !b.misure.length) return A.card(v, disegna(A, v, b, w, h));
+    var n = b.misure.length, gap = 10, wi = Math.floor((w - gap * (n - 1)) / n);
+    /* i pannelli si centrano nell'altezza della card: l'arco di un pannello stretto e piccolo, e
+       ancorato al fondo lasciava un vuoto grande quanto la card sopra di se */
+    return A.card(v, '<div style="display:flex;gap:' + gap + 'px;align-items:center;flex:1">' + b.misure.map(function (g) {
+      return '<div style="flex:1 1 0;min-width:0">' + disegna(A, v, g, wi, h - 22, true) + '</div>';
+    }).join('') + '</div>');
+  };
+  function disegna(A, v, b, w, h, piccolo) {
+    var ms = b.measure, tg = b.target;
+    /* un pannello stretto prende solo l'altezza che il suo arco usa (raggio dalla larghezza) */
+    if (piccolo) h = Math.min(h, Math.round((w / 2 - 6) + 15 + 34 + 6));
     var a = A.agg(A.slice({}));
     var val = A.mv(ms, a);
     /* il bersaglio puo essere un'altra misura (budget, quota) o un numero fisso nella spec */
@@ -1576,7 +1605,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       /* Il velo qui e del colore della SUPERFICIE, non dell'inchiostro: l'etichetta cade
          sull'arco colorato o sul fondo a seconda di dov'e il bersaglio, e un velo chiaro con
          inchiostro scuro sopra e leggibile in tutti e due i casi. */
-      s += M.testoVelato(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target),
+      /* nel pannello stretto la scritta del bersaglio copriva il valore: resta la tacca, e il
+         bersaglio va nella nota sotto l'arco */
+      if (!piccolo) s += M.testoVelato(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target),
         lblX, Math.max(10, lblY), { px: 8.5, anc: anc, velo: 'var(--card)', opacita: 0.88,
           ink: 'var(--ink)', padX: 4, padY: 2 });
     }
@@ -1595,12 +1626,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          sbagliato, e l'articolo giusto dipende da un'etichetta che sceglie la spec. */
       var scarto = val - target, ass = Math.abs(scarto);
       var testo = pct ? A.f.pp(ass).replace(/^[+−-]\s*/, '') : A.mfmt(ms, ass);
-      nota = '<div class="gnote">' + M.esc(A.meas(ms).label || ms) + ' ' + A.mfmt(ms, val) + ', ' +
+      nota = '<div class="gnote">' + (piccolo ? '' : M.esc(A.meas(ms).label || ms) + ' ' + A.mfmt(ms, val) + ', ') +
         (inLinea ? (A.T.inLinea || 'in linea con') : testo + ' ' + (scarto >= 0 ? (A.T.sopra || 'sopra') : (A.T.sotto || 'sotto'))) + ' ' +
-        M.esc(A.tpl(b.targetLabel || 'target')) + '</div>';
+        M.esc(A.tpl(b.targetLabel || 'target')) + (piccolo ? ' ' + A.mfmt(ms, target) : '') + '</div>';
     }
-    return A.card(v, s + nota);
-  };
+    /* nel gauge multiplo ogni pannello porta il nome della sua misura sopra l'arco */
+    var nome = piccolo ? '<div class="gnote" style="font-weight:600;color:var(--ink2)">' + M.esc(b.label || A.meas(ms).label || ms) + '</div>' : '';
+    return nome + s + nota;
+  }
 })(MK);
 /*#endregion*/
 

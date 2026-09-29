@@ -264,7 +264,7 @@ function misure(spec, dp) {
       if (c.kind === 'var') aggiungi(c.measure);
       if (c.kind === 'share' && quote.every(x => x.id !== c.measure || x.dim !== b.dim)) quote.push({ id: c.measure, dim: b.dim });
     });
-    if (v.type === 'gauge' && b.target !== undefined) bersagli.push({ id: b.measure, target: b.target });
+    if (v.type === 'gauge') (b.misure || [b]).forEach(g => { if (g.target !== undefined) bersagli.push({ id: g.measure, target: g.target }); });
   });
   const tempo = [];
   conConfronto.forEach(id => {
@@ -331,7 +331,13 @@ function descriviVisual(spec, v, L, N) {
     case 'funnel': campi.push('Category: Stages[Stage]', 'Values: [Stage value]'); righe.push(L.stadi); break;
     case 'waterfall': campi.push('Category: ' + dim(b.dim), 'Y: ' + m(b.measure)); break;
     case 'scatter': campi.push('Values: ' + dim(b.dim), 'X: ' + m(b.x), 'Y: ' + m(b.y)); if (b.size) campi.push('Size: ' + m(b.size)); righe.push(L.mediane); break;
-    case 'gauge': campi.push('Value: ' + m(b.measure)); if (b.target !== undefined) { campi.push('Target: [Target ' + (N[b.measure] || b.measure) + ']'); righe.push(L.target(b.target)); } if (b.max) campi.push('Max: ' + b.max); break;
+    /* il gauge multiplo in Power BI sono due o tre visual Gauge affiancati, uno per misura */
+    case 'gauge': (b.misure || [b]).forEach((g, i, tutti) => {
+      const pre = tutti.length > 1 ? '(' + (i + 1) + ') ' : '';
+      campi.push(pre + 'Value: ' + m(g.measure));
+      if (g.target !== undefined) { campi.push(pre + 'Target: [Target ' + (N[g.measure] || g.measure) + ']'); righe.push(L.target(g.target)); }
+      if (g.max) campi.push(pre + 'Max: ' + g.max);
+    }); break;
     case 'heatmap': campi.push('Rows: ' + dim(b.dim), 'Columns: ' + dim(b.by), 'Values: ' + m(b.measure));
       righe.push(L.heatCF(m(b.measure), b.scale && b.scale[0], b.scale && b.scale[1])); break;
     case 'delta-card': {

@@ -686,21 +686,45 @@ function validate(specIn, data) {
             `la disegna il motore dalle serie che traccia davvero (anno corrente, anno prima, e con che ` +
             `segno); una scritta a mano deve indovinare lo stile e sbaglia. Togli il campo.`);
         }
-        if (v.type === 'gauge') {
-          const mis = (spec.model.measures || []).find(m => m.id === b.measure);
+        /* anche le viste nascoste di una card: un gauge finisce a schermo al primo clic */
+        (v.viste && v.viste.length ? v.viste : [v]).filter(vv => vv.type === 'gauge').forEach(vv => {
+          const b = vv.bind || {};
+          /* UN GAUGE NON RIEMPIE UNA CARD GRANDE DA SOLO. Dice un numero contro un bersaglio: in una
+             card larga meta pagina occupa lo spazio di un grafico per l'informazione di una KPI
+             (Fra, 29 set 2026, due mockup di fila). Un gauge singolo sta in una card stretta; per
+             una card larga ne servono due o tre (bind.misure), ognuno col suo bersaglio. */
+          const colW = (spec.grid.contentWidth - spec.grid.gutter * (NC - 1)) / NC;
+          const cardW = colW * v.span + spec.grid.gutter * (v.span - 1);
+          const quanti = Array.isArray(b.misure) ? b.misure.length : 1;
+          const maxSpan = Math.max(1, Math.floor((300 + spec.grid.gutter) / (colW + spec.grid.gutter)));
+          if (Array.isArray(b.misure) && (quanti < 2 || quanti > 3))
+            e.push(`page "${pg.id}" gauge: "misure" ne affianca due o tre (qui ${quanti}). Uno solo si scrive con "measure".`);
+          /* una colonna sola e sempre una card stretta, anche dove la colonna supera di poco i 300px */
+          if (!Array.isArray(b.misure) && v.span > 1 && cardW > 300)
+            e.push(`page "${pg.id}" gauge: un gauge da solo in una card di ${Math.round(cardW)}px occupa lo spazio di un grafico per dare un numero solo. ` +
+              `Tre vie: affiancane due o tre nella stessa card con "misure": [{ "measure": …, "target": …, "targetLabel": … }, …] (ognuno un tasso col suo bersaglio); ` +
+              `oppure dagli una colonna sola (span ${maxSpan}) e usa lo spazio liberato per un altro visual; ` +
+              `oppure metti la sua misura come KPI card, dove un numero contro il target sta meglio.`);
+          if (Array.isArray(b.misure) && (cardW / quanti > 300 || cardW / quanti < 130))
+            e.push(`page "${pg.id}" gauge: ${quanti} gauge in ${Math.round(cardW)}px fanno ${Math.round(cardW / quanti)}px ciascuno — servono fra 130 e 300px per gauge: cambia lo span o il numero di misure.`);
+          const daControllare = Array.isArray(b.misure) ? b.misure : [b];
+          daControllare.forEach(g => {
+          if (Array.isArray(b.misure) && !known.has(g.measure)) e.push(`page "${pg.id}" gauge: unknown measure "${g.measure}"`);
+          const mis = (spec.model.measures || []).find(m => m.id === g.measure);
           const u = mis && mis.unit;
           if (mis && u !== 'pct' && u !== 'x') {
-            e.push(`page "${pg.id}" gauge: la misura "${b.measure}" ha unit "${u}", ma il gauge ` +
+            e.push(`page "${pg.id}" gauge: la misura "${g.measure}" ha unit "${u}", ma il gauge ` +
               `accetta solo tassi (pct o x). Con una misura assoluta il valore si affetta coi ` +
               `filtri e il bersaglio no, quindi filtrando su un membro il gauge mostra la sua ` +
               `quota contro il target di tutti. Usa il rapporto: non "fatturato contro target" ` +
               `ma "quota raggiunta", cioe fatturato / target.`);
           }
+          });
           if (b.targets) {
             e.push(`page "${pg.id}" gauge: "targets" (bersagli per membro) e dichiarato nella ` +
               `grammatica ma il motore non lo legge ancora. Toglilo, o usa un target unico.`);
           }
-        }
+        });
 
         if (b.by && b.dim && b.by === b.dim) {
           e.push(`page "${pg.id}" ${v.type}: bind.by e bind.dim sono la stessa dimensione ` +
@@ -1091,6 +1115,7 @@ ${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri sparis
    Lo spazio che avanza lo prendono i GRAFICI (vedi planFit), che con altezza in piu mostrano
    davvero di piu. */
 .mx>table td,.mx>table th{vertical-align:middle}
+.mx.mxs td,.mx.mxs th{padding-top:3px;padding-bottom:3px}.mx.mxss td,.mx.mxss th{padding-top:1px;padding-bottom:1px;font-size:10px}
 ${compact ? String.raw`th,td{padding:2px 6px}.card>.ch{padding:7px 13px 3px}#page{padding:10px 16px;gap:8px}.row{gap:8px}.kpi{padding:8px 14px 7px}` : ``}
 table{width:100%;border-collapse:collapse;font-size:10.5px}
 th{text-align:right;font-weight:600;color:var(--muted);font-size:8.5px;letter-spacing:.4px;text-transform:uppercase;padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
