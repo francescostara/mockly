@@ -101,6 +101,13 @@ falso che sembra un disastro. Un tasso non ha il problema: il bersaglio di un wi
 stesso per ogni segmento. Se serve un valore assoluto, la misura giusta e il rapporto: non
 "fatturato contro target" ma "quota raggiunta", cioe fatturato / target.
 
+**Lo spazio segue l'informazione.** Un gauge dice UN numero contro UN bersaglio: da solo in una card
+larga meta pagina occupa lo spazio di un grafico per l'informazione di una KPI (lo ha segnalato
+l'autore su due mockup di fila). Un gauge singolo sta in una card stretta (una colonna, al massimo
+300px); quando i bersagli sono piu d'uno — OTIF, puntualita, fill rate; NRR e churn — si affiancano
+nella stessa card con `misure`, due o tre. Se il bersaglio e uno solo e la card e larga, lo spazio
+va a un altro visual, o il numero va nella banda KPI.
+
 Tre parti obbligatorie: l'arco, il **marcatore del bersaglio** (senza, il numero non ha metro) e
 l'**annotazione** costruita dalle misure — "Win rate 20,6%, 0,4 pp sotto benchmark", mai un
 testo fisso.
