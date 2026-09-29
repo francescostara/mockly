@@ -76,7 +76,7 @@ function tuttiIFiltri() {
      con la stima del motore, si accendono tutti i filtri e si rimisura. L'attesa e quella vera:
      due fotogrammi, cioe il layout fatto — non un numero di millisecondi scelto a occhio. */
   const layout = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  const guastiCapo = [], guastiStima = [];
+  const guastiCapo = [], guastiStima = [], guastiTabelle = [];
   let viste = 0, misure = 0;
   for (const c of casi()) {
     const data = c.caso.build();
@@ -133,12 +133,27 @@ function tuttiIFiltri() {
       });
       if (JSON.stringify(prima.chip) !== JSON.stringify(dopo.chip)) guastiCapo.push(dove + ': i chip dei filtri si spostano (' + prima.chip + ' → ' + dopo.chip + ')');
       if (dopo.trabocca) guastiCapo.push(dove + ': la barra trabocca');
+
+      /* NESSUNA TABELLA TAGLIATA, su ogni pagina: il totale della matrice usciva mozzato di 2-17px
+         quando le altezze stimate sbagliavano di qualche pixel (Muttahar e cinque pagine del corpus,
+         29 set 2026). Il runtime ora stringe le righe dopo il disegno; qui si misura che basti. */
+      await page.evaluate(() => { const r = document.getElementById('btnReset'); if (r) r.click(); });
+      for (const pg of spec.pages) {
+        await page.evaluate(id => { const n = document.querySelector('.navbtn[data-page="' + id + '"]'); if (n) n.click(); }, pg.id);
+        await layout();
+        const tagli = await page.evaluate(() => [...document.querySelectorAll('#page .mx')].filter(c => c.querySelector('table'))
+          .map(c => c.scrollHeight - c.clientHeight).filter(x => x > 1));
+        tagli.forEach(x => guastiTabelle.push(dove0 + ' · pagina ' + pg.id + ': una tabella e tagliata di ' + x + 'px'));
+      }
     }
   }
 
   await okAsync('con tutti i filtri attivi nessun controllo va a capo, i chip restano fermi, niente esce dalla barra', async () => {
     assert.ok(viste >= 20, 'solo ' + viste + ' barre misurate');
     assert.deepStrictEqual([...new Set(guastiCapo)], [], [...new Set(guastiCapo)].join(String.fromCharCode(10) + '       '));
+  });
+  await okAsync('nessuna tabella e tagliata dal suo riquadro, su ogni pagina di ogni mockup', async () => {
+    assert.deepStrictEqual([...new Set(guastiTabelle)], [], [...new Set(guastiTabelle)].join(String.fromCharCode(10) + '       '));
   });
   await okAsync('la stima della barra non e mai sotto la barra vera: gruppi di filtri e bottoni di destra', async () => {
     assert.ok(misure >= 10, 'solo ' + misure + ' gruppi misurati');

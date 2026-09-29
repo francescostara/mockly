@@ -129,4 +129,38 @@ ok('su una misura dove meno e meglio (inv), stare sotto il bersaglio e verde', (
   assert.ok(g.colori.indexOf('var(--good)') >= 0 && g.colori.indexOf('var(--bad)') < 0, 'sotto il bersaglio con inv deve essere verde: ' + g.colori.join(','));
 });
 
+/* LO SPAZIO SEGUE L'INFORMAZIONE (Fra, 29 set 2026, su due mockup di fila): un gauge da solo in una
+   card larga occupa lo spazio di un grafico per un numero solo. Rifiutato — anche dentro una vista
+   nascosta — e il gauge multiplo mette due o tre pannelli nella stessa card, ognuno col suo bersaglio. */
+ok('un gauge singolo in una card larga e rifiutato, anche come vista nascosta di una card', () => {
+  const s = clona(caso.spec);
+  const riga = s.pages[0].rows.find(r => r.visuals.some(x => x.type === 'gauge'));
+  const g = riga.visuals.find(x => x.type === 'gauge');
+  const colW = (s.grid.contentWidth - s.grid.gutter * (s.grid.columns - 1)) / s.grid.columns;
+  const largo = Math.ceil((301 + s.grid.gutter) / (colW + s.grid.gutter));
+  /* il gauge si allarga rubando colonne agli altri visual della riga */
+  const altri = riga.visuals.filter(x => x.type !== 'gauge').sort((a, b) => b.span - a.span);
+  if (largo > g.span && altri.length && altri[0].span > largo - g.span) { altri[0].span -= (largo - g.span); g.span = largo; }
+  assert.ok(colW * g.span + s.grid.gutter * (g.span - 1) > 300, 'il caso di prova deve avere un gauge largo');
+  assert.throws(() => validate(s, data), /gauge da solo in una card di \d+px/);
+  const s2 = clona(s);
+  const r2 = s2.pages[0].rows.find(r => r.visuals.some(x => x.type === 'gauge'));
+  const i = r2.visuals.findIndex(x => x.type === 'gauge'), gg = r2.visuals[i];
+  const altro = r2.visuals.find(x => x.type !== 'gauge');
+  r2.visuals[i] = { id: 'vv', span: gg.span, h: gg.h, motivo: 'pagina-sprecata', viste: [Object.assign(clona(altro), { etichetta: 'A', span: gg.span }), Object.assign(clona(gg), { etichetta: 'B' })] };
+  assert.throws(() => validate(s2, data), /gauge da solo in una card di \d+px/, 'la vista nascosta deve essere controllata come la prima');
+});
+
+ok('il gauge multiplo disegna un pannello per misura, ognuno col suo bersaglio', () => {
+  const c = require('../engine/templates/executive-summary.js');
+  const v = c.spec.pages[0].rows.flatMap(r => r.visuals).find(x => x.type === 'gauge');
+  assert.ok(v && v.bind.misure && v.bind.misure.length === 2, 'l esempio canonico usa il gauge multiplo');
+  const dom = new JSDOM(render(c.spec, c.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const card = [...dom.window.document.querySelectorAll('#page .card')].find(k => ((k.querySelector('.ch h3') || {}).textContent || '').indexOf(v.title) === 0);
+  const archi = card.querySelectorAll('svg');
+  assert.strictEqual(archi.length, 2, 'due gauge, due svg');
+  assert.strictEqual(card.querySelectorAll('line[stroke="var(--ink)"]').length, 2, 'ogni gauge ha la sua tacca del bersaglio');
+  dom.window.close();
+});
+
 console.log('  ' + n + ' checks');

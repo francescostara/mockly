@@ -533,6 +533,22 @@ const INTERVENTI = [
     fatto: "Il blocco del titolo si stringeva di mezzo pixel quando le pillole del contesto crescevano: ora ha larghezza propria con un tetto fisso. Il gate in Chrome (test/barra.test.js) misura anche titolo e sottotitolo con tutti i filtri attivi, e sul codice di prima ha trovato lo stesso difetto nel mockup di Parsa in inglese.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 1,
+    commento: "un gauge non puo occupare tutto questo spazio. O ne metti piu di uno o inserisci un altro grafico sopra o sotto: occupa troppo spazio per l'informazione che da realmente (visto anche nel mockup precedente).",
+    dove: "gauge · grammatica · skill · kit Power BI",
+    fatto: "Gauge multiplo: bind.misure affianca due o tre gauge nella stessa card, ognuno col suo bersaglio; nei pannelli stretti l'arco si centra e il bersaglio va nella nota sotto (la scritta sull'arco copriva il valore). Un gauge singolo in una card oltre 300px e rifiutato, anche come vista nascosta, con le tre vie d'uscita nel messaggio. Corretti l'esempio canonico executive-summary (il modello lo copia) e il mockup di Parsa, che avevano lo stesso difetto. Regola in chart-selection.md. Gate: test/gauge.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 1,
+    commento: "(visto rifacendo il mockup) La riga del totale della tabella dei magazzini era tagliata di 17px.",
+    dove: "matrice · runtime",
+    fatto: "Le altezze si stimano prima del disegno e sbagliano di qualche pixel su titoli e intestazioni: dopo il disegno il runtime misura e stringe le righe di una tabella che non entra nel suo riquadro. Il gate in Chrome (test/barra.test.js) controlla ogni pagina di ogni mockup in due lingue; prima della correzione ha trovato cinque pagine tagliate nel corpus, fra cui Parsa e l'app di lingue.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
