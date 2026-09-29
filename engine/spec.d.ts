@@ -236,7 +236,8 @@ export type Bind =
   /** gauge MULTIPLO — due o tre gauge affiancati nella stessa card, ognuno un tasso col suo
    *  bersaglio (OTIF, puntualita, fill rate). Un gauge SINGOLO sta solo in una card stretta
    *  (<= 300px): da solo in una card larga occupa lo spazio di un grafico per un numero solo, e il
-   *  motore lo rifiuta. Ogni pannello: 130–300px. */
+   *  motore lo rifiuta. Ogni pannello: 130–300px. Mai su una misura che ha gia una card nella
+   *  banda KPI: ripeterebbe lo stesso numero, e il motore lo rifiuta. */
   | { misure: Array<{ measure: string; target?: string | number; targetLabel?: string; max?: number; label?: string }> } // gauge
   | { dim: string; label?: string; sort?: string; drill?: boolean; totals?: boolean; totalsLabel?: string; columns: MatrixColumn[] } // matrix
   | { template: string; dim?: string; primary?: string };                     // narrative

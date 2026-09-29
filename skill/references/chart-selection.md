@@ -101,6 +101,13 @@ falso che sembra un disastro. Un tasso non ha il problema: il bersaglio di un wi
 stesso per ogni segmento. Se serve un valore assoluto, la misura giusta e il rapporto: non
 "fatturato contro target" ma "quota raggiunta", cioe fatturato / target.
 
+**Nessun doppione della banda KPI.** Se la misura ha gia la sua card in alto, un gauge accanto
+ripete lo stesso numero (lo ha detto l'autore: "se un gauge mostra gia qualcosa che c'e nelle card
+KPI, non metterlo"). Il bersaglio si scrive nell'etichetta della card ("OTIF (target 92%)") e lo
+spazio va a cio che la card non puo dire: DOVE si perde (funnel dei passaggi: ordini -> puntuali ->
+puntuali e completi), CHI e sotto il bersaglio (hbar per entita, `order:"asc"`), QUANDO (trend).
+Il gauge resta per un tasso che NON e in banda. Il motore rifiuta il doppione.
+
 **Lo spazio segue l'informazione.** Un gauge dice UN numero contro UN bersaglio: da solo in una card
 larga meta pagina occupa lo spazio di un grafico per l'informazione di una KPI (lo ha segnalato
 l'autore su due mockup di fila). Un gauge singolo sta in una card stretta (una colonna, al massimo
