@@ -179,4 +179,31 @@ ok('la misura secondaria di un hbar si legge accanto al valore, e resta dentro l
   dom.window.close();
 });
 
+ok('nel funnel la percentuale di passaggio sta fuori dalla barra, su ogni funnel del corpus', () => {
+  const { largh } = require('../engine/runtime.js');
+  let visti = 0;
+  casi().forEach(c => {
+    const pagine = c.caso.spec.pages.filter(p => p.rows.some(r => r.visuals.some(v => (v.viste || [v]).some(x => x.type === 'funnel'))));
+    if (!pagine.length) return;
+    const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
+    const doc = dom.window.document;
+    pagine.forEach(p => {
+      const nav = doc.querySelector('.navbtn[data-page="' + p.id + '"]');
+      if (nav) nav.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      const titoli = p.rows.flatMap(r => r.visuals.flatMap(v => v.viste || [v])).filter(x => x.type === 'funnel').map(x => String(x.title || '').replace(/\{.*$/, '').trim());
+      [...doc.querySelectorAll('#page .card')].filter(k => titoli.some(t => t && ((k.querySelector('.ch h3') || {}).textContent || '').indexOf(t) === 0))
+        .map(k => k.querySelector('svg')).filter(Boolean).forEach(svg => {
+        const barre = [...svg.querySelectorAll('rect')].map(r => +r.getAttribute('x') + +r.getAttribute('width'));
+        [...svg.querySelectorAll('text')].filter(t => /^\d+%$/.test(t.textContent.trim())).forEach(t => {
+          visti++;
+          const inizio = +t.getAttribute('x') - largh(t.textContent, 8.5);
+          assert.ok(barre.every(fine => fine <= inizio + 1), c.id + ': la percentuale ' + t.textContent + ' cade sopra una barra');
+        });
+      });
+    });
+    dom.window.close();
+  });
+  assert.ok(visti >= 2, 'nessun funnel misurato');
+});
+
 console.log('  ' + n + ' checks');

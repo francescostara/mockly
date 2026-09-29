@@ -152,15 +152,33 @@ ok('un gauge singolo in una card larga e rifiutato, anche come vista nascosta di
 });
 
 ok('il gauge multiplo disegna un pannello per misura, ognuno col suo bersaglio', () => {
-  const c = require('../engine/templates/executive-summary.js');
-  const v = c.spec.pages[0].rows.flatMap(r => r.visuals).find(x => x.type === 'gauge');
-  assert.ok(v && v.bind.misure && v.bind.misure.length === 2, 'l esempio canonico usa il gauge multiplo');
+  /* i due gauge del banco (attainment e win rate, nessuno dei due in banda) in una card sola */
+  const sp = clona(caso.spec);
+  const riga = sp.pages[0].rows.find(r => r.visuals.filter(x => x.type === 'gauge').length === 2);
+  const gg = riga.visuals.filter(x => x.type === 'gauge');
+  const v = { type: 'gauge', span: gg[0].span + gg[1].span, h: gg[0].h, title: 'Bersagli', bind: { misure: gg.map(x => x.bind) } };
+  riga.visuals = [v].concat(riga.visuals.filter(x => x.type !== 'gauge'));
+  const c = { spec: sp, build: () => data };
   const dom = new JSDOM(render(c.spec, c.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
   const card = [...dom.window.document.querySelectorAll('#page .card')].find(k => ((k.querySelector('.ch h3') || {}).textContent || '').indexOf(v.title) === 0);
   const archi = card.querySelectorAll('svg');
   assert.strictEqual(archi.length, 2, 'due gauge, due svg');
   assert.strictEqual(card.querySelectorAll('line[stroke="var(--ink)"]').length, 2, 'ogni gauge ha la sua tacca del bersaglio');
   dom.window.close();
+});
+
+ok('un gauge su una misura che ha gia la sua card nella banda KPI e rifiutato (il doppione)', () => {
+  const s = clona(caso.spec);
+  const g = s.pages[0].rows.flatMap(r => r.visuals).find(x => x.type === 'gauge');
+  s.kpiBand[0] = Object.assign({}, s.kpiBand[0], { measure: g.bind.measure });
+  assert.throws(() => validate(s, data), /ha gia una card nella banda KPI/);
+  /* e nessun gauge del corpus ripete la banda */
+  require('./corpus.js').casi().forEach(c => {
+    const kpi = new Set(c.caso.spec.kpiBand.map(k => k.measure));
+    c.caso.spec.pages.concat(c.caso.spec.drill ? [c.caso.spec.drill.page] : []).forEach(p => p.rows.forEach(r => r.visuals.forEach(v => (v.viste || [v])
+      .filter(vv => vv.type === 'gauge').forEach(vv => (vv.bind.misure || [vv.bind]).forEach(m =>
+        assert.ok(!kpi.has(m.measure), c.id + ': il gauge su "' + m.measure + '" ripete una card KPI'))))));
+  });
 });
 
 console.log('  ' + n + ' checks');

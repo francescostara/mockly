@@ -549,6 +549,22 @@ const INTERVENTI = [
     fatto: "Le altezze si stimano prima del disegno e sbagliano di qualche pixel su titoli e intestazioni: dopo il disegno il runtime misura e stringe le righe di una tabella che non entra nel suo riquadro. Il gate in Chrome (test/barra.test.js) controlla ogni pagina di ogni mockup in due lingue; prima della correzione ha trovato cinque pagine tagliate nel corpus, fra cui Parsa e l'app di lingue.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 2,
+    commento: "I don't like it: if a gauge is already showing something that is present in kpi cards don't put it. Change visualization/s.",
+    dove: "gauge · grammatica · skill · corpus",
+    fatto: "Un gauge su una misura che ha gia la sua card nella banda KPI e rifiutato, e il messaggio indica visual che aggiungono informazione (dove si perde, chi e sotto il bersaglio, quando). Il doppione era ovunque: tutti e sei i gauge del corpus ripetevano una card KPI, compresi i due esempi canonici che il modello copia — da li l'abitudine. Corretti tutti: dove il gauge e il visual giusto esce la card KPI doppia, altrimenti esce il gauge. Nel mockup di Muttahar: un funnel ordini -> puntuali -> puntuali e completi al posto dei tre gauge, e le regioni piu lontane dal target nel drill. Gate: test/gauge.test.js (rifiuto e nessun doppione nel corpus).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 2,
+    commento: "(visto rifacendo il mockup) Nel funnel le percentuali di passaggio vicine al 100% finivano sopra la barra.",
+    dove: "funnel",
+    fatto: "Le barre si fermano prima dello spazio della percentuale. Gate: test/dimensioni.test.js, su ogni funnel del corpus.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
