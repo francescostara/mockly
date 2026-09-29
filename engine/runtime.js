@@ -1882,7 +1882,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     h = v.h || h || 200;
     var a = A.agg(A.slice({}));
     var vals = stages.map(st => A.mv(st.measure, a));
-    var m = { t: 10, r: M.PAD, b: 10, l: M.PAD }, ih = h - m.t - m.b, rh = ih / (stages.length || 1);
+    /* a destra c'e la percentuale di passaggio: le barre si fermano prima, o con passaggi vicini
+       al 100% (93%, 96% nel funnel dell'OTIF di Muttahar, 29 set 2026) la scritta finiva sulla barra */
+    var m = { t: 10, r: M.PAD + (stages.length > 1 ? M.largh('100%', 8.5) + 10 : 0), b: 10, l: M.PAD }, ih = h - m.t - m.b, rh = ih / (stages.length || 1);
     var max = vals[0] || 1;
     var s = '<svg width="' + w + '" height="' + h + '">';
     stages.forEach(function (st, i) {

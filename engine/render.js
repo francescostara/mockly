@@ -707,6 +707,15 @@ function validate(specIn, data) {
               `oppure metti la sua misura come KPI card, dove un numero contro il target sta meglio.`);
           if (Array.isArray(b.misure) && (cardW / quanti > 300 || cardW / quanti < 130))
             e.push(`page "${pg.id}" gauge: ${quanti} gauge in ${Math.round(cardW)}px fanno ${Math.round(cardW / quanti)}px ciascuno — servono fra 130 e 300px per gauge: cambia lo span o il numero di misure.`);
+          /* NIENTE DOPPIONI DELLA BANDA KPI. Un gauge su una misura che ha gia la sua card in alto
+             ripete lo stesso numero con piu inchiostro (Fra, 29 set 2026: "se un gauge mostra gia
+             qualcosa che c'e nelle card KPI, non metterlo"). Il gauge sta dove il numero non e in
+             banda; se lo e, lo spazio va a un visual che aggiunge informazione. */
+          const inBanda = new Set((spec.kpiBand || []).map(k => k.measure));
+          const doppi = (Array.isArray(b.misure) ? b.misure : [b]).map(g => g.measure).filter(m => inBanda.has(m));
+          if (doppi.length)
+            e.push(`page "${pg.id}" gauge: ${doppi.map(m => '"' + m + '"').join(', ')} ${doppi.length > 1 ? 'hanno' : 'ha'} gia una card nella banda KPI: il gauge ripeterebbe lo stesso numero. ` +
+              `Usa lo spazio per un visual che aggiunge informazione — DOVE si perde (funnel o waterfall dei passaggi), CHI e sotto il bersaglio (hbar per entita con order:"asc"), QUANDO (trend) — oppure togli la misura dalla banda e tieni il gauge.`);
           const daControllare = Array.isArray(b.misure) ? b.misure : [b];
           daControllare.forEach(g => {
           if (Array.isArray(b.misure) && !known.has(g.measure)) e.push(`page "${pg.id}" gauge: unknown measure "${g.measure}"`);
