@@ -234,26 +234,24 @@
                 }
               },
               {
-                "type": "gauge",
+                "type": "funnel",
                 "span": 2,
                 "h": 200,
-                "title": "Service KPIs against target",
+                "title": "Where orders miss OTIF · {period}",
+                "subtitle": "from shipped, to on time, to on time and in full",
                 "bind": {
-                  "misure": [
+                  "stages": [
                     {
-                      "measure": "otif",
-                      "target": 0.92,
-                      "targetLabel": "target"
+                      "measure": "orders",
+                      "label": "Orders shipped"
                     },
                     {
-                      "measure": "ot",
-                      "target": 0.95,
-                      "targetLabel": "target"
+                      "measure": "ontime",
+                      "label": "Delivered on time"
                     },
                     {
-                      "measure": "fill",
-                      "target": 0.98,
-                      "targetLabel": "target"
+                      "measure": "otifN",
+                      "label": "On time and in full"
                     }
                   ]
                 }
@@ -457,28 +455,17 @@
                 }
               },
               {
-                "type": "gauge",
+                "type": "hbar",
                 "span": 2,
                 "h": 300,
-                "title": "Service KPIs against target",
+                "title": "Regions served · furthest from the OTIF target",
                 "bind": {
-                  "misure": [
-                    {
-                      "measure": "otif",
-                      "target": 0.92,
-                      "targetLabel": "target"
-                    },
-                    {
-                      "measure": "ot",
-                      "target": 0.95,
-                      "targetLabel": "target"
-                    },
-                    {
-                      "measure": "fill",
-                      "target": 0.98,
-                      "targetLabel": "target"
-                    }
-                  ]
+                  "dim": "region",
+                  "measure": "otif",
+                  "order": "asc",
+                  "top": 5,
+                  "subMeasure": "fill",
+                  "subUnit": " fill"
                 }
               }
             ]

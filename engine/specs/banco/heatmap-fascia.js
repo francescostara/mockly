@@ -102,7 +102,8 @@ const spec = {
     { id: 'ricavi', label: 'Ricavi', measure: 'ricavi', span: 1 },
     { id: 'coperti', label: 'Coperti', measure: 'coperti', span: 1 },
     { id: 'scontrino', label: 'Scontrino medio', measure: 'scontrino', span: 1 },
-    { id: 'primePc', label: 'Prime cost %', measure: 'primePc', span: 1, inv: true }
+    /* il prime cost lo dice il gauge, con la soglia: in banda starebbe due volte */
+    { id: 'foodPc', label: 'Food cost %', measure: 'foodPc', span: 1, inv: true }
   ],
   pages: [{
     id: 'main',

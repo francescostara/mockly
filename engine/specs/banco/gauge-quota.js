@@ -85,7 +85,8 @@ const spec = {
   kpiBand: [
     { id: 'vinto', label: 'Chiuso vinto', measure: 'vinto', span: 1 },
     { id: 'dealVinti', label: 'Trattative vinte', measure: 'dealVinti', span: 1 },
-    { id: 'winRate', label: 'Win rate', measure: 'winRate', span: 1 },
+    /* il win rate lo dice il suo gauge, col benchmark: in banda starebbe due volte */
+    { id: 'dealChiusi', label: 'Trattative chiuse', measure: 'dealChiusi', span: 1 },
     { id: 'dealSize', label: 'Valore medio', measure: 'dealSize', span: 1 }
   ],
   pages: [{

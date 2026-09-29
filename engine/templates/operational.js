@@ -114,7 +114,8 @@ const spec = {
   },
   kpiBand: [
     { id: 'soci', label: 'Soci attivi', measure: 'sociAttivi', span: 1 },
-    { id: 'riempimento', label: 'Riempimento', measure: 'riempimento', span: 1 },
+    /* il riempimento lo dice il gauge, col suo bersaglio: in banda starebbe due volte */
+    { id: 'presenze', label: 'Presenze', measure: 'presenze', span: 1 },
     { id: 'churnPc', label: 'Churn mensile', measure: 'churnPc', span: 1, inv: true },
     { id: 'ricavoSocio', label: 'Ricavo per socio / mese', measure: 'ricavoSocio', span: 1 }
   ],
