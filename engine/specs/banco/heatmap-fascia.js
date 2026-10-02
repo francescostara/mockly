@@ -32,11 +32,11 @@ const dataParams = {
     fascia: {
       members: [
         { id: 'pranzo', n: 'Pranzo 12–15', c: '#7FA8C6', base: 21000, growth: -0.11,
-          seasonality: PRANZO, attrs: { scontrino: 17, prime: 0.64, food: 0.31 } },
+          seasonality: PRANZO, attrs: { scontrino: 17, prime: 0.64, food: [0.295, 0.31] } },
         { id: 'aperi', n: 'Aperitivo 18–20', c: '#A8926E', base: 15000, growth: 0.22,
-          attrs: { scontrino: 13, prime: 0.55, food: 0.26 } },
+          attrs: { scontrino: 13, prime: 0.55, food: [0.27, 0.26] } },
         { id: 'cena', n: 'Cena 20–23', c: '#12304F', base: 46000, growth: 0.09,
-          seasonality: CENA, attrs: { scontrino: 38, prime: 0.58, food: 0.28 } }
+          seasonality: CENA, attrs: { scontrino: 38, prime: 0.58, food: [0.27, 0.28] } }
       ]
     },
     giorno: {

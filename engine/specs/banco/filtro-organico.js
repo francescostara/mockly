@@ -29,15 +29,15 @@ const dataParams = {
          verificata, e va dichiarata dal dato, non dedotta dal motore. */
       members: [
         { id: 'ig', n: 'Instagram', c: '#C13584', brand: true, base: 980000, growth: 0.11,
-          attrs: { er: 0.0071, cpm: 7.4, copertura: 0.52 } },
+          attrs: { er: [0.0063, 0.0071], cpm: 7.4, copertura: 0.52 } },
         { id: 'tt', n: 'TikTok', c: '#111111', brand: true, base: 720000, growth: 0.38,
-          attrs: { er: 0.0092, cpm: 5.1, copertura: 0.61 } },
+          attrs: { er: [0.0081, 0.0092], cpm: 5.1, copertura: 0.61 } },
         { id: 'yt', n: 'YouTube', c: '#C4302B', brand: true, base: 430000, growth: 0.06,
-          attrs: { er: 0.0048, cpm: 9.2, copertura: 0.44 } },
+          attrs: { er: [0.0043, 0.0048], cpm: 9.2, copertura: 0.44 } },
         { id: 'li', n: 'LinkedIn', c: '#0A66C2', brand: true, base: 260000, growth: 0.14,
-          attrs: { er: 0.0039, cpm: 13.8, copertura: 0.38 } },
+          attrs: { er: [0.0036, 0.0039], cpm: 13.8, copertura: 0.38 } },
         { id: 'fb', n: 'Facebook', c: '#4267B2', brand: true, base: 340000, growth: -0.17,
-          attrs: { er: 0.0031, cpm: 6.3, copertura: 0.41 } }
+          attrs: { er: [0.0029, 0.0031], cpm: 6.3, copertura: 0.41 } }
       ]
     },
     tipo: {

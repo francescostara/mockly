@@ -44,7 +44,7 @@ const dataParams = {
   dims: {
     cliente: {
       members: CL.map(([id, n, c, base, growth, gm]) => ({
-        id, n, c, base, growth, attrs: { gm, dso: 62, tariffa: 118 }
+        id, n, c, base, growth, attrs: { gm: [+(gm + 0.02).toFixed(3), gm], dso: 62, tariffa: 118 }   /* il margine si erode di due punti (engine/tassi.js) */
       }))
     },
     natura: {

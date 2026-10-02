@@ -122,6 +122,7 @@ const prevSig = s => { for (let k = s.length - 1; k >= 0; k--) if (!/\s/.test(s[
 const SKIN = require('./skin.js');
 const SCHEDA = require('./scheda.js');
 const VISTE = require('./viste.js');
+const { tassiPiatti } = require('./tassi.js');
 
 /** La pelle risolta di una spec: shell + token + caratteri + ritmo. */
 const pelle = spec => SKIN.pelleDi(spec);
@@ -860,6 +861,10 @@ function validate(specIn, data) {
 
   const tb = toolbarBudget(spec, data);
   if (tb.overflow) e.push(toolbarErrore(spec, tb));
+
+  /* i tassi devono differire fra i membri della dimensione che li mostra e muoversi negli anni:
+     le regioni di Muttahar tutte al 90,2% (engine/tassi.js) */
+  tassiPiatti(spec, data).forEach(m => e.push(m));
 
   if (e.length) throw new Error('spec validation failed:\n  - ' + e.join('\n  - '));
   return { types: [...types], advisories: warn };

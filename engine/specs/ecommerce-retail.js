@@ -64,9 +64,11 @@ function build() {
       facts.push({
         y: r.y, m: r.m, chan: r.chan, cat: cat.id,
         gross,
-        ret: Math.round(gross * cat.ret * j(.9, 1.1)),
+        /* i tassi si muovono fra gli anni (engine/tassi.js): i resi calano dopo la guida taglie,
+           il riacquisto sale col CRM */
+        ret: Math.round(gross * cat.ret * (r.y === YRS[YRS.length - 1] ? .93 : 1) * j(.9, 1.1)),
         orders,
-        repOrders: Math.round(orders * ch.repeat * j(.9, 1.1)),
+        repOrders: Math.round(orders * ch.repeat * (r.y === YRS[YRS.length - 1] ? 1.06 : 1) * j(.9, 1.1)),
         spend: spendParts[k].v,
         newCust: Math.max(1, Math.round(orders * (1 - ch.repeat) * j(.85, 1.15)))
       });

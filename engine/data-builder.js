@@ -55,6 +55,40 @@ function members(dp, dimId, what) {
   return d.members;
 }
 
+/* IL TASSO DI UN ANNO. Un attr puo essere un numero (fermo negli anni) o un array con un valore
+   per anno: la puntualita che migliora, il margine che si erode. Fermo, ogni confronto con l'anno
+   prima usciva piatto (Muttahar, 2 ott 2026: "the rates also stay the same every year"). Dentro
+   l'anno il valore scorre fra un anno e l'altro, centrato a meta anno: la media dell'anno resta
+   quella dichiarata e il trend mensile non fa uno scalino a gennaio.
+   Un array piu corto degli anni vale per gli ULTIMI anni (i primi tengono il primo valore): un
+   template scritto su due anni regge l'intervista che ne chiede tre. Piu lungo e un errore. */
+function valoreAttr(v, nome, ctx, row) {
+  if (!Array.isArray(v)) return v;
+  if (!v.length || v.length > ctx.years.length || v.some(x => typeof x !== 'number'))
+    fail(`attrs.${nome}: un array deve avere un numero per anno (${ctx.years.length}: ${ctx.years.join(', ')}), ne ha ${v.length}`);
+  const off = ctx.years.length - v.length;
+  const pos = Math.max(0, Math.min(v.length - 1, ctx.yi - off + ((row ? row.m : 5.5) - 5.5) / 12));
+  const a = Math.floor(pos), b = Math.min(v.length - 1, a + 1);
+  return v[a] + (v[b] - v[a]) * (pos - a);
+}
+
+/* IL CORRETTIVO DI UN'ALTRA DIMENSIONE: `mod`. Il tasso viene da una dimensione sola, e con uno
+   split tutti i membri dello split ricevono lo stesso tasso: dieci regioni con l'OTIF di tutte
+   uguale al 90,2%, e la heatmap, la classifica e la tabella per regione non dicevano niente
+   (Muttahar, 2 ott 2026). `mod` moltiplica il tasso per un attr dei membri di un'altra
+   dimensione dei fatti: il magazzino da il livello, la regione lo sposta. */
+function correttivi(f, row, ctx, splits) {
+  if (!f.mod) return 1;
+  return (Array.isArray(f.mod) ? f.mod : [f.mod]).reduce((acc, m) => {
+    if (!m || !m.from || !m.attr) fail(`field "${f.id}": mod vuole { "from": <dimensione dei fatti>, "attr": <nome dell'attr> }`);
+    const mb = m.from === ctx.dim ? row.__own : (splits || {})[m.from];
+    if (!mb) fail(`field "${f.id}": mod.from "${m.from}" non e una dimensione dei fatti (il nome di facts.dim o di uno split)`);
+    const v = valoreAttr((mb.attrs || {})[m.attr], m.attr, ctx, row);
+    if (v === undefined) fail(`field "${f.id}": mod vuole attrs.${m.attr} su ogni membro di ${m.from} (manca su "${mb.id}")`);
+    return acc * v;
+  }, 1);
+}
+
 /* one field's value for one row */
 function evalField(f, row, own, split, ctx, splits) {
   const j = ctx.j, yi = ctx.yi;
@@ -78,8 +112,9 @@ function evalField(f, row, own, split, ctx, splits) {
     case 'share': {
       const base = row[f.of];
       if (base === undefined) fail(`field "${f.id}" reads "${f.of}" before it is declared`);
-      let rate = attrsOf[f.attr];
+      let rate = valoreAttr(attrsOf[f.attr], f.attr, ctx, row);
       if (rate === undefined) fail(`field "${f.id}" needs attrs.${f.attr} on the members of ${f.attrFrom && f.attrFrom !== ctx.dim ? (f.attrFrom === 'split' ? 'the split dim' : f.attrFrom) : ctx.dim}`);
+      rate *= correttivi(f, row, ctx, splits);
       if (f.growthFactor && yi === ctx.years.length - 1) rate *= f.growthFactor;
       const jit = f.jitter || [.9, 1.1];
       rate *= j(jit[0], jit[1]);
@@ -89,7 +124,7 @@ function evalField(f, row, own, split, ctx, splits) {
     case 'divide': {
       const base = row[f.of];
       if (base === undefined) fail(`field "${f.id}" reads "${f.of}" before it is declared`);
-      const den = attrsOf[f.attr];
+      const den = valoreAttr(attrsOf[f.attr], f.attr, ctx, row) * correttivi(f, row, ctx, splits);
       if (!den) fail(`field "${f.id}" needs a non-zero attrs.${f.attr}`);
       const jit = f.jitter || [.85, 1.15];
       return Math.max(f.min === undefined ? 1 : f.min, Math.round(base / (den * j(jit[0], jit[1]))));

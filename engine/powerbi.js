@@ -464,7 +464,7 @@ function promptDataset(spec, dp, data, L) {
   md.dimsFatti.forEach(d => {
     righe.push('- ' + nomeDim(spec, d) + ':');
     ((dp.dims[d] || {}).members || []).forEach(m => {
-      const attrs = Object.keys(m.attrs || {}).map(k => k + ' ' + (+m.attrs[k].toFixed(4))).join(', ');
+      const attrs = Object.keys(m.attrs || {}).map(k => k + ' ' + (Array.isArray(m.attrs[k]) ? m.attrs[k].map(v => +(+v).toFixed(4)).join(' → ') : +(+m.attrs[k]).toFixed(4))).join(', ');
       righe.push('    ' + m.n + (d === facts.dim ? ' — ' + L.primaria + ' ' + Math.round(m.base).toLocaleString('en-US') +
         ', ' + L.crescita + ' ' + (m.growth >= 0 ? '+' : '') + Math.round((m.growth || 0) * 100) + '%' : '') +
         (splitsOf(facts).filter(sc => sc.dim === d).map(sc => ' — ' + Math.round(((sc.shares || [])[((dp.dims[d] || {}).members || []).indexOf(m)] || 0) * 100) + '%' +

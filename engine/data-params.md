@@ -206,6 +206,18 @@ twelve multipliers still average 1, so `base` is its monthly average and `base Ã
 that dimension's members â€” with two splits, a discount rate that belongs to the region is
 `"attrFrom": "region"`.
 
+**A rate that depends on two dimensions: `mod`.** The warehouse sets the on-time level; the region
+moves it (far regions are later). `"mod": { "from": "region", "attr": "otM" }` multiplies the rate
+by the `otM` attr of the row's region member (`from` is `facts.dim` or a split; an array applies
+several). Without it every member of a split gets the same rate, and a heatmap, a ranking or a
+table by that dimension shows ties. Works on `share` and `divide`.
+
+**A rate that changes over the years: an attr can be an array, one value per year.**
+`"ot": [0.925, 0.94, 0.951]` for `years: [2023, 2024, 2025]`. Within a year the value glides
+towards the next (centred on mid-year), so the yearly average is the declared value and the
+monthly trend has no January step. A fixed rate makes every year-over-year comparison flat. Also
+valid on `mod` attrs (a region that degrades while the others hold).
+
 **A split member can grow faster than the others.** `growth` on a split member tilts its share
 year after year (`(1+growth)^year`, renormalised; `shares` then describes the first year). Without
 it every region grows exactly like the total, and "the region that grows while its margin falls"

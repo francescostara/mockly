@@ -33,16 +33,16 @@ const dataParams = {
     corso: {
       members: [
         { id: 'pesi', n: 'Sala pesi', c: '#12304F', base: 58000, growth: 0.09, seasonality: SERA,
-          attrs: { quota: 52, riemp: 0.78, churn: 0.031, prezzo: 6.4 } },
+          attrs: { quota: 52, riemp: 0.78, churn: [0.036, 0.031], prezzo: 6.4 } },
         { id: 'spin', n: 'Spinning', c: '#1F4E79', base: 31000, growth: 0.14, seasonality: SERA,
-          attrs: { quota: 44, riemp: 0.71, churn: 0.038, prezzo: 8.1 } },
+          attrs: { quota: 44, riemp: 0.71, churn: [0.042, 0.038], prezzo: 8.1 } },
         { id: 'func', n: 'Funzionale', c: '#4A7FA8', base: 24500, growth: 0.21, seasonality: SERA,
-          attrs: { quota: 47, riemp: 0.66, churn: 0.042, prezzo: 8.8 } },
+          attrs: { quota: 47, riemp: 0.66, churn: [0.047, 0.042], prezzo: 8.8 } },
         /* i due che il pranzo affossa: aperti, presidiati, mezzi vuoti */
         { id: 'yoga', n: 'Yoga', c: '#7FA8C6', base: 19800, growth: 0.04, seasonality: MATTINA,
-          attrs: { quota: 39, riemp: 0.54, churn: 0.052, prezzo: 9.2 } },
+          attrs: { quota: 39, riemp: 0.54, churn: [0.056, 0.052], prezzo: 9.2 } },
         { id: 'nuoto', n: 'Nuoto', c: '#C6D7E4', base: 27200, growth: -0.06, seasonality: MATTINA,
-          attrs: { quota: 61, riemp: 0.51, churn: 0.058, prezzo: 7.3 } }
+          attrs: { quota: 61, riemp: 0.51, churn: [0.063, 0.058], prezzo: 7.3 } }
       ]
     },
     fascia: {

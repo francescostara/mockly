@@ -514,7 +514,9 @@ function componi(risposte) {
       if (Math.abs(f - 1) < 0.0005) break;
       membri.forEach(m => {
         m.attrs = Object.assign({}, m.attrs);
-        if (typeof m.attrs[sc.attr.nome] === 'number') m.attrs[sc.attr.nome] *= f;
+        const v = m.attrs[sc.attr.nome];   /* un numero, o un valore per anno */
+        if (typeof v === 'number') m.attrs[sc.attr.nome] *= f;
+        else if (Array.isArray(v)) m.attrs[sc.attr.nome] = v.map(x => x * f);
       });
     }
   }

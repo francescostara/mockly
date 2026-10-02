@@ -26,7 +26,8 @@ function build() {
          new + expansion − churn == net new exactly (the board will add them up) */
       const start = Math.round(mrrStart);
       const churnMrr = Math.round(start * s.churn * j(.85, 1.2) * (s.id === 'smb' && yi === 1 ? 1.35 : 1));
-      const expMrr = Math.round(start * s.exp * j(.85, 1.15));
+      /* l'espansione enterprise cresce nel corrente: l'NRR si muove (engine/tassi.js) */
+      const expMrr = Math.round(start * s.exp * (s.id === 'ent' ? 1 + .25 * yi : 1) * j(.85, 1.15));
       const newMrr = Math.round(start * (s.growth / 12 + s.churn) * j(.8, 1.25));
       const newLogos = Math.max(1, Math.round(newMrr / (s.arpa * j(.9, 1.1))));
       return {

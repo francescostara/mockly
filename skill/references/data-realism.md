@@ -196,6 +196,19 @@ primary one, so all three filters are real and every roll-up reconciles. Give th
 their own `growth` when the story needs one of them to move differently (a region growing faster,
 a segment gaining share) — without it, every split member grows exactly like the total.
 
+**Every dimension the dashboard ranks by needs its own rates — and rates move over time.** A rate
+(OTIF, margin, conversion, fill rate) is declared on ONE dimension's members. When a visual ranks,
+colours or tabulates by ANOTHER dimension (a split), that dimension must shift the rate too, or
+every one of its members lands on the same value: ten regions all at 90.2% OTIF, a heatmap with
+no hot cells, a ranking of ties (Muttahar, 2 Oct 2026). Give the split members a multiplier attr
+and read it with `"mod": { "from": "region", "attr": "otM" }` on the rate field — spread it a few
+points (0.95–1.03), with a reason (the far region is late, the dense corridor is on time).
+Equally, a rate that is identical every year makes every year-over-year comparison flat: give
+the rates that tell the story a value per year (`"ot": [0.925, 0.94, 0.951]` — improving, eroding,
+one member slipping while the others improve). Self-check before emitting: for each rate shown by
+a dimension, do its members differ by at least a couple of points? Does at least one rate move
+across the years?
+
 ## Declaring a facts dimension means populating its members — always
 
 The single most common spec-generation failure: declaring a facts dimension and then leaving

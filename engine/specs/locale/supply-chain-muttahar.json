@@ -1,723 +1,879 @@
 {
-  "spec": {
-    "meta": {
-      "title": "Supply Chain Performance",
-      "subtitle": "Service levels against target · {y} vs {py}",
-      "brand": {
-        "name": "NorthPeak Consumer Goods",
-        "tagline": "Distribution"
-      },
-      "locale": "en-US",
-      "currency": "$",
-      "months": [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec"
-      ],
-      "updated": "Data as of Dec 31, 2025",
-      "source": "Source: WMS and TMS",
-      "watermark": "Demo mockup · synthetic data"
-    },
-    "aesthetic": "corporate-sober",
-    "skin": {
-      "shell": "rail",
-      "palette": "blu-ghiaccio",
-      "tipografia": "tecnico",
-      "densita": "medio",
-      "banda": "box"
-    },
-    "archetype": "operational",
-    "grid": {
-      "contentWidth": 1044,
-      "gutter": 12,
-      "columns": 5
-    },
-    "model": {
-      "sums": [
-        "orders",
-        "cases",
-        "shipped",
-        "ontime",
-        "otif",
-        "freight"
-      ],
-      "measures": [
-        {
-          "id": "orders",
-          "label": "Orders shipped",
-          "agg": "sum",
-          "field": "orders",
-          "unit": "count",
-          "format": "N"
-        },
-        {
-          "id": "cases",
-          "label": "Cases ordered",
-          "agg": "sum",
-          "field": "cases",
-          "unit": "count",
-          "format": "N"
-        },
-        {
-          "id": "shipped",
-          "label": "Cases shipped",
-          "agg": "sum",
-          "field": "shipped",
-          "unit": "count",
-          "format": "N"
-        },
-        {
-          "id": "backorder",
-          "label": "Backordered cases",
-          "agg": "diff",
-          "a": "cases",
-          "b": "shipped",
-          "unit": "count",
-          "format": "N",
-          "inv": true
-        },
-        {
-          "id": "ontime",
-          "label": "On-time orders",
-          "agg": "sum",
-          "field": "ontime",
-          "unit": "count",
-          "format": "N"
-        },
-        {
-          "id": "otifN",
-          "label": "OTIF orders",
-          "agg": "sum",
-          "field": "otif",
-          "unit": "count",
-          "format": "N"
-        },
-        {
-          "id": "ot",
-          "label": "On-time %",
-          "agg": "ratio",
-          "num": "ontime",
-          "den": "orders",
-          "unit": "pct",
-          "format": "pc"
-        },
-        {
-          "id": "fill",
-          "label": "Fill rate",
-          "agg": "ratio",
-          "num": "shipped",
-          "den": "cases",
-          "unit": "pct",
-          "format": "pc"
-        },
-        {
-          "id": "otif",
-          "label": "OTIF",
-          "agg": "ratio",
-          "num": "otifN",
-          "den": "orders",
-          "unit": "pct",
-          "format": "pc"
-        },
-        {
-          "id": "freight",
-          "label": "Freight cost",
-          "agg": "sum",
-          "field": "freight",
-          "unit": "money",
-          "format": "eur",
-          "inv": true
-        },
-        {
-          "id": "fpo",
-          "label": "Freight per order",
-          "agg": "ratio",
-          "num": "freight",
-          "den": "orders",
-          "unit": "money",
-          "format": "eurF",
-          "inv": true
-        }
-      ]
-    },
-    "filters": {
-      "date": {
-        "levels": [
-          "year",
-          "quarter",
-          "month"
-        ],
-        "default": {
-          "y": 2025,
-          "q": null,
-          "m": null
-        }
-      },
-      "dims": [
-        {
-          "id": "wh",
-          "label": "Warehouse",
-          "control": "dropdown",
-          "allLabel": "All warehouses",
-          "pill": "Warehouse"
-        },
-        {
-          "id": "region",
-          "label": "Region",
-          "control": "dropdown",
-          "allLabel": "All regions",
-          "pill": "Region"
-        }
-      ]
-    },
-    "kpiBand": [
-      {
-        "id": "otif",
-        "label": "OTIF (target 92%)",
-        "measure": "otif",
-        "span": 1
-      },
-      {
-        "id": "ot",
-        "label": "On-time (target 95%)",
-        "measure": "ot",
-        "span": 1
-      },
-      {
-        "id": "fill",
-        "label": "Fill rate (target 98%)",
-        "measure": "fill",
-        "span": 1
-      },
-      {
-        "id": "fpo",
-        "label": "Freight per order",
-        "measure": "fpo",
-        "span": 1,
-        "inv": true
-      },
-      {
-        "id": "orders",
-        "label": "Orders shipped",
-        "measure": "orders",
-        "span": 1
-      }
-    ],
-    "pages": [
-      {
-        "id": "service",
-        "title": "Service level",
-        "subtitle": "Atlanta drags OTIF below target; the Southeast and Florida feel it first",
-        "nav": "Service level",
-        "rows": [
-          {
-            "visuals": [
-              {
-                "type": "heatmap",
-                "span": 3,
-                "h": 200,
-                "title": "OTIF by warehouse and region · {period}",
-                "subtitle": "darker = better; click a row to filter the warehouse",
-                "bind": {
-                  "dim": "wh",
-                  "measure": "otif",
-                  "by": "region"
-                }
-              },
-              {
-                "type": "funnel",
-                "span": 2,
-                "h": 200,
-                "title": "Where orders miss OTIF · {period}",
-                "subtitle": "from shipped, to on time, to on time and in full",
-                "bind": {
-                  "stages": [
-                    {
-                      "measure": "orders",
-                      "label": "Orders shipped"
-                    },
-                    {
-                      "measure": "ontime",
-                      "label": "Delivered on time"
-                    },
-                    {
-                      "measure": "otifN",
-                      "label": "On time and in full"
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "flex": true,
-            "visuals": [
-              {
-                "type": "matrix",
-                "span": 5,
-                "title": "Warehouses · service and cost · {period}",
-                "bind": {
-                  "dim": "wh",
-                  "label": "Warehouse",
-                  "sort": "orders",
-                  "drill": true,
-                  "totalsLabel": "Network",
-                  "columns": [
-                    {
-                      "measure": "orders",
-                      "label": "Orders"
-                    },
-                    {
-                      "measure": "orders",
-                      "label": "{basis}",
-                      "kind": "var"
-                    },
-                    {
-                      "measure": "ot",
-                      "label": "On-time %",
-                      "kind": "heat",
-                      "scale": [
-                        0.88,
-                        0.97
-                      ]
-                    },
-                    {
-                      "measure": "fill",
-                      "label": "Fill rate",
-                      "kind": "heat",
-                      "scale": [
-                        0.93,
-                        0.99
-                      ]
-                    },
-                    {
-                      "measure": "otif",
-                      "label": "OTIF",
-                      "kind": "heat",
-                      "scale": [
-                        0.84,
-                        0.94
-                      ]
-                    },
-                    {
-                      "measure": "otif",
-                      "label": "OTIF {basis}",
-                      "kind": "var"
-                    },
-                    {
-                      "measure": "backorder",
-                      "label": "Backordered cases",
-                      "inv": true
-                    },
-                    {
-                      "measure": "fpo",
-                      "label": "Freight / order",
-                      "inv": true
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "trend",
-        "title": "Trends and targets",
-        "subtitle": "Three years of service: which regions sit furthest from the OTIF target",
-        "nav": "Trends & targets",
-        "rows": [
-          {
-            "visuals": [
-              {
-                "type": "colline",
-                "span": 3,
-                "h": 200,
-                "title": "Orders per month, {y} vs {py}, with OTIF",
-                "bind": {
-                  "measure": "orders",
-                  "line": "otif"
-                }
-              },
-              {
-                "type": "hbar",
-                "span": 2,
-                "h": 200,
-                "title": "Regions furthest from the OTIF target",
-                "bind": {
-                  "dim": "region",
-                  "measure": "otif",
-                  "order": "asc",
-                  "top": 5,
-                  "subMeasure": "fill",
-                  "subUnit": " fill"
-                }
-              }
-            ]
-          },
-          {
-            "flex": true,
-            "visuals": [
-              {
-                "type": "matrix",
-                "span": 5,
-                "title": "Regions · service and cost · {period}",
-                "bind": {
-                  "dim": "region",
-                  "label": "Region",
-                  "sort": "orders",
-                  "drill": false,
-                  "totalsLabel": "Network",
-                  "columns": [
-                    {
-                      "measure": "orders",
-                      "label": "Orders"
-                    },
-                    {
-                      "measure": "ot",
-                      "label": "On-time %",
-                      "kind": "heat",
-                      "scale": [
-                        0.88,
-                        0.97
-                      ]
-                    },
-                    {
-                      "measure": "fill",
-                      "label": "Fill rate",
-                      "kind": "heat",
-                      "scale": [
-                        0.93,
-                        0.99
-                      ]
-                    },
-                    {
-                      "measure": "otif",
-                      "label": "OTIF",
-                      "kind": "heat",
-                      "scale": [
-                        0.84,
-                        0.94
-                      ]
-                    },
-                    {
-                      "measure": "otif",
-                      "label": "OTIF {basis}",
-                      "kind": "var"
-                    },
-                    {
-                      "measure": "freight",
-                      "label": "Freight cost",
-                      "inv": true
-                    },
-                    {
-                      "measure": "fpo",
-                      "label": "Freight / order",
-                      "inv": true
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
-    "drill": {
-      "dim": "wh",
-      "page": {
-        "id": "__drill__",
-        "title": "{drill}",
-        "drillHeader": "{period} · {basis}",
-        "backLabel": "Back to network",
-        "subtitle": "Regions served and monthly service from this warehouse",
-        "rows": [
-          {
-            "flex": true,
-            "visuals": [
-              {
-                "type": "colline",
-                "span": 3,
-                "h": 300,
-                "title": "Orders per month with OTIF",
-                "bind": {
-                  "measure": "orders",
-                  "line": "otif"
-                }
-              },
-              {
-                "type": "hbar",
-                "span": 2,
-                "h": 300,
-                "title": "Regions served · furthest from the OTIF target",
-                "bind": {
-                  "dim": "region",
-                  "measure": "otif",
-                  "order": "asc",
-                  "top": 5,
-                  "subMeasure": "fill",
-                  "subUnit": " fill"
-                }
-              }
-            ]
-          }
-        ]
-      }
-    }
+ "spec": {
+  "meta": {
+   "title": "Supply Chain Performance",
+   "subtitle": "Service levels against target · {y} vs {py}",
+   "brand": {
+    "name": "NorthPeak Consumer Goods",
+    "tagline": "Distribution"
+   },
+   "locale": "en-US",
+   "currency": "$",
+   "months": [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+   ],
+   "updated": "Data as of Dec 31, 2025",
+   "source": "Source: WMS and TMS",
+   "watermark": "Demo mockup · synthetic data"
   },
-  "dataParams": {
-    "seed": 30931,
-    "years": [
-      2023,
-      2024,
-      2025
-    ],
-    "seasonality": [
-      0.88,
-      0.86,
-      0.95,
-      0.97,
-      1,
-      1,
-      0.96,
-      1.02,
-      1.05,
-      1.08,
-      1.13,
-      1.1
-    ],
-    "dims": {
-      "wh": {
-        "members": [
-          {
-            "id": "nwk",
-            "n": "Newark, NJ",
-            "base": 5200,
-            "growth": 0.04,
-            "attrs": {
-              "cpo": 44,
-              "fill": 0.978,
-              "ot": 0.955,
-              "inf": 0.965,
-              "fpc": 2.3
-            }
-          },
-          {
-            "id": "atl",
-            "n": "Atlanta, GA",
-            "base": 4300,
-            "growth": 0.07,
-            "attrs": {
-              "cpo": 41,
-              "fill": 0.952,
-              "ot": 0.905,
-              "inf": 0.945,
-              "fpc": 2.55
-            }
-          },
-          {
-            "id": "chi",
-            "n": "Chicago, IL",
-            "base": 4800,
-            "growth": 0.03,
-            "attrs": {
-              "cpo": 46,
-              "fill": 0.981,
-              "ot": 0.948,
-              "inf": 0.97,
-              "fpc": 2.1
-            }
-          },
-          {
-            "id": "dal",
-            "n": "Dallas, TX",
-            "base": 4100,
-            "growth": 0.09,
-            "attrs": {
-              "cpo": 43,
-              "fill": 0.972,
-              "ot": 0.94,
-              "inf": 0.962,
-              "fpc": 2.25
-            }
-          },
-          {
-            "id": "den",
-            "n": "Denver, CO",
-            "base": 2400,
-            "growth": -0.02,
-            "attrs": {
-              "cpo": 38,
-              "fill": 0.968,
-              "ot": 0.93,
-              "inf": 0.958,
-              "fpc": 2.85
-            }
-          },
-          {
-            "id": "rno",
-            "n": "Reno, NV",
-            "base": 3600,
-            "growth": 0.05,
-            "attrs": {
-              "cpo": 42,
-              "fill": 0.975,
-              "ot": 0.945,
-              "inf": 0.966,
-              "fpc": 2.4
-            }
-          }
-        ]
-      },
-      "region": {
-        "members": [
-          {
-            "id": "ne",
-            "n": "Northeast",
-            "base": 1
-          },
-          {
-            "id": "ma",
-            "n": "Mid-Atlantic",
-            "base": 1
-          },
-          {
-            "id": "se",
-            "n": "Southeast",
-            "base": 1,
-            "growth": 0.03
-          },
-          {
-            "id": "fl",
-            "n": "Florida",
-            "base": 1,
-            "growth": 0.04
-          },
-          {
-            "id": "gl",
-            "n": "Great Lakes",
-            "base": 1
-          },
-          {
-            "id": "mw",
-            "n": "Midwest",
-            "base": 1,
-            "growth": -0.02
-          },
-          {
-            "id": "sc",
-            "n": "South Central",
-            "base": 1,
-            "growth": 0.03
-          },
-          {
-            "id": "mt",
-            "n": "Mountain",
-            "base": 1
-          },
-          {
-            "id": "pnw",
-            "n": "Pacific Northwest",
-            "base": 1
-          },
-          {
-            "id": "ca",
-            "n": "California",
-            "base": 1,
-            "growth": 0.02
-          }
-        ]
-      }
+  "aesthetic": "corporate-sober",
+  "skin": {
+   "shell": "rail",
+   "palette": "blu-ghiaccio",
+   "tipografia": "tecnico",
+   "densita": "medio",
+   "banda": "box"
+  },
+  "archetype": "operational",
+  "grid": {
+   "contentWidth": 1044,
+   "gutter": 12,
+   "columns": 5
+  },
+  "model": {
+   "sums": [
+    "orders",
+    "cases",
+    "shipped",
+    "ontime",
+    "otif",
+    "freight"
+   ],
+   "measures": [
+    {
+     "id": "orders",
+     "label": "Orders shipped",
+     "agg": "sum",
+     "field": "orders",
+     "unit": "count",
+     "format": "N"
     },
-    "facts": {
-      "dim": "wh",
-      "split": {
-        "dim": "region",
-        "shares": [
-          0.12,
-          0.11,
-          0.12,
-          0.08,
-          0.11,
-          0.09,
-          0.1,
-          0.07,
-          0.07,
-          0.13
-        ]
-      },
-      "fields": [
-        {
-          "id": "orders",
-          "kind": "seasonal",
-          "jitter": [
-            0.94,
-            1.06
-          ]
-        },
-        {
-          "id": "cases",
-          "kind": "share",
-          "of": "orders",
-          "attr": "cpo",
-          "jitter": [
-            0.95,
-            1.05
-          ]
-        },
-        {
-          "id": "shipped",
-          "kind": "share",
-          "of": "cases",
-          "attr": "fill",
-          "jitter": [
-            0.99,
-            1.01
-          ],
-          "cap": 0.999
-        },
-        {
-          "id": "ontime",
-          "kind": "share",
-          "of": "orders",
-          "attr": "ot",
-          "jitter": [
-            0.97,
-            1.02
-          ],
-          "cap": 0.995
-        },
-        {
-          "id": "otif",
-          "kind": "share",
-          "of": "ontime",
-          "attr": "inf",
-          "jitter": [
-            0.98,
-            1.02
-          ],
-          "cap": 0.999
-        },
-        {
-          "id": "freight",
-          "kind": "share",
-          "of": "shipped",
-          "attr": "fpc",
-          "jitter": [
-            0.95,
-            1.06
-          ]
-        }
-      ]
+    {
+     "id": "cases",
+     "label": "Cases ordered",
+     "agg": "sum",
+     "field": "cases",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "shipped",
+     "label": "Cases shipped",
+     "agg": "sum",
+     "field": "shipped",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "backorder",
+     "label": "Backordered cases",
+     "agg": "diff",
+     "a": "cases",
+     "b": "shipped",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "ontime",
+     "label": "On-time orders",
+     "agg": "sum",
+     "field": "ontime",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "otifN",
+     "label": "OTIF orders",
+     "agg": "sum",
+     "field": "otif",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "ot",
+     "label": "On-time %",
+     "agg": "ratio",
+     "num": "ontime",
+     "den": "orders",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "fill",
+     "label": "Fill rate",
+     "agg": "ratio",
+     "num": "shipped",
+     "den": "cases",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "otif",
+     "label": "OTIF",
+     "agg": "ratio",
+     "num": "otifN",
+     "den": "orders",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "freight",
+     "label": "Freight cost",
+     "agg": "sum",
+     "field": "freight",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "fpo",
+     "label": "Freight per order",
+     "agg": "ratio",
+     "num": "freight",
+     "den": "orders",
+     "unit": "money",
+     "format": "eurF",
+     "inv": true
     }
+   ]
+  },
+  "filters": {
+   "date": {
+    "levels": [
+     "year",
+     "quarter",
+     "month"
+    ],
+    "default": {
+     "y": 2025,
+     "q": null,
+     "m": null
+    }
+   },
+   "dims": [
+    {
+     "id": "wh",
+     "label": "Warehouse",
+     "control": "dropdown",
+     "allLabel": "All warehouses",
+     "pill": "Warehouse"
+    },
+    {
+     "id": "region",
+     "label": "Region",
+     "control": "dropdown",
+     "allLabel": "All regions",
+     "pill": "Region"
+    }
+   ]
+  },
+  "kpiBand": [
+   {
+    "id": "otif",
+    "label": "OTIF (target 92%)",
+    "measure": "otif",
+    "span": 1
+   },
+   {
+    "id": "ot",
+    "label": "On-time (target 95%)",
+    "measure": "ot",
+    "span": 1
+   },
+   {
+    "id": "fill",
+    "label": "Fill rate (target 98%)",
+    "measure": "fill",
+    "span": 1
+   },
+   {
+    "id": "fpo",
+    "label": "Freight per order",
+    "measure": "fpo",
+    "span": 1,
+    "inv": true
+   },
+   {
+    "id": "orders",
+    "label": "Orders shipped",
+    "measure": "orders",
+    "span": 1
+   }
+  ],
+  "pages": [
+   {
+    "id": "service",
+    "title": "Service level",
+    "subtitle": "Atlanta slips while the network improves; Florida, Mountain and the Pacific Northwest sit furthest from target",
+    "nav": "Service level",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "heatmap",
+        "span": 3,
+        "h": 200,
+        "title": "OTIF by warehouse and region · {period}",
+        "subtitle": "darker = better; click a row to filter the warehouse",
+        "bind": {
+         "dim": "wh",
+         "measure": "otif",
+         "by": "region"
+        }
+       },
+       {
+        "type": "funnel",
+        "span": 2,
+        "h": 200,
+        "title": "Where orders miss OTIF · {period}",
+        "subtitle": "from shipped, to on time, to on time and in full",
+        "bind": {
+         "stages": [
+          {
+           "measure": "orders",
+           "label": "Orders shipped"
+          },
+          {
+           "measure": "ontime",
+           "label": "Delivered on time"
+          },
+          {
+           "measure": "otifN",
+           "label": "On time and in full"
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 5,
+        "title": "Warehouses · service and cost · {period}",
+        "bind": {
+         "dim": "wh",
+         "label": "Warehouse",
+         "sort": "orders",
+         "drill": true,
+         "totalsLabel": "Network",
+         "columns": [
+          {
+           "measure": "orders",
+           "label": "Orders"
+          },
+          {
+           "measure": "orders",
+           "label": "{basis}",
+           "kind": "var"
+          },
+          {
+           "measure": "ot",
+           "label": "On-time %",
+           "kind": "heat",
+           "scale": [
+            0.88,
+            0.97
+           ]
+          },
+          {
+           "measure": "fill",
+           "label": "Fill rate",
+           "kind": "heat",
+           "scale": [
+            0.93,
+            0.99
+           ]
+          },
+          {
+           "measure": "otif",
+           "label": "OTIF",
+           "kind": "heat",
+           "scale": [
+            0.84,
+            0.94
+           ]
+          },
+          {
+           "measure": "otif",
+           "label": "OTIF {basis}",
+           "kind": "var"
+          },
+          {
+           "measure": "backorder",
+           "label": "Backordered cases",
+           "inv": true
+          },
+          {
+           "measure": "fpo",
+           "label": "Freight / order",
+           "inv": true
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "trend",
+    "title": "Trends and targets",
+    "subtitle": "Three years of service: the network gains 1.5 points of OTIF, California loses ground",
+    "nav": "Trends & targets",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 3,
+        "h": 200,
+        "title": "Orders per month, {y} vs {py}, with OTIF",
+        "bind": {
+         "measure": "orders",
+         "line": "otif"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 200,
+        "title": "Regions furthest from the OTIF target",
+        "bind": {
+         "dim": "region",
+         "measure": "otif",
+         "order": "asc",
+         "top": 5,
+         "subMeasure": "fill",
+         "subUnit": " fill"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 5,
+        "title": "Regions · service and cost · {period}",
+        "bind": {
+         "dim": "region",
+         "label": "Region",
+         "sort": "orders",
+         "drill": false,
+         "totalsLabel": "Network",
+         "columns": [
+          {
+           "measure": "orders",
+           "label": "Orders"
+          },
+          {
+           "measure": "ot",
+           "label": "On-time %",
+           "kind": "heat",
+           "scale": [
+            0.88,
+            0.97
+           ]
+          },
+          {
+           "measure": "fill",
+           "label": "Fill rate",
+           "kind": "heat",
+           "scale": [
+            0.93,
+            0.99
+           ]
+          },
+          {
+           "measure": "otif",
+           "label": "OTIF",
+           "kind": "heat",
+           "scale": [
+            0.84,
+            0.94
+           ]
+          },
+          {
+           "measure": "otif",
+           "label": "OTIF {basis}",
+           "kind": "var"
+          },
+          {
+           "measure": "freight",
+           "label": "Freight cost",
+           "inv": true
+          },
+          {
+           "measure": "fpo",
+           "label": "Freight / order",
+           "inv": true
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "drill": {
+   "dim": "wh",
+   "page": {
+    "id": "__drill__",
+    "title": "{drill}",
+    "drillHeader": "{period} · {basis}",
+    "backLabel": "Back to network",
+    "subtitle": "Regions served and monthly service from this warehouse",
+    "rows": [
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 3,
+        "h": 300,
+        "title": "Orders per month with OTIF",
+        "bind": {
+         "measure": "orders",
+         "line": "otif"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 300,
+        "title": "Regions served · furthest from the OTIF target",
+        "bind": {
+         "dim": "region",
+         "measure": "otif",
+         "order": "asc",
+         "top": 5,
+         "subMeasure": "fill",
+         "subUnit": " fill"
+        }
+       }
+      ]
+     }
+    ]
+   }
   }
+ },
+ "dataParams": {
+  "seed": 30931,
+  "years": [
+   2023,
+   2024,
+   2025
+  ],
+  "seasonality": [
+   0.88,
+   0.86,
+   0.95,
+   0.97,
+   1,
+   1,
+   0.96,
+   1.02,
+   1.05,
+   1.08,
+   1.13,
+   1.1
+  ],
+  "dims": {
+   "wh": {
+    "members": [
+     {
+      "id": "nwk",
+      "n": "Newark, NJ",
+      "base": 5200,
+      "growth": 0.04,
+      "attrs": {
+       "cpo": 44,
+       "fill": [
+        0.974,
+        0.978,
+        0.982
+       ],
+       "ot": [
+        0.932,
+        0.95,
+        0.965
+       ],
+       "inf": [
+        0.958,
+        0.966,
+        0.972
+       ],
+       "fpc": 2.3
+      }
+     },
+     {
+      "id": "atl",
+      "n": "Atlanta, GA",
+      "base": 4300,
+      "growth": 0.07,
+      "attrs": {
+       "cpo": 41,
+       "fill": [
+        0.968,
+        0.957,
+        0.944
+       ],
+       "ot": [
+        0.921,
+        0.912,
+        0.902
+       ],
+       "inf": [
+        0.957,
+        0.949,
+        0.94
+       ],
+       "fpc": 2.55
+      }
+     },
+     {
+      "id": "chi",
+      "n": "Chicago, IL",
+      "base": 4800,
+      "growth": 0.03,
+      "attrs": {
+       "cpo": 46,
+       "fill": [
+        0.98,
+        0.981,
+        0.98
+       ],
+       "ot": [
+        0.938,
+        0.95,
+        0.958
+       ],
+       "inf": [
+        0.962,
+        0.968,
+        0.973
+       ],
+       "fpc": 2.1
+      }
+     },
+     {
+      "id": "dal",
+      "n": "Dallas, TX",
+      "base": 4100,
+      "growth": 0.09,
+      "attrs": {
+       "cpo": 43,
+       "fill": [
+        0.962,
+        0.969,
+        0.977
+       ],
+       "ot": [
+        0.905,
+        0.932,
+        0.952
+       ],
+       "inf": [
+        0.948,
+        0.96,
+        0.969
+       ],
+       "fpc": 2.25
+      }
+     },
+     {
+      "id": "den",
+      "n": "Denver, CO",
+      "base": 2400,
+      "growth": -0.02,
+      "attrs": {
+       "cpo": 38,
+       "fill": [
+        0.972,
+        0.968,
+        0.963
+       ],
+       "ot": [
+        0.942,
+        0.931,
+        0.917
+       ],
+       "inf": [
+        0.963,
+        0.958,
+        0.952
+       ],
+       "fpc": 2.85
+      }
+     },
+     {
+      "id": "rno",
+      "n": "Reno, NV",
+      "base": 3600,
+      "growth": 0.05,
+      "attrs": {
+       "cpo": 42,
+       "fill": [
+        0.97,
+        0.975,
+        0.977
+       ],
+       "ot": [
+        0.92,
+        0.938,
+        0.953
+       ],
+       "inf": [
+        0.955,
+        0.964,
+        0.97
+       ],
+       "fpc": 2.4
+      }
+     }
+    ]
+   },
+   "region": {
+    "members": [
+     {
+      "id": "ne",
+      "n": "Northeast",
+      "base": 1,
+      "attrs": {
+       "otM": 1.012,
+       "infM": 1.006,
+       "fillM": 1.003,
+       "fpcM": 0.95
+      }
+     },
+     {
+      "id": "ma",
+      "n": "Mid-Atlantic",
+      "base": 1,
+      "attrs": {
+       "otM": 1.008,
+       "infM": 1.004,
+       "fillM": 1.002,
+       "fpcM": 0.97
+      }
+     },
+     {
+      "id": "se",
+      "n": "Southeast",
+      "base": 1,
+      "growth": 0.03,
+      "attrs": {
+       "otM": 0.992,
+       "infM": 0.998,
+       "fillM": 1.0,
+       "fpcM": 1.0
+      }
+     },
+     {
+      "id": "fl",
+      "n": "Florida",
+      "base": 1,
+      "growth": 0.04,
+      "attrs": {
+       "otM": [
+        0.975,
+        0.962,
+        0.95
+       ],
+       "infM": 0.99,
+       "fillM": 0.994,
+       "fpcM": 1.06
+      }
+     },
+     {
+      "id": "gl",
+      "n": "Great Lakes",
+      "base": 1,
+      "attrs": {
+       "otM": 1.014,
+       "infM": 1.007,
+       "fillM": 1.003,
+       "fpcM": 0.94
+      }
+     },
+     {
+      "id": "mw",
+      "n": "Midwest",
+      "base": 1,
+      "growth": -0.02,
+      "attrs": {
+       "otM": 1.0,
+       "infM": 1.0,
+       "fillM": 1.0,
+       "fpcM": 0.98
+      }
+     },
+     {
+      "id": "sc",
+      "n": "South Central",
+      "base": 1,
+      "growth": 0.03,
+      "attrs": {
+       "otM": 0.99,
+       "infM": 0.997,
+       "fillM": 0.999,
+       "fpcM": 1.02
+      }
+     },
+     {
+      "id": "mt",
+      "n": "Mountain",
+      "base": 1,
+      "attrs": {
+       "otM": 0.952,
+       "infM": 0.985,
+       "fillM": 0.988,
+       "fpcM": 1.18
+      }
+     },
+     {
+      "id": "pnw",
+      "n": "Pacific Northwest",
+      "base": 1,
+      "attrs": {
+       "otM": 0.968,
+       "infM": 0.992,
+       "fillM": 0.996,
+       "fpcM": 1.12
+      }
+     },
+     {
+      "id": "ca",
+      "n": "California",
+      "base": 1,
+      "growth": 0.02,
+      "attrs": {
+       "otM": [
+        1.0,
+        0.984,
+        0.968
+       ],
+       "infM": 0.995,
+       "fillM": 0.998,
+       "fpcM": 1.08
+      }
+     }
+    ]
+   }
+  },
+  "facts": {
+   "dim": "wh",
+   "split": {
+    "dim": "region",
+    "shares": [
+     0.12,
+     0.11,
+     0.12,
+     0.08,
+     0.11,
+     0.09,
+     0.1,
+     0.07,
+     0.07,
+     0.13
+    ]
+   },
+   "fields": [
+    {
+     "id": "orders",
+     "kind": "seasonal",
+     "jitter": [
+      0.94,
+      1.06
+     ]
+    },
+    {
+     "id": "cases",
+     "kind": "share",
+     "of": "orders",
+     "attr": "cpo",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "shipped",
+     "kind": "share",
+     "of": "cases",
+     "attr": "fill",
+     "jitter": [
+      0.99,
+      1.01
+     ],
+     "cap": 0.999,
+     "mod": {
+      "from": "region",
+      "attr": "fillM"
+     }
+    },
+    {
+     "id": "ontime",
+     "kind": "share",
+     "of": "orders",
+     "attr": "ot",
+     "jitter": [
+      0.97,
+      1.02
+     ],
+     "cap": 0.995,
+     "mod": {
+      "from": "region",
+      "attr": "otM"
+     }
+    },
+    {
+     "id": "otif",
+     "kind": "share",
+     "of": "ontime",
+     "attr": "inf",
+     "jitter": [
+      0.98,
+      1.02
+     ],
+     "cap": 0.999,
+     "mod": {
+      "from": "region",
+      "attr": "infM"
+     }
+    },
+    {
+     "id": "freight",
+     "kind": "share",
+     "of": "shipped",
+     "attr": "fpc",
+     "jitter": [
+      0.95,
+      1.06
+     ],
+     "mod": {
+      "from": "region",
+      "attr": "fpcM"
+     }
+    }
+   ]
+  }
+ }
 }

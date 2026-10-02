@@ -380,7 +380,8 @@ export interface MemberSpec {
    *  fuori vale zero, e nella matrice la sua variazione si legge "nuova" */
   anni?: number[];
   /** free numeric attributes the field formulas read (aov, margin, rates...) */
-  attrs?: Record<string, number>;
+  /** un numero, o un array con un valore per anno (il tasso che cambia negli anni) */
+  attrs?: Record<string, number | number[]>;
 }
 
 /** A dimension and its members, co-located. There is nowhere else to put them. */
@@ -388,6 +389,8 @@ export interface DimSpec { members: NonEmpty<MemberSpec>; }
 
 /** Da quali membri un campo legge `attr`: omesso = facts.dim; "split" = il primo split; il
  *  NOME di una dimensione dei fatti = i membri di quella (serve con due split). */
+/** il tasso moltiplicato per un attr dei membri di un'altra dimensione dei fatti */
+export type RateMod = { from: string; attr: string };
 export type AttrFrom = 'split' | string;
 
 /** Il campo esiste solo per questi membri di una dimensione dei fatti; altrove vale zero
@@ -396,8 +399,8 @@ export interface OnlyFor { dim: string; members: string[] }
 
 export type FieldSpec =
   | { id: string; kind: 'seasonal'; jitter?: [number, number] }
-  | { id: string; kind: 'share'; of: string; attr: string; attrFrom?: AttrFrom; complement?: boolean; cap?: number; growthFactor?: number; jitter?: [number, number]; only?: OnlyFor }
-  | { id: string; kind: 'divide'; of: string; attr: string; attrFrom?: AttrFrom; min?: number; jitter?: [number, number]; only?: OnlyFor }
+  | { id: string; kind: 'share'; of: string; attr: string; attrFrom?: AttrFrom; complement?: boolean; cap?: number; growthFactor?: number; mod?: RateMod | RateMod[]; jitter?: [number, number]; only?: OnlyFor }
+  | { id: string; kind: 'divide'; of: string; attr: string; attrFrom?: AttrFrom; min?: number; mod?: RateMod | RateMod[]; jitter?: [number, number]; only?: OnlyFor }
   | { id: string; kind: 'combine'; plus?: string[]; minus?: string[]; only?: OnlyFor };
 
 /** Una dimensione dello split: `shares` = la sua quota del totale, in ordine dei membri. */

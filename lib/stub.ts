@@ -153,9 +153,9 @@ export const STUB_RESPONSE = JSON.stringify({
     dims: {
       shop: {
         members: [
-          { id: 'centro', n: 'Centro storico', c: '#4A4038', base: 47000, growth: 0.061, attrs: { aov: 8.4, margin: 0.63, waste: 0.041 } },
-          { id: 'stazione', n: 'Stazione', c: '#7A6A52', base: 39000, growth: 0.124, attrs: { aov: 6.1, margin: 0.58, waste: 0.052 } },
-          { id: 'quartiere', n: 'Quartiere Nord', c: '#A8926E', base: 28000, growth: -0.073, attrs: { aov: 9.2, margin: 0.61, waste: 0.089 } },
+          { id: 'centro', n: 'Centro storico', c: '#4A4038', base: 47000, growth: 0.061, attrs: { aov: 8.4, margin: [0.61, 0.63], waste: [0.046, 0.041] } },
+          { id: 'stazione', n: 'Stazione', c: '#7A6A52', base: 39000, growth: 0.124, attrs: { aov: 6.1, margin: [0.57, 0.58], waste: [0.055, 0.052] } },
+          { id: 'quartiere', n: 'Quartiere Nord', c: '#A8926E', base: 28000, growth: -0.073, attrs: { aov: 9.2, margin: [0.62, 0.61], waste: [0.074, 0.089] } },
           { id: 'outlet', n: 'Centro commerciale', c: '#D8C7A6', base: 22000, growth: 0.028, attrs: { aov: 7.3, margin: 0.55, waste: 0.067 } }
         ]
       }

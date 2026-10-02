@@ -31,9 +31,9 @@ const dataParams = {
     piano: {
       members: [
         { id: 'ent', n: 'Enterprise', c: '#14171A', base: 128000, growth: 0.22,
-          attrs: { arpa: 1450, churn: 0.006, esp: 0.031, nuovo: 0.038, payback: 19 } },
+          attrs: { arpa: 1450, churn: 0.006, esp: [0.026, 0.031], nuovo: 0.038, payback: 19 } },
         { id: 'pro', n: 'Pro', c: '#3E5C86', base: 86000, growth: 0.13,
-          attrs: { arpa: 310, churn: 0.012, esp: 0.019, nuovo: 0.052, payback: 15 } },
+          attrs: { arpa: 310, churn: 0.012, esp: [0.016, 0.019], nuovo: 0.052, payback: 15 } },
         /* il secchio bucato: Starter fa numeri di logo e perde MRR piu di quanto ne aggiunga */
         { id: 'sta', n: 'Starter', c: '#868D95', base: 41000, growth: -0.08,
           attrs: { arpa: 59, churn: 0.028, esp: 0.004, nuovo: 0.061, payback: 23 } }

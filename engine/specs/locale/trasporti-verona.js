@@ -58,7 +58,7 @@ const dataParams = {
   dims: {
     rotta: {
       members: ROTTE.map(([id, n, c, base, growth, margine, costoSped]) => ({
-        id, n, c, base, growth, attrs: { margine, costoSped, quotaCarrier: 0.85 }
+        id, n, c, base, growth, attrs: { margine: [+(margine + 0.012).toFixed(3), margine], costoSped, quotaCarrier: 0.85 }   /* il margine scende di un punto: i confronti con l'anno prima dicono qualcosa (engine/tassi.js) */
       }))
     },
     vettore: {

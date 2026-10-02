@@ -565,6 +565,14 @@ const INTERVENTI = [
     fatto: "Le barre si fermano prima dello spazio della percentuale. Gate: test/dimensioni.test.js, su ogni funnel del corpus.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 3,
+    commento: "The data lacks diversity. Each warehouse has its own service rates, but the regions only get a share of orders: every region lands on almost the same OTIF (around 90.2%), so the heatmap, the region ranking and the region table don't tell a story. The rates also stay the same every year, so year-over-year comparisons come out flat.",
+    dove: "generatore dei dati · validazione · skill · corpus",
+    fatto: "Il generatore non sapeva esprimere un tasso che dipende da due dimensioni ne un tasso che cambia negli anni. Ora `mod` sposta il tasso con l'attr di un'altra dimensione dei fatti (il magazzino da il livello, la regione lo sposta), e un attr puo avere un valore per anno, che scorre dentro l'anno senza scalino a gennaio. La validazione (engine/tassi.js) rifiuta un tasso uguale per tutti i membri della dimensione che lo mostra e una banda KPI coi tassi fermi negli anni; il secondo difetto stava in altri otto casi del corpus, corretti. Muttahar v2: regioni fra 84% e 92% di OTIF (Florida, Mountain e Pacific Northwest in fondo, California in calo), rete da 87,7% a 89,2% in tre anni, Atlanta che peggiora e Dallas che migliora. Gate: test/tassi.test.js.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
