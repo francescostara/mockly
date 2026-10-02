@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+/* L'ASSE DELLA LINEA SI ADATTA AI DATI, E UNA CELLA SENZA BASE E VUOTA.
+ *
+ * Fra sul mockup di Muttahar (2 ott 2026), pagina Trends & targets: nel grafico misto colonne +
+ * OTIF "non si capisce bene l'asse e la riga e dritta… se passo sopra col mouse non si vede il
+ * valore". L'asse della linea andava da zero a 1,25 volte il massimo, senza etichette: un OTIF
+ * fra 80% e 90% stava in un decimo dell'altezza. E nella heatmap magazzino x regione le corsie
+ * che non esistono (un magazzino che non serve quella regione) uscivano "0.0%" col gradino piu
+ * freddo, cioe "pessimo" dove la verita e "niente".
+ *
+ * Gate, su ogni mockup del corpus:
+ *  - ogni colline con una linea ha l'asse secondario scritto (almeno due tacche), un bersaglio
+ *    col tooltip su ogni punto, e se la linea cambia valore i punti occupano un'altezza vera;
+ *  - nessuna heatmap su un rapporto scrive "0.0%" in una cella: dove manca la base c'e "—".
+ */
+'use strict';
+const assert = require('assert');
+const { JSDOM } = require('jsdom');
+const { casi, renderCaso } = require('./corpus.js');
+
+let n = 0;
+const ok = (label, fn) => { fn(); n++; console.log('  ok  ' + label); };
+console.log('assi (la linea del colline si legge, la heatmap non inventa zeri)');
+
+const visuali = pg => {
+  const out = [];
+  pg.rows.forEach(r => r.visuals.forEach(v => (v.viste || [v]).forEach(x => out.push(x))));
+  return out;
+};
+const perPagina = (c, fn) => {
+  const spec = c.caso.spec;
+  const dom = new JSDOM(renderCaso(c, spec), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const doc = dom.window.document, win = dom.window;
+  const pagine = [...doc.querySelectorAll('.navbtn')].map(b => b.dataset.page);
+  (pagine.length ? pagine : [null]).forEach(p => {
+    if (p) doc.querySelector('.navbtn[data-page="' + p + '"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    fn(p ? spec.pages.find(x => x.id === p) : spec.pages[0], doc);
+  });
+};
+
+const guastiC = [], guastiH = [];
+let colline = 0, heat = 0, vuote = 0;
+casi().forEach(c => perPagina(c, (pg, doc) => {
+  const vs = visuali(pg);
+  /* solo le viste visibili: la prima di ogni card a viste */
+  const attesi = [];
+  pg.rows.forEach(r => r.visuals.forEach(v => { const x = v.viste ? v.viste[0] : v; if (x.type === 'colline' && x.bind && x.bind.line) attesi.push(x); }));
+  const svg = [...doc.querySelectorAll('#page svg')].filter(s => s.querySelector('circle.l2p'));
+  if (attesi.length && svg.length < attesi.length) guastiC.push(`${c.id} · ${pg.id}: ${attesi.length} colline con la linea, ${svg.length} con i punti interrogabili`);
+  svg.forEach(s => {
+    colline++;
+    const punti = [...s.querySelectorAll('circle.l2p')];
+    const tacche = s.querySelectorAll('text.l2').length;
+    if (tacche < 2) guastiC.push(`${c.id} · ${pg.id}: l'asse della linea ha ${tacche} tacche`);
+    punti.forEach(p => { if (!/<br>/.test(p.getAttribute('data-tip') || '')) guastiC.push(`${c.id} · ${pg.id}: un punto della linea senza tooltip`); });
+    const valori = new Set(punti.map(p => (p.getAttribute('data-tip') || '').split('<br>')[1]));
+    const ys = punti.map(p => +p.getAttribute('cy'));
+    if (valori.size > 2 && Math.max(...ys) - Math.min(...ys) < 20)
+      guastiC.push(`${c.id} · ${pg.id}: la linea cambia valore ma i punti stanno in ${(Math.max(...ys) - Math.min(...ys)).toFixed(1)}px (asse non adattato)`);
+  });
+  const spec = c.caso.spec, mis = {};
+  (spec.model.measures || []).forEach(m => { mis[m.id] = m; });
+  vs.filter(v => v.type === 'heatmap' && mis[v.bind.measure] && mis[v.bind.measure].agg === 'ratio').forEach(() => { heat++; });
+  [...doc.querySelectorAll('#page svg')].forEach(s => {
+    vuote += s.querySelectorAll('rect.vuota').length;
+    [...s.querySelectorAll('rect.hit[data-tip]')].forEach(r => {
+      if (/<br>0[.,]0%$/.test(r.getAttribute('data-tip')) && r.getAttribute('data-f'))
+        guastiH.push(`${c.id} · ${pg.id}: cella "${r.getAttribute('data-tip').replace(/<[^>]+>/g, ' ')}"`);
+    });
+  });
+}));
+
+ok('ogni colline con la linea: asse secondario scritto, tooltip su ogni punto, linea che si muove', () => {
+  assert(colline >= 3, `solo ${colline} colline con la linea nel corpus: il gate non prova niente`);
+  assert.deepStrictEqual(guastiC.slice(0, 8), [], guastiC.slice(0, 8).join('\n'));
+});
+ok('nessuna heatmap su un rapporto scrive 0.0% dove manca la base; le corsie vuote ci sono (Muttahar)', () => {
+  assert(heat >= 1 && vuote >= 1, `heatmap su rapporti ${heat}, celle vuote ${vuote}`);
+  assert.deepStrictEqual(guastiH.slice(0, 8), [], guastiH.slice(0, 8).join('\n'));
+});
+console.log('  ' + n + ' checks');

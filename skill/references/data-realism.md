@@ -205,7 +205,7 @@ and read it with `"mod": { "from": "region", "attr": "otM" }` on the rate field 
 points (0.95–1.03), with a reason (the far region is late, the dense corridor is on time).
 Equally, a rate that is identical every year makes every year-over-year comparison flat: give
 the rates that tell the story a value per year (`"ot": [0.925, 0.94, 0.951]` — improving, eroding,
-one member slipping while the others improve). Self-check before emitting: for each rate shown by
+one member slipping while the others improve; for an event with a date, one value per month). Self-check before emitting: for each rate shown by
 a dimension, do its members differ by at least a couple of points? Does at least one rate move
 across the years?
 

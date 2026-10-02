@@ -573,6 +573,30 @@ const INTERVENTI = [
     fatto: "Il generatore non sapeva esprimere un tasso che dipende da due dimensioni ne un tasso che cambia negli anni. Ora `mod` sposta il tasso con l'attr di un'altra dimensione dei fatti (il magazzino da il livello, la regione lo sposta), e un attr puo avere un valore per anno, che scorre dentro l'anno senza scalino a gennaio. La validazione (engine/tassi.js) rifiuta un tasso uguale per tutti i membri della dimensione che lo mostra e una banda KPI coi tassi fermi negli anni; il secondo difetto stava in altri otto casi del corpus, corretti. Muttahar v2: regioni fra 84% e 92% di OTIF (Florida, Mountain e Pacific Northwest in fondo, California in calo), rete da 87,7% a 89,2% in tre anni, Atlanta che peggiora e Dallas che migliora. Gate: test/tassi.test.js.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 4,
+    commento: "(Fra) Modifica ancora di piu la diversity o varianza, cerchiamo di evidenziare una storia specifica.",
+    dove: "generatore dei dati · skill · corpus",
+    fatto: "Un attr puo avere un valore per MESE (anni x 12): serve all'evento con una data, che un valore per anno spalma su tutto l'anno. La storia di Muttahar: il cambio di sistema di Atlanta ad aprile 2025 porta il suo OTIF sotto l'80% fra aprile e giugno, poi recupera; ogni magazzino serve le sue regioni (mix), quindi il colpo cade su Southeast e Florida (-4,5 punti) mentre Northeast e Great Lakes stanno sopra il 94%. La rete, che si avvicinava al target nel 2024, perde 0,6 punti. Gate: test/tassi.test.js (il mese colpisce il suo mese; il crollo di Atlanta si vede).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 4,
+    commento: "(Fra) Nel grafico misto con le colonne per anno e l'OTIF come linea non si capisce bene l'asse e la riga e dritta. L'asse deve adeguarsi ai filtri come fa Power BI ed evidenziare i cambiamenti mese per mese; passando col mouse non si vede il valore.",
+    dove: "colline · runtime",
+    fatto: "L'asse della linea andava da zero a 1,25 volte il massimo, senza etichette. Ora va dal minimo al massimo dei mesi visibili, a tacche tonde scritte a destra nel colore della linea, e si ricalcola a ogni filtro; un mese senza dati interrompe la linea invece di farla cadere a zero. Ogni punto ha un bersaglio col tooltip: il valore, la variazione sul mese prima e la misura delle colonne. Gate: test/assi.test.js su ogni colline del corpus.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/supply-chain-muttahar",
+    versione: 4,
+    commento: "(visto rifacendo il mockup) Nella heatmap magazzino x regione le corsie che non esistono uscivano 0.0% col gradino piu freddo.",
+    dove: "heatmap · runtime",
+    fatto: "Una cella il cui rapporto non ha base e vuota, con un trattino, e resta fuori dai gradini di colore; A.definita legge anche un denominatore che e un'altra misura. Gate: test/assi.test.js.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

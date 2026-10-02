@@ -217,6 +217,9 @@ table by that dimension shows ties. Works on `share` and `divide`.
 towards the next (centred on mid-year), so the yearly average is the declared value and the
 monthly trend has no January step. A fixed rate makes every year-over-year comparison flat. Also
 valid on `mod` attrs (a region that degrades while the others hold).
+An event with a date — a warehouse system cut-over in April, a two-month strike — needs a value
+per MONTH: an array of `years.length × 12` numbers (January of the first year first). Use it for
+the one member the story is about; the others keep a value per year.
 
 **A split member can grow faster than the others.** `growth` on a split member tilts its share
 year after year (`(1+growth)^year`, renormalised; `shares` then describes the first year). Without

@@ -476,7 +476,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* UN TASSO SENZA BASE NON E UN NUMERO. Un rapporto il cui denominatore e zero o negativo — l'uplift
        di "Fuori promozione", che non ha vendite in promozione — usciva "0,0%" o "−100,0%" e si leggeva
        come una campagna andata male (Fra, 28 set 2026). Si scrive "—", non applicabile. */
-    A.definita = function (ms, a) { var m = A.meas(ms); return m.agg !== 'ratio' || (a[m.den] || 0) > 0; };
+    A.definita = function (ms, a) {
+      var m = A.meas(ms);
+      if (m.agg !== 'ratio') return true;
+      /* il denominatore puo essere una somma (sta nell'aggregato) o un'altra misura */
+      var d = a[m.den] !== undefined ? a[m.den] : A.mv(m.den, a);
+      return (d || 0) > 0;
+    };
     /* UNA VOCE NUOVA NON VARIA: e nuova. Vale anche per le percentuali: il margine della campagna
        fatta per la prima volta usciva "+17,2 pp" contro un anno in cui non esisteva. Si guarda la
        base: il denominatore di un rapporto, la misura stessa per una somma. */
@@ -1394,6 +1400,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 /*#region chart:colline*/
 /* Clustered column + line on a secondary axis — "actual vs prior with a rate line". */
 (function (M) {
+  /* un asse che non parte da zero: dal minimo al massimo, allargato a tacche tonde (Power BI fa
+     cosi sull'asse secondario). Tre-cinque tacche; un intervallo nullo si apre di poco. */
+  M.asseStretto = function (lo, hi) {
+    if (hi - lo < Math.abs(hi) * 1e-3) { lo -= Math.abs(hi) * .02 || 1; hi += Math.abs(hi) * .02 || 1; }
+    var st = M.ticks((hi - lo) * 1.2, 3)[1], a = Math.floor(lo / st) * st, tk = [];
+    for (var x = a; x <= hi + st * .999; x += st) tk.push(+x.toFixed(10));
+    return { lo: a, hi: tk[tk.length - 1], tk: tk };
+  };
+
   M.V.colline = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, f = A.f, ms = b.measure, ln = b.line;
     h = v.h || h || 206;
@@ -1412,12 +1427,21 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     for (_i = 0; _i < 12; _i++) {
       cur[_i] = gCur.agg[_i] ? A.mv(ms, gCur.agg[_i]) : 0;
       pri[_i] = gPri.agg[_i] ? A.mv(ms, gPri.agg[_i]) : 0;
-      line[_i] = (lm && gCur.agg[_i]) ? A.mv(ln, gCur.agg[_i]) : 0;
+      /* un mese senza dati non e uno zero: la linea lo salta */
+      line[_i] = (lm && gCur.agg[_i]) ? A.mv(ln, gCur.agg[_i]) : null;
     }
-    var mgn = { t: 14, r: 40, b: 22, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
+    /* L'ASSE DELLA LINEA SI ADATTA AI DATI, come in Power BI. Partiva da zero fino a 1,25 volte il
+       massimo: un OTIF fra l'86% e il 91% occupava il dieci per cento dell'altezza e la linea
+       usciva dritta, senza un'etichetta che dicesse la scala (Fra su Muttahar, 2 ott 2026: "non si
+       capisce bene l'asse e la riga e dritta"). Ora l'asse secondario va dal minimo al massimo dei
+       mesi visibili, con tacche tonde scritte a destra nel colore della linea, e si ricalcola a
+       ogni filtro. La linea occupa la meta alta del grafico, sopra le colonne quando puo. */
+    var lv = line.filter(x => x !== null), aL = null;
+    if (ln && lv.length) aL = M.asseStretto(Math.min.apply(null, lv), Math.max.apply(null, lv));
+    var mgn = { t: 14, r: ln ? 44 : 40, b: 22, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var max = Math.max.apply(null, cur.concat(pri)) * 1.14 || 1, tk = M.ticks(max), top = tk[tk.length - 1] || 1;
-    var lmax = Math.max.apply(null, line) * 1.25 || 1;
-    var Y = val => mgn.t + ih - (val / top) * ih, Y2 = val => mgn.t + ih - (val / lmax) * ih;
+    var Y = val => mgn.t + ih - (val / top) * ih;
+    var Y2 = val => aL ? mgn.t + ih * 0.55 - ((val - aL.lo) / (aL.hi - aL.lo || 1)) * ih * 0.55 : mgn.t;
     var cw = iw / 12, bw = cw * .34;
     var s = '<svg width="' + w + '" height="' + h + '">';
     tk.forEach(t => s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="' + (t ? 'var(--line2)' : 'var(--line)') + '"/>' +
@@ -1427,30 +1451,35 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += '<rect class="hit" x="' + (x0 - bw - 1).toFixed(1) + '" y="' + Y(pri[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(pri[i])).toFixed(1) +
         '" fill="var(--prior)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel(S.y - nAmp, S.y0 - nAmp) + '</b><br>' + A.mfmt(ms, pri[i]) + '"/>';
       s += '<rect class="hit" x="' + (x0 + 1).toFixed(1) + '" y="' + Y(cur[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(cur[i])).toFixed(1) +
-        '" fill="var(--c2)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel() + '</b><br>' + A.mfmt(ms, cur[i]) + (ln ? '<br>' + A.meas(ln).label + ': ' + A.mfmt(ln, line[i]) : '') + '"/>';
+        '" fill="var(--c2)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel() + '</b><br>' + A.mfmt(ms, cur[i]) + '' + '"/>';
       s += '<text x="' + x0.toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
     }
-    if (ln) {
-      var p = '';
-      line.forEach((val, k) => p += (k ? 'L' : 'M') + (mgn.l + cw * k + cw / 2).toFixed(1) + ',' + Y2(val).toFixed(1));
+    if (ln && aL) {
+      /* l'asse secondario: tacche a destra, nel colore della linea */
+      aL.tk.forEach(t => s += '<text x="' + (mgn.l + iw + 6) + '" y="' + (Y2(t) + 3).toFixed(1) + '" font-size="8" fill="var(--amber)" class="tnum l2">' + A.mfmt(ln, t) + '</text>');
+      var p = '', su = false;
+      line.forEach((val, k) => { if (val === null) { su = false; return; } p += (su ? 'L' : 'M') + (mgn.l + cw * k + cw / 2).toFixed(1) + ',' + Y2(val).toFixed(1); su = true; });
       s += '<path d="' + p + '" fill="none" stroke="var(--amber)" stroke-width="1.8"/>';
-      line.forEach((val, k) => s += '<circle cx="' + (mgn.l + cw * k + cw / 2).toFixed(1) + '" cy="' + Y2(val).toFixed(1) + '" r="2.2" fill="var(--amber)"/>');
-      /* L'ETICHETTA STA ATTACCATA ALLA FINE DELLA LINEA, non nell'angolo in alto.
-         Nell'angolo era a mezza card di distanza dalla curva a cui si riferisce, e la revisione
-         l'ha segnalata due volte: "non si capisce subito a cosa fa riferimento". Ora parte
-         dall'ultimo punto, e se li non ci sta — la linea finisce alta e vicina al bordo — si
-         sposta sopra il punto invece di uscire dal riquadro. Il velo la tiene leggibile anche
-         quando cade sopra una colonna. */
-      var xUlt = mgn.l + cw * 11 + cw / 2, yUlt = Y2(line[11]);
-      var wLbl = M.largh(A.meas(ln).label || '', 8.5);
-      var accanto = xUlt + 8 + wLbl + 6 <= w - M.PAD;
-      /* accanto all'ultimo punto se ci sta, altrimenti SOPRA di esso — mai nell'angolo, che e
-         il posto piu lontano possibile dalla curva che l'etichetta nomina */
-      s += M.testoVelato(A.meas(ln).label || '',
-        accanto ? xUlt + 8 : Math.min(Math.max(xUlt, M.PAD + wLbl / 2), w - M.PAD - wLbl / 2),
-        accanto ? yUlt + 3 : Math.max(mgn.t + 8, yUlt - 10),
-        { px: 8.5, anc: accanto ? 'start' : 'middle', velo: 'var(--card)', opacita: 0.9,
-          ink: 'var(--amber)', padX: 4, padY: 2 });
+      /* ogni punto ha il suo tooltip, con un bersaglio piu largo del pallino: prima il valore
+         della linea si leggeva solo passando sulle colonne, e chi puntava la linea non vedeva
+         niente */
+      line.forEach((val, k) => {
+        if (val === null) return;
+        var cx = (mgn.l + cw * k + cw / 2).toFixed(1), cy = Y2(val).toFixed(1);
+        var tip = '<b>' + A.MON[k] + ' ' + A.annoLabel() + '</b><br>' + M.esc(lm.label) + ': ' + A.mfmt(ln, val) +
+          (k && line[k - 1] !== null ? ' (' + A.varia(ln, val, line[k - 1]).t + ' ' + M.esc(A.MON[k - 1]) + ')' : '') +
+          '<br>' + M.esc(A.meas(ms).label) + ': ' + A.mfmt(ms, cur[k]);
+        /* il bordo trasparente largo e il bersaglio del mouse: il pallino resta piccolo */
+        s += '<circle class="hit l2p" cx="' + cx + '" cy="' + cy + '" r="2.6" fill="var(--amber)" stroke="transparent" stroke-width="11" data-tip="' + tip.replace(/"/g, '&quot;') + '"/>';
+      });
+      /* L'ETICHETTA STA SOPRA L'ULTIMO PUNTO, non nell'angolo: li era a mezza card dalla curva
+         che nomina ("non si capisce subito a cosa fa riferimento", due volte). A destra ci sono
+         le tacche dell'asse secondario. Il velo la tiene leggibile sopra una colonna. */
+      var k = 11; while (line[k] === null) k--;
+      var wLbl = M.largh(lm.label || '', 8.5), xU = mgn.l + cw * k + cw / 2;
+      s += M.testoVelato(lm.label || '', Math.min(Math.max(xU, M.PAD + wLbl / 2), w - M.PAD - wLbl / 2),
+        Math.max(mgn.t + 8, Y2(line[k]) - 10),
+        { px: 8.5, anc: 'middle', velo: 'var(--card)', opacita: 0.9, ink: 'var(--amber)', padX: 4, padY: 2 });
     }
     return A.card(v, s + '</svg>');
   };
@@ -1661,12 +1690,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       o.pin[dim] = r.id;
       if (c.pin !== undefined) o.pin[b.by] = c.pin;
       if (c.months) { o.months = c.months; o.timeline = true; }
-      return A.mv(ms, A.agg(A.slice(o)));
+      /* UNA CELLA SENZA BASE E VUOTA, non zero. Un magazzino che non serve una regione non ha un
+         OTIF dello 0%: la mappa di Muttahar coloriva di "0.0%" le corsie che non esistono, e il
+         gradino piu freddo diceva "pessimo" dove la verita e "niente" (2 ott 2026). */
+      var a = A.agg(A.slice(o));
+      return A.definita(ms, a) ? A.mv(ms, a) : null;
     };
 
     var celle = [], min = Infinity, max = -Infinity;
     righe.forEach(function (r) {
-      var fila = cols.map(function (c) { var x = val(r, c); if (x < min) min = x; if (x > max) max = x; return x; });
+      var fila = cols.map(function (c) { var x = val(r, c); if (x === null) return null; if (x < min) min = x; if (x > max) max = x; return x; });
       celle.push(fila);
     });
     if (!isFinite(min)) { min = 0; max = 1; }
@@ -1689,7 +1722,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        risponde meglio a questa campagna" non si legge piu (Fra, 28 set 2026). */
     if (b.per === 'colonna') {
       soglieCol = cols.map(function (_c, ci) {
-        var col = celle.map(function (f) { return f[ci]; }).sort(function (p, q) { return p - q; });
+        var col = celle.map(function (f) { return f[ci]; }).filter(function (x) { return x !== null; }).sort(function (p, q) { return p - q; });
         return col.length ? [1, 2, 3, 4].map(function (k) { return col[Math.floor(col.length * k / 5)]; }) : [0, 0.25, 0.5, 0.75];
       });
     }
@@ -1698,7 +1731,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       soglie = [1, 2, 3, 4].map(function (k) { return b.scale[0] + sp0 * k / 5; });
     } else {
       var ord = [];
-      for (var _q = 0; _q < celle.length; _q++) ord = ord.concat(celle[_q]);
+      for (var _q = 0; _q < celle.length; _q++) ord = ord.concat(celle[_q].filter(function (x) { return x !== null; }));
       ord.sort(function (p, q) { return p - q; });
       soglie = ord.length
         ? [1, 2, 3, 4].map(function (k) { return ord[Math.floor(ord.length * k / 5)]; })
@@ -1729,6 +1762,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += '<text x="' + (lw - 6) + '" y="' + (y + ch / 2 + 3).toFixed(1) + '" text-anchor="end" ' +
         'font-size="9" fill="var(--ink2)">' + M.esc(r.n) + '</text>';
       celle[ri].forEach(function (x, ci) {
+        if (x === null) {
+          s += '<rect class="vuota" x="' + (lw + cw * ci + gap / 2).toFixed(1) + '" y="' + (y + gap / 2).toFixed(1) +
+            '" width="' + Math.max(1, cw - gap).toFixed(1) + '" height="' + Math.max(1, ch - gap).toFixed(1) +
+            '" rx="1" fill="var(--card)" stroke="var(--line2)"/>' +
+            (ch >= 17 ? '<text x="' + (lw + cw * ci + cw / 2).toFixed(1) + '" y="' + (y + ch / 2 + 3).toFixed(1) +
+              '" text-anchor="middle" font-size="8.5" fill="var(--muted3)" style="pointer-events:none">—</text>' : '');
+          return;
+        }
         /* Il gradino della cella, dal piu freddo al piu caldo. Sono velature della rampa
            sequenziale (Viridis o Cividis), quindi la scala sale in luminanza in modo monotono e
            resta leggibile anche in stampa e sotto le tre dicromazie. */

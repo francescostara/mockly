@@ -64,8 +64,16 @@ function members(dp, dimId, what) {
    template scritto su due anni regge l'intervista che ne chiede tre. Piu lungo e un errore. */
 function valoreAttr(v, nome, ctx, row) {
   if (!Array.isArray(v)) return v;
+  /* UN VALORE PER MESE: dodici per anno. Serve all'evento che ha una data — il cambio di WMS ad
+     aprile, lo sciopero di due mesi — che un valore per anno spalma su tutto l'anno. */
+  if (v.length === ctx.years.length * 12 && ctx.years.length * 12 !== ctx.years.length) {
+    if (v.some(x => typeof x !== 'number')) fail(`attrs.${nome}: un array mensile vuole solo numeri`);
+    if (row) return v[ctx.yi * 12 + row.m];
+    const anno = v.slice(ctx.yi * 12, ctx.yi * 12 + 12);
+    return anno.reduce((a, x) => a + x, 0) / 12;
+  }
   if (!v.length || v.length > ctx.years.length || v.some(x => typeof x !== 'number'))
-    fail(`attrs.${nome}: un array deve avere un numero per anno (${ctx.years.length}: ${ctx.years.join(', ')}), ne ha ${v.length}`);
+    fail(`attrs.${nome}: un array vuole un numero per anno (${ctx.years.length}: ${ctx.years.join(', ')}) o uno per mese (${ctx.years.length * 12}), ne ha ${v.length}`);
   const off = ctx.years.length - v.length;
   const pos = Math.max(0, Math.min(v.length - 1, ctx.yi - off + ((row ? row.m : 5.5) - 5.5) / 12));
   const a = Math.floor(pos), b = Math.min(v.length - 1, a + 1);
