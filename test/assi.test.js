@@ -39,7 +39,9 @@ const perPagina = (c, fn) => {
 };
 
 const guastiC = [], guastiH = [];
-let colline = 0, heat = 0, vuote = 0, conTarget = 0, colori = 0;
+let colline = 0, heat = 0, vuote = 0, conTarget = 0, colori = 0, lineeEt = 0, quote = 0;
+const guastiEt = [];
+const num = t => parseFloat(String(t).replace(/[^\d.,\-−]/g, '').replace('−', '-').replace(/,/g, ''));
 const guastiColori = [];
 casi().forEach(c => perPagina(c, (pg, doc) => {
   const vs = visuali(pg);
@@ -77,6 +79,30 @@ casi().forEach(c => perPagina(c, (pg, doc) => {
     const norm = v => { const e = doc.createElement('i'); e.style.color = v; return e.style.color; };
     if (norm(bar.getAttribute('fill')) !== norm(sw[nome])) guastiColori.push(`${c.id} · ${pg.id}: "${nome}" e ${sw[nome]} nella tabella e ${bar.getAttribute('fill')} nella barra`);
   }));
+  /* MINIMO, MASSIMO E ULTIMO PUNTO (guideline delle label di Fra, 3 ott 2026): ogni linea con almeno
+     sei punti scrive i suoi estremi, e il massimo scritto e davvero il massimo della linea */
+  [...doc.querySelectorAll('#page svg')].forEach(sv => {
+    const et = [...sv.querySelectorAll('text[data-et]')];
+    const linea = sv.querySelector('circle.l2p') ? [...sv.querySelectorAll('circle.l2p')] : null;
+    if (!et.length) {
+      if (linea && linea.length >= 6) guastiEt.push(c.id + ' · ' + pg.id + ': una linea di ' + linea.length + ' punti senza etichette di minimo e massimo');
+      return;
+    }
+    lineeEt++;
+    if (linea) {
+      const vals = linea.map(p => num((p.getAttribute('data-tip') || '').split('<br>')[1].split(': ')[1].split(' (')[0]));
+      const scritti = et.map(t => num(t.textContent));
+      if (Math.max(...scritti) < Math.max(...vals) - 1e-9) guastiEt.push(c.id + ' · ' + pg.id + ': il massimo scritto (' + Math.max(...scritti) + ') non e il massimo della linea (' + Math.max(...vals) + ')');
+    }
+  });
+  /* LA QUOTA SUL TOTALE accanto al valore di un hbar su una misura che si somma */
+  [...doc.querySelectorAll('#page svg')].filter(sv => sv.querySelector('rect.barra')).forEach(sv => {
+    const q = [...sv.querySelectorAll('tspan')].map(t => t.textContent.trim()).filter(t => /^\d+%$/.test(t));
+    if (!q.length) return;
+    quote++;
+    const somma = q.reduce((a, t) => a + parseInt(t, 10), 0);
+    if (somma > 102) guastiEt.push(c.id + ' · ' + pg.id + ': le quote di un hbar sommano ' + somma + '%');
+  });
   const spec = c.caso.spec, mis = {};
   (spec.model.measures || []).forEach(m => { mis[m.id] = m; });
   vs.filter(v => v.type === 'heatmap' && mis[v.bind.measure] && mis[v.bind.measure].agg === 'ratio').forEach(() => { heat++; });
@@ -96,6 +122,10 @@ ok('ogni colline con la linea: asse secondario su tutta l altezza, tooltip su og
 ok('il target di un colline e una linea fissa; un membro ha lo stesso colore nella tabella e nella barra', () => {
   assert(conTarget >= 2 && colori >= 6, `colline con target ${conTarget}, barre confrontate col colore della tabella ${colori}`);
   assert.deepStrictEqual(guastiColori.slice(0, 8), [], guastiColori.slice(0, 8).join(String.fromCharCode(10)));
+});
+ok('le linee scrivono minimo, massimo e ultimo punto; le barre di una misura additiva la loro quota sul totale', () => {
+  assert(lineeEt >= 5 && quote >= 3, 'linee etichettate ' + lineeEt + ', hbar con la quota ' + quote);
+  assert.deepStrictEqual(guastiEt.slice(0, 8), [], guastiEt.slice(0, 8).join(String.fromCharCode(10)));
 });
 ok('nessuna heatmap su un rapporto scrive 0.0% dove manca la base; le corsie vuote ci sono (Muttahar)', () => {
   assert(heat >= 1 && vuote >= 1, `heatmap su rapporti ${heat}, celle vuote ${vuote}`);

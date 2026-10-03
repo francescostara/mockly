@@ -709,6 +709,14 @@ const INTERVENTI = [
     fatto: "La card finance e gli scostamenti dal budget stanno fra i marcatori #fin, e il loro CSS (conto economico, righe della card) viaggia solo nei report che li usano: un report senza budget torna a 77,5KB.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 3,
+    commento: "(Fra) Riguardo al pdf delle label hai implementato qualcosa in generale? Q&A: min/max/ultimo punto sulle linee e % del totale accanto al valore delle barre, attivi di default con regole.",
+    dove: "trend · colline · hbar · runtime · skill",
+    fatto: "M.etichettePunti: su ogni trend (anno singolo) e sulla linea di ogni colline con almeno sei punti il motore scrive il valore del massimo (sopra), del minimo (sotto) e dell'ultimo punto, evidenziati; un punto che e insieme ultimo ed estremo si scrive una volta; ogni scritta resta nell'area del grafico, evita il nome della serie e il target, prova il lato opposto prima di saltare. Nell'hbar di una misura additiva la quota sul totale di TUTTI i membri sta accanto al valore (dentro la barra se il valore e dentro e ci sta). `labels: false` e `share: false` le spengono. Gate: test/assi.test.js (ogni linea di sei punti ha le sue etichette e il massimo scritto e il massimo vero; le quote non superano il 100%) e test/barra.test.js in Chrome (scritte dei trend dentro il riquadro e mai sovrapposte).",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

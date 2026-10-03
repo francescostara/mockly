@@ -192,8 +192,13 @@ function tuttiIFiltri() {
         const linee = await page.evaluate(() => {
           const rgb = c => { const m = /rgba?\((\d+), (\d+), (\d+)/.exec(c); return m ? [+m[1], +m[2], +m[3]] : null; };
           const dist = (a, b) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) / 441.7; };
-          return [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('path.l2l')).map(s => {
-            const out = [], lc = getComputedStyle(s.querySelector('path.l2l')).stroke;
+          return [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('path.l2l') || s.querySelector('[data-et]')).map(s => {
+            const out = [];
+            if (!s.querySelector('path.l2l')) { const R0 = s.getBoundingClientRect(), t0 = [...s.querySelectorAll('text')].map(x => x.getBoundingClientRect()).filter(x => x.width);
+              t0.forEach(x => { if (x.left < R0.left - 0.5 || x.right > R0.right + 0.5) out.push('una scritta esce dal riquadro'); });
+              for (let i = 0; i < t0.length; i++) for (let j = i + 1; j < t0.length; j++) { const a = t0[i], b = t0[j]; if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 2 && b.top < a.bottom - 2) out.push('due scritte si sovrappongono'); }
+              return out; }
+            const lc = getComputedStyle(s.querySelector('path.l2l')).stroke;
             const col = [...s.querySelectorAll('rect.hit')].map(r => getComputedStyle(r).fill);
             const cur = col.length ? col[col.length - 1] : null;
             if (cur && dist(lc, cur) < 0.28) out.push('la linea (' + lc + ') non si stacca dalle colonne (' + cur + ')');

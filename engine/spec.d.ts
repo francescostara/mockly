@@ -204,13 +204,13 @@ export interface MatrixColumn {
 }
 
 export type Bind =
-  | { measure: string }                                                       // trend, sparkline
-  | { measure: string; line?: string; target?: number; targetLabel?: string }  // colline: target = bersaglio della linea, sulla sua scala
+  | { measure: string; labels?: boolean }                                     // trend (labels:false spegne min/max/ultimo), sparkline
+  | { measure: string; line?: string; target?: number; targetLabel?: string; labels?: boolean }  // colline: target = bersaglio della linea; labels:false spegne min/max/ultimo
   | { dim: string; measure: string }                                          // donut
   /** hbar — classifica. `order: "asc"` mostra la CODA: i `top` peggiori per la misura (i prodotti
    *  "che hanno bisogno di attenzione"), invece dei migliori. `subMeasure` si scrive accanto al
    *  valore di ogni barra ("$6.0M · 40.0% margin", con `subUnit` in coda). */
-  | { dim: string; measure: string; top?: number; order?: 'desc' | 'asc'; parent?: string; detail?: boolean; subMeasure?: string; subUnit?: string } // hbar
+  | { dim: string; measure: string; top?: number; order?: 'desc' | 'asc'; parent?: string; detail?: boolean; subMeasure?: string; subUnit?: string; share?: boolean } // hbar: share:false spegne la quota sul totale
   | { dim: string; measure: string; by?: 'q' | 'm' | string }                 // stack100, ribbon
   /** donut — il visual della CONCENTRAZIONE. `topN` aggrega la coda in "Altri" (e cio che
    *  rende leggibile una dimensione con dodici membri); `centre: "share"` mette al centro la

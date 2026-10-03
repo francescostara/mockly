@@ -108,7 +108,11 @@ name's line, right-aligned. What that asks of the spec:
   the others become slivers. Then rank a RATE or a share instead of the absolute value, or use a
   matrix with a `share` column. A bar chart where only the first bar is readable answers nothing.
 - **Time series:** label what the reader needs (the last point, the minimum and maximum), not
-  every point. Put the line of a column + line chart on its own axis, which fits the data (the
+  every point. The engine does it by default on every trend and on the line of a column + line
+  chart with at least six points; `"labels": false` turns it off when the chart is too dense.
+- **Ranked bars of an additive measure show their share of the total** next to the value
+  (`€2,922.0K 52%`), computed on all members, not only the ones shown; `"share": false` turns it
+  off. Rates, ratios and stocks never get a share. Put the line of a column + line chart on its own axis, which fits the data (the
   engine does it).
 - **A rate with a target shows the target.** In a column + line chart whose line is a
   percentage with a target (compliance 98%, OTIF 92%), declare `"target": 0.98`: the engine draws

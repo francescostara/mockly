@@ -68,6 +68,37 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
      spazi e punti compresi. Misurate con M.largh uscivano piu corte del vero e sforavano il bordo
      (Luca, 3 ott 2026). Chi misura un testo tnum usa questa. */
   M.larghN = (t, px) => String(t).length * .62 * px;
+  /* MINIMO, MASSIMO E ULTIMO PUNTO DI UNA LINEA (le guideline delle label di Fra, 3 ott 2026: si
+     etichetta quello che il lettore cerca, non ogni punto). Con almeno sei punti il motore scrive il
+     valore del punto piu alto (sopra), del piu basso (sotto) e dell'ultimo, e li evidenzia; un punto
+     che e sia l'ultimo sia un estremo si scrive una volta. Ogni scritta resta dentro l'area del
+     grafico e salta se toccherebbe una scritta gia messa (`evita`: i riquadri occupati).
+     p: [{x, y, v}] (v null = mese senza dato) · o: {fmt, col, l, r, t, b, ultimoGiu, evita} */
+  M.etichettePunti = function (p, o) {
+    var pts = p.filter(q => q.v !== null && isFinite(q.v));
+    if (pts.length < 6) return '';
+    var mx = pts.reduce((a, q) => q.v > a.v ? q : a, pts[0]), mn = pts.reduce((a, q) => q.v < a.v ? q : a, pts[0]), ul = pts[pts.length - 1];
+    if (mx.v === mn.v) return '';
+    var voci = [{ q: mx, dove: mx === ul && o.ultimoGiu ? 'giu' : 'su' }, { q: mn, dove: 'giu' }];
+    if (ul !== mx && ul !== mn) voci.push({ q: ul, dove: o.ultimoGiu ? 'giu' : 'su' });
+    var occ = (o.evita || []).slice(), out = '';
+    voci.forEach(function (e) {
+      var t = o.fmt(e.q.v), w = M.larghN(t, 8), x = Math.min(Math.max(e.q.x, o.l + w / 2), o.r - w / 2);
+      /* il lato preferito, poi l'altro: un'etichetta si salta solo se non sta da nessuna parte */
+      var lati = e.dove === 'su' ? [e.q.y - 7, e.q.y + 14] : [e.q.y + 14, e.q.y - 7], y = null, box;
+      lati.some(function (yy) {
+        if (yy - 8 < o.t || yy > o.b) return false;
+        var bx = { l: x - w / 2 - 2, r: x + w / 2 + 2, t: yy - 9, b: yy + 2 };
+        if (occ.some(z => z.l < bx.r && bx.l < z.r && z.t < bx.b && bx.t < z.b)) return false;
+        y = yy; box = bx; return true;
+      });
+      if (y === null) return;
+      occ.push(box);
+      out += '<circle cx="' + e.q.x.toFixed(1) + '" cy="' + e.q.y.toFixed(1) + '" r="3.2" fill="' + o.col + '" style="pointer-events:none"/>' +
+        M.testoVelato(t, x, y, { px: 8, anc: 'middle', velo: 'var(--card)', opacita: .85, ink: o.col, padX: 2, padY: 1 }).replace('<text', '<text data-et="1"');
+    });
+    return out;
+  };
   /* IL CUSCINETTO. Ogni grafico tiene questa distanza dai bordi della sua card, a destra e a
      sinistra. Non e una raffinatezza: un disegno che tocca il bordo sembra tagliato anche
      quando e intero, e la revisione l'ha segnalato su sei mockup prima che diventasse una
@@ -1229,6 +1260,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         (A.T.varShort || 'Var') + ': ' + A.varia(ms, val, prev[i]).t + '"/>';
       s += '<text x="' + X(i).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
     });
+    if (b.labels !== false) s += M.etichettePunti(cur.map((val, i) => ({ x: X(i), y: Y(val), v: val })),
+      { fmt: x => A.mfmt(ms, x), col: 'var(--c2)', l: mgn.l, r: mgn.l + iw, t: mgn.t, b: mgn.t + ih });
     return A.card(v, s + '</svg>');
   };
 })(MK);
@@ -1408,17 +1441,26 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var m = { t: 4, b: 4 }, rh = (h - m.t - m.b) / n;
     var bh = Math.max(8, Math.min(18, rh - lblH - 6));
     var max = Math.max.apply(null, data.map(d => d.v)) || 1;
+    var mm = A.meas(ms), quota = (b.share !== false && mm.agg === 'sum' && data.every(d => d.v >= 0))
+      ? grp.keys.reduce((t, id) => t + Math.max(0, A.mv(ms, grp.agg[id])), 0) : 0;
+    /* con la quota la scritta fuori dalla barra e piu lunga: la barra piu lunga lascia il suo spazio */
+    if (quota) maxBar = Math.max(full * .7, full - (Math.max.apply(null, data.map(d => M.larghN(A.mfmt(ms, d.v) + ' ' + Math.round(d.v / quota * 100) + '%', px))) + 8));
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d, i) {
       var top = m.t + rh * i, yb = top + lblH + 2, bl = Math.max(2, (d.v / max) * maxBar);
       var dimd = (b.parent && S.f[b.parent] && d.cat && S.f[b.parent] !== d.cat) ||
         (!b.parent && S.f[dim] && S.f[dim] !== d.id);
       var df = (b.parent && d.cat) ? b.parent + ':' + d.cat : (A.filtrabile(dim) ? dim + ':' + d.id : '');
-      var val = A.mfmt(ms, d.v), twV = M.larghN(val, px), ty = (yb + bh / 2 + 3.2).toFixed(1);
+      /* LA QUOTA SUL TOTALE accanto al valore, per una misura che si somma (le guideline di Fra: "6,282
+         49%"): il totale e quello di tutti i membri, non solo dei primi mostrati. Una percentuale, un
+         rapporto o uno stock non hanno quota; `share: false` la spegne. */
+      var qt = quota ? ' ' + Math.round(d.v / quota * 100) + '%' : '';
+      var val = A.mfmt(ms, d.v), twV = M.larghN(val + qt, px), ty = (yb + bh / 2 + 3.2).toFixed(1);
       var fuori = x0 + bl + 6 + twV <= w - M.PAD;
       var et = fuori
-        ? '<text x="' + (x0 + bl + 6).toFixed(1) + '" y="' + ty + '" font-size="' + px + '" class="tnum" fill="var(--ink)" font-weight="600">' + M.esc(val) + '</text>'
-        : '<text x="' + (x0 + bl - 5).toFixed(1) + '" y="' + ty + '" text-anchor="end" font-size="' + px + '" class="tnum" fill="' + M.inkSu(d.c || 'var(--c1)') + '" font-weight="600">' + M.esc(val) + '</text>';
+        ? '<text x="' + (x0 + bl + 6).toFixed(1) + '" y="' + ty + '" font-size="' + px + '" class="tnum" fill="var(--ink)" font-weight="600">' + M.esc(val) + (qt ? '<tspan font-weight="400" font-style="italic" fill="var(--muted2)">' + qt + '</tspan>' : '') + '</text>'
+        : '<text x="' + (x0 + bl - 5).toFixed(1) + '" y="' + ty + '" text-anchor="end" font-size="' + px + '" class="tnum" fill="' + M.inkSu(d.c || 'var(--c1)') + '" font-weight="600">' + M.esc(val) +
+          (qt && twV + 10 <= bl ? '<tspan font-weight="400" font-style="italic" opacity=".8">' + qt + '</tspan>' : '') + '</text>';
       var subW = d.subv ? M.larghN(d.subv, 8.5) + 10 : 0;
       if (d.subv) et += '<text x="' + (w - M.PAD) + '" y="' + (top + lblH - 2).toFixed(1) + '" text-anchor="end" font-size="8.5" class="tnum" fill="var(--muted2)">' + M.esc(d.subv) + '</text>';
       /* il nome si accorcia solo se tocca il dettaglio sulla sua riga, e lo dice coi puntini */
@@ -1635,6 +1677,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += M.testoVelato(lm.label || '', Math.min(Math.max(xU, mgn.l + wLbl / 2), mgn.l + iw - wLbl / 2),
         yL,
         { px: 8.5, anc: 'middle', velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 4, padY: 2 });
+      /* minimo, massimo e ultimo valore della linea; l'ultimo sta sotto il punto, perche sopra c'e
+         il nome della serie, e nessuno tocca il nome o la scritta del target */
+      var xN = Math.min(Math.max(xU, mgn.l + wLbl / 2), mgn.l + iw - wLbl / 2), evita = [{ l: xN - wLbl / 2 - 4, r: xN + wLbl / 2 + 4, t: yL - 10, b: yL + 3 }];
+      if (tg !== null) evita.push({ l: mgn.l, r: mgn.l + 8 + M.larghN((b.targetLabel || 'Target') + ' ' + A.mfmt(ln, tg), 8.5), t: Y2(tg) - 14, b: Y2(tg) });
+      if (b.labels !== false) s += M.etichettePunti(line.map((val, k2) => ({ x: mgn.l + cw * k2 + cw / 2, y: val === null ? 0 : Y2(val), v: val })),
+        { fmt: x => A.mfmt(ln, x), col: lc, l: mgn.l, r: mgn.l + iw, t: mgn.t, b: mgn.t + ih, ultimoGiu: true, evita: evita });
     }
     return A.card(v, s + '</svg>');
   };
