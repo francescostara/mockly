@@ -39,7 +39,8 @@ const perPagina = (c, fn) => {
 };
 
 const guastiC = [], guastiH = [];
-let colline = 0, heat = 0, vuote = 0;
+let colline = 0, heat = 0, vuote = 0, conTarget = 0, colori = 0;
+const guastiColori = [];
 casi().forEach(c => perPagina(c, (pg, doc) => {
   const vs = visuali(pg);
   /* solo le viste visibili: la prima di ogni card a viste */
@@ -55,9 +56,27 @@ casi().forEach(c => perPagina(c, (pg, doc) => {
     punti.forEach(p => { if (!/<br>/.test(p.getAttribute('data-tip') || '')) guastiC.push(`${c.id} · ${pg.id}: un punto della linea senza tooltip`); });
     const valori = new Set(punti.map(p => (p.getAttribute('data-tip') || '').split('<br>')[1]));
     const ys = punti.map(p => +p.getAttribute('cy'));
+    /* l'asse della linea e popolato su tutta l'altezza, come in Power BI (Fra, 3 ott 2026) */
+    const H = +s.getAttribute('height'), ty = [...s.querySelectorAll('text.l2')].map(t => +t.getAttribute('y'));
+    if (ty.length >= 2 && Math.max(...ty) - Math.min(...ty) < H * 0.6) guastiC.push(`${c.id} · ${pg.id}: le tacche dell'asse della linea coprono ${Math.round(100 * (Math.max(...ty) - Math.min(...ty)) / H)}% dell'altezza`);
     if (valori.size > 2 && Math.max(...ys) - Math.min(...ys) < 20)
       guastiC.push(`${c.id} · ${pg.id}: la linea cambia valore ma i punti stanno in ${(Math.max(...ys) - Math.min(...ys)).toFixed(1)}px (asse non adattato)`);
   });
+  /* un colline con il target lo disegna: una linea fissa dentro l'area del grafico */
+  attesi.filter(x => typeof x.bind.target === 'number').forEach(() => { conTarget++; });
+  const tgt = [...doc.querySelectorAll('#page svg line.tgt')];
+  if (tgt.length < attesi.filter(x => typeof x.bind.target === 'number').length) guastiC.push(`${c.id} · ${pg.id}: un colline con "target" non disegna la linea del target`);
+  tgt.forEach(l => { const y = +l.getAttribute('y1'), H = +l.closest('svg').getAttribute('height'); if (!(y > 0 && y < H)) guastiC.push(`${c.id} · ${pg.id}: la linea del target sta fuori dal grafico (y ${y})`); });
+  /* IL COLORE DI UN MEMBRO E LO STESSO OVUNQUE: il quadratino della tabella e la barra dell'hbar */
+  const sw = {};
+  [...doc.querySelectorAll('#page td')].forEach(td => { const q = td.querySelector('.sw'); if (q) sw[td.textContent.replace('›', '').trim()] = q.style.background; });
+  [...doc.querySelectorAll('#page svg')].filter(x => x.querySelector('rect.barra')).forEach(x => [...x.querySelectorAll('g.hit')].forEach(g => {
+    const nome = (g.querySelector('text') || {}).textContent, bar = g.querySelector('rect.barra');
+    if (!nome || !(nome in sw)) return;
+    colori++;
+    const norm = v => { const e = doc.createElement('i'); e.style.color = v; return e.style.color; };
+    if (norm(bar.getAttribute('fill')) !== norm(sw[nome])) guastiColori.push(`${c.id} · ${pg.id}: "${nome}" e ${sw[nome]} nella tabella e ${bar.getAttribute('fill')} nella barra`);
+  }));
   const spec = c.caso.spec, mis = {};
   (spec.model.measures || []).forEach(m => { mis[m.id] = m; });
   vs.filter(v => v.type === 'heatmap' && mis[v.bind.measure] && mis[v.bind.measure].agg === 'ratio').forEach(() => { heat++; });
@@ -70,9 +89,13 @@ casi().forEach(c => perPagina(c, (pg, doc) => {
   });
 }));
 
-ok('ogni colline con la linea: asse secondario scritto, tooltip su ogni punto, linea che si muove', () => {
+ok('ogni colline con la linea: asse secondario su tutta l altezza, tooltip su ogni punto, linea che si muove', () => {
   assert(colline >= 3, `solo ${colline} colline con la linea nel corpus: il gate non prova niente`);
   assert.deepStrictEqual(guastiC.slice(0, 8), [], guastiC.slice(0, 8).join('\n'));
+});
+ok('il target di un colline e una linea fissa; un membro ha lo stesso colore nella tabella e nella barra', () => {
+  assert(conTarget >= 2 && colori >= 6, `colline con target ${conTarget}, barre confrontate col colore della tabella ${colori}`);
+  assert.deepStrictEqual(guastiColori.slice(0, 8), [], guastiColori.slice(0, 8).join(String.fromCharCode(10)));
 });
 ok('nessuna heatmap su un rapporto scrive 0.0% dove manca la base; le corsie vuote ci sono (Muttahar)', () => {
   assert(heat >= 1 && vuote >= 1, `heatmap su rapporti ${heat}, celle vuote ${vuote}`);

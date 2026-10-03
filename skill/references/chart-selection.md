@@ -110,6 +110,12 @@ name's line, right-aligned. What that asks of the spec:
 - **Time series:** label what the reader needs (the last point, the minimum and maximum), not
   every point. Put the line of a column + line chart on its own axis, which fits the data (the
   engine does it).
+- **A rate with a target shows the target.** In a column + line chart whose line is a
+  percentage with a target (compliance 98%, OTIF 92%), declare `"target": 0.98`: the engine draws
+  a fixed dashed line on the line's axis, which spans the whole chart height as in Power BI.
+- **The same member keeps the same colour everywhere.** The swatch of a currency in a table is the
+  colour of its bar in the ranked list; the engine does it, so do not fight it with a `parent`
+  unless the parent is the point.
 - **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
 
 ## gauge — un valore contro il suo bersaglio

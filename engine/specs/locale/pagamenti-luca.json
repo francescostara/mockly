@@ -368,7 +368,8 @@
         "title": "Late payments per month, {y} vs {py}, with compliance",
         "bind": {
          "measure": "late",
-         "line": "comp"
+         "line": "comp",
+         "target": 0.98
         },
         "h": 170
        }
@@ -594,7 +595,8 @@
         "title": "Late payments per month with compliance",
         "bind": {
          "measure": "late",
-         "line": "comp"
+         "line": "comp",
+         "target": 0.98
         }
        },
        {

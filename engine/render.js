@@ -687,6 +687,14 @@ function validate(specIn, data) {
             `la disegna il motore dalle serie che traccia davvero (anno corrente, anno prima, e con che ` +
             `segno); una scritta a mano deve indovinare lo stile e sbaglia. Togli il campo.`);
         }
+        /* IL TARGET DELLA LINEA DI UN COLLINE: un numero, sulla scala della linea (0.98 per il 98%).
+           Senza, il bersaglio di una percentuale stava solo nel titolo (Fra su Luca, 3 ott 2026). */
+        (v.viste && v.viste.length ? v.viste : [v]).filter(vv => vv.type === 'colline' && vv.bind && vv.bind.target !== undefined).forEach(vv => {
+          const b = vv.bind, lm = (spec.model.measures || []).find(m => m.id === b.line);
+          if (!b.line) e.push(`page "${pg.id}" colline: "target" e il bersaglio della LINEA, e il visual non ha "line"`);
+          else if (typeof b.target !== 'number' || !isFinite(b.target)) e.push(`page "${pg.id}" colline: "target" deve essere un numero sulla scala di "${b.line}" (es. 0.98 per il 98%)`);
+          else if (lm && lm.unit === 'pct' && (b.target <= 0 || b.target > 1.5)) e.push(`page "${pg.id}" colline: "target" ${b.target} non e una percentuale in decimali — il 98% si scrive 0.98`);
+        });
         /* anche le viste nascoste di una card: un gauge finisce a schermo al primo clic */
         (v.viste && v.viste.length ? v.viste : [v]).filter(vv => vv.type === 'gauge').forEach(vv => {
           const b = vv.bind || {};
@@ -1259,7 +1267,7 @@ function shell(spec, data) {
 
 /* ---------- deterministic, compact JSON ---------- */
 /* L'ANNO VIAGGIA COME SCARTO DAL PRIMO: "2024," ripetuto in ogni riga dei fatti erano cinque byte
-   a riga, un chilo e mezzo in un mockup medio, dentro un file col tetto di 75KB. Il runtime
+   a riga, un chilo e mezzo in un mockup medio, dentro un file col tetto di 80KB. Il runtime
    (M.materialize) lo riporta all'anno vero leggendo y0. */
 function tableJSON(t) {
   const iy = t.cols.indexOf('y');

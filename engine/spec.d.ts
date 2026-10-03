@@ -194,7 +194,7 @@ export interface MatrixColumn {
 
 export type Bind =
   | { measure: string }                                                       // trend, sparkline
-  | { measure: string; line?: string }                                        // colline
+  | { measure: string; line?: string; target?: number; targetLabel?: string }  // colline: target = bersaglio della linea, sulla sua scala
   | { dim: string; measure: string }                                          // donut
   /** hbar — classifica. `order: "asc"` mostra la CODA: i `top` peggiori per la misura (i prodotti
    *  "che hanno bisogno di attenzione"), invece dei migliori. `subMeasure` si scrive accanto al

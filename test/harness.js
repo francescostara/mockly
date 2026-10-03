@@ -31,7 +31,7 @@ const BAD = /NaN|undefined|Infinity/;
 /* IL TETTO DEL FILE, in un posto solo. Vive qui perche qui lo si misura su ogni caso; chi lo
    controlla altrove lo importa invece di riscriverlo, che e il modo in cui due budget diversi
    nascono senza che nessuno lo decida. */
-const TETTO_BYTE = 75 * 1024;
+const TETTO_BYTE = 80 * 1024;
 
 function open(html) {
   const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });
@@ -361,8 +361,11 @@ function runCase(id, fixture, evalCase) {
      Il tetto era 60KB, scritto quando i report erano di una pagina sola e prima che il file
      portasse la scheda di interazione, le pubblicazioni, i valori dentro i grafici. Alzato a
      75KB su decisione dell'autore: resta un file che si apre in un istante e si manda per
-     posta, e il peso vero del prodotto sta altrove — nel motore, che e gia dentro ogni file. */
-  ok('output stays under 75KB', R.bytes < TETTO_BYTE, `${(R.bytes / 1024).toFixed(1)}KB`);
+     posta, e il peso vero del prodotto sta altrove — nel motore, che e gia dentro ogni file.
+     Poi a 80KB, ancora su decisione dell'autore (3 ott 2026): in due giorni tre interventi
+     chiesti dai tester (asse adattato del colline, hbar leggibile, linea del target) l'avevano
+     sfondato, e i margini facili — codice compattato, anno come scarto nei dati — erano finiti. */
+  ok('output stays under ' + (TETTO_BYTE / 1024) + 'KB', R.bytes < TETTO_BYTE, `${(R.bytes / 1024).toFixed(1)}KB`);
 
   R.advisories = lint(spec, data).concat(R.notes);
   B.close();

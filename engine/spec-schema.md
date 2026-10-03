@@ -165,7 +165,7 @@ Common visual fields: `type`, `span`, `h`, `title`, `subtitle`, `note` (right-al
 | type | bind | answers |
 |---|---|---|
 | `trend` | `{measure}` | one measure over time. **Timeline-exempt**: always the full 12 months of the selected year vs prior, highlighting the selected span |
-| `colline` | `{measure, line}` | actual vs prior columns + a rate line on a secondary axis |
+| `colline` | `{measure, line, target, targetLabel}` | actual vs prior columns + a rate line on a secondary axis that fits the data. `target` (on the line's scale: `0.98` for 98%) draws a fixed dashed target line; **declare it whenever the line's measure has a target in the brief** |
 | `donut` | `{dim, measure}` | part-to-whole. **2-5 members only** — above that use `hbar`/`stack100` |
 | `hbar` | `{dim, measure, top, order, parent, detail, subMeasure, subUnit}` | ranked list. `detail:true` reads the detail grain; `parent` colours by the parent dim and makes bars cross-filter it; `order:"asc"` shows the TAIL — the `top` weakest members (products that "need attention") instead of the best |
 | `stack100` | `{dim, measure, by}` | composition across quarters (`by:"q"`) or another dim |

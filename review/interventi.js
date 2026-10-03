@@ -621,6 +621,22 @@ const INTERVENTI = [
     fatto: "L'anno nelle righe dei fatti viaggia come scarto dal primo (y0), e il runtime lo riporta all'anno vero: circa 1,1KB in meno per ogni mockup, senza toccare il codice dei grafici.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 3,
+    commento: "(Fra) In un grafico misto in percentuale con un target puoi includere una linea fissa che mostri il target. Popola meglio l'asse: con le etichette solo nella parte alta non l'ho mai visto in Power BI.",
+    dove: "colline · runtime · grammatica · skill",
+    fatto: "Il colline accetta `target` (e `targetLabel`) sulla scala della linea: una linea fissa tratteggiata con la sua etichetta, inclusa nella scala dell'asse. L'asse della linea ora occupa tutta l'altezza del grafico, con quattro-sei tacche e un margine sotto il minimo, cosi un valore o un target sul fondo non coincide con la base. La validazione rifiuta un target senza linea o una percentuale scritta come 98 invece di 0.98. Target dichiarati nei casi di Luca (98%) e di Muttahar (OTIF 92%). Gate: test/assi.test.js (le tacche coprono almeno il 60% dell'altezza; un colline con target disegna la linea dentro il grafico).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 3,
+    commento: "(Fra) Nelle tabelle usi un colore per ogni valuta: potresti usare lo stesso anche nel grafico a barre.",
+    dove: "hbar · runtime · skill",
+    fatto: "Ogni barra prende il colore del suo membro, lo stesso del quadratino nelle tabelle (col padre, il colore del padre); l'inchiostro del valore scritto dentro la barra si sceglie sul contrasto col colore di quella barra. Gate: test/assi.test.js confronta, su ogni pagina del corpus, il colore di ogni barra col quadratino dello stesso membro nelle tabelle.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

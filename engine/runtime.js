@@ -1270,9 +1270,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 (function (M) {
   /* l'inchiostro leggibile SOPRA un colore della palette: chiaro sui fondi scuri, scuro sui chiari.
      Un valore dentro una barra col colore fisso del tema era scuro su scuro (Luca, 3 ott 2026). */
-  M.inkSu = function (nome) {
+  M.inkSu = function (col) {
     try {
-      var c = getComputedStyle(document.documentElement).getPropertyValue(nome).trim(), mm = /^#?([0-9a-f]{6})$/i.exec(c);
+      var vv = /^var\((--[\w-]+)\)$/.exec(col || '');
+      var c = vv ? getComputedStyle(document.documentElement).getPropertyValue(vv[1]).trim() : String(col || ''), mm = /^#?([0-9a-f]{6})$/i.exec(c);
       if (!mm) return '#fff';
       var n = parseInt(mm[1], 16), l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
       return l < 0.6 ? '#fff' : 'var(--ink)';
@@ -1291,7 +1292,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var data = grp.keys.map(function (id) {
       var a = grp.agg[id], mb = A.member(dim, id), par = b.parent ? parentOf[id] : null;
       var subv = b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : '';
-      return { id: id, l: mb.n, v: A.mv(ms, a), cat: par, c: par ? A.color(b.parent, par) : null,
+      /* IL COLORE DEL MEMBRO E LO STESSO DELLA TABELLA: il quadratino di USD nella matrice e la
+         barra di USD qui (Fra su Luca, 3 ott 2026). Col padre colora il padre. */
+      return { id: id, l: mb.n, v: A.mv(ms, a), cat: par, c: par ? A.color(b.parent, par) : (mb.c || null),
         sub: (par ? A.dimLabel(b.parent, par) + ' · ' : '') + subv, subv: subv };
     /* `order: "asc"` e la lista dei PEGGIORI: stessa misura, verso opposto (Parsa) */
     }).sort((x, y) => b.order === 'asc' ? x.v - y.v : y.v - x.v).slice(0, b.top || 8);
@@ -1303,7 +1306,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        Ora, come il bar chart "space-saving" di Power BI:
         - il nome sta SOPRA la barra, allineato a sinistra: la barra parte dal cuscinetto e ha
           tutta la larghezza della card per mostrare le differenze;
-        - un colore solo (il colore e la quantita, non l'identita); col padre colora il padre;
+        - il colore del membro, lo stesso della sua riga nelle tabelle, su barre abbastanza
+          spesse da leggerlo; col padre colora il padre;
         - la barra e spessa quanto la riga permette (fra 8 e 18px);
         - il valore in grassetto alla fine della barra; dove fuori non ci sta entra DENTRO (i
           "details" di Power BI), con l'inchiostro che contrasta col colore della barra;
@@ -1317,7 +1321,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var maxBar = Math.max(full * .7, full - valW);
     var m = { t: 4, b: 4 }, rh = (h - m.t - m.b) / n;
     var bh = Math.max(8, Math.min(18, rh - lblH - 6));
-    var max = Math.max.apply(null, data.map(d => d.v)) || 1, ink = M.inkSu('--c1');
+    var max = Math.max.apply(null, data.map(d => d.v)) || 1;
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d, i) {
       var top = m.t + rh * i, yb = top + lblH + 2, bl = Math.max(2, (d.v / max) * maxBar);
@@ -1328,7 +1332,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var fuori = x0 + bl + 6 + twV <= w - M.PAD;
       var et = fuori
         ? '<text x="' + (x0 + bl + 6).toFixed(1) + '" y="' + ty + '" font-size="' + px + '" class="tnum" fill="var(--ink)" font-weight="600">' + M.esc(val) + '</text>'
-        : '<text x="' + (x0 + bl - 5).toFixed(1) + '" y="' + ty + '" text-anchor="end" font-size="' + px + '" class="tnum" fill="' + (d.c ? '#fff' : ink) + '" font-weight="600">' + M.esc(val) + '</text>';
+        : '<text x="' + (x0 + bl - 5).toFixed(1) + '" y="' + ty + '" text-anchor="end" font-size="' + px + '" class="tnum" fill="' + M.inkSu(d.c || 'var(--c1)') + '" font-weight="600">' + M.esc(val) + '</text>';
       var subW = d.subv ? M.larghN(d.subv, 8.5) + 10 : 0;
       if (d.subv) et += '<text x="' + (w - M.PAD) + '" y="' + (top + lblH - 2).toFixed(1) + '" text-anchor="end" font-size="8.5" class="tnum" fill="var(--muted2)">' + M.esc(d.subv) + '</text>';
       /* il nome si accorcia solo se tocca il dettaglio sulla sua riga, e lo dice coi puntini */
@@ -1432,10 +1436,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 /* Clustered column + line on a secondary axis — "actual vs prior with a rate line". */
 (function (M) {
   /* un asse che non parte da zero: dal minimo al massimo, allargato a tacche tonde (Power BI fa
-     cosi sull'asse secondario). Tre-cinque tacche; un intervallo nullo si apre di poco. */
+     cosi sull'asse secondario). Quattro-sei tacche; un intervallo nullo si apre di poco. */
   M.asseStretto = function (lo, hi) {
     if (hi - lo < Math.abs(hi) * 1e-3) { lo -= Math.abs(hi) * .02 || 1; hi += Math.abs(hi) * .02 || 1; }
-    var st = M.ticks((hi - lo) * 1.2, 3)[1], a = Math.floor(lo / st) * st, tk = [];
+    /* un margine sotto il minimo: un valore (o un target) sul fondo coinciderebbe con la base del
+       grafico; quattro-sei tacche, non tre */
+    lo -= (hi - lo) * .2;
+    var st = M.ticks((hi - lo) * 1.1, 5)[1], a = Math.floor(lo / st) * st, tk = [];
     for (var x = a; x <= hi + st * .999; x += st) tk.push(+x.toFixed(10));
     return { lo: a, hi: tk[tk.length - 1], tk: tk };
   };
@@ -1467,12 +1474,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        capisce bene l'asse e la riga e dritta"). Ora l'asse secondario va dal minimo al massimo dei
        mesi visibili, con tacche tonde scritte a destra nel colore della linea, e si ricalcola a
        ogni filtro. La linea occupa la meta alta del grafico, sopra le colonne quando puo. */
-    var lv = line.filter(x => x !== null), aL = null;
-    if (ln && lv.length) aL = M.asseStretto(Math.min.apply(null, lv), Math.max.apply(null, lv));
+    /* il target entra nella scala: una linea fissa fuori dall'asse non si vedrebbe */
+    var lv = line.filter(x => x !== null), aL = null, tg = typeof b.target === 'number' ? b.target : null;
+    var lvT = tg === null ? lv : lv.concat([tg]);
+    if (ln && lv.length) aL = M.asseStretto(Math.min.apply(null, lvT), Math.max.apply(null, lvT));
     var mgn = { t: 14, r: ln ? 44 : 40, b: 22, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var max = Math.max.apply(null, cur.concat(pri)) * 1.14 || 1, tk = M.ticks(max), top = tk[tk.length - 1] || 1;
     var Y = val => mgn.t + ih - (val / top) * ih;
-    var Y2 = val => aL ? mgn.t + ih * 0.55 - ((val - aL.lo) / (aL.hi - aL.lo || 1)) * ih * 0.55 : mgn.t;
+    /* L'ASSE DELLA LINEA OCCUPA TUTTA L'ALTEZZA, come in Power BI: stava nella meta alta del
+       grafico, con le tacche solo in cima (Fra, 3 ott 2026: "mai visto in Power BI"). */
+    var Y2 = val => aL ? mgn.t + ih - ((val - aL.lo) / (aL.hi - aL.lo || 1)) * ih : mgn.t;
     var cw = iw / 12, bw = cw * .34;
     var s = '<svg width="' + w + '" height="' + h + '">';
     tk.forEach(t => s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="' + (t ? 'var(--line2)' : 'var(--line)') + '"/>' +
@@ -1488,6 +1499,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     if (ln && aL) {
       /* l'asse secondario: tacche a destra, nel colore della linea */
       aL.tk.forEach(t => s += '<text x="' + (mgn.l + iw + 6) + '" y="' + (Y2(t) + 3).toFixed(1) + '" font-size="8" fill="var(--amber)" class="tnum l2">' + A.mfmt(ln, t) + '</text>');
+      /* LA LINEA DEL TARGET, fissa e tratteggiata, con la sua etichetta a sinistra sopra la linea */
+      if (tg !== null) {
+        var yT = Y2(tg).toFixed(1), tl = (b.targetLabel || 'Target') + ' ' + A.mfmt(ln, tg);
+        s += '<line class="tgt" x1="' + mgn.l + '" y1="' + yT + '" x2="' + (mgn.l + iw) + '" y2="' + yT + '" stroke="var(--ink2)" stroke-width="1.2" stroke-dasharray="4 3"/>' +
+          M.testoVelato(tl, mgn.l + 4, +yT - 4, { px: 8.5, anc: 'start', velo: 'var(--card)', opacita: 0.9, ink: 'var(--ink2)', padX: 3, padY: 1 });
+      }
       var p = '', su = false;
       line.forEach((val, k) => { if (val === null) { su = false; return; } p += (su ? 'L' : 'M') + (mgn.l + cw * k + cw / 2).toFixed(1) + ',' + Y2(val).toFixed(1); su = true; });
       s += '<path d="' + p + '" fill="none" stroke="var(--amber)" stroke-width="1.8"/>';

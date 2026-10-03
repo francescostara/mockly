@@ -30,7 +30,7 @@ const rendi = (id, entry, gruppo) => {
   if (html) fs.writeFileSync(path.join(out, id + '.html'), html);
   const note = html ? lint(entry.spec, data) : [];
   voci.push({ id, nome: entry.name || id, gruppo, kb: html ? Math.round(Buffer.byteLength(html) / 1024) : 0, errore, note });
-  /* IL PESO SI DICE. Il tetto del file (75KB) era verificato solo sui quattro casi dell'eval:
+  /* IL PESO SI DICE. Il tetto del file (80KB) era verificato solo sui quattro casi dell'eval:
      i mockup del banco potevano ingrassare senza che nessuno se ne accorgesse, ed e successo.
      Qui non fallisce — il banco serve a guardare, non a sbarrare — ma la riga lo dice forte,
      e la stessa costante di harness.js decide cosa e "troppo". */

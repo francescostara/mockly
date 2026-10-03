@@ -345,7 +345,8 @@
         "title": "Orders per month, {y} vs {py}, with OTIF",
         "bind": {
          "measure": "orders",
-         "line": "otif"
+         "line": "otif",
+         "target": 0.92
         }
        },
        {
@@ -451,7 +452,8 @@
         "title": "Orders per month with OTIF",
         "bind": {
          "measure": "orders",
-         "line": "otif"
+         "line": "otif",
+         "target": 0.92
         }
        },
        {
