@@ -1258,8 +1258,14 @@ function shell(spec, data) {
 }
 
 /* ---------- deterministic, compact JSON ---------- */
+/* L'ANNO VIAGGIA COME SCARTO DAL PRIMO: "2024," ripetuto in ogni riga dei fatti erano cinque byte
+   a riga, un chilo e mezzo in un mockup medio, dentro un file col tetto di 75KB. Il runtime
+   (M.materialize) lo riporta all'anno vero leggendo y0. */
 function tableJSON(t) {
-  return '{"cols":' + JSON.stringify(t.cols) + ',"rows":[' + t.rows.map(r => JSON.stringify(r)).join(',') + ']}';
+  const iy = t.cols.indexOf('y');
+  const y0 = iy < 0 ? null : Math.min.apply(null, t.rows.map(r => r[iy]));
+  const rows = iy < 0 || !isFinite(y0) ? t.rows : t.rows.map(r => { const c = r.slice(); c[iy] = r[iy] - y0; return c; });
+  return '{"cols":' + JSON.stringify(t.cols) + (iy < 0 || !isFinite(y0) ? '' : ',"y0":' + y0) + ',"rows":[' + rows.map(r => JSON.stringify(r)).join(',') + ']}';
 }
 function dataJSON(data) {
   const parts = ['"dims":' + JSON.stringify(data.dims), '"years":' + JSON.stringify(data.years),

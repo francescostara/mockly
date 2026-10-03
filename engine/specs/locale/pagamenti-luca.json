@@ -1,0 +1,1087 @@
+{
+ "spec": {
+  "meta": {
+   "title": "Payment Cut-off Control",
+   "subtitle": "Cut-off compliance, late payments and STP · {period}",
+   "brand": {
+    "name": "Helvetia Private Bank",
+    "tagline": "Payment Operations"
+   },
+   "locale": "en-US",
+   "currency": "CHF ",
+   "months": [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+   ],
+   "updated": "Data as of Dec 31, 2025",
+   "source": "Source: payment hub and SWIFT gateway",
+   "watermark": "Demo mockup · synthetic data"
+  },
+  "aesthetic": "corporate-sober",
+  "skin": {
+   "shell": "rail",
+   "palette": "slate-freddo",
+   "tipografia": "tecnico",
+   "densita": "medio",
+   "banda": "box"
+  },
+  "archetype": "operational",
+  "grid": {
+   "contentWidth": 1044,
+   "gutter": 12,
+   "columns": 4
+  },
+  "model": {
+   "sums": [
+    "payments",
+    "value",
+    "late",
+    "lateVal",
+    "ontime",
+    "cClient",
+    "cRepair",
+    "cSanct",
+    "cFunds",
+    "cSystem",
+    "manual",
+    "stp",
+    "vdb",
+    "cost",
+    "queueN",
+    "riskN",
+    "riskVal"
+   ],
+   "measures": [
+    {
+     "id": "payments",
+     "label": "Payments",
+     "agg": "sum",
+     "field": "payments",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "value",
+     "label": "Value processed",
+     "agg": "sum",
+     "field": "value",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "late",
+     "label": "Late payments",
+     "agg": "sum",
+     "field": "late",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "lateVal",
+     "label": "Late value",
+     "agg": "sum",
+     "field": "lateVal",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "ontime",
+     "label": "Before cut-off",
+     "agg": "sum",
+     "field": "ontime",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "comp",
+     "label": "Cut-off compliance",
+     "agg": "ratio",
+     "num": "ontime",
+     "den": "payments",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "cClient",
+     "label": "Instruction after cut-off",
+     "agg": "sum",
+     "field": "cClient",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "cRepair",
+     "label": "Manual repair",
+     "agg": "sum",
+     "field": "cRepair",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "cSanct",
+     "label": "Sanctions screening hold",
+     "agg": "sum",
+     "field": "cSanct",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "cFunds",
+     "label": "Insufficient funds check",
+     "agg": "sum",
+     "field": "cFunds",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "cSystem",
+     "label": "Counterparty / system",
+     "agg": "sum",
+     "field": "cSystem",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "pClient",
+     "label": "Client late %",
+     "agg": "ratio",
+     "num": "cClient",
+     "den": "late",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "pRepair",
+     "label": "Repair %",
+     "agg": "ratio",
+     "num": "cRepair",
+     "den": "late",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "pSanct",
+     "label": "Sanctions %",
+     "agg": "ratio",
+     "num": "cSanct",
+     "den": "late",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "pFunds",
+     "label": "Funds %",
+     "agg": "ratio",
+     "num": "cFunds",
+     "den": "late",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "pSystem",
+     "label": "System %",
+     "agg": "ratio",
+     "num": "cSystem",
+     "den": "late",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "manual",
+     "label": "Manual repairs",
+     "agg": "sum",
+     "field": "manual",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "stpN",
+     "label": "Straight-through",
+     "agg": "sum",
+     "field": "stp",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "stpR",
+     "label": "STP rate",
+     "agg": "ratio",
+     "num": "stpN",
+     "den": "payments",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "vdb",
+     "label": "Value date breaches",
+     "agg": "sum",
+     "field": "vdb",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "cost",
+     "label": "Cost of late payments",
+     "agg": "sum",
+     "field": "cost",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "queueN",
+     "label": "In queue",
+     "agg": "last",
+     "field": "queueN",
+     "unit": "count",
+     "format": "N"
+    },
+    {
+     "id": "riskN",
+     "label": "At risk (<30 min)",
+     "agg": "last",
+     "field": "riskN",
+     "unit": "count",
+     "format": "N",
+     "inv": true
+    },
+    {
+     "id": "riskVal",
+     "label": "Value at risk in queue",
+     "agg": "last",
+     "field": "riskVal",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    }
+   ]
+  },
+  "filters": {
+   "date": {
+    "levels": [
+     "year",
+     "quarter",
+     "month"
+    ],
+    "default": {
+     "y": 2025,
+     "q": null,
+     "m": null
+    }
+   },
+   "dims": [
+    {
+     "id": "ccy",
+     "label": "Currency",
+     "control": "dropdown",
+     "allLabel": "All currencies",
+     "pill": "Currency"
+    },
+    {
+     "id": "chan",
+     "label": "Channel",
+     "control": "dropdown",
+     "allLabel": "All channels",
+     "pill": "Channel"
+    },
+    {
+     "id": "ptype",
+     "label": "Payment type",
+     "control": "dropdown",
+     "allLabel": "All types",
+     "pill": "Type"
+    }
+   ]
+  },
+  "kpiBand": [
+   {
+    "id": "comp",
+    "label": "Cut-off compliance (target 98%)",
+    "measure": "comp",
+    "span": 1
+   },
+   {
+    "id": "late",
+    "label": "Late payments",
+    "measure": "late",
+    "span": 1,
+    "inv": true
+   },
+   {
+    "id": "riskVal",
+    "label": "Value at risk in queue",
+    "measure": "riskVal",
+    "span": 1,
+    "inv": true
+   },
+   {
+    "id": "cost",
+    "label": "Cost of late payments",
+    "measure": "cost",
+    "span": 1,
+    "inv": true
+   }
+  ],
+  "pages": [
+   {
+    "id": "monitor",
+    "title": "Cut-off monitor",
+    "subtitle": "USD and other SWIFT currencies miss the cut-off most, and relationship-manager payments are the weakest channel",
+    "nav": "Cut-off monitor",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "heatmap",
+        "span": 2,
+        "h": 170,
+        "title": "Cut-off compliance by currency and channel · {period}",
+        "subtitle": "darker = better; click a row to filter the currency",
+        "bind": {
+         "dim": "ccy",
+         "measure": "comp",
+         "by": "chan"
+        }
+       },
+       {
+        "type": "colline",
+        "span": 2,
+        "title": "Late payments per month, {y} vs {py}, with compliance",
+        "bind": {
+         "measure": "late",
+         "line": "comp"
+        },
+        "h": 170
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 3,
+        "title": "Queue vs cut-off by currency · latest day of {period}",
+        "bind": {
+         "dim": "ccy",
+         "label": "Currency · cut-off",
+         "sort": "riskVal",
+         "drill": true,
+         "totalsLabel": "All currencies",
+         "columns": [
+          {
+           "measure": "queueN",
+           "label": "In queue"
+          },
+          {
+           "measure": "riskN",
+           "label": "At risk (<30 min)",
+           "inv": true
+          },
+          {
+           "measure": "riskVal",
+           "label": "Value at risk",
+           "inv": true
+          },
+          {
+           "measure": "comp",
+           "label": "Compliance",
+           "kind": "heat",
+           "scale": [
+            0.95,
+            0.995
+           ]
+          },
+          {
+           "measure": "comp",
+           "label": "Compliance {basis}",
+           "kind": "var"
+          },
+          {
+           "measure": "late",
+           "label": "Late",
+           "inv": true
+          },
+          {
+           "measure": "lateVal",
+           "label": "Late value",
+           "inv": true
+          }
+         ]
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 1,
+        "title": "Value at risk in queue",
+        "bind": {
+         "dim": "ccy",
+         "measure": "riskVal",
+         "top": 6,
+         "subMeasure": "riskN",
+         "subUnit": " at risk"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "causes",
+    "title": "Trends and root causes",
+    "subtitle": "Why payments miss the cut-off, what it costs, and where STP breaks",
+    "nav": "Root causes & STP",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "heatmap",
+        "span": 2,
+        "h": 170,
+        "title": "STP rate by channel and payment type · {period}",
+        "subtitle": "darker = better",
+        "bind": {
+         "dim": "chan",
+         "measure": "stpR",
+         "by": "ptype"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 1,
+        "h": 170,
+        "title": "Manual repairs by channel",
+        "bind": {
+         "dim": "chan",
+         "measure": "manual",
+         "top": 4,
+         "subMeasure": "stpR",
+         "subUnit": " STP"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 1,
+        "h": 170,
+        "title": "Cost of late payments by currency",
+        "bind": {
+         "dim": "ccy",
+         "measure": "cost",
+         "top": 6,
+         "subMeasure": "vdb",
+         "subUnit": " breaches"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 4,
+        "title": "Root cause of late payments by currency · {period}",
+        "bind": {
+         "dim": "ccy",
+         "label": "Currency",
+         "sort": "late",
+         "drill": true,
+         "totalsLabel": "All currencies",
+         "columns": [
+          {
+           "measure": "late",
+           "label": "Late",
+           "inv": true
+          },
+          {
+           "measure": "pClient",
+           "label": "Instruction after cut-off",
+           "kind": "heat",
+           "scale": [
+            0.1,
+            0.5
+           ]
+          },
+          {
+           "measure": "pRepair",
+           "label": "Manual repair",
+           "kind": "heat",
+           "scale": [
+            0.1,
+            0.4
+           ]
+          },
+          {
+           "measure": "pSanct",
+           "label": "Sanctions hold",
+           "kind": "heat",
+           "scale": [
+            0.02,
+            0.3
+           ]
+          },
+          {
+           "measure": "pFunds",
+           "label": "Funds check",
+           "kind": "heat",
+           "scale": [
+            0.02,
+            0.2
+           ]
+          },
+          {
+           "measure": "pSystem",
+           "label": "Counterparty / system",
+           "kind": "heat",
+           "scale": [
+            0.02,
+            0.2
+           ]
+          },
+          {
+           "measure": "vdb",
+           "label": "Value date breaches",
+           "inv": true
+          },
+          {
+           "measure": "cost",
+           "label": "Cost",
+           "inv": true
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "drill": {
+   "dim": "ccy",
+   "page": {
+    "id": "__drill__",
+    "title": "{drill}",
+    "drillHeader": "{period} · {basis}",
+    "backLabel": "Back to all currencies",
+    "subtitle": "Late payments, compliance and STP by channel for this currency",
+    "rows": [
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 2,
+        "h": 300,
+        "title": "Late payments per month with compliance",
+        "bind": {
+         "measure": "late",
+         "line": "comp"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 300,
+        "title": "STP by channel, weakest first",
+        "bind": {
+         "dim": "chan",
+         "measure": "stpR",
+         "order": "asc",
+         "top": 4,
+         "subMeasure": "manual",
+         "subUnit": " repairs"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "dataParams": {
+  "seed": 41207,
+  "years": [
+   2024,
+   2025
+  ],
+  "seasonality": [
+   1.02,
+   0.97,
+   1.03,
+   0.98,
+   0.99,
+   1.04,
+   0.93,
+   0.88,
+   1.01,
+   1.03,
+   1.02,
+   1.1
+  ],
+  "dims": {
+   "ccy": {
+    "members": [
+     {
+      "id": "chf",
+      "n": "CHF · SIC · 16:15",
+      "base": 52000,
+      "growth": 0.04,
+      "mix": {
+       "ptype": {
+        "dom": 1
+       }
+      },
+      "attrs": {
+       "avg": 18500,
+       "lateR": [
+        0.014,
+        0.0078
+       ],
+       "pC": 0.52,
+       "pR": 0.22,
+       "pS": 0.02,
+       "pF": 0.14,
+       "rep": 0.035,
+       "vdb": 0.35,
+       "cpb": 240,
+       "q": 0.012,
+       "risk": 0.18
+      }
+     },
+     {
+      "id": "sepa",
+      "n": "EUR · SEPA · 15:00",
+      "base": 31000,
+      "growth": 0.06,
+      "mix": {
+       "ptype": {
+        "eur": 1
+       }
+      },
+      "attrs": {
+       "avg": 9200,
+       "lateR": [
+        0.017,
+        0.0095
+       ],
+       "pC": 0.48,
+       "pR": 0.25,
+       "pS": 0.04,
+       "pF": 0.12,
+       "rep": 0.042,
+       "vdb": 0.3,
+       "cpb": 160,
+       "q": 0.014,
+       "risk": 0.2
+      }
+     },
+     {
+      "id": "esic",
+      "n": "EUR · euroSIC · 16:00",
+      "base": 7800,
+      "growth": 0.02,
+      "mix": {
+       "ptype": {
+        "eur": 1
+       }
+      },
+      "attrs": {
+       "avg": 64000,
+       "lateR": [
+        0.018,
+        0.0115
+       ],
+       "pC": 0.44,
+       "pR": 0.27,
+       "pS": 0.05,
+       "pF": 0.13,
+       "rep": 0.05,
+       "vdb": 0.42,
+       "cpb": 520,
+       "q": 0.016,
+       "risk": 0.22
+      }
+     },
+     {
+      "id": "usd",
+      "n": "USD · SWIFT · 17:00",
+      "base": 9400,
+      "growth": 0.08,
+      "mix": {
+       "ptype": {
+        "xb": 1
+       }
+      },
+      "attrs": {
+       "avg": 142000,
+       "lateR": [
+        0.03,
+        0.035
+       ],
+       "pC": 0.28,
+       "pR": 0.27,
+       "pS": 0.27,
+       "pF": 0.08,
+       "rep": 0.11,
+       "vdb": 0.55,
+       "cpb": 1450,
+       "q": 0.03,
+       "risk": 0.34
+      }
+     },
+     {
+      "id": "gbp",
+      "n": "GBP · SWIFT · 15:30",
+      "base": 4100,
+      "growth": 0.03,
+      "mix": {
+       "ptype": {
+        "xb": 1
+       }
+      },
+      "attrs": {
+       "avg": 96000,
+       "lateR": [
+        0.026,
+        0.021
+       ],
+       "pC": 0.36,
+       "pR": 0.3,
+       "pS": 0.12,
+       "pF": 0.1,
+       "rep": 0.085,
+       "vdb": 0.48,
+       "cpb": 980,
+       "q": 0.022,
+       "risk": 0.27
+      }
+     },
+     {
+      "id": "oth",
+      "n": "Other · SWIFT · 12:00",
+      "base": 2900,
+      "growth": 0.05,
+      "mix": {
+       "ptype": {
+        "xb": 1
+       }
+      },
+      "attrs": {
+       "avg": 71000,
+       "lateR": [
+        0.043,
+        0.048
+       ],
+       "pC": 0.24,
+       "pR": 0.31,
+       "pS": 0.24,
+       "pF": 0.07,
+       "rep": 0.14,
+       "vdb": 0.6,
+       "cpb": 1100,
+       "q": 0.035,
+       "risk": 0.4
+      }
+     }
+    ]
+   },
+   "chan": {
+    "members": [
+     {
+      "id": "eb",
+      "n": "E-banking",
+      "base": 1,
+      "attrs": {
+       "lateM": 1.12,
+       "repM": 0.7
+      }
+     },
+     {
+      "id": "rm",
+      "n": "Relationship manager",
+      "base": 1,
+      "attrs": {
+       "lateM": 1.45,
+       "repM": 2.6
+      }
+     },
+     {
+      "id": "mt",
+      "n": "SWIFT MT",
+      "base": 1,
+      "growth": -0.12,
+      "attrs": {
+       "lateM": [
+        0.85,
+        0.95
+       ],
+       "repM": [
+        1.3,
+        1.55
+       ]
+      }
+     },
+     {
+      "id": "iso",
+      "n": "ISO 20022",
+      "base": 1,
+      "growth": 0.25,
+      "attrs": {
+       "lateM": 0.62,
+       "repM": [
+        0.5,
+        0.4
+       ]
+      }
+     }
+    ]
+   },
+   "ptype": {
+    "members": [
+     {
+      "id": "dom",
+      "n": "Domestic CHF",
+      "base": 1
+     },
+     {
+      "id": "eur",
+      "n": "EUR (SEPA / euroSIC)",
+      "base": 1
+     },
+     {
+      "id": "xb",
+      "n": "Cross-border SWIFT",
+      "base": 1
+     }
+    ]
+   }
+  },
+  "facts": {
+   "dim": "ccy",
+   "split": [
+    {
+     "dim": "chan",
+     "shares": [
+      0.46,
+      0.12,
+      0.24,
+      0.18
+     ]
+    },
+    {
+     "dim": "ptype",
+     "shares": [
+      0.48,
+      0.36,
+      0.16
+     ]
+    }
+   ],
+   "fields": [
+    {
+     "id": "payments",
+     "kind": "seasonal",
+     "jitter": [
+      0.94,
+      1.06
+     ]
+    },
+    {
+     "id": "value",
+     "kind": "share",
+     "of": "payments",
+     "attr": "avg",
+     "jitter": [
+      0.85,
+      1.18
+     ]
+    },
+    {
+     "id": "late",
+     "kind": "share",
+     "of": "payments",
+     "attr": "lateR",
+     "jitter": [
+      0.8,
+      1.25
+     ],
+     "mod": {
+      "from": "chan",
+      "attr": "lateM"
+     }
+    },
+    {
+     "id": "lateVal",
+     "kind": "share",
+     "of": "late",
+     "attr": "avg",
+     "jitter": [
+      0.75,
+      1.3
+     ]
+    },
+    {
+     "id": "ontime",
+     "kind": "combine",
+     "plus": [
+      "payments"
+     ],
+     "minus": [
+      "late"
+     ]
+    },
+    {
+     "id": "cClient",
+     "kind": "share",
+     "of": "late",
+     "attr": "pC",
+     "jitter": [
+      0.85,
+      1.15
+     ]
+    },
+    {
+     "id": "cRepair",
+     "kind": "share",
+     "of": "late",
+     "attr": "pR",
+     "jitter": [
+      0.85,
+      1.15
+     ],
+     "mod": {
+      "from": "chan",
+      "attr": "repM"
+     },
+     "cap": 0.6
+    },
+    {
+     "id": "cSanct",
+     "kind": "share",
+     "of": "late",
+     "attr": "pS",
+     "jitter": [
+      0.8,
+      1.2
+     ]
+    },
+    {
+     "id": "cFunds",
+     "kind": "share",
+     "of": "late",
+     "attr": "pF",
+     "jitter": [
+      0.8,
+      1.2
+     ]
+    },
+    {
+     "id": "cSystem",
+     "kind": "combine",
+     "plus": [
+      "late"
+     ],
+     "minus": [
+      "cClient",
+      "cRepair",
+      "cSanct",
+      "cFunds"
+     ]
+    },
+    {
+     "id": "manual",
+     "kind": "share",
+     "of": "payments",
+     "attr": "rep",
+     "jitter": [
+      0.9,
+      1.1
+     ],
+     "mod": {
+      "from": "chan",
+      "attr": "repM"
+     }
+    },
+    {
+     "id": "stp",
+     "kind": "combine",
+     "plus": [
+      "payments"
+     ],
+     "minus": [
+      "manual"
+     ]
+    },
+    {
+     "id": "vdb",
+     "kind": "share",
+     "of": "late",
+     "attr": "vdb",
+     "jitter": [
+      0.85,
+      1.15
+     ]
+    },
+    {
+     "id": "cost",
+     "kind": "share",
+     "of": "vdb",
+     "attr": "cpb",
+     "jitter": [
+      0.8,
+      1.25
+     ]
+    },
+    {
+     "id": "queueN",
+     "kind": "share",
+     "of": "payments",
+     "attr": "q",
+     "jitter": [
+      0.7,
+      1.35
+     ]
+    },
+    {
+     "id": "riskN",
+     "kind": "share",
+     "of": "queueN",
+     "attr": "risk",
+     "jitter": [
+      0.7,
+      1.3
+     ]
+    },
+    {
+     "id": "riskVal",
+     "kind": "share",
+     "of": "riskN",
+     "attr": "avg",
+     "jitter": [
+      0.7,
+      1.4
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -89,6 +89,29 @@ Applies across niches: retail (by store), F&B (by venue), sales (by territory), 
 (by route/country), not only logistics.
 
 
+## Labels and bars — readable at a glance (Fra, 3 Oct 2026)
+
+Before choosing a visual, ask two questions, not one: **is every label fully visible and
+uncut**, and **is every bar visible at a size that makes comparison possible?** A ranked list
+whose bars are thin slivers in six colours, with the figure written outside the card, fails
+both, even when the numbers are right.
+
+The engine draws the `hbar` in the "space-saving" layout of Power BI: the name sits above the
+bar, the bar spans the card in ONE colour, the value is bold at the end of the bar (or inside
+it, in contrasting ink, when it would not fit outside), and the `subMeasure` sits muted on the
+name's line, right-aligned. What that asks of the spec:
+- **One or two figures per bar, no more.** The value, plus at most one detail
+  (`subMeasure`, e.g. a share, a count, a rate). Keep `subUnit` short (" late", " STP").
+- **Short member names.** They have the whole card width, but a name like
+  "USD · SWIFT · 17:00" is already the limit.
+- **Use the hbar where the comparison is the point.** If one member is ten times the others,
+  the others become slivers. Then rank a RATE or a share instead of the absolute value, or use a
+  matrix with a `share` column. A bar chart where only the first bar is readable answers nothing.
+- **Time series:** label what the reader needs (the last point, the minimum and maximum), not
+  every point. Put the line of a column + line chart on its own axis, which fits the data (the
+  engine does it).
+- **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
+
 ## gauge — un valore contro il suo bersaglio
 
 Quando la domanda e "siamo arrivati dove dovevamo?". Firma in B2B sales (quota attainment, win

@@ -46,6 +46,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }
     return w * (px || 9.5);
   };
+  /* LE CIFRE SONO MONOSPAZIATE (classe tnum, in ogni tipografia): ogni carattere vale lo stesso,
+     spazi e punti compresi. Misurate con M.largh, che stima un font proporzionale, uscivano piu
+     corte del vero: "CHF 19.2M · 131 at risk" sforava il bordo della card nel mockup di Luca
+     (3 ott 2026). Chi misura un testo tnum usa questa. */
   /* IL CUSCINETTO. Ogni grafico tiene questa distanza dai bordi della sua card, a destra e a
      sinistra. Non e una raffinatezza: un disegno che tocca il bordo sembra tagliato anche
      quando e intero, e la revisione l'ha segnalato su sei mockup prima che diventasse una
@@ -101,7 +105,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       if (!isFinite(v)) v = 0;
       k = k === undefined ? 0 : k;
       var a = Math.abs(v), s = v < 0 ? '−' : '';
-      if (a >= 1e6) return s + cur + d((a / 1e6).toFixed(1)) + 'M';
+      /* I MILIARDI HANNO LA LORO SIGLA: "CHF 1183.9M" nel totale di una tabella di Luca (3 ott
+         2026) si legge solo contando le cifre. E il confine e quello dell'arrotondamento:
+         999.960 fa "1.0M", non "1000K". */
+      if (a >= 999.95e6) return s + cur + d((a / 1e9).toFixed(1)) + (o.locale && o.locale.slice(0, 2) === 'it' ? ' Mld' : 'B');
+      if (a >= 1e6 - 500 * Math.pow(10, -k)) return s + cur + d((a / 1e6).toFixed(1)) + 'M';
       if (a >= 1e3) return s + cur + d((a / 1e3).toFixed(k)) + 'K';
       return s + cur + Math.round(a);
     };
@@ -160,7 +168,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       r = t.rows[i]; o = {};
       for (k = 0; k < cols.length; k++) {
         var c = cols[k], mb = dims[c] ? dims[c][r[k]] : null;
-        o[c] = mb ? mb.id : r[k];
+        o[c] = mb ? mb.id : (c === 'y' && t.y0 ? r[k] + t.y0 : r[k]);   /* l'anno arriva come scarto da y0 */
         /* a member may name its parent dimension member — derived, never stored per row */
         if (mb && mb.parent && mb.parentDim) o[mb.parentDim] = mb.parent;
       }
@@ -1257,58 +1265,81 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 /*#endregion*/
 
 /*#region chart:hbar*/
-/* Ranked horizontal bars — sorted by value, coloured by the parent dimension. */
+/* Ranked horizontal bars — "space-saving": il nome sopra la barra, la barra su tutta la larghezza,
+   valore e dettaglio attaccati alla sua fine (o dentro, se fuori non ci stanno). */
 (function (M) {
+  /* l'inchiostro leggibile SOPRA un colore della palette: chiaro sui fondi scuri, scuro sui chiari.
+     Un valore dentro una barra col colore fisso del tema era scuro su scuro (Luca, 3 ott 2026). */
+  M.inkSu = function (nome) {
+    try {
+      var c = getComputedStyle(document.documentElement).getPropertyValue(nome).trim(), mm = /^#?([0-9a-f]{6})$/i.exec(c);
+      if (!mm) return '#fff';
+      var n = parseInt(mm[1], 16), l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+      return l < 0.6 ? '#fff' : 'var(--ink)';
+    } catch (e) { return '#fff'; }
+  };
+  M.larghN = (t, px) => String(t).length * .62 * px;
   M.V.hbar = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, dim = b.dim, ms = b.measure;
     h = v.h || h || 190;
     var det = !!b.detail, rows = A.slice({ detail: det });   /* ranked lists respect every filter */
-    /* per membro, attraverso il layer condiviso: qui si sommava la colonna grezza, e una misura
-       ratio (Engagement Rate, Unfollow/Nuovi) usciva 0,0% su ogni barra mentre la matrice
-       accanto mostrava il valore giusto */
+    /* per membro, attraverso il layer condiviso: una misura ratio sommata dalla colonna grezza
+       usciva 0,0% su ogni barra mentre la matrice accanto mostrava il valore giusto */
     var grp = A.byKey(rows, r => r[dim]);
     var parentOf = {};
     if (b.parent) grp.keys.forEach(function (id) { parentOf[id] = (grp.rows[id][0] || {})[b.parent]; });
     var data = grp.keys.map(function (id) {
       var a = grp.agg[id], mb = A.member(dim, id), par = b.parent ? parentOf[id] : null;
-      return {
-        id: id, l: mb.n, v: A.mv(ms, a), cat: par,
-        c: par ? A.color(b.parent, par) : mb.c,
-        sub: (par ? A.dimLabel(b.parent, par) + ' · ' : '') + (b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : ''),
-        subv: b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : ''
-      };
-    /* `order: "asc"` e la lista dei PEGGIORI: stessa misura, verso opposto. Il brief di Parsa
-       chiedeva i prodotti migliori E quelli "che hanno bisogno di attenzione", e l'hbar sapeva
-       solo i primi. Una coda della classifica e una domanda vera quanto la testa. */
+      var subv = b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : '';
+      return { id: id, l: mb.n, v: A.mv(ms, a), cat: par, c: par ? A.color(b.parent, par) : null,
+        sub: (par ? A.dimLabel(b.parent, par) + ' · ' : '') + subv, subv: subv };
+    /* `order: "asc"` e la lista dei PEGGIORI: stessa misura, verso opposto (Parsa) */
     }).sort((x, y) => b.order === 'asc' ? x.v - y.v : y.v - x.v).slice(0, b.top || 8);
-    /* La colonna delle etichette vale quanto le etichette, non una frazione della card: con
-       nomi corti — "Ads", "Fiere" — il 42% fisso lasciava un terzo del grafico vuoto a
-       sinistra, e le barre partivano da meta riquadro senza motivo. Il tetto resta, perche un
-       nome lunghissimo non deve mangiarsi il grafico. */
-    var lw = M.colonnaEtichette(data.map(d => d.l), 9.5, Math.min(158, w * .42), 10);
-    /* LA MISURA SECONDARIA SI VEDE, accanto al valore. Stava solo nel tooltip, e un titolo come
-       "Products by revenue, with gross margin" prometteva un margine che a schermo non c'era
-       (Parsa, 27 set 2026). Lo spazio a destra si allarga di quanto serve alla scritta piu lunga. */
-    var subW = b.subMeasure ? Math.max.apply(null, data.map(d => M.largh(' · ' + d.subv, 9))) : 0;
-    var m = { t: 5, r: 46 + (subW ? subW + 4 : 0), b: 5 }, ih = h - m.t - m.b, iw = w - lw - m.r - M.PAD;
-    var max = Math.max.apply(null, data.map(d => d.v)) || 1, rh = ih / (data.length || 1), bh = Math.min(13, rh * .56);
+    /* LE BARRE SI DEVONO POTER CONFRONTARE (Fra su Luca, 3 ott 2026: "sono cosi piccoli i colori
+       che non si capisce quale sia di piu degli altri… se metti qualcosa fuori cosi i grafici non
+       sono chiari"). Prima: nome a sinistra in una colonna fino al 42% della card, barra fra il
+       nome e un valore con la misura secondaria, alta al massimo 13px, e un colore per membro —
+       barre corte e sottili, sei colori da decifrare, e la scritta che sforava il bordo.
+       Ora, come il bar chart "space-saving" di Power BI:
+        - il nome sta SOPRA la barra, allineato a sinistra: la barra parte dal cuscinetto e ha
+          tutta la larghezza della card per mostrare le differenze;
+        - un colore solo (il colore e la quantita, non l'identita); col padre colora il padre;
+        - la barra e spessa quanto la riga permette (fra 8 e 18px);
+        - il valore in grassetto alla fine della barra; dove fuori non ci sta entra DENTRO (i
+          "details" di Power BI), con l'inchiostro che contrasta col colore della barra;
+        - il dettaglio (subMeasure) sulla riga del nome, a destra, attenuato.
+       Niente esce mai dal riquadro (gate: test/barre.test.js). */
+    var px = 9, lblH = 12, n = data.length || 1;
+    var x0 = M.PAD, full = w - 2 * M.PAD;
+    /* il valore sta alla fine della barra; il dettaglio sulla riga del nome, a destra: cosi la
+       barra piu lunga ha quasi tutta la card */
+    var valW = Math.max.apply(null, data.map(d => M.larghN(A.mfmt(ms, d.v), px))) + 8;
+    var maxBar = Math.max(full * .7, full - valW);
+    var m = { t: 4, b: 4 }, rh = (h - m.t - m.b) / n;
+    var bh = Math.max(8, Math.min(18, rh - lblH - 6));
+    var max = Math.max.apply(null, data.map(d => d.v)) || 1, ink = M.inkSu('--c1');
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d, i) {
-      var y = m.t + rh * i + rh / 2, bl = Math.max(1, (d.v / max) * iw);
-      var dimd = b.parent && S.f[b.parent] && d.cat && S.f[b.parent] !== d.cat;
-      /* Il clic filtra: la dimensione padre quando la barra e una voce di dettaglio, altrimenti
-         la dimensione della barra stessa — purche il report abbia un controllo per governarla.
-         Prima il data-f usciva SOLO col padre: una hbar su una dimensione filtrabile aveva la
-         classe "hit" e il tooltip, sembrava cliccabile, e non filtrava niente. */
-      var df = (b.parent && d.cat) ? b.parent + ':' + d.cat
-        : (A.filtrabile(dim) ? dim + ':' + d.id : '');
+      var top = m.t + rh * i, yb = top + lblH + 2, bl = Math.max(2, (d.v / max) * maxBar);
+      var dimd = (b.parent && S.f[b.parent] && d.cat && S.f[b.parent] !== d.cat) ||
+        (!b.parent && S.f[dim] && S.f[dim] !== d.id);
+      var df = (b.parent && d.cat) ? b.parent + ':' + d.cat : (A.filtrabile(dim) ? dim + ':' + d.id : '');
+      var val = A.mfmt(ms, d.v), twV = M.larghN(val, px), ty = (yb + bh / 2 + 3.2).toFixed(1);
+      var fuori = x0 + bl + 6 + twV <= w - M.PAD;
+      var et = fuori
+        ? '<text x="' + (x0 + bl + 6).toFixed(1) + '" y="' + ty + '" font-size="' + px + '" class="tnum" fill="var(--ink)" font-weight="600">' + M.esc(val) + '</text>'
+        : '<text x="' + (x0 + bl - 5).toFixed(1) + '" y="' + ty + '" text-anchor="end" font-size="' + px + '" class="tnum" fill="' + (d.c ? '#fff' : ink) + '" font-weight="600">' + M.esc(val) + '</text>';
+      var subW = d.subv ? M.larghN(d.subv, 8.5) + 10 : 0;
+      if (d.subv) et += '<text x="' + (w - M.PAD) + '" y="' + (top + lblH - 2).toFixed(1) + '" text-anchor="end" font-size="8.5" class="tnum" fill="var(--muted2)">' + M.esc(d.subv) + '</text>';
+      /* il nome si accorcia solo se tocca il dettaglio sulla sua riga, e lo dice coi puntini */
+      var nm = d.l, spazioNm = full - subW;
+      if (M.largh(nm, 9.5) > spazioNm) { while (nm.length > 3 && M.largh(nm + '…', 9.5) > spazioNm) nm = nm.slice(0, -1); nm += '…'; }
       s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" ' + (df ? 'data-f="' + df + '"' : '') +
-        ' data-tip="<b>' + M.esc(d.l) + '</b><br>' + A.mfmt(ms, d.v) + (d.sub ? '<br>' + M.esc(d.sub) : '') + '">' +
-        '<rect x="0" y="' + (y - rh / 2).toFixed(1) + '" width="' + w + '" height="' + rh.toFixed(1) + '" fill="transparent"/>' +
-        '<text x="' + (lw - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--ink2)">' + M.esc(d.l) + '</text>' +
-        '<rect x="' + lw + '" y="' + (y - bh / 2).toFixed(1) + '" width="' + bl.toFixed(1) + '" height="' + bh + '" rx="1" fill="' + (d.c || 'var(--c2)') + '"/>' +
-        '<text x="' + (lw + bl + 7).toFixed(1) + '" y="' + (y + 3.5).toFixed(1) + '" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) +
-        (d.subv ? '<tspan fill="var(--muted2)"> · ' + M.esc(d.subv) + '</tspan>' : '') + '</text></g>';
+        ' data-tip="<b>' + M.esc(d.l) + '</b><br>' + val + (d.sub ? '<br>' + M.esc(d.sub) : '') + '">' +
+        '<rect x="0" y="' + top.toFixed(1) + '" width="' + w + '" height="' + rh.toFixed(1) + '" fill="transparent"/>' +
+        '<text x="' + x0 + '" y="' + (top + lblH - 2).toFixed(1) + '" font-size="9.5" fill="var(--ink2)">' + M.esc(nm) + '</text>' +
+        '<rect class="barra" x="' + x0 + '" y="' + yb.toFixed(1) + '" width="' + bl.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="1.5" fill="' + (d.c || 'var(--c1)') + '"/>' +
+        et + '</g>';
     });
     return A.card(v, '<div style="flex:1;display:flex;align-items:center;padding-bottom:6px">' + s + '</svg></div>', { flex: true });
   };

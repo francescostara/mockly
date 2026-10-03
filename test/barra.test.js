@@ -76,7 +76,8 @@ function tuttiIFiltri() {
      con la stima del motore, si accendono tutti i filtri e si rimisura. L'attesa e quella vera:
      due fotogrammi, cioe il layout fatto — non un numero di millisecondi scelto a occhio. */
   const layout = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  const guastiCapo = [], guastiStima = [], guastiTabelle = [];
+  const guastiCapo = [], guastiStima = [], guastiTabelle = [], guastiBarre = [];
+  let viste2 = 0;
   let viste = 0, misure = 0;
   for (const c of casi()) {
     const data = c.caso.build();
@@ -144,6 +145,27 @@ function tuttiIFiltri() {
         const tagli = await page.evaluate(() => [...document.querySelectorAll('#page .mx')].filter(c => c.querySelector('table'))
           .map(c => c.scrollHeight - c.clientHeight).filter(x => x > 1));
         tagli.forEach(x => guastiTabelle.push(dove0 + ' · pagina ' + pg.id + ': una tabella e tagliata di ' + x + 'px'));
+        /* LE BARRE SI CONFRONTANO E LE SCRITTE SONO INTERE (Fra su Luca, 3 ott 2026: barre sottili,
+           sei colori, la scritta fuori dal riquadro). Su ogni hbar: barre alte almeno 8px, la piu
+           lunga occupa almeno il 55% della card, un colore solo se non c'e un padre, ogni testo
+           dentro il riquadro, valore e dettaglio senza sovrapporsi. */
+        const barre = await page.evaluate(() => [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('rect.barra')).map(s => {
+          const R = s.getBoundingClientRect(), out = [];
+          const bs = [...s.querySelectorAll('rect.barra')];
+          const lmax = Math.max(...bs.map(r => r.getBoundingClientRect().width));
+          if (bs.some(r => r.getBoundingClientRect().height < 7.9)) out.push('barre piu sottili di 8px');
+          if (lmax < R.width * 0.55) out.push('la barra piu lunga occupa ' + Math.round(100 * lmax / R.width) + '% della card');
+          const tit = (s.closest('.card') && s.closest('.card').querySelector('h3') || {}).textContent || '';
+          const testi = [...s.querySelectorAll('text')].map(t => t.getBoundingClientRect());
+          testi.forEach(t => { if (t.left < R.left - 0.5 || t.right > R.right + 0.5) out.push('un testo esce dal riquadro di ' + Math.round(Math.max(R.left - t.left, t.right - R.right)) + 'px'); });
+          for (let i = 0; i < testi.length; i++) for (let j = i + 1; j < testi.length; j++) {
+            const a = testi[i], b = testi[j];
+            if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 2 && b.top < a.bottom - 2) out.push('due testi si sovrappongono');
+          }
+          return out.map(x => '"' + tit + '": ' + x);
+        }).flat());
+        barre.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
+        viste2 += await page.evaluate(() => [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('rect.barra')).length);
       }
     }
   }
@@ -154,6 +176,10 @@ function tuttiIFiltri() {
   });
   await okAsync('nessuna tabella e tagliata dal suo riquadro, su ogni pagina di ogni mockup', async () => {
     assert.deepStrictEqual([...new Set(guastiTabelle)], [], [...new Set(guastiTabelle)].join(String.fromCharCode(10) + '       '));
+  });
+  await okAsync('ogni hbar: barre spesse e lunghe abbastanza da confrontarle, scritte intere e separate', async () => {
+    assert.ok(viste2 >= 10, 'solo ' + viste2 + ' hbar misurate');
+    assert.deepStrictEqual([...new Set(guastiBarre)].slice(0, 10), [], [...new Set(guastiBarre)].slice(0, 10).join(String.fromCharCode(10) + '       '));
   });
   await okAsync('la stima della barra non e mai sotto la barra vera: gruppi di filtri e bottoni di destra', async () => {
     assert.ok(misure >= 10, 'solo ' + misure + ' gruppi misurati');

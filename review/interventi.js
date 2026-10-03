@@ -597,6 +597,30 @@ const INTERVENTI = [
     fatto: "Una cella il cui rapporto non ha base e vuota, con un trattino, e resta fuori dai gradini di colore; A.definita legge anche un denominatore che e un'altra misura. Gate: test/assi.test.js.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 2,
+    commento: "(Fra) Non voglio piu vedere grafici a barre orizzontali del genere: sono cosi piccoli i colori che non si capisce quale sia di piu degli altri. Studia dei metodi per far apparire meglio la grandezza delle barre e le label (Power BI ha i details dentro le barre); se metti qualcosa fuori cosi i grafici non sono chiari. Chiediti sempre se non solo il testo e intero ma anche se le barre si vedono a una grandezza che permette il confronto. + guideline sulle label (PDF).",
+    dove: "hbar · runtime · skill · gate in Chrome",
+    fatto: "L'hbar e ridisegnato come il bar chart 'space-saving' di Power BI: il nome sopra la barra, la barra su tutta la larghezza della card (la piu lunga ha almeno il 70%), un colore solo, spessa fino a 18px; il valore in grassetto alla fine della barra o dentro, con l'inchiostro che contrasta (M.inkSu); il dettaglio sulla riga del nome, a destra. Le cifre, sempre monospaziate, si misurano con M.larghN: misurate come testo proporzionale uscivano corte e sforavano il bordo. La skill (chart-selection.md) ha le regole delle label dalle guideline di Fra. Gate in Chrome (test/barra.test.js), su ogni hbar del corpus: barre di almeno 8px, la piu lunga oltre il 55% della card, ogni testo dentro il riquadro, nessuna sovrapposizione.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 2,
+    commento: "(visto nel primo colpo) Il totale della colonna Late value si leggeva CHF 1183.9M.",
+    dove: "formati",
+    fatto: "I miliardi hanno la loro sigla (B, Mld in italiano) e il confine fra K, M e B segue l'arrotondamento (999.700 fa 1,0M). Gate: test/runtime.smoke.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 2,
+    commento: "(visto rifacendo il mockup) Il codice nuovo portava ecommerce-retail a 76,1KB, oltre il tetto di 75KB.",
+    dove: "render · runtime",
+    fatto: "L'anno nelle righe dei fatti viaggia come scarto dal primo (y0), e il runtime lo riporta all'anno vero: circa 1,1KB in meno per ogni mockup, senza toccare il codice dei grafici.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

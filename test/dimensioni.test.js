@@ -165,17 +165,24 @@ ok('l\'errore della barra dice di quanto sfora e quanto libera ogni via d\'uscit
   else assert.strictEqual(+(m2.match(/sfora di (\d+)px/) || [])[1], over - libera, 'il guadagno dichiarato non e quello vero');
 });
 
-ok('la misura secondaria di un hbar si legge accanto al valore, e resta dentro la card', () => {
+ok('la misura secondaria di un hbar si legge su ogni barra, e resta dentro la card', () => {
   const c = casi().find(x => x.id === 'locale/retail-parsa');
   const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
   const doc = dom.window.document;
   doc.querySelector('.navbtn[data-page="regions"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   const card = [...doc.querySelectorAll('#page .card')].find(k => /products/i.test((k.querySelector('.ch h3') || {}).textContent || ''));
   const svg = card.querySelector('svg'), w = +svg.getAttribute('width');
-  const valori = [...svg.querySelectorAll('text.tnum')];
-  assert.ok(valori.length >= 3 && valori.every(t => /·\s*[\d.,]+%\s*margin/.test(t.textContent)), 'il margine deve comparire accanto al valore: ' + valori.map(t => t.textContent).join(' | '));
-  const { largh } = (() => { const MK = {}; return { largh: (s, px) => s.length * px * 0.56 }; })();
-  valori.forEach(t => assert.ok(+t.getAttribute('x') + largh(t.textContent, 9) <= w + 2, 'la scritta esce dalla card: ' + t.textContent));
+  /* dal 3 ott 2026 (Luca) la misura secondaria sta sulla riga del nome, allineata a destra: ogni
+     barra la mostra, e nessuna scritta esce dalla card (le cifre sono monospaziate: 0,62 em) */
+  const righe = [...svg.querySelectorAll('g.hit')];
+  assert.ok(righe.length >= 3 && righe.every(g => [...g.querySelectorAll('text.tnum')].some(t => /^[\d.,]+%\s*margin$/.test(t.textContent))),
+    'il margine deve comparire su ogni barra: ' + righe.map(g => g.textContent).join(' | '));
+  const largh = (s, px) => s.length * px * 0.62;
+  [...svg.querySelectorAll('text.tnum')].forEach(t => {
+    const x = +t.getAttribute('x'), l = largh(t.textContent, +t.getAttribute('font-size') || 9);
+    const fine = t.getAttribute('text-anchor') === 'end' ? x : x + l;
+    assert.ok(fine <= w + 1 && (t.getAttribute('text-anchor') === 'end' ? x - l : x) >= -1, 'la scritta esce dalla card: ' + t.textContent);
+  });
   dom.window.close();
 });
 
