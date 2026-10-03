@@ -577,6 +577,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     };
 
     /* ---------- KPI card — house signature ---------- */
+    /*#fin*/
     /* UNO SCOSTAMENTO DA UN RIFERIMENTO (budget o anno prima): una percentuale in punti, un importo
        in percentuale; favorevole se va nel verso giusto per la misura (un costo sopra il budget
        e sfavorevole). Lo usano la card finance, la matrice e il conto economico. */
@@ -614,8 +615,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       return '<div class="card kpi" style="' + geo + '"><div><div class="k">' + M.esc(k.label) + '</div><div class="vr"><div class="v tnum">' +
         (A.definita(ms, c) ? A.mfmt(ms, cv) : '—') + '</div></div></div>' + html + '</div>';
     };
+    /*#/fin*/
     A.kpi = function (k) {
-      if (k.budget || k.ytd) return A.kpiFin(k);
+      if ((k.budget || k.ytd) && A.kpiFin) return A.kpiFin(k);
       var a = A.kpiState, c = a.cur, p = a.prev;
       var cv = A.mv(k.measure, c), pv = A.mv(k.measure, p);
       var m = A.meas(k.measure);
@@ -819,6 +821,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
             '<span class="dot" style="background:' + m.c + '"></span>' + M.esc(m.n) + '</div>').join('');
         }
       });
+      /* IL MENU SI APRE SOTTO IL SUO BOTTONE, e sopra se sotto non c'e posto. Nella rail il pannello
+         non aveva un contenitore di riferimento: si apriva in alto a sinistra largo tutta la pagina
+         (Fra su Bodan, 3 ott 2026). Ora e agganciato al suo gruppo; qui si controlla solo il fondo. */
+      var dop = document.querySelector('.ddp.open');
+      if (dop && dop.getBoundingClientRect && window.innerHeight) {
+        var rb = dop.getBoundingClientRect();
+        if (rb.bottom > window.innerHeight - 6 && rb.height) dop.classList.add('su');
+      }
       /* header */
       var pg = S.page === '__drill__' ? SPEC.drill.page : A.page(S.page);
       if ($('#hTtl')) $('#hTtl').textContent = A.tpl(S.page === '__drill__' ? A.dimLabel(S.drill.dim, S.drill.id) : pg.title);

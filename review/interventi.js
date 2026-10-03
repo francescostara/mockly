@@ -693,6 +693,22 @@ const INTERVENTI = [
     fatto: "L'etichetta della linea resta dentro l'area del grafico e scende sotto il punto se tocca il target; l'hbar colorato per il padre ha la legenda dei padri; i grafici crescono fino al 60% (era il 25%) per riempire la pagina; lo stack100 attenua i gruppi col filtro sulla loro dimensione. Gate: test/barra.test.js (scritte dei colline dentro il riquadro e mai sovrapposte), test/filtri-visual.test.js.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "(Fra) Check the filters: when I click the drop down ones the menu appears at the top left and does not follow a normal behaviour.",
+    dove: "filtri · CSS · runtime · gate in Chrome",
+    fatto: "Nella rail il pannello del menu era in posizione assoluta senza un contenitore di riferimento: si apriva in alto a sinistra, largo tutta la pagina. Ora il gruppo del filtro e il riferimento e il pannello si apre attaccato sotto il suo bottone, largo quanto lui; se sotto non c'e posto si apre sopra, e una lista lunga scorre invece di uscire dalla finestra. Il gate ha trovato subito un secondo caso: con la rail e i filtri nell'intestazione (trasporti-verona) il menu prendeva la posizione della rail e si apriva trenta pixel sotto il bottone, corretto. Gate in Chrome (test/barra.test.js): ogni menu a tendina di ogni mockup, in due lingue, si apre attaccato al suo bottone e dentro la finestra.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "(visto rifacendo il mockup) Il codice finance portava ecommerce-retail a 80,1KB, oltre il tetto.",
+    dove: "render · runtime",
+    fatto: "La card finance e gli scostamenti dal budget stanno fra i marcatori #fin, e il loro CSS (conto economico, righe della card) viaggia solo nei report che li usano: un report senza budget torna a 77,5KB.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

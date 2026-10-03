@@ -77,7 +77,7 @@ function tuttiIFiltri() {
      due fotogrammi, cioe il layout fatto — non un numero di millisecondi scelto a occhio. */
   const layout = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const guastiCapo = [], guastiStima = [], guastiTabelle = [], guastiBarre = [];
-  let viste2 = 0;
+  let viste2 = 0, menu = 0;
   let viste = 0, misure = 0;
   for (const c of casi()) {
     const data = c.caso.build();
@@ -139,6 +139,28 @@ function tuttiIFiltri() {
          quando le altezze stimate sbagliavano di qualche pixel (Muttahar e cinque pagine del corpus,
          29 set 2026). Il runtime ora stringe le righe dopo il disegno; qui si misura che basti. */
       await page.evaluate(() => { const r = document.getElementById('btnReset'); if (r) r.click(); });
+      /* OGNI MENU A TENDINA SI APRE ATTACCATO AL SUO BOTTONE E DENTRO LA FINESTRA. Nella rail il
+         pannello si apriva in alto a sinistra largo tutta la pagina (Fra su Bodan, 3 ott 2026). */
+      const nDd = await page.evaluate(() => document.querySelectorAll('[data-dd]').length);
+      for (let di = 0; di < nDd; di++) {
+        await page.evaluate(i => document.querySelectorAll('[data-dd]')[i].click(), di);
+        await layout();
+        const g = await page.evaluate(i => {
+          const bt = document.querySelectorAll('[data-dd]')[i], pn = document.querySelector('.ddp.open');
+          if (!pn) return 'il menu ' + bt.getAttribute('data-dd') + ' non si apre';
+          const b = bt.getBoundingClientRect(), r = pn.getBoundingClientRect();
+          const out = [];
+          if (r.top < -1 || r.bottom > innerHeight + 1 || r.left < -1 || r.right > innerWidth + 1) out.push('esce dalla finestra');
+          if (r.right < b.left || r.left > b.right) out.push('non sta sotto o sopra il suo bottone in orizzontale');
+          const sotto = r.top >= b.bottom - 1 && r.top <= b.bottom + 12, sopra = r.bottom <= b.top + 1 && r.bottom >= b.top - 30;
+          if (!sotto && !sopra) out.push('non e attaccato al bottone (bottone ' + Math.round(b.top) + '-' + Math.round(b.bottom) + ', menu ' + Math.round(r.top) + '-' + Math.round(r.bottom) + ')');
+          if (r.width > Math.max(420, b.width * 3)) out.push('e largo ' + Math.round(r.width) + 'px');
+          return out.length ? 'il menu ' + bt.getAttribute('data-dd') + ': ' + out.join(', ') : '';
+        }, di);
+        if (g) guastiBarre.push(dove0 + ' · ' + g);
+        menu++;
+        await page.evaluate(i => { const bt = document.querySelectorAll('[data-dd]')[i]; if (document.querySelector('.ddp.open')) bt.click(); }, di);
+      }
       for (const pg of spec.pages) {
         await page.evaluate(id => { const n = document.querySelector('.navbtn[data-page="' + id + '"]'); if (n) n.click(); }, pg.id);
         await layout();
@@ -204,8 +226,9 @@ function tuttiIFiltri() {
   await okAsync('nessuna tabella e tagliata dal suo riquadro, su ogni pagina di ogni mockup', async () => {
     assert.deepStrictEqual([...new Set(guastiTabelle)], [], [...new Set(guastiTabelle)].join(String.fromCharCode(10) + '       '));
   });
-  await okAsync('ogni hbar: barre spesse e lunghe abbastanza da confrontarle, scritte intere e separate; la linea del colline contrasta con le colonne', async () => {
+  await okAsync('ogni hbar: barre spesse e lunghe abbastanza da confrontarle, scritte intere e separate; la linea del colline contrasta con le colonne; ogni menu a tendina si apre attaccato al suo bottone', async () => {
     assert.ok(viste2 >= 10, 'solo ' + viste2 + ' hbar misurate');
+    assert.ok(menu >= 10, 'solo ' + menu + ' menu a tendina aperti');
     assert.deepStrictEqual([...new Set(guastiBarre)].slice(0, 10), [], [...new Set(guastiBarre)].slice(0, 10).join(String.fromCharCode(10) + '       '));
   });
   await okAsync('la stima della barra non e mai sotto la barra vera: gruppi di filtri e bottoni di destra', async () => {

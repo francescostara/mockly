@@ -28,6 +28,11 @@ const FINESTRA = /\/\*#finestra\*\/[\s\S]*?\/\*#\/finestra\*\//g;
    funzioni della finestra, che stanno in tre righe invece che in trenta. Nel sorgente ci sono
    entrambe le versioni, e vince l'ultima: la completa. Nel file spedito ne viaggia una sola. */
 const BREVE = /\/\*#breve\*\/[\s\S]*?\/\*#\/breve\*\//g;
+/* IL CODICE FINANCE VIAGGIA SOLO NEI REPORT FINANCE: la card con budget e YTD, gli scostamenti
+   dal budget. In un report senza budget sarebbero un chilo in piu dentro il tetto del file. */
+const FIN = /\/\*#fin\*\/[\s\S]*?\/\*#\/fin\*\//g;
+const usaFinanza = spec => (spec.kpiBand || []).some(k => k.budget || k.ytd) ||
+  JSON.stringify(spec.pages || []).concat(JSON.stringify((spec.drill || {}).page || {})).search(/"kind":"bud"|"type":"statement"/) >= 0;
 function bundle(types, opts) {
   const R = regions(fs.readFileSync(RUNTIME_PATH, 'utf8'));
   const parts = [R.core];
@@ -38,6 +43,7 @@ function bundle(types, opts) {
   });
   let src = parts.join('\n');
   src = (opts && opts.finestra === false) ? src.replace(FINESTRA, '') : src.replace(BREVE, '');
+  if (opts && opts.fin === false) src = src.replace(FIN, '');
   return (opts && opts.raw) ? src : strip(src);
 }
 
@@ -1044,7 +1050,11 @@ ${rail ? `#rail{width:${sh.rail}px;flex:0 0 ${sh.rail}px;background:var(--rail);
    del periodo che ormai vive sulla barra, rendendolo alto 48px dentro una banda da 40 e
    disallineandolo rispetto agli altri filtri. */
 #rail .slgrp{padding:14px 16px 0;position:relative}
-#rail .catgrp{padding:16px 16px 0}
+#rail .catgrp{padding:16px 16px 0;position:relative}
+#rail .ddp{top:calc(100% + 4px);max-height:min(300px,55vh);overflow:auto}#rail .ddp.su{top:auto;bottom:42px}
+/* nell'intestazione il menu sta sotto il suo bottone qualunque sia la pelle: con la rail prendeva
+   la posizione pensata per la rail e si apriva trenta pixel piu in basso (trasporti-verona) */
+.fgrp .ddp{top:calc(100% + 4px);left:0;right:auto;min-width:100%;max-height:min(300px,60vh);overflow:auto}
 .railfoot{margin-top:auto;padding:0 16px;font-size:8.5px;color:var(--muted2);line-height:1.5}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}` : ``}
 ${sh.topbar ? `#topbar{height:46px;flex:0 0 46px;background:var(--rail);display:flex;align-items:center;gap:10px;padding:0 16px}
@@ -1156,9 +1166,9 @@ ${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri sparis
 .kpi .v{font-size:25px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-1px}
 .kpi .d{font-size:10px;font-weight:600;padding-bottom:2px;white-space:nowrap}
 .kpi .det{font-size:9px;color:var(--muted);margin-top:7px}
-.st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
+${usaFinanza(spec) ? `.st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
 .kpi .kf{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;display:flex;gap:10px}.kpi .kf b{font-weight:600}
-.kpi .ky{border-top:1px solid var(--line2);margin-top:7px;padding-top:5px;font-size:10px;color:var(--ink2);font-weight:600;white-space:nowrap}
+.kpi .ky{border-top:1px solid var(--line2);margin-top:7px;padding-top:5px;font-size:10px;color:var(--ink2);font-weight:600;white-space:nowrap}` : ''}
 .up{color:var(--good)}.dn{color:var(--bad)}.fl{color:var(--muted)}
 .dcv{font-size:31px;font-weight:600;line-height:1;letter-spacing:-1.2px}
 .dcd{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.45}
@@ -1423,7 +1433,7 @@ ${css(spec, compact).replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.tri
 </div></div>
 <div id="tip"></div>
 <script>
-${bundle(types, { finestra: ((data && data.years) || []).length > 2 })}
+${bundle(types, { finestra: ((data && data.years) || []).length > 2, fin: usaFinanza(spec) })}
 var SPEC=${JSON.stringify(spec)};
 var DATA=${dataJSON(data)};
 MK.__A=MK.boot(SPEC,DATA,document);
