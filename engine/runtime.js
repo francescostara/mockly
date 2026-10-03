@@ -50,6 +50,20 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
      spazi e punti compresi. Misurate con M.largh, che stima un font proporzionale, uscivano piu
      corte del vero: "CHF 19.2M · 131 at risk" sforava il bordo della card nel mockup di Luca
      (3 ott 2026). Chi misura un testo tnum usa questa. */
+  /* un colore come [r,g,b] (0-255), esadecimale o token var(--x); null se non si sa leggere */
+  M.rgb = function (col) {
+    try {
+      var vv = /^var\((--[\w-]+)\)$/.exec(col || '');
+      var c = vv ? getComputedStyle(document.documentElement).getPropertyValue(vv[1]).trim() : String(col || ''), mm = /^#?([0-9a-f]{6})$/i.exec(c);
+      if (!mm) return null;
+      var n = parseInt(mm[1], 16);
+      return [n >> 16, (n >> 8) & 255, n & 255];
+    } catch (e) { return null; }
+  };
+  M.lum = function (col) { var c = M.rgb(col); return c ? (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255 : null; };
+  /* quanto due colori si distinguono (0-1): distanza nello spazio rgb, che conta tinta e luce —
+     l'ambra accanto al blu si legge anche a pari luminosita, l'ambra accanto all'oliva no */
+  M.distanza = function (a, b) { var x = M.rgb(a), y = M.rgb(b); return x && y ? Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) / 441.7 : null; };
   /* IL CUSCINETTO. Ogni grafico tiene questa distanza dai bordi della sua card, a destra e a
      sinistra. Non e una raffinatezza: un disegno che tocca il bordo sembra tagliato anche
      quando e intero, e la revisione l'ha segnalato su sei mockup prima che diventasse una
@@ -1270,15 +1284,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 (function (M) {
   /* l'inchiostro leggibile SOPRA un colore della palette: chiaro sui fondi scuri, scuro sui chiari.
      Un valore dentro una barra col colore fisso del tema era scuro su scuro (Luca, 3 ott 2026). */
-  M.inkSu = function (col) {
-    try {
-      var vv = /^var\((--[\w-]+)\)$/.exec(col || '');
-      var c = vv ? getComputedStyle(document.documentElement).getPropertyValue(vv[1]).trim() : String(col || ''), mm = /^#?([0-9a-f]{6})$/i.exec(c);
-      if (!mm) return '#fff';
-      var n = parseInt(mm[1], 16), l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-      return l < 0.6 ? '#fff' : 'var(--ink)';
-    } catch (e) { return '#fff'; }
-  };
+  M.inkSu = function (col) { var l = M.lum(col); return l !== null && l >= 0.6 ? 'var(--ink)' : '#fff'; };
   M.larghN = (t, px) => String(t).length * .62 * px;
   M.V.hbar = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, dim = b.dim, ms = b.measure;
@@ -1496,18 +1502,32 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         '" fill="var(--c2)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel() + '</b><br>' + A.mfmt(ms, cur[i]) + '' + '"/>';
       s += '<text x="' + x0.toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
     }
+    /* IL COLORE DELLA LINEA CONTRASTA CON LE COLONNE. Era l'ambra fissa del tema, quasi uguale
+       alle colonne dell'anno corrente su piu di una palette (oliva accanto ad ambra nel mockup di
+       Luca, Fra 3 ott 2026). Si sceglie il primo colore che si stacca in luminosita sia dalle
+       colonne correnti sia da quelle dell'anno prima; il target usa lo stesso, tratteggiato. */
+    /* abbastanza scuro da leggersi sulla card (luminosita <= .75); vince il primo che dista
+       abbastanza dalle due serie di colonne, altrimenti quello che dista di piu */
+    var lc = 'var(--amber)', best = -1;
+    ['var(--c1)', 'var(--c3)', 'var(--amber)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--ink)'].some(function (c) {
+      var l = M.lum(c), dC = M.distanza(c, 'var(--c2)'), dP = M.distanza(c, 'var(--prior)');
+      if (l === null || dC === null || l > .75) return false;
+      var sc = Math.min(dC, dP === null ? 1 : dP);
+      if (sc > best) { best = sc; lc = c; }
+      return sc >= .3;
+    });
     if (ln && aL) {
       /* l'asse secondario: tacche a destra, nel colore della linea */
-      aL.tk.forEach(t => s += '<text x="' + (mgn.l + iw + 6) + '" y="' + (Y2(t) + 3).toFixed(1) + '" font-size="8" fill="var(--amber)" class="tnum l2">' + A.mfmt(ln, t) + '</text>');
+      aL.tk.forEach(t => s += '<text x="' + (mgn.l + iw + 6) + '" y="' + (Y2(t) + 3).toFixed(1) + '" font-size="8" fill="' + lc + '" class="tnum l2">' + A.mfmt(ln, t) + '</text>');
       /* LA LINEA DEL TARGET, fissa e tratteggiata, con la sua etichetta a sinistra sopra la linea */
       if (tg !== null) {
         var yT = Y2(tg).toFixed(1), tl = (b.targetLabel || 'Target') + ' ' + A.mfmt(ln, tg);
-        s += '<line class="tgt" x1="' + mgn.l + '" y1="' + yT + '" x2="' + (mgn.l + iw) + '" y2="' + yT + '" stroke="var(--ink2)" stroke-width="1.2" stroke-dasharray="4 3"/>' +
-          M.testoVelato(tl, mgn.l + 4, +yT - 4, { px: 8.5, anc: 'start', velo: 'var(--card)', opacita: 0.9, ink: 'var(--ink2)', padX: 3, padY: 1 });
+        s += '<line class="tgt" x1="' + mgn.l + '" y1="' + yT + '" x2="' + (mgn.l + iw) + '" y2="' + yT + '" stroke="' + lc + '" stroke-width="1.4" stroke-dasharray="5 3" opacity=".8"/>' +
+          M.testoVelato(tl, mgn.l + 4, +yT - 4, { px: 8.5, anc: 'start', velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 3, padY: 1 });
       }
       var p = '', su = false;
       line.forEach((val, k) => { if (val === null) { su = false; return; } p += (su ? 'L' : 'M') + (mgn.l + cw * k + cw / 2).toFixed(1) + ',' + Y2(val).toFixed(1); su = true; });
-      s += '<path d="' + p + '" fill="none" stroke="var(--amber)" stroke-width="1.8"/>';
+      s += '<path class="l2l" d="' + p + '" fill="none" stroke="' + lc + '" stroke-width="2"/>';
       /* ogni punto ha il suo tooltip, con un bersaglio piu largo del pallino: prima il valore
          della linea si leggeva solo passando sulle colonne, e chi puntava la linea non vedeva
          niente */
@@ -1518,7 +1538,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           (k && line[k - 1] !== null ? ' (' + A.varia(ln, val, line[k - 1]).t + ' ' + M.esc(A.MON[k - 1]) + ')' : '') +
           '<br>' + M.esc(A.meas(ms).label) + ': ' + A.mfmt(ms, cur[k]);
         /* il bordo trasparente largo e il bersaglio del mouse: il pallino resta piccolo */
-        s += '<circle class="hit l2p" cx="' + cx + '" cy="' + cy + '" r="2.6" fill="var(--amber)" stroke="transparent" stroke-width="11" data-tip="' + tip.replace(/"/g, '&quot;') + '"/>';
+        s += '<circle class="hit l2p" cx="' + cx + '" cy="' + cy + '" r="2.6" fill="' + lc + '" stroke="transparent" stroke-width="11" data-tip="' + tip.replace(/"/g, '&quot;') + '"/>';
       });
       /* L'ETICHETTA STA SOPRA L'ULTIMO PUNTO, non nell'angolo: li era a mezza card dalla curva
          che nomina ("non si capisce subito a cosa fa riferimento", due volte). A destra ci sono
@@ -1527,7 +1547,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var wLbl = M.largh(lm.label || '', 8.5), xU = mgn.l + cw * k + cw / 2;
       s += M.testoVelato(lm.label || '', Math.min(Math.max(xU, M.PAD + wLbl / 2), w - M.PAD - wLbl / 2),
         Math.max(mgn.t + 8, Y2(line[k]) - 10),
-        { px: 8.5, anc: 'middle', velo: 'var(--card)', opacita: 0.9, ink: 'var(--amber)', padX: 4, padY: 2 });
+        { px: 8.5, anc: 'middle', velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 4, padY: 2 });
     }
     return A.card(v, s + '</svg>');
   };

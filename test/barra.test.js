@@ -165,6 +165,22 @@ function tuttiIFiltri() {
           return out.map(x => '"' + tit + '": ' + x);
         }).flat());
         barre.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
+        /* LA LINEA DEL COLLINE SI STACCA DALLE COLONNE, e il target ha il suo colore (Fra su Luca,
+           3 ott 2026: l'ambra accanto alle colonne oliva del 2025 non aveva contrasto) */
+        const linee = await page.evaluate(() => {
+          const rgb = c => { const m = /rgba?\((\d+), (\d+), (\d+)/.exec(c); return m ? [+m[1], +m[2], +m[3]] : null; };
+          const dist = (a, b) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) / 441.7; };
+          return [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('path.l2l')).map(s => {
+            const out = [], lc = getComputedStyle(s.querySelector('path.l2l')).stroke;
+            const col = [...s.querySelectorAll('rect.hit')].map(r => getComputedStyle(r).fill);
+            const cur = col.length ? col[col.length - 1] : null;
+            if (cur && dist(lc, cur) < 0.28) out.push('la linea (' + lc + ') non si stacca dalle colonne (' + cur + ')');
+            const t = s.querySelector('line.tgt');
+            if (t && getComputedStyle(t).stroke !== lc) out.push('il target non ha il colore della linea');
+            return out;
+          }).flat();
+        });
+        linee.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · colline: ' + x));
         viste2 += await page.evaluate(() => [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('rect.barra')).length);
       }
     }
@@ -177,7 +193,7 @@ function tuttiIFiltri() {
   await okAsync('nessuna tabella e tagliata dal suo riquadro, su ogni pagina di ogni mockup', async () => {
     assert.deepStrictEqual([...new Set(guastiTabelle)], [], [...new Set(guastiTabelle)].join(String.fromCharCode(10) + '       '));
   });
-  await okAsync('ogni hbar: barre spesse e lunghe abbastanza da confrontarle, scritte intere e separate', async () => {
+  await okAsync('ogni hbar: barre spesse e lunghe abbastanza da confrontarle, scritte intere e separate; la linea del colline contrasta con le colonne', async () => {
     assert.ok(viste2 >= 10, 'solo ' + viste2 + ' hbar misurate');
     assert.deepStrictEqual([...new Set(guastiBarre)].slice(0, 10), [], [...new Set(guastiBarre)].slice(0, 10).join(String.fromCharCode(10) + '       '));
   });

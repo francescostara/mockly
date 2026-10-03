@@ -637,6 +637,14 @@ const INTERVENTI = [
     fatto: "Ogni barra prende il colore del suo membro, lo stesso del quadratino nelle tabelle (col padre, il colore del padre); l'inchiostro del valore scritto dentro la barra si sceglie sul contrasto col colore di quella barra. Gate: test/assi.test.js confronta, su ogni pagina del corpus, il colore di ogni barra col quadratino dello stesso membro nelle tabelle.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 3,
+    commento: "(Fra) Rendi la linea target di un colore piu simile alla linea; suggerisco di modificare entrambe, perche la linea non ha molto contrasto in confronto all'anno 2025.",
+    dove: "colline · runtime · gate in Chrome",
+    fatto: "La linea del colline era l'ambra fissa del tema, quasi uguale alle colonne oliva del 2025. Ora il motore sceglie il colore della linea fra quelli della palette: il primo che dista abbastanza (distanza fra colori, che conta tinta e luce) sia dalle colonne correnti sia da quelle grigie dell'anno prima, ed e abbastanza scuro da leggersi sulla card. La linea del target, l'asse, i punti e l'etichetta usano lo stesso colore; il target resta tratteggiato. Gate in Chrome (test/barra.test.js): su ogni colline del corpus la linea dista dalle colonne e il target ha il colore della linea.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
