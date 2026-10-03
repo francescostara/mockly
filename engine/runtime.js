@@ -64,6 +64,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   /* quanto due colori si distinguono (0-1): distanza nello spazio rgb, che conta tinta e luce —
      l'ambra accanto al blu si legge anche a pari luminosita, l'ambra accanto all'oliva no */
   M.distanza = function (a, b) { var x = M.rgb(a), y = M.rgb(b); return x && y ? Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) / 441.7 : null; };
+  /* LE CIFRE SONO MONOSPAZIATE (classe tnum, in ogni tipografia): ogni carattere vale lo stesso,
+     spazi e punti compresi. Misurate con M.largh uscivano piu corte del vero e sforavano il bordo
+     (Luca, 3 ott 2026). Chi misura un testo tnum usa questa. */
+  M.larghN = (t, px) => String(t).length * .62 * px;
   /* IL CUSCINETTO. Ogni grafico tiene questa distanza dai bordi della sua card, a destra e a
      sinistra. Non e una raffinatezza: un disegno che tocca il bordo sembra tagliato anche
      quando e intero, e la revisione l'ha segnalato su sei mockup prima che diventasse una
@@ -115,10 +119,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var num = v => nf.format(Math.round(v));
     var f = {};
     /* compact currency, K/M — canonical eur() */
+    /* MIGLIAIA CON UN DECIMALE, la convenzione dei report finance ("numbers in thousands with
+       one decimal", Bodan 3 ott 2026): con meta.numberFormat "k1" ogni importo e €52,134.5K,
+       card e tooltip compresi. */
+    var nf1 = new Intl.NumberFormat(lang, { useGrouping: true, minimumFractionDigits: 1, maximumFractionDigits: 1 });
     f.eur = function (v, k) {
       if (!isFinite(v)) v = 0;
       k = k === undefined ? 0 : k;
       var a = Math.abs(v), s = v < 0 ? '−' : '';
+      if (o.numberFormat === 'k1') return s + cur + nf1.format(a / 1e3) + 'K';
       /* I MILIARDI HANNO LA LORO SIGLA: "CHF 1183.9M" nel totale di una tabella di Luca (3 ott
          2026) si legge solo contando le cifre. E il confine e quello dell'arrotondamento:
          999.960 fa "1.0M", non "1000K". */
@@ -160,6 +169,18 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   };
 
   /* ---------- nice axis ticks ---------- */
+  /* un asse che non parte da zero: dal minimo al massimo, allargato a tacche tonde (Power BI fa
+     cosi sull'asse secondario). Quattro-sei tacche; un intervallo nullo si apre di poco. */
+  M.asseStretto = function (lo, hi) {
+    if (hi - lo < Math.abs(hi) * 1e-3) { lo -= Math.abs(hi) * .02 || 1; hi += Math.abs(hi) * .02 || 1; }
+    /* un margine sotto il minimo: un valore (o un target) sul fondo coinciderebbe con la base del
+       grafico; quattro-sei tacche, non tre */
+    lo -= (hi - lo) * .2;
+    var st = M.ticks((hi - lo) * 1.1, 5)[1], a = Math.floor(lo / st) * st, tk = [];
+    for (var x = a; x <= hi + st * .999; x += st) tk.push(+x.toFixed(10));
+    return { lo: a, hi: tk[tk.length - 1], tk: tk };
+  };
+
   M.ticks = function (max, n) {
     n = n || 4;
     var raw = max / n, mag = Math.pow(10, Math.floor(Math.log10(raw) || 0));
@@ -556,7 +577,45 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     };
 
     /* ---------- KPI card — house signature ---------- */
+    /* UNO SCOSTAMENTO DA UN RIFERIMENTO (budget o anno prima): una percentuale in punti, un importo
+       in percentuale; favorevole se va nel verso giusto per la misura (un costo sopra il budget
+       e sfavorevole). Lo usano la card finance, la matrice e il conto economico. */
+    A.scost = function (ms, act, ref, inv) {
+      var m = A.meas(ms), d = act - ref, inv2 = inv === undefined ? !!m.inv : inv;
+      if (!isFinite(d) || (!ref && !A.punti(ms))) return { t: '—', cls: 'fl', d: 0 };
+      var piatto = A.punti(ms) ? Math.abs(d) < 5e-4 : Math.abs(d / ref) < .0005;
+      var cls = piatto ? 'fl' : ((d > 0) !== inv2 ? 'up' : 'dn');
+      var t = A.punti(ms) ? f.pp(d) : (d >= 0 ? '+' : '−') + f.pc(Math.abs(d / Math.abs(ref)));
+      return { t: (piatto ? '' : (d > 0 ? '▲ ' : '▼ ')) + t, cls: cls, d: d };
+    };
+    /* i mesi dell'anno fino alla fine del periodo selezionato: il YTD segue il mese scelto */
+    A.ytdMesi = function () { var e = S.mo !== null ? S.mo : (S.q !== null ? S.q * 3 + 2 : 11), o = []; for (var i = 0; i <= e; i++) o.push(i); return o; };
+    /* LA CARD FINANCE (Bodan, 3 ott 2026: "each for the month and YTD, against budget and prior
+       year"): il valore del periodo con lo scostamento dal budget e dall'anno prima; sotto, il
+       YTD fino al mese scelto con gli stessi due scostamenti. Con l'anno intero il YTD sarebbe
+       lo stesso numero: la riga dice allora budget e anno prima in assoluto. */
+    A.kpiFin = function (k) {
+      var c = A.kpiState.cur, ms = k.measure, inv = k.inv;
+      var cv = A.mv(ms, c), pyA = A.agg(A.slice({ y: S.y - 1, months: S.mo !== null ? [S.mo] : A.QMON(S.q) })), pv = A.mv(ms, pyA);
+      var riga = function (act, bud, py) {
+        var s1 = k.budget ? A.scost(ms, act, bud, inv) : null, s2 = A.scost(ms, act, py, inv);
+        return (s1 ? '<span>' + (T.vsBud || 'vs budget') + ' <b class="' + s1.cls + '">' + s1.t + '</b></span>' : '') +
+          '<span>' + (T.vsPY || 'vs AP') + ' <b class="' + s2.cls + '">' + s2.t + '</b></span>';
+      };
+      var html = '<div class="kf tnum">' + riga(cv, k.budget ? A.mv(k.budget, c) : 0, pv) + '</div>';
+      if (k.ytd !== false) {
+        var mesi = A.ytdMesi(), yc = A.agg(A.slice({ y: S.y, months: mesi })), yp = A.agg(A.slice({ y: S.y - 1, months: mesi }));
+        if (S.mo === null && S.q === null) html += '<div class="ky tnum">' + (k.budget ? (T.bud || 'Budget') + ' ' + A.mfmt(ms, A.mv(k.budget, c)) + ' · ' : '') + (T.py || 'AP') + ' ' + A.mfmt(ms, pv) + '</div>';
+        else html += '<div class="ky tnum">YTD ' + MON[mesi[mesi.length - 1]] + ' ' + A.mfmt(ms, A.mv(ms, yc)) + '</div><div class="kf tnum" style="margin-top:2px">' +
+          riga(A.mv(ms, yc), k.budget ? A.mv(k.budget, yc) : 0, A.mv(ms, yp)) + '</div>';
+      }
+      var kb = (SPEC.__pelle || {}).banda === 'blocco';
+      var geo = kb ? 'flex:' + (k.span || 1) + ' 1 0;min-width:0' : 'width:' + g.span(k.span || 1) + 'px';
+      return '<div class="card kpi" style="' + geo + '"><div><div class="k">' + M.esc(k.label) + '</div><div class="vr"><div class="v tnum">' +
+        (A.definita(ms, c) ? A.mfmt(ms, cv) : '—') + '</div></div></div>' + html + '</div>';
+    };
     A.kpi = function (k) {
+      if (k.budget || k.ytd) return A.kpiFin(k);
       var a = A.kpiState, c = a.cur, p = a.prev;
       var cv = A.mv(k.measure, c), pv = A.mv(k.measure, p);
       var m = A.meas(k.measure);
@@ -859,6 +918,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           S.vista[rawV.slice(0, ixV)] = +rawV.slice(ixV + 1);
           A.render(); return;
         }
+        /* una voce del conto economico si apre nei suoi conti, e si richiude */
+        var xe = cl('[data-exp]');
+        if (xe) { S.exp = S.exp || {}; var kx = xe.getAttribute('data-exp'); S.exp[kx] = !S.exp[kx]; A.render(); return; }
         var oe = cl('[data-ord]');
         if (oe) {
           var raw2 = oe.getAttribute('data-ord'), ix2 = raw2.indexOf(':');
@@ -1285,7 +1347,6 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   /* l'inchiostro leggibile SOPRA un colore della palette: chiaro sui fondi scuri, scuro sui chiari.
      Un valore dentro una barra col colore fisso del tema era scuro su scuro (Luca, 3 ott 2026). */
   M.inkSu = function (col) { var l = M.lum(col); return l !== null && l >= 0.6 ? 'var(--ink)' : '#fff'; };
-  M.larghN = (t, px) => String(t).length * .62 * px;
   M.V.hbar = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, dim = b.dim, ms = b.measure;
     h = v.h || h || 190;
@@ -1319,6 +1380,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           "details" di Power BI), con l'inchiostro che contrasta col colore della barra;
         - il dettaglio (subMeasure) sulla riga del nome, a destra, attenuato.
        Niente esce mai dal riquadro (gate: test/barre.test.js). */
+    /* COLORATE PER IL PADRE, LE BARRE DICONO QUALE PADRE: la legenda dei padri presenti. Senza,
+       i Top 10 clienti di Bodan avevano tre colori che nessuno spiegava (3 ott 2026). */
+    var lgd = '';
+    if (b.parent) {
+      var visti = [];
+      data.forEach(d => { if (d.cat && visti.indexOf(d.cat) < 0) visti.push(d.cat); });
+      lgd = A.legend(visti.map(id => ({ l: A.dimLabel(b.parent, id), c: A.color(b.parent, id) })));
+      h -= 20;
+    }
     var px = 9, lblH = 12, n = data.length || 1;
     var x0 = M.PAD, full = w - 2 * M.PAD;
     /* il valore sta alla fine della barra; il dettaglio sulla riga del nome, a destra: cosi la
@@ -1351,7 +1421,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         '<rect class="barra" x="' + x0 + '" y="' + yb.toFixed(1) + '" width="' + bl.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="1.5" fill="' + (d.c || 'var(--c1)') + '"/>' +
         et + '</g>';
     });
-    return A.card(v, '<div style="flex:1;display:flex;align-items:center;padding-bottom:6px">' + s + '</svg></div>', { flex: true });
+    return A.card(v, lgd + '<div style="flex:1;display:flex;align-items:center;padding-bottom:6px">' + s + '</svg></div>', { flex: true });
   };
 })(MK);
 /*#endregion*/
@@ -1377,6 +1447,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var c = cols[i];
       if (!c) return 0;
       if (c.kind === 'var') return A.varia(c.measure, A.mv(c.measure, r.a), A.mv(c.measure, r.b)).d;
+      if (c.kind === 'bud') return A.mv(c.measure, r.a) - A.mv(c.budget, r.a);
       return A.mv(c.measure, r.a);
     };
     if (ord) {
@@ -1403,6 +1474,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       }).join('') + '</tr>';
     var cell = function (c, a, p, base) {
       var cv = A.mv(c.measure, a), pv = A.mv(c.measure, p);
+      /* SCOSTAMENTO DAL BUDGET con la logica finance: `budget` e la misura di riferimento,
+         `show` "abs" (importo) o "pct" (percentuale, punti per un tasso). Rosso e verde seguono il
+         verso della misura: un costo sopra il budget e sfavorevole (Bodan, 3 ott 2026). */
+      if (c.kind === 'bud') {
+        var bv = A.mv(c.budget, a), sc = A.scost(c.measure, cv, bv, c.inv);
+        if (c.show === 'abs' && !A.punti(c.measure)) sc.t = (sc.d > 0 ? '+' : sc.d < 0 ? '−' : '') + A.mfmt(c.measure, Math.abs(sc.d));
+        return '<td class="tnum ' + sc.cls + '">' + sc.t + '</td>';
+      }
       if (c.kind === 'var') {
         /* una voce che l'anno prima non c'era non "cresce dello zero per cento": e nuova. Senza,
            la campagna fatta per la prima volta usciva "— 0,0%" accanto alle altre (Fra, 28 set 2026) */
@@ -1441,18 +1520,6 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 /*#region chart:colline*/
 /* Clustered column + line on a secondary axis — "actual vs prior with a rate line". */
 (function (M) {
-  /* un asse che non parte da zero: dal minimo al massimo, allargato a tacche tonde (Power BI fa
-     cosi sull'asse secondario). Quattro-sei tacche; un intervallo nullo si apre di poco. */
-  M.asseStretto = function (lo, hi) {
-    if (hi - lo < Math.abs(hi) * 1e-3) { lo -= Math.abs(hi) * .02 || 1; hi += Math.abs(hi) * .02 || 1; }
-    /* un margine sotto il minimo: un valore (o un target) sul fondo coinciderebbe con la base del
-       grafico; quattro-sei tacche, non tre */
-    lo -= (hi - lo) * .2;
-    var st = M.ticks((hi - lo) * 1.1, 5)[1], a = Math.floor(lo / st) * st, tk = [];
-    for (var x = a; x <= hi + st * .999; x += st) tk.push(+x.toFixed(10));
-    return { lo: a, hi: tk[tk.length - 1], tk: tk };
-  };
-
   M.V.colline = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, f = A.f, ms = b.measure, ln = b.line;
     h = v.h || h || 206;
@@ -1484,8 +1551,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var lv = line.filter(x => x !== null), aL = null, tg = typeof b.target === 'number' ? b.target : null;
     var lvT = tg === null ? lv : lv.concat([tg]);
     if (ln && lv.length) aL = M.asseStretto(Math.min.apply(null, lvT), Math.max.apply(null, lvT));
-    var mgn = { t: 14, r: ln ? 44 : 40, b: 22, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var max = Math.max.apply(null, cur.concat(pri)) * 1.14 || 1, tk = M.ticks(max), top = tk[tk.length - 1] || 1;
+    /* i margini valgono quanto le tacche piu larghe dei due assi (in migliaia con un decimale
+       "€8,000.0K" non stava nei 46px fissi) */
+    var tw = a => Math.ceil(Math.max.apply(null, a)) + 12;
+    var mgn = { t: 14, b: 22, l: Math.max(46, tw(tk.map(t => M.larghN(A.mfmt(ms, t), 8.5)))),
+      r: aL ? Math.max(44, tw(aL.tk.map(t => M.larghN(A.mfmt(ln, t), 8))) - 4) : 40 };
+    var iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var Y = val => mgn.t + ih - (val / top) * ih;
     /* L'ASSE DELLA LINEA OCCUPA TUTTA L'ALTEZZA, come in Power BI: stava nella meta alta del
        grafico, con le tacche solo in cima (Fra, 3 ott 2026: "mai visto in Power BI"). */
@@ -1545,11 +1617,72 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          le tacche dell'asse secondario. Il velo la tiene leggibile sopra una colonna. */
       var k = 11; while (line[k] === null) k--;
       var wLbl = M.largh(lm.label || '', 8.5), xU = mgn.l + cw * k + cw / 2;
-      s += M.testoVelato(lm.label || '', Math.min(Math.max(xU, M.PAD + wLbl / 2), w - M.PAD - wLbl / 2),
-        Math.max(mgn.t + 8, Y2(line[k]) - 10),
+      /* dentro l'area del grafico, mai sopra le tacche dell'asse a destra; e se cade sulla scritta
+         del target, sotto il punto invece che sopra ("EBITDA margin" copriva il 22,0% e il budget
+         nel mockup di Bodan, 3 ott 2026) */
+      var yL = Math.max(mgn.t + 8, Y2(line[k]) - 10);
+      if (tg !== null && Math.abs(yL - (Y2(tg) - 4)) < 11) yL = Y2(line[k]) + 16;
+      s += M.testoVelato(lm.label || '', Math.min(Math.max(xU, mgn.l + wLbl / 2), mgn.l + iw - wLbl / 2),
+        yL,
         { px: 8.5, anc: 'middle', velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 4, padY: 2 });
     }
     return A.card(v, s + '</svg>');
+  };
+})(MK);
+/*#endregion*/
+
+/*#region chart:statement*/
+/* IL CONTO ECONOMICO (Bodan, 3 ott 2026: "the full income statement in proper account order …
+   with Actual, Budget, Variance and Variance % columns. Drill from statement lines down to
+   individual accounts"). Le righe sono le voci nell'ordine dichiarato; un subtotale e la sua
+   MISURA (Gross profit = ricavi − costo del venduto), mai la somma delle righe sopra. Colonne:
+   periodo e, con un mese o un trimestre scelto, il YTD fino a li. Una voce con `accounts` si apre
+   in riga nei suoi conti: i conti si ripartiscono la voce coi loro pesi — il budget esattamente,
+   l'effettivo con uno scarto per conto e per periodo, sempre rinormalizzato perche la somma dei
+   conti sia la voce. */
+(function (M) {
+  var scarto = function (t) { var h = 2166136261; for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return .86 + ((h >>> 0) % 1000) / 1000 * .28; };
+  M.V.statement = function (A, v, w, h) {
+    var b = v.bind || {}, S = A.S, f = A.f, lines = b.lines || [], idv = v.id || v.title || 'pl';
+    var gruppi = [{ l: A.periodLabel(), a: A.agg(A.slice({})) }];
+    if (b.ytd !== false && (S.mo !== null || S.q !== null)) {
+      var mesi = A.ytdMesi();
+      gruppi.push({ l: 'YTD ' + A.MON[mesi[mesi.length - 1]], a: A.agg(A.slice({ y: S.y, months: mesi })) });
+    }
+    var T = A.T, cn = [T.actual || 'Effettivo', T.bud || 'Budget', T.varShort || 'Var', (T.varShort || 'Var') + ' %'];
+    var head = '<tr><th rowspan="2" style="text-align:left">' + M.esc(A.tpl(b.label || '')) + '</th>' +
+      gruppi.map(g => '<th colspan="4" class="grp">' + M.esc(g.l) + '</th>').join('') + '</tr><tr>' +
+      gruppi.map(() => cn.map(c => '<th>' + M.esc(c) + '</th>').join('')).join('') + '</tr>';
+    var celle = function (ms, bud, inv, a, chiave, quota, quotaB) {
+      var act = A.mv(ms, a) * (quota === undefined ? 1 : quota), bv = bud ? A.mv(bud, a) * (quotaB === undefined ? 1 : quotaB) : null;
+      var out = '<td class="tnum">' + A.mfmt(ms, act) + '</td><td class="tnum">' + (bv === null ? '' : A.mfmt(ms, bv)) + '</td>';
+      if (bv === null) return out + '<td></td><td></td>';
+      var sc = A.scost(ms, act, bv, inv), d = act - bv;
+      var abs = A.punti(ms) ? sc.t : (d > 0 ? '+' : d < 0 ? '−' : '') + A.mfmt(ms, Math.abs(d));
+      var pc = A.punti(ms) ? '' : sc.t;
+      return out + '<td class="tnum ' + sc.cls + '">' + abs + '</td><td class="tnum ' + sc.cls + '">' + pc + '</td>';
+    };
+    var body = '';
+    lines.forEach(function (ln, li) {
+      var k = idv + ':' + li, aperta = S.exp && S.exp[k], acc = ln.accounts || [];
+      var cls = ln.kind === 'sub' ? 'sub' : ln.kind === 'total' ? 'tot' : ln.kind === 'pct' ? 'pct' : '';
+      body += '<tr class="pl ' + cls + '"' + (acc.length ? ' data-exp="' + M.esc(k) + '" style="cursor:pointer"' : '') + '><td>' +
+        (acc.length ? '<span class="tg">' + (aperta ? '▾' : '▸') + '</span> ' : '') + M.esc(ln.label) + '</td>' +
+        gruppi.map(g => celle(ln.measure, ln.budget, ln.inv, g.a)).join('') + '</tr>';
+      if (aperta && acc.length) {
+        var tw = acc.reduce((s, x) => s + (x.w || 1), 0);
+        gruppi.forEach(function (g, gi) {
+          var raw = acc.map(x => (x.w || 1) / tw * scarto(x.label + '|' + S.y + '|' + (gi ? 'ytd' : A.periodLabel()) + '|' + JSON.stringify(S.f)));
+          var rs = raw.reduce((s, x) => s + x, 0);
+          g.q = raw.map(x => x / rs);
+        });
+        acc.forEach(function (x, xi) {
+          body += '<tr class="pl acc"><td>' + M.esc(x.label) + '</td>' +
+            gruppi.map(g => celle(ln.measure, ln.budget, ln.inv, g.a, null, g.q[xi], (x.w || 1) / tw)).join('') + '</tr>';
+        });
+      }
+    });
+    return A.card(v, '<div class="mx st" style="flex:1"><table><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>', { flex: true });
   };
 })(MK);
 /*#endregion*/
@@ -1580,7 +1713,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += '<text x="' + (lw - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="10" fill="var(--ink2)">' + M.esc(grp.l) + '</text>';
       cats.forEach(function (c) {
         var val = vals[c.id], bl = val / tot * iw;
-        var dimd = S.f[dim] && S.f[dim] !== c.id;
+        /* il filtro sulla dimensione dei GRUPPI attenua gli altri gruppi, come quello sulle categorie
+           attenua le altre categorie: prima il mix per segmento restava fermo col filtro "SMB" (Bodan) */
+        var dimd = (S.f[dim] && S.f[dim] !== c.id) || (by !== 'q' && S.f[by] && S.f[by] !== grp.id);
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + x.toFixed(1) + '" y="' + (y - bh / 2).toFixed(1) + '" width="' + Math.max(0, bl - 1).toFixed(1) +
           '" height="' + bh + '" fill="' + c.c + '" data-f="' + dim + ':' + c.id + '" data-tip="<b>' + M.esc(grp.l + ' · ' + c.n) + '</b><br>' +
           A.mfmt(ms, val) + '<br>' + f.pc(val / tot) + '"/>';
@@ -2028,36 +2163,69 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   M.V.waterfall = function (A, v, w, h) {
     var b = v.bind || {}, f = A.f, dim = b.dim, ms = b.measure;
     h = v.h || h || 206;
-    var rows = A.byDim(dim, {});
-    var start = rows.reduce((a, r) => a + A.mv(ms, r.b), 0), end = rows.reduce((a, r) => a + A.mv(ms, r.a), 0);
-    var steps = rows.map(r => ({ l: r.m.n, d: A.mv(ms, r.a) - A.mv(ms, r.b), id: r.m.id })).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
-    var bars = [{ l: A.tpl(b.startLabel || '{py}'), abs: start, kind: 't' }]
-      .concat(steps.map(s2 => ({ l: s2.l, d: s2.d, kind: 's', id: s2.id })))
-      .concat([{ l: A.tpl(b.endLabel || '{y}'), abs: end, kind: 't' }]);
-    var mgn = { t: 14, r: M.PAD, b: 24, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
+    var start, end, steps, bars;
+    if (b.steps) {
+      /* IL PONTE DA UNO STOCK AL SUO STOCK, per tipo di flusso (Bodan, 3 ott 2026: "a monthly
+         bridge from opening to closing cash"): la chiusura e lo stock a fine periodo, ogni passo
+         e un flusso col suo segno, l'apertura e la chiusura meno i flussi — che, con uno stock
+         cumulativo nei dati, e esattamente lo stock alla fine del periodo prima. */
+      ms = b.stock;
+      var a0 = A.agg(A.slice({}));
+      end = A.mv(b.stock, a0);
+      steps = b.steps.map(st => ({ l: st.label || A.meas(st.measure).label, d: (st.sign === -1 ? -1 : 1) * A.mv(st.measure, a0) }));
+      start = end - steps.reduce((x, st) => x + st.d, 0);
+      bars = [{ l: A.tpl(b.startLabel || (A.T.opening || 'Apertura')), abs: start, kind: 't' }]
+        .concat(steps.map(s2 => ({ l: s2.l, d: s2.d, kind: 's' })))
+        .concat([{ l: A.tpl(b.endLabel || (A.T.closing || 'Chiusura')), abs: end, kind: 't' }]);
+    } else {
+      var rows = A.byDim(dim, {});
+      start = rows.reduce((a, r) => a + A.mv(ms, r.b), 0); end = rows.reduce((a, r) => a + A.mv(ms, r.a), 0);
+      steps = rows.map(r => ({ l: r.m.n, d: A.mv(ms, r.a) - A.mv(ms, r.b), id: r.m.id })).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+      bars = [{ l: A.tpl(b.startLabel || '{py}'), abs: start, kind: 't' }]
+        .concat(steps.map(s2 => ({ l: s2.l, d: s2.d, kind: 's', id: s2.id })))
+        .concat([{ l: A.tpl(b.endLabel || '{y}'), abs: end, kind: 't' }]);
+    }
+    var mgn = { t: 16, r: M.PAD, b: 24, l: 46 };
     var lo = 0, hi = Math.max(start, end), run = start;
     steps.forEach(function (s2) { run += s2.d; hi = Math.max(hi, run); lo = Math.min(lo, run); });
-    var tk = M.ticks(hi * 1.1 || 1), top = tk[tk.length - 1] || 1;
-    var Y = val => mgn.t + ih - (val / top) * ih, cw = iw / bars.length, bw = cw * .62;
+    var tk = M.ticks(hi * 1.1 || 1), top = tk[tk.length - 1] || 1, base = 0;
+    /* PASSI PICCOLI SU TOTALI GRANDI: l'asse non parte da zero. Un ponte di cassa da 14,5M a 15,2M
+       con passi da 0,2M disegnava due colonne alte e tre strisce di un pixel, e i passi non si
+       confrontavano (Bodan, 3 ott 2026; la regola delle barre confrontabili di Fra). Quando
+       l'escursione e meno di un terzo del massimo, l'asse va dal minimo al massimo del percorso,
+       e le tacche dicono da dove parte. */
+    var minRun = Math.min(start, end), runX = start;
+    steps.forEach(function (s2) { runX += s2.d; minRun = Math.min(minRun, runX); });
+    if (lo >= 0 && hi - minRun < hi / 3) { var aw = M.asseStretto(minRun, hi); base = aw.lo; top = aw.hi; tk = aw.tk; }
+    /* il margine dell'asse vale quanto la tacca piu larga: in migliaia con un decimale una tacca e
+       "€8,000.0K" e in 46px usciva tagliata */
+    mgn.l = Math.max(46, Math.ceil(Math.max.apply(null, tk.map(t => M.larghN(A.mfmt(ms, t), 8.5)))) + 12);
+    var iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
+    var Y = val => mgn.t + ih - ((val - base) / ((top - base) || 1)) * ih, cw = iw / bars.length, bw = cw * .62;
     var s = '<svg width="' + w + '" height="' + h + '">';
     tk.forEach(t => s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="' + (t ? 'var(--line2)' : 'var(--line)') + '"/>' +
       '<text x="' + (mgn.l - 7) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted2)" class="tnum">' + A.mfmt(ms, t) + '</text>');
     var cum = 0;
     bars.forEach(function (bar, i) {
       var x = mgn.l + cw * i + (cw - bw) / 2, y0, y1, fill, tipv;
-      if (bar.kind === 't') { y0 = Y(bar.abs); y1 = Y(0); fill = 'var(--c1)'; cum = bar.abs; tipv = A.mfmt(ms, bar.abs); }
+      if (bar.kind === 't') { y0 = Y(bar.abs); y1 = Y(base); fill = 'var(--c1)'; cum = bar.abs; tipv = A.mfmt(ms, bar.abs); }
       else {
         var from = cum, to = cum + bar.d; cum = to;
         y0 = Y(Math.max(from, to)); y1 = Y(Math.min(from, to));
+        /* un gradino piccolo resta visibile (4px): il valore scritto sopra dice quanto vale davvero */
+        if (y1 - y0 < 4) { var mz = (y0 + y1) / 2; y0 = mz - 2; y1 = mz + 2; }
         fill = bar.d >= 0 ? 'var(--good)' : 'var(--bad)';
         tipv = (bar.d >= 0 ? '+' : '−') + A.mfmt(ms, Math.abs(bar.d));
       }
       /* il membro filtrato resta pieno, gli altri si attenuano — come in ogni altro visual per
          dimensione: prima il bridge restava identico davanti al filtro sul suo segmento */
       var dimd = bar.id && A.S.f[dim] && A.S.f[dim] !== bar.id;
-      s += '<rect class="hit' + (dimd ? ' dimd' : '') + '" ' + (bar.id ? 'data-f="' + dim + ':' + bar.id + '"' : '') + ' x="' + x.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + bw.toFixed(1) +
+      s += '<rect class="hit' + (bar.kind === 's' ? ' wfs' : '') + (dimd ? ' dimd' : '') + '" ' + (bar.id ? 'data-f="' + dim + ':' + bar.id + '"' : '') + ' x="' + x.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + bw.toFixed(1) +
         '" height="' + Math.max(1, y1 - y0).toFixed(1) + '" fill="' + fill + '" data-tip="<b>' + M.esc(bar.l) + '</b><br>' + tipv + '"/>';
-      s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8" fill="var(--muted)">' + M.esc(bar.l.length > 12 ? bar.l.slice(0, 11) + '…' : bar.l) + '</text>';
+      s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8" fill="var(--muted)">' + M.esc(bar.l.length > 14 ? bar.l.slice(0, 13) + '…' : bar.l) + '</text>';
+      /* il valore sopra la barra, se ci sta nella colonna: un ponte senza cifre si legge solo
+         passando col mouse su ogni gradino */
+      if (M.larghN(tipv, 8) <= cw - 2) s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y0 - 4).toFixed(1) + '" text-anchor="middle" font-size="8" class="tnum" fill="var(--ink2)">' + tipv + '</text>';
     });
     return A.card(v, s + '</svg>');
   };

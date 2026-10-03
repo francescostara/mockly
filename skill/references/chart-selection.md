@@ -118,6 +118,24 @@ name's line, right-aligned. What that asks of the spec:
   unless the parent is the point.
 - **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
 
+## Finance reporting — actual, budget, prior year (Bodan, 3 Oct 2026)
+
+A CFO report is read in the language of finance; the engine speaks it, if the spec asks:
+- **The income statement is a `statement`, not a matrix by entity.** Lines in account order,
+  subtotals (`kind: "sub"`) as calculated measures, margins as `kind: "pct"`, the bottom line as
+  `"total"`. Give every cost/revenue line its `budget` measure and its `accounts` (3–5, with
+  weights) so the reader can open a line. Model one budget field per line (`bRev`, `bCogs`,
+  `bRnd`, …) and the budget subtotals as `diff` measures, like the actuals.
+- **KPI cards carry `budget` and `ytd`** when the brief asks for month and YTD against budget
+  and prior year.
+- **Variance columns are `kind: "bud"`** (absolute and %), never a plain difference column:
+  they take the finance colours. Set `meta.varianze: "finanza"` when the brief asks for red and
+  green, and `meta.numberFormat: "k1"` for thousands with one decimal.
+- **A cash bridge goes from opening to closing cash by flow type:** a `waterfall` with `stock`
+  and `steps`, on a `cumulative` net-cash field.
+- **Default the date filter to the latest month** (`"m": 11`) when the brief talks about "the
+  month" and YTD: with the full year selected, YTD is the year itself.
+
 ## gauge — un valore contro il suo bersaglio
 
 Quando la domanda e "siamo arrivati dove dovevamo?". Firma in B2B sales (quota attainment, win

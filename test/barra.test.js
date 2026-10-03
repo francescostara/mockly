@@ -177,10 +177,21 @@ function tuttiIFiltri() {
             if (cur && dist(lc, cur) < 0.28) out.push('la linea (' + lc + ') non si stacca dalle colonne (' + cur + ')');
             const t = s.querySelector('line.tgt');
             if (t && getComputedStyle(t).stroke !== lc) out.push('il target non ha il colore della linea');
+            /* le scritte dentro il riquadro e mai una sopra l'altra: "EBITDA margin" copriva la tacca
+               del 22% e il target (Bodan, 3 ott 2026). I veli delle etichette non contano. */
+            const R = s.getBoundingClientRect(), tx = [...s.querySelectorAll('text')].map(x => x.getBoundingClientRect()).filter(x => x.width);
+            tx.forEach(x => { if (x.left < R.left - 0.5 || x.right > R.right + 0.5) out.push('una scritta esce dal riquadro'); });
+            for (let i = 0; i < tx.length; i++) for (let j = i + 1; j < tx.length; j++) {
+              const a = tx[i], b = tx[j];
+              if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 2 && b.top < a.bottom - 2) out.push('due scritte si sovrappongono');
+            }
             return out;
           }).flat();
         });
         linee.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · colline: ' + x));
+        /* i gradini di un ponte si vedono: con l'asse da zero erano strisce di un pixel (Bodan) */
+        const gradini = await page.evaluate(() => [...document.querySelectorAll('#page rect.wfs')].filter(r => r.getBoundingClientRect().height < 4).length);
+        if (gradini) guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · waterfall: ' + gradini + ' gradini piu bassi di 4px');
         viste2 += await page.evaluate(() => [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('rect.barra')).length);
       }
     }

@@ -130,6 +130,7 @@ it is the primary measure, from which the others derive. Field kinds:
 | `share` | `of × attrs[attr] × jitter` | `complement: true` → uses `1 − attr` · `cap` → ceiling on the rate · `growthFactor` → multiplies the rate in the current year (e.g. online doubling) |
 | `divide` | `of ÷ (attrs[attr] × jitter)` | `min` (default 1) — always an integer |
 | `combine` | `Σ plus − Σ minus` | for movement measures (new + expansion − churn = net new) |
+| `cumulative` | `previous value + flow` (first month: `attrs[start] × startOf`) | a stock that is the running sum of its flow: net cash = last month's cash + net cash flow. `{ "kind": "cumulative", "flow": "ncf", "start": "cashMonths", "startOf": "rev" }`. Read it with an `agg: "last"` measure; a stock bridge then reconciles exactly |
 
 Every field is rounded to an integer, so the totals a reader adds up actually add up.
 `share` and `divide` read the member's `attrs`; add `"attrFrom": "split"` to read the split

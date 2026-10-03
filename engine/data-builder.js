@@ -143,7 +143,7 @@ function evalField(f, row, own, split, ctx, splits) {
       return plus - minus;
     }
     default:
-      fail(`field "${f.id}": unknown kind "${f.kind}" (seasonal | share | divide | combine)`);
+      fail(`field "${f.id}": unknown kind "${f.kind}" (seasonal | share | divide | combine | cumulative)`);
   }
 }
 
@@ -287,13 +287,29 @@ function build(dp) {
      split, stesso campo): il totale dell'anno, e ogni tasso costruito sopra, resta quello
      dichiarato. Trovato sul segmento russo dell'app di lingue, dove lo scambio 1:1 usciva meno
      efficace delle voice room per puro arrotondamento. */
-  const resti = {};
+  const resti = {}, cumul = {};
   years.forEach((y, yi) => {
     grain.filter(r => r.y === y).forEach(r => {
       const ctx = { j, yi, seas, years, dim: dimId };
       const serie = r[dimId] + '|' + splitList.map(sc => r[sc.dim]).join('|') + '|';
       for (let i = 1; i < fields.length; i++) {
         const f = fields[i];
+        /* UNO STOCK CHE E LA SOMMA DEI SUOI FLUSSI: la cassa di fine mese e quella del mese prima
+           piu il flusso netto del mese. Calcolata a parte, la cassa del ponte "apertura -> chiusura"
+           non tornava mai coi flussi (Bodan, 3 ott 2026). Il primo mese parte da start x startOf
+           (es. 1,9 mesi di ricavi), poi si accumula per serie. */
+        if (f.kind === 'cumulative') {
+          const kc = serie + f.id;
+          if (r[f.flow] === undefined) fail(`field "${f.id}": flow "${f.flow}" va dichiarato prima`);
+          if (cumul[kc] === undefined) {
+            const a0 = valoreAttr((r.__own.attrs || {})[f.start], f.start, ctx, r);
+            if (a0 === undefined || r[f.startOf] === undefined) fail(`field "${f.id}": vuole start (un attr di facts.dim) e startOf (un campo gia dichiarato)`);
+            cumul[kc] = r[f.startOf] * a0;
+          }
+          cumul[kc] += r[f.flow];
+          r[f.id] = Math.round(cumul[kc]);
+          continue;
+        }
         const k = serie + f.id, v = evalField(f, r, r.__own, r.__split, ctx, r.__splits) + (resti[k] || 0);
         r[f.id] = Math.round(v);
         resti[k] = v - r[f.id];

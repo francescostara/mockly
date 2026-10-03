@@ -1,0 +1,1624 @@
+{
+ "spec": {
+  "meta": {
+   "title": "Monthly Management Report",
+   "subtitle": "Group P&L, revenue and cash · {period}",
+   "brand": {
+    "name": "Nordvale Software Group",
+    "tagline": "CFO reporting"
+   },
+   "locale": "en-GB",
+   "currency": "€",
+   "months": [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+   ],
+   "updated": "Data as of Dec 31, 2026",
+   "source": "Source: ERP general ledger, consolidated",
+   "watermark": "Demo mockup · synthetic data",
+   "numberFormat": "k1",
+   "varianze": "finanza"
+  },
+  "aesthetic": "corporate-sober",
+  "skin": {
+   "shell": "rail",
+   "palette": "slate-freddo",
+   "tipografia": "tecnico",
+   "densita": "medio",
+   "banda": "box"
+  },
+  "archetype": "scorecard",
+  "grid": {
+   "contentWidth": 1044,
+   "gutter": 12,
+   "columns": 5
+  },
+  "model": {
+   "sums": [
+    "rev",
+    "rec",
+    "oneoff",
+    "cogs",
+    "rnd",
+    "snm",
+    "gna",
+    "opex",
+    "da",
+    "bRev",
+    "bCogs",
+    "bOpex",
+    "cfo",
+    "capex",
+    "taxint",
+    "netcash",
+    "arW",
+    "apW",
+    "bRnd",
+    "bSnm",
+    "bGna",
+    "bDa"
+   ],
+   "measures": [
+    {
+     "id": "rev",
+     "label": "Revenue",
+     "agg": "sum",
+     "field": "rev",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "rec",
+     "label": "Recurring revenue",
+     "agg": "sum",
+     "field": "rec",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "oneoff",
+     "label": "One-off revenue",
+     "agg": "sum",
+     "field": "oneoff",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "recPc",
+     "label": "Recurring share",
+     "agg": "ratio",
+     "num": "rec",
+     "den": "rev",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "cogs",
+     "label": "COGS",
+     "agg": "sum",
+     "field": "cogs",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "gp",
+     "label": "Gross profit",
+     "agg": "diff",
+     "a": "rev",
+     "b": "cogs",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "gm",
+     "label": "Gross margin %",
+     "agg": "ratio",
+     "num": "gp",
+     "den": "rev",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "rnd",
+     "label": "R&D",
+     "agg": "sum",
+     "field": "rnd",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "snm",
+     "label": "Sales & marketing",
+     "agg": "sum",
+     "field": "snm",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "gna",
+     "label": "G&A",
+     "agg": "sum",
+     "field": "gna",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "opex",
+     "label": "Opex",
+     "agg": "sum",
+     "field": "opex",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "ebitda",
+     "label": "EBITDA",
+     "agg": "diff",
+     "a": "gp",
+     "b": "opex",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "ebm",
+     "label": "EBITDA margin",
+     "agg": "ratio",
+     "num": "ebitda",
+     "den": "rev",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "da",
+     "label": "D&A",
+     "agg": "sum",
+     "field": "da",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "ebit",
+     "label": "EBIT",
+     "agg": "diff",
+     "a": "ebitda",
+     "b": "da",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "bRev",
+     "label": "Budget revenue",
+     "agg": "sum",
+     "field": "bRev",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "bCogs",
+     "label": "Budget COGS",
+     "agg": "sum",
+     "field": "bCogs",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "bOpex",
+     "label": "Budget opex",
+     "agg": "sum",
+     "field": "bOpex",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "bGp",
+     "label": "Budget gross profit",
+     "agg": "diff",
+     "a": "bRev",
+     "b": "bCogs",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "bEbitda",
+     "label": "Budget EBITDA",
+     "agg": "diff",
+     "a": "bGp",
+     "b": "bOpex",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "vRev",
+     "label": "Revenue vs budget",
+     "agg": "diff",
+     "a": "rev",
+     "b": "bRev",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "vRevPc",
+     "label": "Revenue var %",
+     "agg": "ratio",
+     "num": "vRev",
+     "den": "bRev",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "vEbitda",
+     "label": "EBITDA vs budget",
+     "agg": "diff",
+     "a": "ebitda",
+     "b": "bEbitda",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "vEbitdaPc",
+     "label": "EBITDA var %",
+     "agg": "ratio",
+     "num": "vEbitda",
+     "den": "bEbitda",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "vOpex",
+     "label": "Opex vs budget",
+     "agg": "diff",
+     "a": "opex",
+     "b": "bOpex",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "cfo",
+     "label": "Operating cash flow",
+     "agg": "sum",
+     "field": "cfo",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "capex",
+     "label": "Capex",
+     "agg": "sum",
+     "field": "capex",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "taxint",
+     "label": "Tax & interest",
+     "agg": "sum",
+     "field": "taxint",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "fcf0",
+     "label": "Cash flow before tax",
+     "agg": "diff",
+     "a": "cfo",
+     "b": "capex",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "ncf",
+     "label": "Net cash flow",
+     "agg": "diff",
+     "a": "fcf0",
+     "b": "taxint",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "netcash",
+     "label": "Net cash",
+     "agg": "last",
+     "field": "netcash",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
+     "id": "dso",
+     "label": "DSO",
+     "agg": "ratio",
+     "num": "arW",
+     "den": "rev",
+     "unit": "days",
+     "format": "days",
+     "inv": true
+    },
+    {
+     "id": "dpo",
+     "label": "DPO",
+     "agg": "ratio",
+     "num": "apW",
+     "den": "cogs",
+     "unit": "days",
+     "format": "days"
+    },
+    {
+     "id": "bGm",
+     "label": "Budget gross margin %",
+     "agg": "ratio",
+     "num": "bGp",
+     "den": "bRev",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "bEbm",
+     "label": "Budget EBITDA margin",
+     "agg": "ratio",
+     "num": "bEbitda",
+     "den": "bRev",
+     "unit": "pct",
+     "format": "pc"
+    },
+    {
+     "id": "bRnd",
+     "label": "Budget R&D",
+     "agg": "sum",
+     "field": "bRnd",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "bSnm",
+     "label": "Budget S&M",
+     "agg": "sum",
+     "field": "bSnm",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "bGna",
+     "label": "Budget G&A",
+     "agg": "sum",
+     "field": "bGna",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "bDa",
+     "label": "Budget D&A",
+     "agg": "sum",
+     "field": "bDa",
+     "unit": "money",
+     "format": "eur",
+     "inv": true
+    },
+    {
+     "id": "bEbit",
+     "label": "Budget EBIT",
+     "agg": "diff",
+     "a": "bEbitda",
+     "b": "bDa",
+     "unit": "money",
+     "format": "eur"
+    }
+   ]
+  },
+  "filters": {
+   "date": {
+    "levels": [
+     "year",
+     "quarter",
+     "month"
+    ],
+    "default": {
+     "y": 2026,
+     "q": null,
+     "m": 11
+    }
+   },
+   "dims": [
+    {
+     "id": "ent",
+     "label": "Entity",
+     "control": "list",
+     "allLabel": "Group",
+     "pill": "Entity"
+    },
+    {
+     "id": "seg",
+     "label": "Segment",
+     "control": "dropdown",
+     "allLabel": "All segments",
+     "pill": "Segment"
+    },
+    {
+     "id": "prod",
+     "label": "Product line",
+     "control": "dropdown",
+     "allLabel": "All products",
+     "pill": "Product"
+    }
+   ]
+  },
+  "kpiBand": [
+   {
+    "id": "rev",
+    "label": "Revenue",
+    "measure": "rev",
+    "budget": "bRev",
+    "ytd": true,
+    "span": 1
+   },
+   {
+    "id": "gm",
+    "label": "Gross margin %",
+    "measure": "gm",
+    "budget": "bGm",
+    "ytd": true,
+    "span": 1
+   },
+   {
+    "id": "ebitda",
+    "label": "EBITDA",
+    "measure": "ebitda",
+    "budget": "bEbitda",
+    "ytd": true,
+    "span": 1
+   },
+   {
+    "id": "ebm",
+    "label": "EBITDA margin",
+    "measure": "ebm",
+    "budget": "bEbm",
+    "ytd": true,
+    "span": 1
+   },
+   {
+    "id": "netcash",
+    "label": "Net cash",
+    "measure": "netcash",
+    "ytd": true,
+    "span": 1
+   }
+  ],
+  "pages": [
+   {
+    "id": "exec",
+    "title": "Executive summary",
+    "subtitle": "Revenue ahead of prior year but behind budget; Poland's ramp-up costs absorb the EBITDA margin",
+    "nav": "Executive summary",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 3,
+        "h": 180,
+        "title": "Revenue per month, {y} vs {py}, with EBITDA margin",
+        "bind": {
+         "measure": "rev",
+         "line": "ebm",
+         "target": 0.22,
+         "targetLabel": "Budget"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 180,
+        "title": "EBITDA by entity · {period}",
+        "bind": {
+         "dim": "ent",
+         "measure": "ebitda",
+         "top": 3,
+         "subMeasure": "vEbitda",
+         "subUnit": " vs budget"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 5,
+        "title": "Entities · actual vs budget · {period}",
+        "bind": {
+         "dim": "ent",
+         "label": "Entity",
+         "sort": "rev",
+         "drill": true,
+         "totalsLabel": "Group",
+         "columns": [
+          {
+           "measure": "rev",
+           "label": "Revenue"
+          },
+          {
+           "measure": "bRev",
+           "label": "Budget"
+          },
+          {
+           "measure": "rev",
+           "budget": "bRev",
+           "label": "Var",
+           "kind": "bud",
+           "show": "abs"
+          },
+          {
+           "measure": "rev",
+           "budget": "bRev",
+           "label": "Var %",
+           "kind": "bud",
+           "show": "pct"
+          },
+          {
+           "measure": "rev",
+           "label": "vs PY",
+           "kind": "var"
+          },
+          {
+           "measure": "gm",
+           "budget": "bGm",
+           "label": "GM % vs Bud",
+           "kind": "bud"
+          },
+          {
+           "measure": "ebitda",
+           "label": "EBITDA"
+          },
+          {
+           "measure": "bEbitda",
+           "label": "Budget"
+          },
+          {
+           "measure": "ebitda",
+           "budget": "bEbitda",
+           "label": "Var",
+           "kind": "bud",
+           "show": "abs"
+          },
+          {
+           "measure": "ebitda",
+           "budget": "bEbitda",
+           "label": "Var %",
+           "kind": "bud",
+           "show": "pct"
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "pnl",
+    "title": "P&L",
+    "subtitle": "Income statement in account order: subtotals are calculated measures. Click a line to open its accounts",
+    "nav": "P&L",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 3,
+        "h": 150,
+        "title": "EBITDA per month, {y} vs {py}, with EBITDA margin",
+        "bind": {
+         "measure": "ebitda",
+         "line": "ebm",
+         "target": 0.22,
+         "targetLabel": "Budget"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 150,
+        "title": "Opex vs budget by entity · {period}",
+        "bind": {
+         "dim": "ent",
+         "measure": "opex",
+         "top": 3,
+         "subMeasure": "vOpex",
+         "subUnit": " vs budget"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "statement",
+        "span": 5,
+        "title": "Income statement · {period}",
+        "bind": {
+         "label": "€K",
+         "lines": [
+          {
+           "label": "Revenue",
+           "measure": "rev",
+           "budget": "bRev",
+           "accounts": [
+            {
+             "label": "Subscriptions",
+             "w": 5
+            },
+            {
+             "label": "Licences",
+             "w": 1.5
+            },
+            {
+             "label": "Implementation services",
+             "w": 2
+            }
+           ]
+          },
+          {
+           "label": "Cost of goods sold",
+           "measure": "cogs",
+           "budget": "bCogs",
+           "accounts": [
+            {
+             "label": "Hosting & infrastructure",
+             "w": 3
+            },
+            {
+             "label": "Customer support",
+             "w": 2
+            },
+            {
+             "label": "Services delivery",
+             "w": 2.5
+            },
+            {
+             "label": "Third-party licences",
+             "w": 1
+            }
+           ]
+          },
+          {
+           "label": "Gross profit",
+           "measure": "gp",
+           "budget": "bGp",
+           "kind": "sub"
+          },
+          {
+           "label": "Gross margin %",
+           "measure": "gm",
+           "budget": "bGm",
+           "kind": "pct"
+          },
+          {
+           "label": "Research & development",
+           "measure": "rnd",
+           "budget": "bRnd",
+           "accounts": [
+            {
+             "label": "Engineering salaries",
+             "w": 6
+            },
+            {
+             "label": "Contractors",
+             "w": 1.5
+            },
+            {
+             "label": "Dev tools & cloud",
+             "w": 1
+            }
+           ]
+          },
+          {
+           "label": "Sales & marketing",
+           "measure": "snm",
+           "budget": "bSnm",
+           "accounts": [
+            {
+             "label": "Sales salaries",
+             "w": 4
+            },
+            {
+             "label": "Commissions",
+             "w": 1.5
+            },
+            {
+             "label": "Campaigns",
+             "w": 2
+            },
+            {
+             "label": "Events",
+             "w": 1
+            }
+           ]
+          },
+          {
+           "label": "General & administrative",
+           "measure": "gna",
+           "budget": "bGna",
+           "accounts": [
+            {
+             "label": "Finance & HR salaries",
+             "w": 3
+            },
+            {
+             "label": "Office & rent",
+             "w": 1.5
+            },
+            {
+             "label": "Professional fees",
+             "w": 1
+            },
+            {
+             "label": "Insurance & other",
+             "w": 0.5
+            }
+           ]
+          },
+          {
+           "label": "Total opex",
+           "measure": "opex",
+           "budget": "bOpex",
+           "kind": "sub"
+          },
+          {
+           "label": "EBITDA",
+           "measure": "ebitda",
+           "budget": "bEbitda",
+           "kind": "sub"
+          },
+          {
+           "label": "EBITDA margin",
+           "measure": "ebm",
+           "budget": "bEbm",
+           "kind": "pct"
+          },
+          {
+           "label": "Depreciation & amortisation",
+           "measure": "da",
+           "budget": "bDa",
+           "accounts": [
+            {
+             "label": "Depreciation",
+             "w": 1
+            },
+            {
+             "label": "Amortisation of capitalised software",
+             "w": 1.4
+            }
+           ]
+          },
+          {
+           "label": "EBIT",
+           "measure": "ebit",
+           "budget": "bEbit",
+           "kind": "total"
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "revenue",
+    "title": "Revenue",
+    "subtitle": "Recurring platform revenue carries growth; services stay one-off and thin",
+    "nav": "Revenue",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "stack100",
+        "span": 2,
+        "h": 180,
+        "title": "Product mix by segment · {period}",
+        "bind": {
+         "dim": "prod",
+         "measure": "rev",
+         "by": "seg"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 1,
+        "h": 180,
+        "title": "Revenue by entity",
+        "bind": {
+         "dim": "ent",
+         "measure": "rev",
+         "top": 3,
+         "subMeasure": "recPc",
+         "subUnit": " recurring"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 180,
+        "title": "Top 10 customers · {period}",
+        "bind": {
+         "dim": "cust",
+         "measure": "rev",
+         "top": 10,
+         "detail": true,
+         "parent": "seg"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 5,
+        "title": "Revenue by product line · {period}",
+        "bind": {
+         "dim": "prod",
+         "label": "Product line",
+         "sort": "rev",
+         "drill": false,
+         "totalsLabel": "Total",
+         "columns": [
+          {
+           "measure": "rev",
+           "label": "Revenue"
+          },
+          {
+           "measure": "rev",
+           "label": "{basis}",
+           "kind": "var"
+          },
+          {
+           "measure": "rev",
+           "budget": "bRev",
+           "label": "vs Budget",
+           "kind": "bud",
+           "show": "pct"
+          },
+          {
+           "measure": "rev",
+           "label": "Share",
+           "kind": "share"
+          },
+          {
+           "measure": "rec",
+           "label": "Recurring"
+          },
+          {
+           "measure": "oneoff",
+           "label": "One-off"
+          },
+          {
+           "measure": "recPc",
+           "label": "Recurring %",
+           "kind": "heat",
+           "scale": [
+            0.2,
+            0.95
+           ]
+          },
+          {
+           "measure": "gm",
+           "label": "GM %",
+           "kind": "heat",
+           "scale": [
+            0.4,
+            0.85
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "cash",
+    "title": "Cash",
+    "subtitle": "Operating cash covers capex and tax; DSO creeps up in Poland",
+    "nav": "Cash",
+    "rows": [
+     {
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 3,
+        "h": 180,
+        "title": "Operating cash flow per month, {y} vs {py}, with DSO",
+        "bind": {
+         "measure": "cfo",
+         "line": "dso"
+        }
+       },
+       {
+        "type": "waterfall",
+        "span": 2,
+        "h": 180,
+        "title": "Cash bridge · {period}",
+        "bind": {
+         "stock": "netcash",
+         "steps": [
+          {
+           "measure": "cfo",
+           "label": "Operating CF"
+          },
+          {
+           "measure": "capex",
+           "label": "Capex",
+           "sign": -1
+          },
+          {
+           "measure": "taxint",
+           "label": "Tax & interest",
+           "sign": -1
+          }
+         ],
+         "startLabel": "Opening",
+         "endLabel": "Closing"
+        }
+       }
+      ]
+     },
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "matrix",
+        "span": 5,
+        "title": "Cash by entity · {period}",
+        "bind": {
+         "dim": "ent",
+         "label": "Entity",
+         "sort": "cfo",
+         "drill": true,
+         "totalsLabel": "Group",
+         "columns": [
+          {
+           "measure": "cfo",
+           "label": "Operating CF"
+          },
+          {
+           "measure": "capex",
+           "label": "Capex",
+           "inv": true
+          },
+          {
+           "measure": "taxint",
+           "label": "Tax & interest",
+           "inv": true
+          },
+          {
+           "measure": "ncf",
+           "label": "Net cash flow"
+          },
+          {
+           "measure": "netcash",
+           "label": "Closing net cash"
+          },
+          {
+           "measure": "dso",
+           "label": "DSO",
+           "kind": "heat",
+           "scale": [
+            70,
+            40
+           ],
+           "inv": true
+          },
+          {
+           "measure": "dpo",
+           "label": "DPO",
+           "kind": "heat",
+           "scale": [
+            25,
+            50
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "drill": {
+   "dim": "ent",
+   "page": {
+    "id": "__drill__",
+    "title": "{drill}",
+    "drillHeader": "{period} · {basis}",
+    "backLabel": "Back to group",
+    "subtitle": "Revenue, margin and cost lines for this entity",
+    "rows": [
+     {
+      "flex": true,
+      "visuals": [
+       {
+        "type": "colline",
+        "span": 3,
+        "h": 300,
+        "title": "Revenue per month with EBITDA margin",
+        "bind": {
+         "measure": "rev",
+         "line": "ebm"
+        }
+       },
+       {
+        "type": "hbar",
+        "span": 2,
+        "h": 300,
+        "title": "Revenue by product line",
+        "bind": {
+         "dim": "prod",
+         "measure": "rev",
+         "top": 3,
+         "subMeasure": "gm",
+         "subUnit": " GM"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "dataParams": {
+  "seed": 52118,
+  "years": [
+   2025,
+   2026
+  ],
+  "seasonality": [
+   0.9,
+   0.92,
+   1.02,
+   0.96,
+   0.97,
+   1.04,
+   0.92,
+   0.86,
+   1.03,
+   1.05,
+   1.06,
+   1.27
+  ],
+  "dims": {
+   "ent": {
+    "members": [
+     {
+      "id": "de",
+      "n": "Germany",
+      "base": 2100000,
+      "growth": 0.09,
+      "attrs": {
+       "rndR": [
+        0.17,
+        0.165
+       ],
+       "snmR": [
+        0.24,
+        0.23
+       ],
+       "gnaR": 0.09,
+       "daR": 0.04,
+       "bF": [
+        1.02,
+        1.03
+       ],
+       "cfoR": [
+        0.2,
+        0.21
+       ],
+       "capexR": 0.035,
+       "taxR": 0.05,
+       "cashM": 1.6,
+       "dso": [
+        52,
+        50
+       ],
+       "dpo": 38,
+       "bRndR": 0.19,
+       "bSnmR": 0.23,
+       "bGnaR": 0.085
+      }
+     },
+     {
+      "id": "nl",
+      "n": "Netherlands",
+      "base": 1150000,
+      "growth": 0.12,
+      "attrs": {
+       "rndR": [
+        0.12,
+        0.12
+       ],
+       "snmR": [
+        0.27,
+        0.25
+       ],
+       "gnaR": 0.08,
+       "daR": 0.035,
+       "bF": [
+        0.99,
+        1.0
+       ],
+       "cfoR": [
+        0.22,
+        0.24
+       ],
+       "capexR": 0.025,
+       "taxR": 0.055,
+       "cashM": 1.4,
+       "dso": [
+        45,
+        44
+       ],
+       "dpo": 35,
+       "bRndR": 0.19,
+       "bSnmR": 0.25,
+       "bGnaR": 0.08
+      }
+     },
+     {
+      "id": "pl",
+      "n": "Poland",
+      "base": 620000,
+      "growth": 0.26,
+      "attrs": {
+       "rndR": [
+        0.26,
+        0.31
+       ],
+       "snmR": [
+        0.16,
+        0.19
+       ],
+       "gnaR": [
+        0.1,
+        0.12
+       ],
+       "daR": 0.05,
+       "bF": [
+        1.0,
+        1.08
+       ],
+       "cfoR": [
+        0.1,
+        0.05
+       ],
+       "capexR": 0.06,
+       "taxR": 0.03,
+       "cashM": 0.9,
+       "dso": [
+        58,
+        67
+       ],
+       "dpo": 31,
+       "bRndR": 0.25,
+       "bSnmR": 0.17,
+       "bGnaR": 0.095
+      }
+     }
+    ]
+   },
+   "seg": {
+    "members": [
+     {
+      "id": "ent",
+      "n": "Enterprise",
+      "base": 1,
+      "growth": 0.04
+     },
+     {
+      "id": "mid",
+      "n": "Mid-market",
+      "base": 1
+     },
+     {
+      "id": "smb",
+      "n": "SMB",
+      "base": 1,
+      "growth": -0.03
+     }
+    ]
+   },
+   "prod": {
+    "members": [
+     {
+      "id": "plat",
+      "n": "Platform (SaaS)",
+      "base": 1,
+      "growth": 0.05,
+      "attrs": {
+       "recR": [
+        0.94,
+        0.95
+       ],
+       "cogsR": [
+        0.19,
+        0.18
+       ]
+      }
+     },
+     {
+      "id": "anl",
+      "n": "Analytics add-ons",
+      "base": 1,
+      "growth": 0.03,
+      "attrs": {
+       "recR": [
+        0.82,
+        0.85
+       ],
+       "cogsR": [
+        0.24,
+        0.23
+       ]
+      }
+     },
+     {
+      "id": "svc",
+      "n": "Professional services",
+      "base": 1,
+      "growth": -0.05,
+      "attrs": {
+       "recR": [
+        0.08,
+        0.07
+       ],
+       "cogsR": [
+        0.66,
+        0.69
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "facts": {
+   "dim": "ent",
+   "split": [
+    {
+     "dim": "seg",
+     "shares": [
+      0.46,
+      0.34,
+      0.2
+     ]
+    },
+    {
+     "dim": "prod",
+     "shares": [
+      0.62,
+      0.18,
+      0.2
+     ]
+    }
+   ],
+   "fields": [
+    {
+     "id": "rev",
+     "kind": "seasonal",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "rec",
+     "kind": "share",
+     "of": "rev",
+     "attr": "recR",
+     "attrFrom": "prod",
+     "jitter": [
+      0.98,
+      1.02
+     ],
+     "cap": 0.99
+    },
+    {
+     "id": "oneoff",
+     "kind": "combine",
+     "plus": [
+      "rev"
+     ],
+     "minus": [
+      "rec"
+     ]
+    },
+    {
+     "id": "cogs",
+     "kind": "share",
+     "of": "rev",
+     "attr": "cogsR",
+     "attrFrom": "prod",
+     "jitter": [
+      0.95,
+      1.06
+     ]
+    },
+    {
+     "id": "rnd",
+     "kind": "share",
+     "of": "rev",
+     "attr": "rndR",
+     "jitter": [
+      0.95,
+      1.06
+     ]
+    },
+    {
+     "id": "snm",
+     "kind": "share",
+     "of": "rev",
+     "attr": "snmR",
+     "jitter": [
+      0.9,
+      1.12
+     ]
+    },
+    {
+     "id": "gna",
+     "kind": "share",
+     "of": "rev",
+     "attr": "gnaR",
+     "jitter": [
+      0.95,
+      1.05
+     ]
+    },
+    {
+     "id": "opex",
+     "kind": "combine",
+     "plus": [
+      "rnd",
+      "snm",
+      "gna"
+     ]
+    },
+    {
+     "id": "da",
+     "kind": "share",
+     "of": "rev",
+     "attr": "daR",
+     "jitter": [
+      0.97,
+      1.03
+     ]
+    },
+    {
+     "id": "bRev",
+     "kind": "share",
+     "of": "rev",
+     "attr": "bF",
+     "jitter": [
+      0.96,
+      1.06
+     ]
+    },
+    {
+     "id": "bCogs",
+     "kind": "share",
+     "of": "bRev",
+     "attr": "cogsR",
+     "attrFrom": "prod",
+     "jitter": [
+      0.98,
+      1.0
+     ]
+    },
+    {
+     "id": "bRnd",
+     "kind": "share",
+     "of": "bRev",
+     "attr": "bRndR",
+     "jitter": [
+      0.98,
+      1.02
+     ]
+    },
+    {
+     "id": "bSnm",
+     "kind": "share",
+     "of": "bRev",
+     "attr": "bSnmR",
+     "jitter": [
+      0.97,
+      1.03
+     ]
+    },
+    {
+     "id": "bGna",
+     "kind": "share",
+     "of": "bRev",
+     "attr": "bGnaR",
+     "jitter": [
+      0.98,
+      1.02
+     ]
+    },
+    {
+     "id": "bOpex",
+     "kind": "combine",
+     "plus": [
+      "bRnd",
+      "bSnm",
+      "bGna"
+     ]
+    },
+    {
+     "id": "bDa",
+     "kind": "share",
+     "of": "bRev",
+     "attr": "daR",
+     "jitter": [
+      0.99,
+      1.01
+     ]
+    },
+    {
+     "id": "cfo",
+     "kind": "share",
+     "of": "rev",
+     "attr": "cfoR",
+     "jitter": [
+      0.6,
+      1.4
+     ]
+    },
+    {
+     "id": "capex",
+     "kind": "share",
+     "of": "rev",
+     "attr": "capexR",
+     "jitter": [
+      0.5,
+      1.6
+     ]
+    },
+    {
+     "id": "taxint",
+     "kind": "share",
+     "of": "rev",
+     "attr": "taxR",
+     "jitter": [
+      0.7,
+      1.3
+     ]
+    },
+    {
+     "id": "ncfF",
+     "kind": "combine",
+     "plus": [
+      "cfo"
+     ],
+     "minus": [
+      "capex",
+      "taxint"
+     ]
+    },
+    {
+     "id": "netcash",
+     "kind": "cumulative",
+     "flow": "ncfF",
+     "start": "cashM",
+     "startOf": "rev"
+    },
+    {
+     "id": "arW",
+     "kind": "share",
+     "of": "rev",
+     "attr": "dso",
+     "jitter": [
+      0.92,
+      1.08
+     ]
+    },
+    {
+     "id": "apW",
+     "kind": "share",
+     "of": "cogs",
+     "attr": "dpo",
+     "jitter": [
+      0.92,
+      1.08
+     ]
+    }
+   ]
+  },
+  "detail": {
+   "dim": "cust",
+   "parentDim": "seg",
+   "members": {
+    "ent": [
+     {
+      "n": "Hartmann Logistik AG",
+      "w": 2.4
+     },
+     {
+      "n": "Van Leeuwen Retail",
+      "w": 1.9
+     },
+     {
+      "n": "Kowalski Energia",
+      "w": 1.5
+     },
+     {
+      "n": "Brunner Pharma",
+      "w": 1.2
+     }
+    ],
+    "mid": [
+     {
+      "n": "Fischer Maschinenbau",
+      "w": 1.6
+     },
+     {
+      "n": "De Groot Foods",
+      "w": 1.3
+     },
+     {
+      "n": "Nowak Systems",
+      "w": 1.1
+     },
+     {
+      "n": "Altmann Media",
+      "w": 0.9
+     }
+    ],
+    "smb": [
+     {
+      "n": "Bakker & Zn",
+      "w": 1.2
+     },
+     {
+      "n": "Lewandowski Studio",
+      "w": 1.0
+     },
+     {
+      "n": "Weber Werkstatt",
+      "w": 0.8
+     },
+     {
+      "n": "Visser Design",
+      "w": 0.7
+     }
+    ]
+   },
+   "fields": [
+    "rev"
+   ]
+  }
+ }
+}

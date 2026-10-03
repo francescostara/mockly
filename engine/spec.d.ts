@@ -105,6 +105,10 @@ export interface Meta {
   /** BCP-47; drives grouping and decimal separator */
   locale?: string;
   currency?: string;
+  /** "k1": every amount in thousands with one decimal (€52,134.5K) */
+  numberFormat?: 'k1';
+  /** "finanza": favourable variances green, unfavourable red */
+  varianze?: 'finanza';
   /** 12 month abbreviations in the report language */
   months?: string[];
   /** UI words in the report language */
@@ -178,6 +182,10 @@ export interface KpiCard {
   span?: number;
   /** lower is better — flips the variance colour */
   inv?: boolean;
+  /** finance card: the budget measure; the card shows vs budget and vs prior year */
+  budget?: string;
+  /** finance card: a second row with YTD up to the selected month, vs budget and vs prior year */
+  ytd?: boolean;
 }
 
 export interface LegendItem { l: string; c?: string; dash?: boolean }
@@ -186,7 +194,10 @@ export interface MatrixColumn {
   measure: string;
   label?: string;
   /** undefined = value · var = ▲/▼ vs prior · share = % of total · heat = conditional format */
-  kind?: 'var' | 'share' | 'heat';
+  kind?: 'var' | 'share' | 'heat' | 'bud';
+  /** kind:'bud' — the budget measure, and whether to show the variance as amount or % */
+  budget?: string;
+  show?: 'abs' | 'pct';
   /** [lo,hi] for kind:'heat' */
   scale?: [number, number];
   inv?: boolean;
@@ -221,6 +232,8 @@ export type Bind =
   | { measure: string }                                                       // delta-card
   | { stages: Array<{ measure: string; label: string; c?: string }> }         // funnel
   | { dim: string; measure: string; startLabel?: string; endLabel?: string }  // waterfall
+  | { stock: string; steps: Array<{ measure: string; label?: string; sign?: 1 | -1 }>; startLabel?: string; endLabel?: string } // waterfall: ponte da stock a stock
+  | { label?: string; ytd?: boolean; lines: Array<{ label: string; measure: string; budget?: string; kind?: 'sub' | 'total' | 'pct'; inv?: boolean; accounts?: Array<{ label: string; w?: number }> }> } // statement
   | { dim: string; x: string; y: string; size?: string }                      // scatter
   /** gauge — SOLO misure di tipo tasso (`unit: 'pct' | 'x'`).
    *  Un gauge dice "quanto sei arrivato rispetto a dove dovevi", che e per natura un rapporto.
@@ -243,7 +256,7 @@ export type Bind =
   | { template: string; dim?: string; primary?: string };                     // narrative
 
 export type VisualType =
-  | 'trend' | 'colline' | 'donut' | 'hbar' | 'stack100' | 'ribbon'
+  | 'trend' | 'colline' | 'donut' | 'hbar' | 'stack100' | 'ribbon' | 'statement'
   | 'funnel' | 'waterfall' | 'scatter' | 'matrix' | 'sparkline' | 'narrative' | 'gauge'
   | 'heatmap' | 'delta-card';
 
@@ -401,7 +414,9 @@ export type FieldSpec =
   | { id: string; kind: 'seasonal'; jitter?: [number, number] }
   | { id: string; kind: 'share'; of: string; attr: string; attrFrom?: AttrFrom; complement?: boolean; cap?: number; growthFactor?: number; mod?: RateMod | RateMod[]; jitter?: [number, number]; only?: OnlyFor }
   | { id: string; kind: 'divide'; of: string; attr: string; attrFrom?: AttrFrom; min?: number; mod?: RateMod | RateMod[]; jitter?: [number, number]; only?: OnlyFor }
-  | { id: string; kind: 'combine'; plus?: string[]; minus?: string[]; only?: OnlyFor };
+  | { id: string; kind: 'combine'; plus?: string[]; minus?: string[]; only?: OnlyFor }
+  /** a stock that is the running sum of a flow: starts at attrs[start] x startOf, then += flow */
+  | { id: string; kind: 'cumulative'; flow: string; start: string; startOf: string };
 
 /** Una dimensione dello split: `shares` = la sua quota del totale, in ordine dei membri. */
 export interface SplitSpec { dim: string; shares?: number[] }

@@ -149,7 +149,9 @@ const PAGE_PAD_DEF = 28;    /* padding verticale di #page, valore di riferimento
 /* Il padding verticale vero lo decide la densita: e uno dei tre assi del ritmo, e il fit deve
    conoscerlo o calcola il budget di una pagina che non e quella che disegna. */
 const padDi = spec => pelle(spec).densita.pad * 2;
-const KPI_H = 90;           /* banda KPI: altezza reale della card */
+const KPI_H0 = 90;          /* banda KPI: altezza reale della card */
+/* una card con budget o YTD porta due righe di scostamenti in piu (Bodan, 3 ott 2026) */
+const KPI_H = spec => (spec.kpiBand || []).some(k => k.budget || k.ytd) ? 122 : KPI_H0;
 const CHROME_H = 34;        /* intestazione della card (.ch) */
 const LEGEND_H = 18;        /* riga legenda, quando c'e */
 const MIN_CHART_H = 110;    /* sotto questa soglia un grafico non si legge piu */
@@ -166,6 +168,9 @@ const TABLE_ROW_H_CMP = 20; /* la stessa riga in modalita compatta */
    ultime righe della tabella, che e proprio il bug segnalato. */
 function flexNeed(row, data, rowH, drillDim) {
   return Math.max(MIN_FLEX_H, ...row.visuals.map(v => {
+    /* il conto economico si allunga con le sue voci come la matrice coi suoi membri, piu la
+       seconda riga d'intestazione (periodo / YTD) */
+    if (v.type === 'statement') return chromeOf(v) + TABLE_HEAD_H * 2 + ((v.bind || {}).lines || []).length * (rowH || TABLE_ROW_H) + 12;
     if (v.type !== 'matrix') return MIN_FLEX_H;
     const dim = (v.bind || {}).dim;
     let members = ((data && data.dims && data.dims[dim]) || []).length || 5;
@@ -211,7 +216,7 @@ function planFit(spec, page, data, dense) {
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   const minChart = dense ? DENSE_MIN_CHART_H : MIN_CHART_H;
   let budget = pageBudget(spec, page, gutter) + (dense ? (padDi(spec) - DENSE_PAD) : 0);
-  if (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H - 6 : KPI_H;
+  if (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
   if (page.drillHeader) budget -= 46;
 
   const fixed = rows.filter(r => !r.flex);
@@ -226,13 +231,14 @@ function planFit(spec, page, data, dense) {
        mockup, e la revisione l'ha segnalato ogni volta. Il surplus va ai grafici, che con
        qualche pixel in piu mostrano davvero di piu — la tabella invece resta alta quanto le sue
        righe, perche allungarle non aggiunge niente.
-       Il tetto e un quarto in piu del dichiarato: oltre, un grafico pensato per centocinquanta
-       pixel diventa un'altra cosa, e la spec smetterebbe di dire quello che dice. */
+       Il tetto era un quarto in piu del dichiarato; con una tabella di tre righe (le tre entita di
+       Bodan, 3 ott 2026) restava comunque un terzo di pagina bianco sotto la tabella. Ora e il 60%:
+       un grafico da centottanta pixel arriva a circa trecento, che e ancora lo stesso grafico. */
     const avanza = budget - wanted - declared;
     const chromeF = fixed.reduce((a, r) => a + Math.max(...r.visuals.map(chromeOf)), 0);
     const chartsF = declared - chromeF;
     if (avanza > 8 && chartsF > 0 && fixed.length) {
-      const su = Math.min(1.25, (chartsF + avanza) / chartsF);
+      const su = Math.min(1.6, (chartsF + avanza) / chartsF);
       return { scaled: true, cresciuto: true, tight: false, over: 0,
         k: Math.round(su * 1000) / 1000, declared, room: budget - wanted };
     }
@@ -331,7 +337,7 @@ function measurePage(spec, data, pageId) {
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   let budget = pageBudget(fitted.spec, page, dense ? DENSE_GUTTER : spec.grid.gutter)
     + (dense ? padDi(spec) - DENSE_PAD : 0);
-  if (spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H - 6 : KPI_H;
+  if (spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
   const drillDim = fitted.spec.drill && page === fitted.spec.drill.page ? fitted.spec.drill.dim : null;
   const h = r => r.flex ? flexNeed(r, data, rowH, drillDim) : rowHeight(r);
   const rows = page.rows.map(h);
@@ -413,7 +419,7 @@ function gateArchetipo(spec, e) {
     }
 
     /* LA CHIUSURA. */
-    const chiudeMatrice = ultima.some(v => v.type === 'matrix' || (A.chiudeAnche || []).includes(v.type));
+    const chiudeMatrice = ultima.some(v => v.type === 'matrix' || v.type === 'statement' || (A.chiudeAnche || []).includes(v.type));
     if (A.chiudeMatrice && !chiudeMatrice) {
       e.push(`page "${pg.id}": archetype "${pg.archetype || a}" chiude con la matrice, con ` +
         `totali e drill-through. L'ultima riga e [${ultima.map(v => v.type).join(', ')}].`);
@@ -465,7 +471,7 @@ function gateArchetipo(spec, e) {
      diversamente: e la regola storica, applicata al report invece che alla singola pagina. */
   if (!A0.chiudeMatrice) {
     const pagine = spec.pages.concat(spec.drill ? [spec.drill.page] : []);
-    const trovata = pagine.some(pg => (pg.rows || []).some(r => r.visuals.some(v => v.type === 'matrix')));
+    const trovata = pagine.some(pg => (pg.rows || []).some(r => r.visuals.some(v => v.type === 'matrix' || v.type === 'statement')));
     if (!trovata) {
       e.push(`archetype "${a}": in tutto il report non c'e una matrice. La pagina puo chiudere ` +
         `diversamente, ma il dettaglio deve stare da qualche parte — una seconda pagina, o la ` +
@@ -498,6 +504,8 @@ function validate(specIn, data) {
   const measures = new Set((spec.model.measures || []).map(m => m.id));
   const known = new Set([...measures, ...(spec.model.sums || [])]);
   spec.kpiBand.forEach(k => { if (!measures.has(k.measure)) e.push(`kpi "${k.id}": unknown measure "${k.measure}"`); });
+  /* la card finance: il budget e una misura del modello */
+  spec.kpiBand.forEach(k => { if (k.budget && !measures.has(k.budget)) e.push(`kpi "${k.id}": budget "${k.budget}" non e una misura del modello`); });
   (spec.model.measures || []).forEach((m, i) => {
     const deps = m.agg === 'diff' ? [m.a, m.b] : m.agg === 'ratio' ? [m.num, m.den] : [];
     const before = new Set([...(spec.model.sums || []), ...spec.model.measures.slice(0, i).map(x => x.id)]);
@@ -591,7 +599,7 @@ function validate(specIn, data) {
          190, 200 — e il fondo pagina si sfonda. Il conto del fit torna lo stesso, perche il
          fit ha misurato il pavimento: il taglio non lo vede nessun test strutturale, si vede
          solo aprendo il file. E' successo al primo scheletro executive-summary. */
-      if (row.flex && !row.visuals.some(v => v.type === 'matrix')) {
+      if (row.flex && !row.visuals.some(v => v.type === 'matrix' || v.type === 'statement')) {
         row.visuals.filter(v => !v.h).forEach(v => {
           /* una card a piu viste non ha un `type` suo: nominarla per id, o il messaggio dice
              "undefined" — ed e successo, nella riparazione della v3 dell'app di lingue */
@@ -751,6 +759,21 @@ function validate(specIn, data) {
         }
         (b.columns || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" matrix: unknown measure "${c.measure}"`); });
         (b.stages || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" funnel: unknown measure "${c.measure}"`); });
+        /* la colonna di scostamento dal budget, il conto economico, il ponte da stock a stock */
+        (b.columns || []).filter(c => c.kind === 'bud').forEach(c => { if (!known.has(c.budget)) e.push(`page "${pg.id}" matrix: la colonna "bud" vuole "budget", una misura del modello (ha "${c.budget}")`); });
+        if (v.type === 'statement') {
+          if (!Array.isArray(b.lines) || !b.lines.length) e.push(`page "${pg.id}" statement: "lines" e l'elenco delle voci in ordine, ognuna { label, measure, budget?, kind?: "sub"|"total"|"pct", accounts? }`);
+          (b.lines || []).forEach((ln, i) => {
+            if (!known.has(ln.measure)) e.push(`page "${pg.id}" statement riga ${i} ("${ln.label}"): unknown measure "${ln.measure}"`);
+            if (ln.budget && !known.has(ln.budget)) e.push(`page "${pg.id}" statement riga ${i}: budget "${ln.budget}" non e una misura`);
+            if (ln.accounts && (!Array.isArray(ln.accounts) || ln.accounts.some(a => !a || !a.label))) e.push(`page "${pg.id}" statement riga ${i}: "accounts" e un elenco di { label, w }`);
+          });
+        }
+        if (v.type === 'waterfall' && b.steps) {
+          const st = (spec.model.measures || []).find(m => m.id === b.stock);
+          if (!st || st.agg !== 'last') e.push(`page "${pg.id}" waterfall: col ponte a passi "stock" e la misura dello stock (agg "last"), es. la cassa netta`);
+          b.steps.forEach(x => { if (!known.has(x.measure)) e.push(`page "${pg.id}" waterfall: passo con misura sconosciuta "${x.measure}"`); });
+        }
       });
     });
   });
@@ -958,6 +981,15 @@ function toolbarErrore(spec, tb) {
 function css(spec, compact) {
   const P = pelle(spec);
   const t = Object.assign({}, P.tokens, spec.palette || {});
+  /* GLI SCOSTAMENTI DI UN REPORT FINANCE SONO ROSSO E VERDE, se il brief lo chiede
+     (meta.varianze "finanza"; Bodan, 3 ott 2026: "costs above budget and revenue below budget are
+     unfavourable (red)"). La casa usa blu e arancio, che reggono le dicromazie: qui restano le
+     frecce ▲▼ e il segno, che portano il verso anche a chi non distingue i due colori. */
+  if (spec.meta && spec.meta.varianze === 'finanza') {
+    const scuro = SKIN.contrasto(t.card, '#000000') < SKIN.contrasto(t.card, '#FFFFFF');
+    t.good = scuro ? '#4CC38A' : '#17803D';
+    t.bad = scuro ? '#F97066' : '#C4320A';
+  }
   const ser = (spec.palette && spec.palette.series) || null;
   if (ser) ser.slice(0, 6).forEach((c, i) => t['c' + (i + 1)] = c);
   /* La tipografia entra come token, non come stringa sparsa nel foglio: `font` e l'interfaccia,
@@ -1124,6 +1156,9 @@ ${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri sparis
 .kpi .v{font-size:25px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-1px}
 .kpi .d{font-size:10px;font-weight:600;padding-bottom:2px;white-space:nowrap}
 .kpi .det{font-size:9px;color:var(--muted);margin-top:7px}
+.st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
+.kpi .kf{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;display:flex;gap:10px}.kpi .kf b{font-weight:600}
+.kpi .ky{border-top:1px solid var(--line2);margin-top:7px;padding-top:5px;font-size:10px;color:var(--ink2);font-weight:600;white-space:nowrap}
 .up{color:var(--good)}.dn{color:var(--bad)}.fl{color:var(--muted)}
 .dcv{font-size:31px;font-weight:600;line-height:1;letter-spacing:-1.2px}
 .dcd{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.45}
@@ -1299,7 +1334,7 @@ function dataJSON(data) {
 const INGLESE = {
   period: 'Period', spanLong: 'How many years', year: 'Year', qtrLong: 'Quarter', monthLong: 'Month',
   reset: 'Reset filters', updatedLabel: 'Last updated', report: 'Report',
-  all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var',
+  all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var', actual: 'Actual', opening: 'Opening', closing: 'Closing', vsBud: 'vs Bud', vsPY: 'vs PY', bud: 'Budget', py: 'PY',
   spanUno: '1 year', spanTutti: 'All', anni: 'years', others: 'Others', target: 'target',
   conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory',
   sopra: 'above', sotto: 'below', inLinea: 'in line with', nuova: 'new'

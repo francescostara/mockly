@@ -62,6 +62,8 @@ the canvas. La decide la SHELL, non il gusto: rail 1044, rail-slim 1116, top e b
 | `updated` | the "last refreshed" line — a literal string, never a live clock |
 | `source` | rail footnote ("Fonte: gestionale negozio") |
 | `watermark` | the synthetic-data watermark (required) |
+| `numberFormat` | `"k1"`: every amount in thousands with one decimal (`€52,134.5K`), cards and tooltips included — the finance convention |
+| `varianze` | `"finanza"`: favourable variances green, unfavourable red (arrows and signs stay, for colour-blind readers). Default: blue/orange |
 
 `strings` keys: `fullYear, all, allM, compare, qtr, month, varShort, pyShort, cyShort,
 prevShort, curShort, reset, period, conv`.
@@ -132,6 +134,11 @@ debt/EBITDA) so the variance colours flip.
 ]
 ```
 
+**Finance card:** add `"budget": "<budget measure>"` and/or `"ytd": true`. The card shows the
+period value with **vs budget** and **vs PY**, and below it **YTD up to the selected month** with the
+same two variances (with the full year selected, the second row states budget and PY in absolute
+terms). Variances follow the measure's direction (`inv` on a cost: above budget is unfavourable).
+
 Each card renders: label, big value, variance chip `▲ 5,6% YoY` (basis always shown), and the
 descriptor line `PY <x> | CY <y> | Var <z>` (`Prec. | Corr. | …` when the basis is MoM;
 percentage measures show a `pp` move instead of a `Var`). Spans must sum to `grid.columns`.
@@ -165,13 +172,14 @@ Common visual fields: `type`, `span`, `h`, `title`, `subtitle`, `note` (right-al
 | type | bind | answers |
 |---|---|---|
 | `trend` | `{measure}` | one measure over time. **Timeline-exempt**: always the full 12 months of the selected year vs prior, highlighting the selected span |
+| `statement` | `{label, lines:[{label, measure, budget, kind, inv, accounts:[{label, w}]}], ytd}` | **the income statement**: rows are the lines in account order; `kind` `"sub"` (subtotal: Gross profit, EBITDA — a calculated measure, never a sum of rows), `"total"` (EBIT, net income), `"pct"` (a margin row, varies in points). Columns Actual · Budget · Var · Var % for the period and, with a month or quarter selected, for YTD. A line with `accounts` expands in place into its accounts (weights `w`). Closes a page like a matrix |
 | `colline` | `{measure, line, target, targetLabel}` | actual vs prior columns + a rate line on a secondary axis that fits the data. `target` (on the line's scale: `0.98` for 98%) draws a fixed dashed target line; **declare it whenever the line's measure has a target in the brief** |
 | `donut` | `{dim, measure}` | part-to-whole. **2-5 members only** — above that use `hbar`/`stack100` |
 | `hbar` | `{dim, measure, top, order, parent, detail, subMeasure, subUnit}` | ranked list. `detail:true` reads the detail grain; `parent` colours by the parent dim and makes bars cross-filter it; `order:"asc"` shows the TAIL — the `top` weakest members (products that "need attention") instead of the best |
 | `stack100` | `{dim, measure, by}` | composition across quarters (`by:"q"`) or another dim |
 | `ribbon` | `{dim, measure, by}` | rank change over periods |
 | `funnel` | `{stages:[{measure,label,c}]}` | stage-to-stage conversion |
-| `waterfall` | `{dim, measure, startLabel, endLabel}` | prior → current decomposed by dimension |
+| `waterfall` | `{dim, measure, startLabel, endLabel}` or `{stock, steps:[{measure, label, sign}], startLabel, endLabel}` | prior → current decomposed by dimension; **or a stock bridge** (opening cash → operating CF − capex − tax → closing cash): `stock` is an `agg:"last"` measure built from a `cumulative` field, so opening + steps = closing exactly. When the steps are small against the totals the axis starts near the minimum |
 | `scatter` | `{dim, x, y, size}` | the revenue-vs-margin tension, with median quadrant lines |
 | `matrix` | see below | the analytical closing table |
 | `sparkline` | `{measure}` | inline 12-month trend |
@@ -190,7 +198,7 @@ Common visual fields: `type`, `span`, `h`, `title`, `subtitle`, `note` (right-al
   ] }
 ```
 
-`kind`: omitted = plain value · `var` = ▲/▼ vs the comparable prior window (a percentage
+`kind`: omitted = plain value · `bud` = variance vs a budget measure (`"budget": "bRev"`, `"show": "abs"|"pct"`), coloured by finance logic · `var` = ▲/▼ vs the comparable prior window (a percentage
 measure varies in **points**, `▼ −3.2 pp`, never in percent of itself — the engine does it) · `share` = % of the
 filtered total · `heat` = conditional formatting on a `[lo,hi]` scale (house signature). The
 totals row recomputes from the visible rows; every row carries cross-filter and drill-through.

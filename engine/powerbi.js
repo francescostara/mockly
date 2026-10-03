@@ -87,7 +87,7 @@ const T = {
     vis: {
       trend: 'Grafico a linee', colline: 'Grafico a linee e istogramma raggruppato', donut: 'Grafico ad anello',
       hbar: 'Grafico a barre raggruppate', stack100: 'Grafico a barre in pila 100%', ribbon: 'Grafico a nastro',
-      funnel: 'Imbuto', waterfall: 'Grafico a cascata', scatter: 'Grafico a dispersione', matrix: 'Matrice',
+      funnel: 'Imbuto', waterfall: 'Grafico a cascata', scatter: 'Grafico a dispersione', matrix: 'Matrice', statement: 'Matrice (conto economico)',
       sparkline: 'Scheda (nuova) con sparkline', narrative: 'Narrazione intelligente / casella di testo con valori dinamici',
       gauge: 'Misuratore', heatmap: 'Matrice con formattazione condizionale (mappa di calore)',
       'delta-card': 'Scheda (nuova) — variazione come valore principale', kpi: 'Scheda (nuova)'
@@ -157,7 +157,7 @@ const T = {
     vis: {
       trend: 'Line chart', colline: 'Line and clustered column chart', donut: 'Donut chart',
       hbar: 'Clustered bar chart', stack100: '100% stacked bar chart', ribbon: 'Ribbon chart',
-      funnel: 'Funnel', waterfall: 'Waterfall chart', scatter: 'Scatter chart', matrix: 'Matrix',
+      funnel: 'Funnel', waterfall: 'Waterfall chart', scatter: 'Scatter chart', matrix: 'Matrix', statement: 'Matrix (income statement)',
       sparkline: 'Card (new) with sparkline', narrative: 'Smart narrative / text box with dynamic values',
       gauge: 'Gauge', heatmap: 'Matrix with conditional formatting (heatmap)',
       'delta-card': 'Card (new) — change as the main value', kpi: 'Card (new)'
@@ -287,6 +287,51 @@ function misure(spec, dp) {
     extra.push({ nome: 'Stage value', formato: '#,0',
       expr: 'SWITCH (\n    SELECTEDVALUE ( Stages[Order] ),\n' + st.map((s, i) => '    ' + (i + 1) + ', ' + rif(s.measure)).join(',\n') + '\n)' });
   });
+  /* YTD E SCOSTAMENTI DAL BUDGET (Bodan, 3 ott 2026): le card finance e il conto economico
+     leggono il YTD fino al mese scelto e lo scostamento dal budget, assoluto e percentuale */
+  const ytd = [], bud = [];
+  const r = id => perId[id] ? '[' + N[id] + ']' : 'BLANK ()';
+  const aggYtd = id => { if (perId[id] && ytd.every(x => x.id !== id)) ytd.push({ id, nome: N[id] + ' YTD', formato: formatoPbi(perId[id]), expr: "TOTALYTD ( [" + N[id] + "], 'Date'[Date] )" }); };
+  const aggBud = (id, bid) => {
+    if (!perId[id] || !perId[bid] || bud.some(x => x.id === id)) return;
+    const n = N[id], pp = inPunti(perId[id]);
+    bud.push({ id, nome: n + ' vs Budget', formato: pp ? '+0.0" pp";-0.0" pp"' : formatoPbi(perId[id]), expr: pp ? '( [' + n + '] - [' + N[bid] + '] ) * 100' : '[' + n + '] - [' + N[bid] + ']' });
+    if (!pp) bud.push({ id: id + '%', nome: n + ' vs Budget %', formato: '+0.0%;-0.0%;0.0%', expr: 'DIVIDE ( [' + n + '] - [' + N[bid] + '], ABS ( [' + N[bid] + '] ) )' });
+  };
+  (spec.kpiBand || []).forEach(k => { if (k.ytd) { aggYtd(k.measure); if (k.budget) aggYtd(k.budget); } if (k.budget) aggBud(k.measure, k.budget); });
+  visuali(spec).forEach(({ v }) => {
+    const b = v.bind || {};
+    (b.columns || []).filter(c => c.kind === 'bud').forEach(c => aggBud(c.measure, c.budget));
+    if (v.type === 'statement') (b.lines || []).forEach(l => { aggYtd(l.measure); if (l.budget) { aggYtd(l.budget); aggBud(l.measure, l.budget); } });
+  });
+  ytd.concat(bud).forEach(x => extra.push(x));
+  /* il conto economico: una tabella delle voci in ordine e una misura SWITCH per colonna, cosi i
+     subtotali restano le loro misure e non si sommano mai dalle righe */
+  const NL = '\n';
+  const lit = t => '"' + String(t).replace(/"/g, '""') + '"';
+  visuali(spec).filter(({ v }) => v.type === 'statement').slice(0, 1).forEach(({ v }) => {
+    const ls = (v.bind || {}).lines || [];
+    extra.push({ nome: 'P&L line', tabella: true,
+      expr: 'DATATABLE ( "Sort", INTEGER, "Line", STRING, {' + NL + ls.map((l, i) => '    { ' + (i + 1) + ', ' + lit(l.label) + ' }').join(',' + NL) + NL + '} )' });
+    const sw = (nome, f) => extra.push({ nome, formato: '#,0.0,"K"',
+      expr: 'SWITCH (' + NL + "    SELECTEDVALUE ( 'P&L line'[Sort] )," + NL + ls.map((l, i) => '    ' + (i + 1) + ', ' + f(l)).join(',' + NL) + NL + ')' });
+    sw('Line actual', l => r(l.measure));
+    sw('Line budget', l => l.budget ? r(l.budget) : 'BLANK ()');
+    sw('Line vs budget', l => l.budget ? '[Line actual] - [Line budget]' : 'BLANK ()');
+    extra.push({ nome: 'Line vs budget %', formato: '+0.0%;-0.0%;0.0%', expr: 'DIVIDE ( [Line vs budget], ABS ( [Line budget] ) )' });
+    sw('Line actual YTD', l => perId[l.measure] ? '[' + N[l.measure] + ' YTD]' : 'BLANK ()');
+    sw('Line budget YTD', l => l.budget && perId[l.budget] ? '[' + N[l.budget] + ' YTD]' : 'BLANK ()');
+  });
+  /* il ponte di cassa: i passi come tabella, e il valore di ogni passo */
+  visuali(spec).filter(({ v }) => v.type === 'waterfall' && (v.bind || {}).steps).slice(0, 1).forEach(({ v }) => {
+    const b = v.bind, st = [{ label: b.startLabel || 'Opening' }].concat(b.steps, [{ label: b.endLabel || 'Closing' }]);
+    extra.push({ nome: 'Cash flow step', tabella: true,
+      expr: 'DATATABLE ( "Order", INTEGER, "Step", STRING, {' + NL + st.map((x, i) => '    { ' + (i + 1) + ', ' + lit(x.label || N[x.measure]) + ' }').join(',' + NL) + NL + '} )' });
+    const somma = b.steps.map(x => (x.sign === -1 ? '- ' : '+ ') + r(x.measure)).join(' ');
+    extra.push({ nome: 'Cash flow step value', formato: '#,0.0,"K"',
+      expr: 'SWITCH (' + NL + "    SELECTEDVALUE ( 'Cash flow step'[Order] )," + NL + '    1, ' + r(b.stock) + ' - ( ' + somma + ' ),' + NL +
+        b.steps.map((x, i) => '    ' + (i + 2) + ', ' + (x.sign === -1 ? '- ' : '') + r(x.measure)).join(',' + NL) + ',' + NL + '    ' + (b.steps.length + 2) + ', ' + r(b.stock) + NL + ')' });
+  });
   return { base, tempo, extra, N };
 }
 
@@ -329,7 +374,14 @@ function descriviVisual(spec, v, L, N) {
     case 'stack100': campi.push('Y: ' + dim(b.dim), 'Legend: ' + dim(b.by), 'X: ' + m(b.measure)); break;
     case 'ribbon': campi.push("X: " + dim(b.by || 'q'), 'Legend: ' + dim(b.dim), 'Y: ' + m(b.measure)); break;
     case 'funnel': campi.push('Category: Stages[Stage]', 'Values: [Stage value]'); righe.push(L.stadi); break;
-    case 'waterfall': campi.push('Category: ' + dim(b.dim), 'Y: ' + m(b.measure)); break;
+    case 'waterfall':
+      if (b.steps) { campi.push("Category: 'Cash flow step'[Step]", 'Y: [Cash flow step value]'); righe.push(L.ponte ? L.ponte(m(b.stock), b.steps.map(x => (x.sign === -1 ? '− ' : '+ ') + m(x.measure)).join(' ')) : 'Opening = ' + m(b.stock) + ' at the end of the previous period; steps: ' + b.steps.map(x => (x.sign === -1 ? '− ' : '+ ') + m(x.measure)).join(' ') + '; closing = ' + m(b.stock) + '. Build a disconnected table of steps and a SWITCH measure, as for the funnel stages.'); }
+      else campi.push('Category: ' + dim(b.dim), 'Y: ' + m(b.measure));
+      break;
+    case 'statement':
+      campi.push("Rows: 'P&L line'[Line] → 'Account'[Account] (drill down with +/−)", 'Values: [Line actual], [Line budget], [Line vs budget], [Line vs budget %] and the same four in YTD');
+      righe.push('A disconnected table of P&L lines in order (' + (b.lines || []).map(l => l.label).join(', ') + '), sorted by a Sort column; a SWITCH measure returns, for each line, its own measure (' + (b.lines || []).map(l => m(l.measure)).join(', ') + '), so subtotals stay calculated measures and are never summed from the rows. Accounts are a child level of each line. Conditional formatting on the variance columns: red when unfavourable, green when favourable, using the line cost or revenue sign.');
+      break;
     case 'scatter': campi.push('Values: ' + dim(b.dim), 'X: ' + m(b.x), 'Y: ' + m(b.y)); if (b.size) campi.push('Size: ' + m(b.size)); righe.push(L.mediane); break;
     /* il gauge multiplo in Power BI sono due o tre visual Gauge affiancati, uno per misura */
     case 'gauge': (b.misure || [b]).forEach((g, i, tutti) => {
@@ -354,12 +406,14 @@ function descriviVisual(spec, v, L, N) {
       campi.push('Rows: ' + dim(b.dim));
       (b.columns || []).forEach(c => {
         const nm = N[c.measure] || c.measure;
-        const col = c.kind === 'var' ? '[' + nm + (inPunti((spec.model.measures || []).filter(x => x.id === c.measure)[0]) ? ' Var pp]' : ' Var %]')
+        const col = c.kind === 'bud' ? '[' + nm + (c.show === 'abs' ? ' vs Budget]' : (inPunti((spec.model.measures || []).filter(x => x.id === c.measure)[0]) ? ' vs Budget]' : ' vs Budget %]'))
+          : c.kind === 'var' ? '[' + nm + (inPunti((spec.model.measures || []).filter(x => x.id === c.measure)[0]) ? ' Var pp]' : ' Var %]')
           : c.kind === 'share' ? '[' + nm + ' % ' + nomeDim(spec, b.dim).replace(/^Dim /, '') + ']' : '[' + nm + ']';
         campi.push('Values: ' + col + (c.label && !/\{/.test(c.label) ? '  → "' + c.label + '"' : ''));
         if (c.kind === 'heat') righe.push(L.heatCF('[' + nm + ']', c.scale && c.scale[0], c.scale && c.scale[1]));
       });
       if ((b.columns || []).some(c => c.kind === 'var')) righe.push(L.varCF);
+      if ((b.columns || []).some(c => c.kind === 'bud')) righe.push('Budget variance columns use the measures named "<measure> vs Budget" and "<measure> vs Budget %", with red/green conditional formatting by finance logic (costs above budget are unfavourable).');
       righe.push(L.totali);
       break;
     }

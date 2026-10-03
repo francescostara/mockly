@@ -645,6 +645,54 @@ const INTERVENTI = [
     fatto: "La linea del colline era l'ambra fissa del tema, quasi uguale alle colonne oliva del 2025. Ora il motore sceglie il colore della linea fra quelli della palette: il primo che dista abbastanza (distanza fra colori, che conta tinta e luce) sia dalle colonne correnti sia da quelle grigie dell'anno prima, ed e abbastanza scuro da leggersi sulla card. La linea del target, l'asse, i punti e l'etichetta usano lo stesso colore; il target resta tratteggiato. Gate in Chrome (test/barra.test.js): su ogni colline del corpus la linea dista dalle colonne e il target ha il colore della linea.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "(Fra) Correggi tutto, includi qualunque cosa abbia chiesto. Brief: \"the full income statement in proper account order (Revenue, COGS, Gross Profit, Opex by department, EBITDA, D&A, EBIT), with Actual, Budget, Variance and Variance % columns. Drill from statement lines down to individual accounts\"; \"Subtotals like Gross Profit and EBITDA are calculated, not summed\".",
+    dove: "statement · runtime · grammatica · skill · kit",
+    fatto: "Nuovo visual `statement`: le righe sono le voci in ordine, i subtotali (`kind: sub`) e il totale sono le loro misure, mai la somma delle righe, i margini (`kind: pct`) variano in punti. Colonne Actual, Budget, Var, Var % per il periodo e, con un mese o un trimestre scelto, per il YTD. Una voce con `accounts` si apre in riga nei suoi conti (budget per peso, effettivo con uno scarto per conto e periodo, sempre rinormalizzato perche i conti sommino la voce). Nel kit: tabella delle voci e misure SWITCH, YTD con TOTALYTD. Gate: test/finanza.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "Brief: \"Revenue, Gross Margin %, EBITDA, EBITDA margin and net cash, each for the month and YTD, against budget and prior year\"; \"YTD follows the selected month\".",
+    dove: "KPI · runtime · grammatica",
+    fatto: "La card finance (`budget`, `ytd` nella banda KPI, scelta di Fra: due righe per card): il valore del periodo con lo scostamento dal budget e dall'anno prima, sotto il YTD fino al mese scelto con gli stessi due scostamenti; con l'anno intero la seconda riga dice budget e anno prima in assoluto. La banda si alza a 122px solo quando serve. Gate: test/finanza.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "Brief: \"Variances follow finance logic: costs above budget and revenue below budget are unfavourable (red), the opposite is favourable (green)\".",
+    dove: "matrice · statement · colori",
+    fatto: "Colonna di matrice `kind: bud` (assoluta o %), scostamenti nel conto economico e nella card con A.scost, che segue il verso della misura (inv sui costi). Con `meta.varianze: finanza` il favorevole e verde e lo sfavorevole rosso (le frecce restano per chi non distingue i colori). Gate: test/finanza.test.js controlla il colore di ogni riga del conto economico.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "Brief: \"numbers in thousands with one decimal\" (Fra: ovunque).",
+    dove: "formati",
+    fatto: "`meta.numberFormat: k1`: ogni importo in migliaia con un decimale (€52,134.5K), card, tabelle, assi e tooltip; i margini degli assi si misurano sulle tacche, che in K.1 sono lunghe. Gate: test/finanza.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "Brief: \"Cash - a monthly bridge from opening to closing cash\".",
+    dove: "waterfall · generatore dei dati",
+    fatto: "Il waterfall a passi (`stock`, `steps`): apertura, flussi col segno, chiusura. Nel generatore il campo `cumulative` (la cassa e quella del mese prima piu il flusso netto), quindi apertura + passi = chiusura esattamente e l'apertura e la cassa del mese prima. Quando i passi sono piccoli rispetto ai totali l'asse parte vicino al minimo (i gradini erano strisce di un pixel); un gradino piccolo resta alto almeno 4px; i valori stanno sopra le barre. Gate: test/finanza.test.js e test/barra.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 2,
+    commento: "(visto nel primo colpo) Nel grafico misto \"EBITDA margin\" copriva la tacca del 22% dell'asse; nei Top 10 clienti i colori per segmento non avevano legenda; sotto le tabelle di tre righe restava un terzo di pagina bianco; il mix per segmento non rispondeva al filtro del segmento.",
+    dove: "colline · hbar · layout · stack100",
+    fatto: "L'etichetta della linea resta dentro l'area del grafico e scende sotto il punto se tocca il target; l'hbar colorato per il padre ha la legenda dei padri; i grafici crescono fino al 60% (era il 25%) per riempire la pagina; lo stack100 attenua i gruppi col filtro sulla loro dimensione. Gate: test/barra.test.js (scritte dei colline dentro il riquadro e mai sovrapposte), test/filtri-visual.test.js.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
