@@ -190,6 +190,10 @@ export interface KpiCard {
 
 export interface LegendItem { l: string; c?: string; dash?: boolean }
 
+/** Ogni bind puo staccare il visual da alcuni filtri della barra: `ignoreFilters: ["seg"]` — il
+ *  visual tiene sempre tutti i membri e non segue quei filtri (Power BI: Edit interactions → None). */
+export interface BindCommon { ignoreFilters?: string[] }
+
 export interface MatrixColumn {
   measure: string;
   label?: string;

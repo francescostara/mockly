@@ -120,6 +120,14 @@ debt/EBITDA) so the variance colours flip.
 - `dims[].id` must be a key of `data.dims`. `control`:
   - `"list"` — inline clickable members. Only for **≤ 5 members** (Gate 6).
   - `"dropdown"` — a button + panel. **Required above 5 members**, so the toolbar cannot clip.
+- **Filter or highlight — the Power BI rule.** A toolbar filter (a slicer) FILTERS every visual,
+  including the ones broken down by that same dimension (the ranking by segment shows the chosen
+  segment). A click inside a chart HIGHLIGHTS that chart (the other members stay, dimmed) and
+  filters the others. A rank chart (`ribbon`) always highlights: filtered to one member it would
+  always rank first.
+- **A visual can be detached from a filter:** `"ignoreFilters": ["seg"]` in its `bind` keeps every
+  member and ignores that filter (Power BI: Format → Edit interactions → None; the kit says so).
+  Use it where the full breakdown is the point (the mix of all segments next to a segment filter).
 - Every declared dim filters through the one shared slice layer. There is no way to declare a
   decorative filter: a dim in this list slices the fact table or it is not in the list.
 

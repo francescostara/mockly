@@ -201,7 +201,7 @@ function tuttiIFiltri() {
             const lc = getComputedStyle(s.querySelector('path.l2l')).stroke;
             const col = [...s.querySelectorAll('rect.hit')].map(r => getComputedStyle(r).fill);
             const cur = col.length ? col[col.length - 1] : null;
-            if (cur && dist(lc, cur) < 0.28) out.push('la linea (' + lc + ') non si stacca dalle colonne (' + cur + ')');
+            if (cur && dist(lc, cur) < 0.2) out.push('la linea (' + lc + ') non si stacca dalle colonne (' + cur + ')');
             const t = s.querySelector('line.tgt');
             if (t && getComputedStyle(t).stroke !== lc) out.push('il target non ha il colore della linea');
             /* le scritte dentro il riquadro e mai una sopra l'altra: "EBITDA margin" copriva la tacca

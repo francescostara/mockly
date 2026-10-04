@@ -126,9 +126,17 @@ function risolviTitolo(spec, s) {
   const d = (spec.filters && spec.filters.date && spec.filters.date.default) || {};
   const y = d.y || (spec.filters && spec.filters.date && spec.filters.date.levels ? 0 : 0);
   const basis = d.m !== null && d.m !== undefined ? 'MoM' : 'YoY';
+  /* {period} come lo scrive il runtime (A.periodLabel): col mese di partenza e "Dec 2026", non
+     "2026". Col solo anno il video cercava la card "… · 2026" in un report che parte da dicembre,
+     non la trovava e cliccava la prima voce del menu (cfo-bodan, 4 ott 2026). */
+  const mesi = (spec.meta && spec.meta.months) || [];
+  const T = (spec.meta && spec.meta.strings) || {};
+  const per = d.m !== null && d.m !== undefined && mesi[d.m] ? mesi[d.m] + ' ' + y
+    : d.q !== null && d.q !== undefined ? 'Q' + (d.q + 1) + ' ' + y
+      : String(y) + (T.fullYear ? ' · ' + T.fullYear : '');
   return String(s)
     .replace(/\{y\}/g, y).replace(/\{py\}/g, y - 1)
-    .replace(/\{basis\}/g, basis).replace(/\{period\}/g, String(y))
+    .replace(/\{basis\}/g, basis).replace(/\{period\}/g, per)
     .replace(/\{drill\}/g, '').replace(/\s{2,}/g, ' ').trim();
 }
 

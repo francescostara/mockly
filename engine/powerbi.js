@@ -366,6 +366,8 @@ function descriviVisual(spec, v, L, N) {
   const m = id => id ? '[' + (N[id] || id) + ']' : '';
   const dim = d => d === 'q' ? "'Date'[Quarter]" : d === 'm' ? "'Date'[Month]" : d ? q(nomeDim(spec, d)) + '[Name]' : '';
   const campi = [];
+  /* un visual staccato da un filtro: in Power BI si fa con Format → Edit interactions → None */
+  if (Array.isArray(b.ignoreFilters) && b.ignoreFilters.length) righe.push('Interactions: select the ' + b.ignoreFilters.map(d => q(nomeDim(spec, d)) + ' slicer').join(' and the ') + ', then Format → Edit interactions → None on this visual: it keeps every member and ignores that filter.');
   switch (v.type) {
     case 'trend': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); righe.push(L.legendaAnni, L.esenzione); break;
     case 'colline': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); if (b.line) righe.push(L.linea(m(b.line))); righe.push(L.legendaColonne); break;   /* nel colline l'anno prima e una colonna, non un tratteggio */

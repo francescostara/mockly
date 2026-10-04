@@ -69,7 +69,12 @@ function sceneggiatura(spec, data, opt) {
 
   /* 2. il cross-filter: si sceglie il visual piu leggibile della prima pagina */
   const cross = P.cross.filter(c => c.page !== '__drill__');
-  const scelto = cross.slice().sort((a, b) => (PREFERENZA[b.tipo] || 0) - (PREFERENZA[a.tipo] || 0))[0];
+  /* un clic in un grafico FILTRA gli altri visual (la regola di Power BI, 4 ott 2026): se filtrasse
+     la dimensione della tabella che il video apre col tasto destro, la tabella resterebbe con una
+     riga sola — o nessuna, cambiato il periodo. Si preferisce un clic su un'altra dimensione. */
+  const dimDrill = (P.drill[0] || {}).dim;
+  const ordinati = cross.slice().sort((a, b) => (PREFERENZA[b.tipo] || 0) - (PREFERENZA[a.tipo] || 0));
+  const scelto = ordinati.filter(c => !dimDrill || c.dim !== dimDrill)[0] || ordinati[0];
   if (passi.indexOf('filtro') >= 0 && scelto) {
     if (scelto.page !== prima) agg({ tipo: 'pagina', sel: selPagina(scelto.page), pagina: prima,
       etichetta: 'vai alla pagina "' + scelto.page + '"', attesa: ATTESE.pagina });

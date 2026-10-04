@@ -33,6 +33,23 @@ const hex = h => {
 const str = ([r, g, b]) => '#' + [r, g, b].map(v =>
   Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase();
 
+/* IL PERIODO CORRENTE NON SI CONFONDE CON NESSUN MEMBRO (Bodan, 4 ott 2026: "2026 and Netherlands
+   share the same color"). Si sceglie, fra alcuni neutri scuri e un ardesia, il primo lontano da ogni
+   colore della serie (0,13) e dal grigio dell'anno prima (0,27); se nessuno ci riesce, quello che ci
+   va piu vicino. Lo usa lo skin e, quando la spec porta la sua palette, il CSS dopo l'unione.
+   Gate: test/interazioni.test.js. */
+function scegliCur(t, serie) {
+  const d = (x, y) => { const X = hex(x), Y = hex(y); return Math.hypot(X[0] - Y[0], X[1] - Y[1], X[2] - Y[2]) / 441.7; };
+  const cand = [mix(t.ink, t.card, 0.18), t.ink, mix(t.ink, t.card, 0.32), mix(mix(t.ink, '#2B3A55', 0.55), t.card, 0.12),
+    mix(mix(t.ink, '#3A5A9A', 0.6), t.card, 0.08), mix(mix(t.ink, '#55402B', 0.55), t.card, 0.12),
+    mix(mix(t.ink, '#5B2B55', 0.6), t.card, 0.1), mix(t.ink, t.card, 0.42)]
+    /* sul fondo chiaro anche tre scuri caldi: le palette tutte blu o tutte grigie non lasciano spazio
+       ai neutri freddi */
+    .concat(lum(t.card) > 0.5 ? ['#3B3F45', '#5A4A3A', '#6B3A2A', '#1F3A6B'] : []);
+  const voto = c => { const sv = serie.filter(Boolean).map(x => d(c, x)); return Math.min(sv.length ? Math.min(...sv) / 0.13 : 9, d(c, t.prior) / 0.27); };
+  return cand.find(c => voto(c) >= 1) || cand.reduce((a2, c) => voto(c) > voto(a2) ? c : a2, cand[0]);
+}
+
 /** Miscela due colori. `t` e quanto del secondo entra nel primo. */
 const mix = (a, b, t) => {
   const A = hex(a), B = hex(b);
@@ -201,6 +218,15 @@ function calcolaPalette(id, opz) {
        2026). Un token solo per il trend tratteggiato e per la colonna del colline; il gate
        test/periodo-precedente.test.js lo vuole neutro in tutte e tredici le famiglie. */
     prior: mix(ink, card, 0.58),
+    /* IL PERIODO CORRENTE E ANTRACITE, in ogni grafico nel tempo e in ogni palette (convenzione
+       IBCS dei report finance: effettivo scuro pieno, anno prima grigio chiaro). Usava il secondo
+       colore della palette, che e anche il colore del secondo membro di ogni dimensione: "2026" e
+       "Netherlands" avevano lo stesso colore (Bodan, 4 ott 2026). I colori della palette restano ai
+       membri. Gate: test/assi.test.js. */
+    cur: mix(ink, card, 0.18),
+    /* lo sfondo delle colonne di budget: una velatura fredda leggera, che non si confonde con il
+       grigio dell'anno prima ne con i gradini della formattazione condizionale */
+    bud: mix(mix(ink, '#2F6FB0', 0.5), card, 0.9),
     /* flab e l'etichetta dei filtri: 8,5px, maiuscoletto, spaziata — la dimensione piu
        piccola dell'intera cornice. Un grigio da "testo secondario" li non basta, e il gate
        dell'harness lo misura: sotto 4,5:1 la riga dei filtri diventa decorazione. */
@@ -238,6 +264,7 @@ function calcolaPalette(id, opz) {
      nessuno ha verificato */
   for (let k = serie.length; k < 6; k++) t['c' + (k + 1)] = serie[k % serie.length];
   t.serie = serie;
+  t.cur = scegliCur(t, serie);
 
   /* SEQUENZIALE: Viridis o Cividis, percettivamente uniformi. Sostituiscono qualunque rampa
      arcobaleno e valgono per la heatmap e per le celle heat della matrice — dove il messaggio
@@ -521,7 +548,7 @@ function scegliPelle(v) {
   };
 }
 
-module.exports = {
+module.exports = { scegliCur,
   SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, BANDE, PRESET, ALIAS_TIPO, famigliaBrand,
   palette, pelleDi, scegliPelle, seme,
   mix, contrasto

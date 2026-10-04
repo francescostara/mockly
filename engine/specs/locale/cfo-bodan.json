@@ -843,8 +843,12 @@
         "bind": {
          "dim": "prod",
          "measure": "rev",
-         "by": "seg"
-        }
+         "by": "seg",
+         "ignoreFilters": [
+          "seg"
+         ]
+        },
+        "subtitle": "all segments, whatever the segment filter"
        },
        {
         "type": "hbar",

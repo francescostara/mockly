@@ -153,12 +153,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* MIGLIAIA CON UN DECIMALE, la convenzione dei report finance ("numbers in thousands with
        one decimal", Bodan 3 ott 2026): con meta.numberFormat "k1" ogni importo e €52,134.5K,
        card e tooltip compresi. */
+    /*#fin*/
     var nf1 = new Intl.NumberFormat(lang, { useGrouping: true, minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    /*#/fin*/
     f.eur = function (v, k) {
       if (!isFinite(v)) v = 0;
       k = k === undefined ? 0 : k;
       var a = Math.abs(v), s = v < 0 ? '−' : '';
+      /*#fin*/
       if (o.numberFormat === 'k1') return s + cur + nf1.format(a / 1e3) + 'K';
+      /*#/fin*/
       /* I MILIARDI HANNO LA LORO SIGLA: "CHF 1183.9M" nel totale di una tabella di Luca (3 ott
          2026) si legge solo contando le cifre. E il confine e quello dell'arrotondamento:
          999.960 fa "1.0M", non "1000K". */
@@ -447,7 +451,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var fin = o.finestra || null;
       var months = o.months || null;
       var pin = Object.assign({}, A.drillPin(), o.pin || {});
-      var ignore = o.ignore || [];
+      var ignore = (o.ignore || []).concat(A.ign);
       var rows = o.detail ? (DT || []) : F;
       /* Una dimensione che vive solo nel grano di dettaglio (i corsi dentro una sede, i
          prodotti dentro una categoria) non compare nelle righe dei fatti: filtrarci sopra
@@ -484,6 +488,32 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var active = (pin[d] !== undefined && pin[d] !== null) || S.f[d];
         return active && F[0][d] === undefined && DT[0][d] !== undefined;
       });
+    };
+    /* FILTRARE O EVIDENZIARE: LA REGOLA DI POWER BI (Bodan, 4 ott 2026: "selecting a segment
+       highlights the bars, while selecting an entity filters the chart… one behaviour would be
+       cleaner"). Un filtro della barra — lo slicer — FILTRA ogni visual, anche quello che ha la
+       sua dimensione: la classifica per segmento mostra il segmento scelto. Il clic dentro un
+       grafico invece EVIDENZIA quel grafico (gli altri membri restano, attenuati) e filtra gli
+       altri visual, come il cross-highlight. S.fonte[dim] ricorda da quale visual e partito il
+       filtro. Un visual puo anche staccarsi da un filtro (`ignoreFilters`), come "Edit
+       interactions → None" di Power BI: tiene sempre tutti i membri. */
+    A.vk = null; A.ign = [];
+    /* LE MISURE DI BUDGET: ogni misura che la spec usa come `budget` di qualcosa. Le loro colonne
+       hanno uno sfondo proprio, cosi effettivo e budget si distinguono a colpo d'occhio (Bodan, 4
+       ott 2026: "a different color for budget than for actual"). */
+    A.bud = {};
+    /*#fin*/
+    JSON.stringify(SPEC, function (k, val) { if (k === 'budget' && typeof val === 'string') A.bud[val] = 1; return val; });
+    /*#/fin*/
+    A.ignorato = d => A.ign.indexOf(d) >= 0;
+    A.evid = d => !!(S.f[d] && S.fonte && S.fonte[d] && S.fonte[d] === A.vk);
+    /* il membro da evidenziare in questo visual, o null */
+    A.hl = d => (A.evid(d) && !A.ignorato(d)) ? S.f[d] : null;
+    /* i membri che questo visual mostra di una dimensione */
+    A.membri = function (d) {
+      var tutti = dims[d] || [];
+      if (S.f[d] && !A.evid(d) && !A.ignorato(d)) return tutti.filter(m => m.id === S.f[d]);
+      return tutti;
     };
     /* the drill-through page pins its entity on every visual of that page */
     A.drillPin = () => (S.drill && S.page === '__drill__') ? { [S.drill.dim]: S.drill.id } : {};
@@ -572,7 +602,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* per-member aggregate of a dimension (own filter ignored, PBI highlight semantics) */
     A.byDim = function (dim, o) {
       o = o || {};
-      return (dims[dim] || []).map(function (mb) {
+      return A.membri(dim).map(function (mb) {
         var s = Object.assign({}, o, { pin: Object.assign({}, o.pin || {}, { [dim]: mb.id }) });
         var p = Object.assign({}, s); delete p.y; delete p.months; delete p.finestra;
         return { m: mb, a: A.agg(A.slice(s)), b: A.prev(p) };
@@ -727,7 +757,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var head = v.title ? '<div class="ch"><h3>' + M.esc(A.tpl(v.title)) + '</h3>' +
         (v.subtitle ? '<span class="hs">' + M.esc(A.tpl(v.subtitle)) + '</span>' : '') +
         (v.note ? '<span class="hr">' + (v.__noteHtml ? v.note : M.esc(A.tpl(v.note))) + '</span>' : '') + '</div>' : '';
-      return '<div class="card" style="width:' + g.span(v.span) + 'px' + (opts.flex ? ';display:flex;flex-direction:column' : '') + '">' +
+      return '<div class="card"' + (A.vk ? ' data-vk="' + M.esc(A.vk) + '"' : '') + ' style="width:' + g.span(v.span) + 'px' + (opts.flex ? ';display:flex;flex-direction:column' : '') + '">' +
         head + (A.legendaAuto(v) ? A.legend(A.legendaAuto(v)) : '') + body + '</div>';
     };
     /* LA LEGENDA LA DISEGNA CHI DISEGNA IL GRAFICO. Nel trend l'anno prima e una linea grigia
@@ -735,8 +765,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        spec, il modello copiava quella del trend dentro un colline: "2024 = tratteggio" sopra due
        serie di barre colorate, in tre mockup, due gia approvati. */
     A.legendaAuto = function (v) {
-      if (v.type === 'trend') return [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', dash: true }];
-      if (v.type === 'colline') return [{ l: '{y}', c: 'var(--c2)' }, { l: '{py}', c: 'var(--prior)' }];
+      if (v.type === 'trend') return [{ l: '{y}', c: 'var(--cur)' }, { l: '{py}', dash: true }];
+      if (v.type === 'colline') return [{ l: '{y}', c: 'var(--cur)' }, { l: '{py}', c: 'var(--prior)' }];
       return null;
     };
     A.legend = voci => '<div class="lgd">' + voci.map(function (l) {
@@ -798,7 +828,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       }
       var b = M.V[v.type];
       if (!b) return A.card(v, '<div class="mx">?</div>');
-      return b(A, v, g.span(v.span), v.h || (row.flex ? 0 : 200));
+      A.vk = v.id || (v.type + ':' + (v.title || '') + ':' + (v.bind && (v.bind.dim || v.bind.measure)));
+      A.ign = (v.bind && v.bind.ignoreFilters) || [];
+      var html = b(A, v, g.span(v.span), v.h || (row.flex ? 0 : 200));
+      A.vk = null; A.ign = [];
+      return html;
     };
 
     /* ---------- render ---------- */
@@ -980,6 +1014,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (fe) {
           var raw = fe.getAttribute('data-f'), ix = raw.indexOf(':'), k = raw.slice(0, ix), v = raw.slice(ix + 1);
           S.f[k] = (v === '' || S.f[k] === v) ? null : v;      /* toggle off when re-clicked */
+          /* dentro un grafico: il filtro nasce li ed e un'evidenziazione per quel grafico;
+             dalla barra dei filtri: filtra tutto */
+          var cardF = fe.closest && fe.closest('#page .card[data-vk]');
+          S.fonte = S.fonte || {};
+          S.fonte[k] = S.f[k] && cardF ? cardF.getAttribute('data-vk') : null;
           S.dd = null; A.render(); return;
         }
         if (S.slOpen && !cl('#slPanel') && !cl('#slBtn')) { S.slOpen = false; A.render(); return; }
@@ -1085,17 +1124,17 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var off = (anni.length - 1) * 12;
       for (i = 0; i < 12; i++) if (A.inSel(i))
         s += '<rect x="' + Math.max(0, X(off + i) - step / 2).toFixed(1) + '" y="0" width="' +
-          step.toFixed(1) + '" height="' + ah + '" fill="var(--c2)" opacity=".06"/>';
+          step.toFixed(1) + '" height="' + ah + '" fill="var(--cur)" opacity=".06"/>';
     }
     var p = '';
     for (i = 0; i < vals.length; i++) p += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(vals[i]).toFixed(1);
     /* L'area porta il suo tooltip: e l'unica parte della delta-card che rappresenta dei valori
        senza scriverli, e senza il tooltip resta un disegno di cui non si puo chiedere conto. */
     s += '<path class="hit" d="' + p + 'L' + X(vals.length - 1).toFixed(1) + ',' + ah + 'L0,' + ah +
-      'Z" fill="var(--c2)" opacity=".13" data-tip="<b>' + M.esc(A.meas(ms).label || ms) +
+      'Z" fill="var(--cur)" opacity=".13" data-tip="<b>' + M.esc(A.meas(ms).label || ms) +
       '</b><br>' + M.esc(A.T.trajectory || 'traiettoria mensile') + ': ' +
       A.mfmt(ms, Math.min.apply(null, vals)) + ' – ' + A.mfmt(ms, Math.max.apply(null, vals)) + '"/>';
-    s += '<path d="' + p + '" fill="none" stroke="var(--c2)" stroke-width="1.6"/>';
+    s += '<path d="' + p + '" fill="none" stroke="var(--cur)" stroke-width="1.6"/>';
     /* una riga fra un anno e l'altro: senza, trentasei mesi in fila sono una linea sola e non
        si capisce dove finisce il 2023 */
     for (i = 1; i < anni.length && !perAnno; i++)
@@ -1106,7 +1145,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        e il genere di cosa che si vede solo quando qualcuno guarda il file. */
     var rP = 2.6;
     s += '<circle cx="' + Math.min(X(vals.length - 1), w - rP - 0.5).toFixed(1) + '" cy="' +
-      Y(vals[vals.length - 1]).toFixed(1) + '" r="' + rP + '" fill="var(--c2)"/></svg>';
+      Y(vals[vals.length - 1]).toFixed(1) + '" r="' + rP + '" fill="var(--cur)"/></svg>';
 
     /* La card si allunga fino all'altezza della riga — se accanto c'e un grafico con la
        legenda, la riga e piu alta di h. Con un'altezza fissa l'area restava a mezz'aria a
@@ -1161,12 +1200,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var serie = lungo
         ? [{ etichetta: A.annoLabel(), vals: anniW.map(function (y) {
               return A.mv(ms, A.agg(A.slice({ y: y, timeline: true })));
-            }), colore: 'var(--c2)', forte: true }]
+            }), colore: 'var(--cur)', forte: true }]
         : anniW.map(function (y, k) {
             return { etichetta: String(y), vals: byM(y),
               /* l'ultimo anno e il protagonista: pieno e piu spesso. Gli altri sono lo sfondo
                  su cui si legge, e devono restare distinguibili senza rubare l'occhio. */
-              colore: k === anniW.length - 1 ? 'var(--c2)' : COLORI[k % COLORI.length],
+              colore: k === anniW.length - 1 ? 'var(--cur)' : COLORI[k % COLORI.length],
               forte: k === anniW.length - 1 };
           });
       var etichette = lungo ? anniW.map(String) : A.MON;
@@ -1192,7 +1231,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         s2.vals.forEach(function (val, i) { p2 += (i ? 'L' : 'M') + XW(i).toFixed(1) + ',' + YW(val).toFixed(1); });
         if (s2.forte)
           sw += '<path d="' + p2 + 'L' + XW(nPunti - 1).toFixed(1) + ',' + (mgnW.t + ihW) + 'L' + mgnW.l + ',' + (mgnW.t + ihW) +
-            'Z" fill="var(--c2)" opacity=".06"/>';
+            'Z" fill="var(--cur)" opacity=".06"/>';
         sw += '<path d="' + p2 + '" fill="none" stroke="' + s2.colore + '" stroke-width="' + (s2.forte ? 2 : 1.4) + '"/>';
       });
       /* i pallini con il tooltip stanno sulla serie in primo piano, e il tooltip porta TUTTI
@@ -1204,7 +1243,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           tip += '<br>' + s2.etichetta + ': ' + A.mfmt(ms, s2.vals[i]);
         });
         sw += '<circle class="hit" cx="' + XW(i).toFixed(1) + '" cy="' + YW(val).toFixed(1) +
-          '" r="3" fill="var(--card)" stroke="var(--c2)" stroke-width="1.7" data-tip="' + tip + '"/>';
+          '" r="3" fill="var(--card)" stroke="var(--cur)" stroke-width="1.7" data-tip="' + tip + '"/>';
       });
       /* la finestra scelta, evidenziata sull'asse della storia */
       if (lungo && (S.y0 > anniW[0] || S.y < anniW[anniW.length - 1])) {
@@ -1212,7 +1251,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (i0 >= 0 && i1 >= 0)
           sw += '<rect x="' + Math.max(mgnW.l, XW(i0) - passoX / 2).toFixed(1) + '" y="' + mgnW.t +
             '" width="' + Math.min(iwW, (i1 - i0 + 1) * passoX).toFixed(1) + '" height="' + ihW +
-            '" fill="var(--c2)" opacity=".06"/>';
+            '" fill="var(--cur)" opacity=".06"/>';
       }
       /* le etichette dell'asse: con dieci anni si stampano una sì e una no, altrimenti si
          toccano e diventano una striscia grigia */
@@ -1247,21 +1286,21 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         '<text x="' + (mgn.l - 7) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted2)" class="tnum">' + A.mfmt(ms, t) + '</text>';
     });
     for (m = 0; m < 12; m++) if (A.inSel(m) && (S.q !== null || S.mo !== null))
-      s += '<rect x="' + (X(m) - iw / 22).toFixed(1) + '" y="' + mgn.t + '" width="' + (iw / 11).toFixed(1) + '" height="' + ih + '" fill="var(--c2)" opacity=".05"/>';
+      s += '<rect x="' + (X(m) - iw / 22).toFixed(1) + '" y="' + mgn.t + '" width="' + (iw / 11).toFixed(1) + '" height="' + ih + '" fill="var(--cur)" opacity=".05"/>';
     var pa = '', pb = '';
     cur.forEach((val, i) => pa += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(val).toFixed(1));
     prev.forEach((val, i) => pb += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(val).toFixed(1));
-    s += '<path d="' + pa + 'L' + X(11).toFixed(1) + ',' + (mgn.t + ih) + 'L' + mgn.l + ',' + (mgn.t + ih) + 'Z" fill="var(--c2)" opacity=".06"/>';
+    s += '<path d="' + pa + 'L' + X(11).toFixed(1) + ',' + (mgn.t + ih) + 'L' + mgn.l + ',' + (mgn.t + ih) + 'Z" fill="var(--cur)" opacity=".06"/>';
     s += '<path d="' + pb + '" fill="none" stroke="var(--prior)" stroke-width="1.5" stroke-dasharray="4 3"/>';
-    s += '<path d="' + pa + '" fill="none" stroke="var(--c2)" stroke-width="2"/>';
+    s += '<path d="' + pa + '" fill="none" stroke="var(--cur)" stroke-width="2"/>';
     cur.forEach(function (val, i) {
-      s += '<circle class="hit" cx="' + X(i).toFixed(1) + '" cy="' + Y(val).toFixed(1) + '" r="3" fill="var(--card)" stroke="var(--c2)" stroke-width="1.7" data-tip="<b>' +
+      s += '<circle class="hit" cx="' + X(i).toFixed(1) + '" cy="' + Y(val).toFixed(1) + '" r="3" fill="var(--card)" stroke="var(--cur)" stroke-width="1.7" data-tip="<b>' +
         A.MON[i] + ' ' + S.y + '</b><br>' + A.mfmt(ms, val) + '<br>' + (S.y - 1) + ': ' + A.mfmt(ms, prev[i]) + '<br>' +
         (A.T.varShort || 'Var') + ': ' + A.varia(ms, val, prev[i]).t + '"/>';
       s += '<text x="' + X(i).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
     });
     if (b.labels !== false) s += M.etichettePunti(cur.map((val, i) => ({ x: X(i), y: Y(val), v: val })),
-      { fmt: x => A.mfmt(ms, x), col: 'var(--c2)', l: mgn.l, r: mgn.l + iw, t: mgn.t, b: mgn.t + ih });
+      { fmt: x => A.mfmt(ms, x), col: 'var(--cur)', l: mgn.l, r: mgn.l + iw, t: mgn.t, b: mgn.t + ih });
     return A.card(v, s + '</svg>');
   };
 })(MK);
@@ -1336,7 +1375,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var a2 = ang + (d.v / tot) * Math.PI * 2, big = (a2 - ang) > Math.PI ? 1 : 0;
       var P = (r, a) => [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)];
       var p1 = P(rO, ang), p2 = P(rO, a2), p3 = P(rI, a2), p4 = P(rI, ang);
-      var dim2 = S.f[dim] && S.f[dim] !== d.id;
+      var dim2 = A.hl(dim) && A.hl(dim) !== d.id;
       /* Rosso solo al problema: lo spicchio segnalato dalla spec, mai una tinta a caso. */
       var col = (b.alert && b.alert === d.id) ? 'var(--bad)' : d.c;
       var sp = d.coda ? STACCO : 0, amS = (ang + a2) / 2;
@@ -1368,7 +1407,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var step = Math.max(11, Math.min(15.5, (h - 16) / Math.max(1, data.length)));
     var ly = cy - (data.length * step) / 2 + step * .7;
     data.forEach(function (d) {
-      var dimd = S.f[dim] && S.f[dim] !== d.id;
+      var dimd = A.hl(dim) && A.hl(dim) !== d.id;
       s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" data-f="' + dim + ':' + d.id +
         '" data-tip="<b>' + M.esc(d.l) + '</b><br>' + A.mfmt(ms, d.v) + '<br>' + f.pc(d.v / tot) + '">' +
         '<rect x="' + lx + '" y="' + (ly - 7.5) + '" width="' + wLeg + '" height="' + Math.min(step, 15) + '" fill="transparent"/>' +
@@ -1393,7 +1432,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   M.V.hbar = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, dim = b.dim, ms = b.measure;
     h = v.h || h || 190;
-    var det = !!b.detail, rows = A.slice({ detail: det });   /* ranked lists respect every filter */
+    var det = !!b.detail, rows = A.slice({ detail: det, ignore: [dim, b.parent].filter(x => x && A.evid(x)) });   /* da slicer filtra, dal clic qui evidenzia */
     /* per membro, attraverso il layer condiviso: una misura ratio sommata dalla colonna grezza
        usciva 0,0% su ogni barra mentre la matrice accanto mostrava il valore giusto */
     var grp = A.byKey(rows, r => r[dim]);
@@ -1401,7 +1440,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     if (b.parent) grp.keys.forEach(function (id) { parentOf[id] = (grp.rows[id][0] || {})[b.parent]; });
     var data = grp.keys.map(function (id) {
       var a = grp.agg[id], mb = A.member(dim, id), par = b.parent ? parentOf[id] : null;
-      var subv = b.subMeasure ? A.mfmt(b.subMeasure, A.mv(b.subMeasure, a)) + (b.subUnit || '') : '';
+      /* una differenza ha sempre il segno: "€97.4K vs budget" si leggeva come un valore, non come +97,4K */
+      var sv = b.subMeasure ? A.mv(b.subMeasure, a) : 0, sd = b.subMeasure && A.meas(b.subMeasure).agg === 'diff' && sv > 0 ? '+' : '';
+      var subv = b.subMeasure ? sd + A.mfmt(b.subMeasure, sv) + (b.subUnit || '') : '';
       /* IL COLORE DEL MEMBRO E LO STESSO DELLA TABELLA: il quadratino di USD nella matrice e la
          barra di USD qui (Fra su Luca, 3 ott 2026). Col padre colora il padre. */
       return { id: id, l: mb.n, v: A.mv(ms, a), cat: par, c: par ? A.color(b.parent, par) : (mb.c || null),
@@ -1448,8 +1489,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var s = '<svg width="' + w + '" height="' + h + '">';
     data.forEach(function (d, i) {
       var top = m.t + rh * i, yb = top + lblH + 2, bl = Math.max(2, (d.v / max) * maxBar);
-      var dimd = (b.parent && S.f[b.parent] && d.cat && S.f[b.parent] !== d.cat) ||
-        (!b.parent && S.f[dim] && S.f[dim] !== d.id);
+      var dimd = (b.parent && A.hl(b.parent) && d.cat && A.hl(b.parent) !== d.cat) ||
+        (!b.parent && A.hl(dim) && A.hl(dim) !== d.id);
       var df = (b.parent && d.cat) ? b.parent + ':' + d.cat : (A.filtrabile(dim) ? dim + ':' + d.id : '');
       /* LA QUOTA SUL TOTALE accanto al valore, per una misura che si somma (le guideline di Fra: "6,282
          49%"): il totale e quello di tutti i membri, non solo dei primi mostrati. Una percentuale, un
@@ -1513,7 +1554,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var sortM = b.sort || (cols[0] || {}).measure;
       rows.sort(function (x, y) { return A.mv(sortM, y.a) - A.mv(sortM, x.a); });
     }
-    var tot = A.agg(A.slice({ ignore: [dim] })), totP = A.prev({ ignore: [dim] });
+    var ig = A.evid(dim) ? [dim] : [], tot = A.agg(A.slice({ ignore: ig })), totP = A.prev({ ignore: ig });
     var frec = function (chiave) {
       if (!ord || String(ord.i) !== String(chiave)) return '<span class="so"> ⇅</span>';
       return '<span class="so on"> ' + (ord.d === 'asc' ? '▲' : '▼') + '</span>';
@@ -1521,7 +1562,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var head = '<tr><th class="ord" data-ord="' + dim + ':__nome">' +
       M.esc(A.tpl(b.label || dim)) + frec('__nome') + '</th>' +
       cols.map(function (c, i) {
-        return '<th class="ord" data-ord="' + dim + ':' + i + '">' +
+        return '<th class="ord' + (A.bud[c.measure] && !c.kind ? ' bdg' : '') + '" data-ord="' + dim + ':' + i + '">' +
           M.esc(A.tpl(c.label || A.meas(c.measure).label || '')) + frec(i) + '</th>';
       }).join('') + '</tr>';
     var cell = function (c, a, p, base) {
@@ -1550,10 +1591,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var lim = c.scale || [0, 1], t = Math.max(0, Math.min(1, (cv - lim[0]) / ((lim[1] - lim[0]) || 1)));
         return '<td class="tnum" style="background:' + (t > .66 ? 'var(--heatHi)' : t > .33 ? 'var(--heatMid)' : 'var(--heatLo)') + '">' + A.mfmt(c.measure, cv) + '</td>';
       }
-      return '<td class="tnum">' + A.mfmt(c.measure, cv) + '</td>';
+      return '<td class="tnum' + (A.bud[c.measure] && !c.kind ? ' bdg' : '') + '">' + A.mfmt(c.measure, cv) + '</td>';
     };
     var body = rows.map(function (r) {
-      var cl = S.f[dim] ? (S.f[dim] === r.m.id ? 'sel' : 'dim') : '';
+      var cl = A.hl(dim) ? (A.hl(dim) === r.m.id ? 'sel' : 'dim') : '';
       return '<tr class="r ' + cl + '" data-f="' + dim + ':' + r.m.id + '"' + (b.drill === false ? '' : ' data-drill="' + dim + ':' + r.m.id + '"') + '>' +
         '<td><span class="sw" style="background:' + r.m.c + '"></span>' + M.esc(r.m.n) + '<span class="dg">›</span></td>' +
         cols.map(c => cell(c, r.a, r.b, A.mv(c.measure, tot))).join('') + '</tr>';
@@ -1623,7 +1664,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += '<rect class="hit" x="' + (x0 - bw - 1).toFixed(1) + '" y="' + Y(pri[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(pri[i])).toFixed(1) +
         '" fill="var(--prior)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel(S.y - nAmp, S.y0 - nAmp) + '</b><br>' + A.mfmt(ms, pri[i]) + '"/>';
       s += '<rect class="hit" x="' + (x0 + 1).toFixed(1) + '" y="' + Y(cur[i]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0, mgn.t + ih - Y(cur[i])).toFixed(1) +
-        '" fill="var(--c2)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel() + '</b><br>' + A.mfmt(ms, cur[i]) + '' + '"/>';
+        '" fill="var(--cur)" data-tip="<b>' + A.MON[i] + ' ' + A.annoLabel() + '</b><br>' + A.mfmt(ms, cur[i]) + '' + '"/>';
       s += '<text x="' + x0.toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8.5" fill="' + (A.inSel(i) ? 'var(--ink2)' : 'var(--muted3)') + '">' + A.MON[i] + '</text>';
     }
     /* IL COLORE DELLA LINEA CONTRASTA CON LE COLONNE. Era l'ambra fissa del tema, quasi uguale
@@ -1634,7 +1675,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        abbastanza dalle due serie di colonne, altrimenti quello che dista di piu */
     var lc = 'var(--amber)', best = -1;
     ['var(--c1)', 'var(--c3)', 'var(--amber)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--ink)'].some(function (c) {
-      var l = M.lum(c), dC = M.distanza(c, 'var(--c2)'), dP = M.distanza(c, 'var(--prior)');
+      var l = M.lum(c), dC = M.distanza(c, 'var(--cur)'), dP = M.distanza(c, 'var(--prior)');
       if (l === null || dC === null || l > .75) return false;
       var sc = Math.min(dC, dP === null ? 1 : dP);
       if (sc > best) { best = sc; lc = c; }
@@ -1710,10 +1751,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var T = A.T, cn = [T.actual || 'Effettivo', T.bud || 'Budget', T.varShort || 'Var', (T.varShort || 'Var') + ' %'];
     var head = '<tr><th rowspan="2" style="text-align:left">' + M.esc(A.tpl(b.label || '')) + '</th>' +
       gruppi.map(g => '<th colspan="4" class="grp">' + M.esc(g.l) + '</th>').join('') + '</tr><tr>' +
-      gruppi.map(() => cn.map(c => '<th>' + M.esc(c) + '</th>').join('')).join('') + '</tr>';
+      gruppi.map(() => cn.map((c, ci) => '<th' + (ci === 1 ? ' class="bdg"' : '') + '>' + M.esc(c) + '</th>').join('')).join('') + '</tr>';
     var celle = function (ms, bud, inv, a, chiave, quota, quotaB) {
       var act = A.mv(ms, a) * (quota === undefined ? 1 : quota), bv = bud ? A.mv(bud, a) * (quotaB === undefined ? 1 : quotaB) : null;
-      var out = '<td class="tnum">' + A.mfmt(ms, act) + '</td><td class="tnum">' + (bv === null ? '' : A.mfmt(ms, bv)) + '</td>';
+      var out = '<td class="tnum">' + A.mfmt(ms, act) + '</td><td class="tnum bdg">' + (bv === null ? '' : A.mfmt(ms, bv)) + '</td>';
       if (bv === null) return out + '<td></td><td></td>';
       var sc = A.scost(ms, act, bv, inv), d = act - bv;
       var abs = A.punti(ms) ? sc.t : (d > 0 ? '+' : d < 0 ? '−' : '') + A.mfmt(ms, Math.abs(d));
@@ -1752,8 +1793,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var b = v.bind || {}, S = A.S, f = A.f, dim = b.dim, ms = b.measure, by = b.by || 'q';
     h = v.h || h || 190;
     var groups = by === 'q' ? [0, 1, 2, 3].map(q => ({ id: 'q' + q, l: 'Q' + (q + 1), months: A.QMON(q) }))
-      : A.dims[by].map(m => ({ id: m.id, l: m.n, pin: { [by]: m.id } }));
-    var cats = A.dims[dim];
+      : A.membri(by).map(m => ({ id: m.id, l: m.n, pin: { [by]: m.id } }));
+    var cats = A.membri(dim);
     /* stessa regola dell'hbar: "Q1" non ha bisogno di novantasei pixel */
     var lw = M.colonnaEtichette(groups.map(g => g.l), 10, 96, 10);
     var m = { t: 6, r: M.PAD, b: 6 }, rh = (h - m.t - m.b) / groups.length, bh = Math.min(20, rh * .6), iw = w - lw - m.r;
@@ -1773,7 +1814,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var val = vals[c.id], bl = val / tot * iw;
         /* il filtro sulla dimensione dei GRUPPI attenua gli altri gruppi, come quello sulle categorie
            attenua le altre categorie: prima il mix per segmento restava fermo col filtro "SMB" (Bodan) */
-        var dimd = (S.f[dim] && S.f[dim] !== c.id) || (by !== 'q' && S.f[by] && S.f[by] !== grp.id);
+        var dimd = (A.hl(dim) && A.hl(dim) !== c.id) || (by !== 'q' && A.hl(by) && A.hl(by) !== grp.id);
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + x.toFixed(1) + '" y="' + (y - bh / 2).toFixed(1) + '" width="' + Math.max(0, bl - 1).toFixed(1) +
           '" height="' + bh + '" fill="' + c.c + '" data-f="' + dim + ':' + c.id + '" data-tip="<b>' + M.esc(grp.l + ' · ' + c.n) + '</b><br>' +
           A.mfmt(ms, val) + '<br>' + f.pc(val / tot) + '"/>';
@@ -1939,11 +1980,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   M.V.heatmap = function (A, v, w, h) {
     var b = v.bind || {}, dim = b.dim, ms = b.measure, S = A.S;
     h = v.h || h || 200;
-    var righe = A.dims[dim] || [];
+    var righe = A.membri(dim);
     /* le colonne: una seconda dimensione, i mesi o i trimestri */
     var cols = b.by === 'm' ? A.MON.map(function (l, i) { return { id: 'm' + i, n: l, months: [i] }; })
       : b.by === 'q' ? [0, 1, 2, 3].map(function (q) { return { id: 'q' + q, n: 'Q' + (q + 1), months: A.QMON(q) }; })
-        : (A.dims[b.by] || []).map(function (m) { return { id: m.id, n: m.n, pin: m.id }; });
+        : A.membri(b.by).map(function (m) { return { id: m.id, n: m.n, pin: m.id }; });
 
     /* il valore di una cella: sempre attraverso l'aggregatore, mai r[ms] */
     var val = function (r, c) {
@@ -2039,8 +2080,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         var col = ['var(--heat1)', 'var(--heat2)', 'var(--heat3)', 'var(--heat4)', 'var(--heat5)'][liv];
         /* un filtro sulla dimensione delle COLONNE segna la sua colonna come quello sulle righe
            segna la sua riga: prima la heatmap restava identica davanti al filtro "Corporate" */
-        var dimd = (S.f[dim] && S.f[dim] !== r.id) ||
-          (cols[ci].pin !== undefined && S.f[b.by] && S.f[b.by] !== cols[ci].pin);
+        var dimd = (A.hl(dim) && A.hl(dim) !== r.id) ||
+          (cols[ci].pin !== undefined && A.hl(b.by) && A.hl(b.by) !== cols[ci].pin);
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + (lw + cw * ci + gap / 2).toFixed(1) +
           '" y="' + (y + gap / 2).toFixed(1) + '" width="' + Math.max(1, cw - gap).toFixed(1) +
           '" height="' + Math.max(1, ch - gap).toFixed(1) + '" rx="1" fill="' + col +
@@ -2129,7 +2170,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     });
     var s = '<svg width="' + w + '" height="' + h + '">';
     cats.forEach(function (c) {
-      var dimd = A.S.f[dim] && A.S.f[dim] !== c.id;
+      var dimd = A.S.f[dim] && A.S.f[dim] !== c.id;   /* una classifica evidenzia sempre: filtrata a un membro, quello sarebbe sempre primo */
       for (var p = 0; p < periods.length - 1; p++) {
         var a = cols[p][c.id], z = cols[p + 1][c.id], x1 = X(p), x2 = X(p + 1), cx = (x1 + x2) / 2;
         var pd0 = periods[p], pd1 = periods[p + 1];
@@ -2277,7 +2318,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       }
       /* il membro filtrato resta pieno, gli altri si attenuano — come in ogni altro visual per
          dimensione: prima il bridge restava identico davanti al filtro sul suo segmento */
-      var dimd = bar.id && A.S.f[dim] && A.S.f[dim] !== bar.id;
+      var dimd = bar.id && A.hl(dim) && A.hl(dim) !== bar.id;
       s += '<rect class="hit' + (bar.kind === 's' ? ' wfs' : '') + (dimd ? ' dimd' : '') + '" ' + (bar.id ? 'data-f="' + dim + ':' + bar.id + '"' : '') + ' x="' + x.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + bw.toFixed(1) +
         '" height="' + Math.max(1, y1 - y0).toFixed(1) + '" fill="' + fill + '" data-tip="<b>' + M.esc(bar.l) + '</b><br>' + tipv + '"/>';
       s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle" font-size="8" fill="var(--muted)">' + M.esc(bar.l.length > 14 ? bar.l.slice(0, 13) + '…' : bar.l) + '</text>';
@@ -2315,7 +2356,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     s += '<line x1="' + X(mx).toFixed(1) + '" y1="' + mgn.t + '" x2="' + X(mx).toFixed(1) + '" y2="' + (mgn.t + ih) + '" stroke="var(--muted2)" stroke-dasharray="3 3"/>';
     s += '<line x1="' + mgn.l + '" y1="' + Y(my).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(my).toFixed(1) + '" stroke="var(--muted2)" stroke-dasharray="3 3"/>';
     pts.forEach(function (p) {
-      var r = b.size ? 4 + 7 * Math.sqrt(p.s / smax) : 6, dimd = S.f[dim] && S.f[dim] !== p.id;
+      var r = b.size ? 4 + 7 * Math.sqrt(p.s / smax) : 6, dimd = A.hl(dim) && A.hl(dim) !== p.id;
       s += '<circle class="hit ' + (dimd ? 'dimd' : '') + '" cx="' + X(p.x).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + p.c +
         '" fill-opacity=".85" stroke="var(--card)" data-f="' + dim + ':' + p.id + '" data-tip="<b>' + M.esc(p.l) + '</b><br>' +
         M.esc(A.meas(b.x).label || b.x) + ': ' + A.mfmt(b.x, p.x) + '<br>' + M.esc(A.meas(b.y).label || b.y) + ': ' + A.mfmt(b.y, p.y) + '"/>';

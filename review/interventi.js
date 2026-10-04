@@ -717,6 +717,38 @@ const INTERVENTI = [
     fatto: "M.etichettePunti: su ogni trend (anno singolo) e sulla linea di ogni colline con almeno sei punti il motore scrive il valore del massimo (sopra), del minimo (sotto) e dell'ultimo punto, evidenziati; un punto che e insieme ultimo ed estremo si scrive una volta; ogni scritta resta nell'area del grafico, evita il nome della serie e il target, prova il lato opposto prima di saltare. Nell'hbar di una misura additiva la quota sul totale di TUTTI i membri sta accanto al valore (dentro la barra se il valore e dentro e ci sta). `labels: false` e `share: false` le spengono. Gate: test/assi.test.js (ogni linea di sei punti ha le sue etichette e il massimo scritto e il massimo vero; le quote non superano il 100%) e test/barra.test.js in Chrome (scritte dei trend dentro il riquadro e mai sovrapposte).",
     stato: "fatto"
   }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 3,
+    commento: "On the Revenue page, selecting a segment or product line highlights the bars, while selecting an entity filters the chart down to just that entity. One behaviour for both would be cleaner. (Fra: in Power BI si puo anche staccare un grafico da un filtro; tenere in alcuni casi tutti i segmenti ha senso; scrivilo nel kit.)",
+    dove: "filtri · runtime · kit · skill · gate",
+    fatto: "La regola di Power BI: un filtro della barra (slicer) filtra ogni visual, anche quello della sua dimensione; il clic dentro un grafico evidenzia quel grafico e filtra gli altri (S.fonte ricorda da quale card parte il filtro; A.hl, A.membri, A.evid). Il ribbon evidenzia sempre: filtrato a un membro, quel membro sarebbe sempre primo. Un visual si stacca da un filtro con `ignoreFilters` (Power BI: Edit interactions → None), e il kit scrive come farlo. Nel caso di Bodan il mix per segmento resta completo col filtro del segmento. Due correzioni nate dal cambio: lo script del video sceglie un clic su un'altra dimensione rispetto alla tabella da aprire, e la scheda scrive {period} col mese di partenza (cercava '· 2026' in un report che parte da 'Dec 2026'). Gate: test/interazioni.test.js e test/filtri-visual.test.js (un visual staccato deve restare fermo).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 3,
+    commento: "Colors could be more standardized, 2026 and Netherlands share the same color.",
+    dove: "colori · skin · runtime",
+    fatto: "Il periodo corrente ha il suo token (--cur): un neutro scuro (antracite, convenzione IBCS) scelto fra alcuni candidati come il primo lontano da ogni colore della palette e dal grigio dell'anno prima, anche quando la spec porta la sua palette; i colori della palette restano ai membri. Trend, colline, sparkline e le loro legende usano --cur. Gate: test/interazioni.test.js su ogni mockup del corpus.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 3,
+    commento: "In the tables, a different color for budget than for actual would make it more visual which is which, probably column color.",
+    dove: "matrice · statement · CSS",
+    fatto: "Ogni misura usata come `budget` nella spec ha le sue colonne con uno sfondo proprio (--bud, una velatura fredda leggera), nelle tabelle e nella colonna Budget del conto economico. Gate: test/interazioni.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 3,
+    commento: "(visto rifacendo il mockup) Lo scostamento positivo accanto alle barre si leggeva \"€97.4K vs budget\" senza segno; il nuovo codice portava ecommerce-retail a 80,5KB.",
+    dove: "hbar · render",
+    fatto: "Una misura differenza accanto alla barra ha sempre il segno. Per il peso: CSS spedito senza a capo, regole delle card a viste solo dove ci sono viste, formato K.1 e scansione del budget nel blocco finance, e dalla spec incorporata escono le chiavi che il runtime non legge (aesthetic, archetype, skin e i campi di meta disegnati dal server): ecommerce-retail torna a 79,7KB.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

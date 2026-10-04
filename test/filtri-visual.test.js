@@ -37,6 +37,10 @@ ok('su ogni pagina di ogni mockup, ogni filtro di dimensione cambia ogni card', 
       if (nav) clic(nav);
       const foto = () => [...doc.querySelectorAll('#page .card:not(.kpi)')].map(k => ({
         t: ((k.querySelector('.ch h3') || {}).textContent || '').trim(), h: k.innerHTML }));
+      /* un visual staccato da un filtro (ignoreFilters, Edit interactions → None) deve restare fermo */
+      const staccati = {};
+      const pg = spec.pages.find(x => x.id === pid);
+      (pg.rows || []).forEach(r => r.visuals.forEach(v => ((v.bind || {}).ignoreFilters || []).forEach(d => { (staccati[d] = staccati[d] || []).push(v.title); })));
       (spec.filters.dims || []).forEach(fd => {
         /* si prova ogni membro: "Paid" puo lasciare giustamente identica la spesa paid (sugli
            organici e zero per costruzione); ferma e la card che NESSUN membro muove */
@@ -57,6 +61,8 @@ ok('su ogni pagina di ogni mockup, ogni filtro di dimensione cambia ogni card', 
         prima.forEach((p, i) => {
           if (!p.t || !membri.length) return;
           prove++;
+          const fermo = (staccati[fd.id] || []).some(tt => p.t.indexOf(String(tt).split('{')[0].trim()) === 0);
+          if (fermo) { if (mosse[i]) guasti.push(c.id + ' · ' + pid + ' · "' + p.t + '" e staccato dal filtro ' + fd.id + ' ma lo segue'); return; }
           if (!mosse[i]) guasti.push(c.id + ' · ' + pid + ' · "' + p.t + '" non risponde al filtro ' + fd.id);
         });
       });

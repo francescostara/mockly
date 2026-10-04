@@ -122,6 +122,14 @@ name's line, right-aligned. What that asks of the spec:
   unless the parent is the point.
 - **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
 
+## Filters filter, clicks highlight (4 Oct 2026)
+
+The toolbar filters behave like Power BI slicers: they filter every visual, the ones broken down
+by that dimension included. A click on a bar or a row highlights its own chart and filters the
+others. When a visual must keep showing all members whatever the filter (a composition of all
+segments, a benchmark of all entities), detach it with `"ignoreFilters": ["<dim>"]` — in Power
+BI that is Edit interactions → None, and the kit writes it down.
+
 ## Finance reporting — actual, budget, prior year (Bodan, 3 Oct 2026)
 
 A CFO report is read in the language of finance; the engine speaks it, if the spec asks:

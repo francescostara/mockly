@@ -31,7 +31,7 @@ const BREVE = /\/\*#breve\*\/[\s\S]*?\/\*#\/breve\*\//g;
 /* IL CODICE FINANCE VIAGGIA SOLO NEI REPORT FINANCE: la card con budget e YTD, gli scostamenti
    dal budget. In un report senza budget sarebbero un chilo in piu dentro il tetto del file. */
 const FIN = /\/\*#fin\*\/[\s\S]*?\/\*#\/fin\*\//g;
-const usaFinanza = spec => (spec.kpiBand || []).some(k => k.budget || k.ytd) ||
+const usaFinanza = spec => (spec.kpiBand || []).some(k => k.budget || k.ytd) || (spec.meta || {}).numberFormat === 'k1' ||
   JSON.stringify(spec.pages || []).concat(JSON.stringify((spec.drill || {}).page || {})).search(/"kind":"bud"|"type":"statement"/) >= 0;
 function bundle(types, opts) {
   const R = regions(fs.readFileSync(RUNTIME_PATH, 'utf8'));
@@ -765,6 +765,11 @@ function validate(specIn, data) {
         }
         (b.columns || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" matrix: unknown measure "${c.measure}"`); });
         (b.stages || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" funnel: unknown measure "${c.measure}"`); });
+        /* un visual staccato da un filtro (Edit interactions → None di Power BI): solo filtri che esistono */
+        if (b.ignoreFilters !== undefined) {
+          const fd = new Set(((spec.filters || {}).dims || []).map(x => x.id));
+          if (!Array.isArray(b.ignoreFilters) || b.ignoreFilters.some(x => !fd.has(x))) e.push(`page "${pg.id}" ${v.type}: "ignoreFilters" e un elenco di filtri della barra (${[...fd].join(', ')}) da cui il visual si stacca`);
+        }
         /* la colonna di scostamento dal budget, il conto economico, il ponte da stock a stock */
         (b.columns || []).filter(c => c.kind === 'bud').forEach(c => { if (!known.has(c.budget)) e.push(`page "${pg.id}" matrix: la colonna "bud" vuole "budget", una misura del modello (ha "${c.budget}")`); });
         if (v.type === 'statement') {
@@ -984,9 +989,22 @@ function toolbarErrore(spec, tb) {
 }
 
 /* ---------- CSS ---------- */
+/* IL CSS SPEDITO SENZA A CAPO. Una regola spezzata su due righe e i rientri valevano mezzo chilo in
+   un file col tetto di 80KB (4 ott 2026). Si tolgono commenti, a capo e spazi attorno a { } ; ,
+   e l'ultimo punto e virgola di ogni regola; mai lo spazio dentro un selettore. */
+const cssMinimo = c => c.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.trim()).filter(Boolean).join('')
+  .replace(/\s*([{};,])\s*/g, '$1').replace(/;}/g, '}');
+/* le chiavi della spec che servono a scegliere la pelle e a validare, non al runtime (che legge
+   __pelle): nel file spedito sarebbero byte senza lettori */
+const SOLO_MOTORE = { aesthetic: 1, archetype: 1, skin: 1 };
+/* di meta il runtime legge solo formati e parole; titolo, marchio, fonte e watermark li scrive il
+   server nella cornice */
+const META_RUNTIME = { locale: 1, currency: 1, decimal: 1, numberFormat: 1, months: 1, strings: 1 };
 function css(spec, compact) {
   const P = pelle(spec);
   const t = Object.assign({}, P.tokens, spec.palette || {});
+  /* con una palette propria della spec il periodo corrente si sceglie sui colori che si vedono davvero */
+  if (spec.palette) t.cur = SKIN.scegliCur(t, Array.isArray(spec.palette.series) ? spec.palette.series : [1, 2, 3, 4, 5, 6].map(i => t['c' + i]));
   /* GLI SCOSTAMENTI DI UN REPORT FINANCE SONO ROSSO E VERDE, se il brief lo chiede
      (meta.varianze "finanza"; Bodan, 3 ott 2026: "costs above budget and revenue below budget are
      unfavourable (red)"). La casa usa blu e arancio, che reggono le dicromazie: qui restano le
@@ -1155,18 +1173,19 @@ ${banda === 'blocco' ? `/* la banda KPI come superficie unica: i riquadri sparis
 .card .ch .hs{font-size:9.5px;color:var(--muted)}
 .card .ch .hr{margin-left:auto;font-size:9px;color:var(--muted2)}
 /* le linguette di una card a piu viste: piccole, in fondo all'intestazione, e si vede quale
-   comanda — sono un interruttore, non una decorazione */
-.vsw{display:inline-block;margin-left:5px;padding:2px 8px;border:1px solid var(--line);
+   comanda — sono un interruttore, non una decorazione. Solo nei report che hanno card a viste. */
+${JSON.stringify(spec.pages || []).indexOf('"viste"') >= 0 ? `.vsw{display:inline-block;margin-left:5px;padding:2px 8px;border:1px solid var(--line);
   border-radius:999px;font-size:9px;color:var(--muted);cursor:pointer;white-space:nowrap}
 .vsw:hover{color:var(--ink2);border-color:var(--muted2)}
-.vsw.on{background:var(--c2);border-color:var(--c2);color:#fff;font-weight:600}
+.vsw.on{background:var(--c2);border-color:var(--c2);color:#fff;font-weight:600}` : ''}
 .kpi{padding:11px 14px 10px;display:flex;flex-direction:column;justify-content:space-between}
 .kpi .k{font-size:9px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);font-weight:600}
 .kpi .vr{display:flex;align-items:flex-end;gap:7px;margin-top:6px}
 .kpi .v{font-size:25px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-1px}
 .kpi .d{font-size:10px;font-weight:600;padding-bottom:2px;white-space:nowrap}
 .kpi .det{font-size:9px;color:var(--muted);margin-top:7px}
-${usaFinanza(spec) ? `.st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
+${usaFinanza(spec) ? `td.bdg,th.bdg{background:var(--bud)}th.bdg{color:var(--ink2)}tr.tot td.bdg{background:var(--bud)}
+.st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
 .kpi .kf{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;display:flex;gap:10px}.kpi .kf b{font-weight:600}
 .kpi .ky{border-top:1px solid var(--line2);margin-top:7px;padding-top:5px;font-size:10px;color:var(--ink2);font-weight:600;white-space:nowrap}` : ''}
 .up{color:var(--good)}.dn{color:var(--bad)}.fl{color:var(--muted)}
@@ -1424,7 +1443,7 @@ function render(specIn, data) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(spec.meta.brand && spec.meta.brand.name ? spec.meta.brand.name + ' — ' + spec.meta.title : spec.meta.title)}</title>
 <style>
-${css(spec, compact).replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.trim()).filter(Boolean).join('\n')}
+${cssMinimo(css(spec, compact))}
 </style>
 </head>
 <body>
@@ -1434,7 +1453,7 @@ ${css(spec, compact).replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.tri
 <div id="tip"></div>
 <script>
 ${bundle(types, { finestra: ((data && data.years) || []).length > 2, fin: usaFinanza(spec) })}
-var SPEC=${JSON.stringify(spec)};
+var SPEC=${JSON.stringify(spec, function (k, v) { return (this === spec && SOLO_MOTORE[k]) || (this === spec.meta && !META_RUNTIME[k]) ? undefined : v; })};
 var DATA=${dataJSON(data)};
 MK.__A=MK.boot(SPEC,DATA,document);
 </script>
