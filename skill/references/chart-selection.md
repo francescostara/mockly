@@ -128,7 +128,9 @@ The toolbar filters behave like Power BI slicers: they filter every visual, the 
 by that dimension included. A click on a bar or a row highlights its own chart and filters the
 others. When a visual must keep showing all members whatever the filter (a composition of all
 segments, a benchmark of all entities), detach it with `"ignoreFilters": ["<dim>"]` — in Power
-BI that is Edit interactions → None, and the kit writes it down.
+BI that is Edit interactions → None, and the kit writes it down. A click must filter what was
+clicked: a top-N list of customers or products (not a toolbar filter) is not clickable and follows
+the slicers only; `"crossFilter": false` does the same for any visual whose clicks would mislead.
 
 ## Finance reporting — actual, budget, prior year (Bodan, 3 Oct 2026)
 

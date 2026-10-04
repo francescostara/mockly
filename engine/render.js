@@ -766,6 +766,7 @@ function validate(specIn, data) {
         (b.columns || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" matrix: unknown measure "${c.measure}"`); });
         (b.stages || []).forEach(c => { if (!known.has(c.measure)) e.push(`page "${pg.id}" funnel: unknown measure "${c.measure}"`); });
         /* un visual staccato da un filtro (Edit interactions → None di Power BI): solo filtri che esistono */
+        if (b.crossFilter !== undefined && typeof b.crossFilter !== 'boolean') e.push(`page "${pg.id}" ${v.type}: "crossFilter" e true o false`);
         if (b.ignoreFilters !== undefined) {
           const fd = new Set(((spec.filters || {}).dims || []).map(x => x.id));
           if (!Array.isArray(b.ignoreFilters) || b.ignoreFilters.some(x => !fd.has(x))) e.push(`page "${pg.id}" ${v.type}: "ignoreFilters" e un elenco di filtri della barra (${[...fd].join(', ')}) da cui il visual si stacca`);

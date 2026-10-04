@@ -368,6 +368,8 @@ function descriviVisual(spec, v, L, N) {
   const campi = [];
   /* un visual staccato da un filtro: in Power BI si fa con Format → Edit interactions → None */
   if (Array.isArray(b.ignoreFilters) && b.ignoreFilters.length) righe.push('Interactions: select the ' + b.ignoreFilters.map(d => q(nomeDim(spec, d)) + ' slicer').join(' and the ') + ', then Format → Edit interactions → None on this visual: it keeps every member and ignores that filter.');
+  if (b.crossFilter === false) righe.push('Interactions: select this visual, then Format → Edit interactions → None on every other visual: clicking it filters nothing; it still follows the slicers.');
+  if (v.type === 'hbar' && b.parent && b.crossFilter !== false && !((spec.filters || {}).dims || []).some(f => f.id === b.dim)) righe.push('Interactions: its items are not a slicer of the report, so set Edit interactions → None from this visual to the others: it follows the slicers only.');
   switch (v.type) {
     case 'trend': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); righe.push(L.legendaAnni, L.esenzione); break;
     case 'colline': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); if (b.line) righe.push(L.linea(m(b.line))); righe.push(L.legendaColonne); break;   /* nel colline l'anno prima e una colonna, non un tratteggio */

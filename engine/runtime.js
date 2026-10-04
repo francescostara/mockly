@@ -831,6 +831,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       A.vk = v.id || (v.type + ':' + (v.title || '') + ':' + (v.bind && (v.bind.dim || v.bind.measure)));
       A.ign = (v.bind && v.bind.ignoreFilters) || [];
       var html = b(A, v, g.span(v.span), v.h || (row.flex ? 0 : 200));
+      /* `crossFilter: false`: i clic dentro il visual non filtrano niente (Power BI: Edit interactions
+         → None dal visual verso gli altri); il visual continua a seguire gli slicer */
+      if (v.bind && v.bind.crossFilter === false) html = html.replace(/ data-f="[^"]*"/g, '');
       A.vk = null; A.ign = [];
       return html;
     };
@@ -1491,7 +1494,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var top = m.t + rh * i, yb = top + lblH + 2, bl = Math.max(2, (d.v / max) * maxBar);
       var dimd = (b.parent && A.hl(b.parent) && d.cat && A.hl(b.parent) !== d.cat) ||
         (!b.parent && A.hl(dim) && A.hl(dim) !== d.id);
-      var df = (b.parent && d.cat) ? b.parent + ':' + d.cat : (A.filtrabile(dim) ? dim + ':' + d.id : '');
+      /* UN CLIC FILTRA CIO SU CUI SI CLICCA (Fra, 4 ott 2026): in una lista di dettaglio — i clienti
+         colorati per segmento — il clic filtrava il segmento del cliente, ed evidenziava tutto il
+         Mid-market mentre lo slicer filtrava: due comportamenti. Se l'elemento cliccato non e un
+         filtro del report, la barra non e cliccabile e la lista risponde solo agli slicer. */
+      var df = A.filtrabile(dim) ? dim + ':' + d.id : '';
       /* LA QUOTA SUL TOTALE accanto al valore, per una misura che si somma (le guideline di Fra: "6,282
          49%"): il totale e quello di tutti i membri, non solo dei primi mostrati. Una percentuale, un
          rapporto o uno stock non hanno quota; `share: false` la spegne. */

@@ -749,6 +749,14 @@ const INTERVENTI = [
     fatto: "Una misura differenza accanto alla barra ha sempre il segno. Per il peso: CSS spedito senza a capo, regole delle card a viste solo dove ci sono viste, formato K.1 e scansione del budget nel blocco finance, e dalla spec incorporata escono le chiavi che il runtime non legge (aesthetic, archetype, skin e i campi di meta disegnati dal server): ecommerce-retail torna a 79,7KB.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/cfo-bodan",
+    versione: 3,
+    commento: "(Fra) Vedo ancora due comportamenti: se in Revenue clicco un cliente si evidenzia tutto il Mid-market, se filtro il segmento a sinistra ho solo i clienti di quel segmento. La top 10 clienti deve essere filtrabile solo col pannello a sinistra: non ha logica cliccare una barra se il resto del report non filtra per quel cliente.",
+    dove: "hbar · runtime · scheda · kit · skill",
+    fatto: "Regola generale: un clic filtra cio su cui si clicca. Una lista di una dimensione che non e un filtro del report (i clienti, i prodotti di una top N) non e piu cliccabile: prima il clic filtrava il suo padre (il segmento) e ne evidenziava tutti i membri. La lista segue solo gli slicer. `crossFilter: false` toglie i clic a qualunque visual (Power BI: Edit interactions → None dal visual verso gli altri), e il kit lo scrive, anche per le liste di dettaglio. La scheda e lo script del video non promettono piu quei clic. Gate: test/interazioni.test.js (i clienti non sono cliccabili, nessuna lista del corpus filtra piu di una dimensione, crossFilter toglie i clic).",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

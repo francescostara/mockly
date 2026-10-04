@@ -62,6 +62,35 @@ ok('un visual staccato da un filtro tiene tutti i membri e non lo segue', () => 
   assert(/Edit interactions → None/.test(require('../engine/powerbi.js').kit(c.caso.spec, c.caso.dataParams, c.caso.build())), 'il kit spiega come staccarlo in Power BI');
 });
 
+ok('un clic filtra cio su cui si clicca: una lista che non e un filtro del report non e cliccabile', () => {
+  /* Fra, 4 ott 2026: cliccando un cliente si evidenziava tutto il suo segmento, mentre lo slicer
+     filtrava. I clienti non sono un filtro: la lista segue solo gli slicer */
+  const { card } = apri();
+  const top = card(/^Top 10 customers/);
+  assert.strictEqual(top.querySelectorAll('[data-f]').length, 0, 'i clienti non devono essere cliccabili');
+  const kit = require('../engine/powerbi.js').kit(c.caso.spec, c.caso.dataParams, c.caso.build());
+  assert(/follows the slicers only/.test(kit), 'il kit dice di staccare le interazioni della lista');
+  /* in tutto il corpus: nessuna barra filtra una dimensione diversa dalla sua */
+  const guasti = [];
+  casi().forEach(k => {
+    const dom = new JSDOM(renderCaso(k), { runScripts: 'dangerously', pretendToBeVisual: true });
+    [...dom.window.document.querySelectorAll('#page svg')].filter(x => x.querySelector('rect.barra')).forEach(x => {
+      const dims = new Set([...x.querySelectorAll('[data-f]')].map(e => e.getAttribute('data-f').split(':')[0]));
+      if (dims.size > 1) guasti.push(k.id + ': una lista filtra piu dimensioni');
+    });
+  });
+  assert.deepStrictEqual(guasti, []);
+  /* crossFilter:false toglie i clic a qualunque visual */
+  const spec = JSON.parse(JSON.stringify(c.caso.spec));
+  spec.pages.find(pg => pg.id === 'revenue').rows[1].visuals[0].bind.crossFilter = false;
+  const { render } = require('../engine/render.js');
+  const dom = new JSDOM(render(spec, c.caso.build()), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const d = dom.window.document;
+  d.querySelector('.navbtn[data-page="revenue"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  const tab = [...d.querySelectorAll('#page .card')].find(k => /^Revenue by product line/.test(k.textContent.trim()));
+  assert.strictEqual(tab.querySelectorAll('[data-f]').length, 0, 'crossFilter:false deve togliere i clic');
+});
+
 ok('il periodo corrente ha un colore suo, lontano dai membri e dall anno prima, in ogni mockup', () => {
   const rgb = h => { const m = /#([0-9a-f]{6})/i.exec(h || ''); if (!m) return null; const v = parseInt(m[1], 16); return [v >> 16, (v >> 8) & 255, v & 255]; };
   const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) / 441.7;

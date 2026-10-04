@@ -186,8 +186,10 @@ function piano(spec, data) {
     /* Quale dimensione filtra il clic: quella della barra, oppure — in una lista di dettaglio —
        la sua dimensione PADRE, che e l'unica che il report sa governare. Nominare la dimensione
        sbagliata manderebbe il lettore a cercare un filtro che non esiste. */
-    const filtrata = (spec.filters.dims || []).some(f => f.id === b.dim) ? b.dim
-      : ((spec.filters.dims || []).some(f => f.id === b.parent) ? b.parent : null);
+    /* (4 ott 2026) il clic filtra solo la dimensione su cui si clicca: una lista di dettaglio non
+       filtra piu il suo padre, e `crossFilter: false` toglie i clic */
+    const filtrata = b.crossFilter === false ? null
+      : (spec.filters.dims || []).some(f => f.id === b.dim) ? b.dim : null;
     if (CLICCABILI[v.type] && filtrata) {
       P.cross.push({ page: pg.id, tipo: v.type, cosa: CLICCABILI[v.type], titolo: tit, dim: filtrata,
         sel: `[data-f^="${filtrata}:"]`, drillPage: !!drill });

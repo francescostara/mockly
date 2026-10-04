@@ -125,6 +125,9 @@ debt/EBITDA) so the variance colours flip.
   segment). A click inside a chart HIGHLIGHTS that chart (the other members stay, dimmed) and
   filters the others. A rank chart (`ribbon`) always highlights: filtered to one member it would
   always rank first.
+- **A click filters what you clicked.** A ranked list of a dimension that is not a toolbar filter
+  (top customers, top products) is not clickable: it follows the slicers only. `"crossFilter": false`
+  removes the clicks from any visual (Power BI: Edit interactions → None from that visual).
 - **A visual can be detached from a filter:** `"ignoreFilters": ["seg"]` in its `bind` keeps every
   member and ignores that filter (Power BI: Format → Edit interactions → None; the kit says so).
   Use it where the full breakdown is the point (the mix of all segments next to a segment filter).
