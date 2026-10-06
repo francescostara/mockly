@@ -255,6 +255,11 @@ function calcolaPalette(id, opz) {
   t.good = COL.aggiusta(COL.STATI.positivo, card, 4.5);
   t.bad = COL.aggiusta(COL.STATI.negativo, card, 4.5);
   t.alert = COL.aggiusta(COL.STATI.allarme, card, 4.5);
+  /* SOPRA IL TARGET VERDE, SOTTO ROSSO (Luca, 6 ott 2026: "in generale"). Lo stato rispetto a un
+     bersaglio e l'unico posto dove la casa usa la coppia verde/rosso: accanto restano sempre la
+     freccia o il segno, per chi non distingue i due colori. */
+  t.ok = COL.aggiusta('#1E8449', card, 4.5);
+  t.ko = COL.aggiusta('#C0392B', card, 4.5);
   t.amber = COL.aggiusta(COL.STATI.attenzione, card, 4.5);
 
   /* La scala categoriale: scelta da una base misurata e verificata, mai inventata. */
@@ -471,18 +476,21 @@ function famigliaBrand(colori, opz) {
   /* La scala si completa da una base misurata: due colori di marca non fanno una scala
      categoriale, e inventare le voci mancanti attorno alla tinta del cliente e il modo piu
      rapido di ritrovarsi due categorie indistinguibili. */
-  const completa = COL.serieCVD(BASI[opz.base || 'okabe'], card, 6, { minimo: 3 });
   const serie = validati.slice(0, 3);
-  completa.forEach(c => {
-    if (serie.length >= 6) return;
-    /* si aggiunge solo cio che resta distinguibile da tutto il resto */
-    if (serie.every(s => COL.separati(s, c).ok)) serie.push(c);
+  /* si completa da piu basi sicure, finche la scala arriva a sei: con una sola base un marchio
+     scuro lasciava cinque colori, e un report con sei valute veniva rifiutato (Luca, 6 ott 2026) */
+  [opz.base || 'okabe', 'tolBright', 'tolMuted', 'dark2', 'paired', 'tolLight'].filter((b, i, a) => BASI[b] && a.indexOf(b) === i).forEach(b => {
+    COL.serieCVD(BASI[b], card, 6, { minimo: 3 }).forEach(c => {
+      if (serie.length >= 6) return;
+      /* si aggiunge solo cio che resta distinguibile da tutto il resto */
+      if (serie.every(s => COL.separati(s, c).ok)) serie.push(c);
+    });
   });
 
   const f = { etichetta: 'brand del cliente', scuro, radius: '3px', base: 'okabe',
     sequenziale: 'viridis', canvas, card, ink, rail };
   FAMIGLIE.__brand = f;
-  const tokens = palette('__brand');
+  const tokens = calcolaPalette('__brand');   /* mai dalla memoria: due marchi avrebbero gli stessi token */
   delete FAMIGLIE.__brand;
   serie.forEach((c, i) => { tokens['c' + (i + 1)] = c; });
   for (let k = serie.length; k < 6; k++) tokens['c' + (k + 1)] = serie[k % serie.length];
@@ -504,7 +512,21 @@ function pelleDi(spec) {
   return {
     id: s,
     shell: Object.assign({ id: s.shell }, SHELLS[s.shell]),
-    tokens: palette(s.palette),
+    /* I COLORI UFFICIALI DEL CLIENTE (Luca, 6 ott 2026: "il layout andrebbe adattato ai colori
+       ufficiali della banca"). `skin.brand` e l'elenco degli esadecimali del marchio, dal piu
+       importante: la cornice nasce dal primo, la scala dei membri parte dai loro e si completa con
+       colori sicuri; quelli che non reggono il contrasto si correggono (famigliaBrand). */
+    tokens: Array.isArray(s.brand) && s.brand.length ? (() => {
+      /* IL LAYOUT PRENDE I COLORI DEL CLIENTE, I DATI NO. Con i vincoli di distinguibilita (anche per
+         chi non vede bene i colori) un marchio lascia quattro o cinque tinte, non sei: forzare la
+         scala dei membri sul marchio rendeva illeggibile un report con sei valute. Quindi la
+         cornice — rail, intestazione attiva, etichette della rail — nasce dal marchio, la scala dei
+         dati resta quella verificata della palette. */
+      const tk = palette(s.palette), br = famigliaBrand(s.brand, { scuro: !!FAMIGLIE[s.palette].scuro }).tokens;
+      ['rail', 'railInk', 'flabRail', 'chrome', 'chromeInk'].forEach(k => { if (br[k]) tk[k] = br[k]; });
+      tk.brand = s.brand[0];
+      return tk;
+    })() : palette(s.palette),
     tipo: Object.assign({ id: s.tipografia }, TIPOGRAFIE[s.tipografia]),
     densita: Object.assign({ id: s.densita }, DENSITA[s.densita]),
     banda: Object.assign({ id: s.banda || 'box' }, BANDE[s.banda || 'box'])

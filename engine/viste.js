@@ -113,11 +113,13 @@ function valida(spec) {
        misura, oppure la dimensione. Due viste che non condividono nulla sono due grafici
        diversi messi nello stesso posto per far quadrare la pagina. */
     if (v.viste.length > 1 && v.motivo !== 'pagina-sprecata') {
-      const mis = vi => (vi.bind || {}).measure;
+      /* le misure di una vista: quella del bind e, per una matrice, quelle delle colonne — due
+         tabelle per valuta e per paese con le stesse colonne guardano la stessa domanda (Luca) */
+      const mis = vi => { const b = vi.bind || {}; return [b.measure].concat((b.columns || []).map(c => c.measure)).filter(Boolean); };
       const dim = vi => (vi.bind || {}).dim;
       const m0 = mis(v.viste[0]), d0 = dim(v.viste[0]);
       const legate = v.viste.slice(1).every(vi =>
-        (m0 !== undefined && mis(vi) === m0) || (d0 !== undefined && dim(vi) === d0));
+        mis(vi).some(x => m0.indexOf(x) >= 0) || (d0 !== undefined && dim(vi) === d0));
       if (!legate) {
         e.push(dove + ': le viste non condividono ne la misura ne la dimensione, quindi non sono ' +
           'due modi di guardare la stessa domanda. Se il motivo vero e "non ci stava", si ' +

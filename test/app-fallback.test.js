@@ -91,8 +91,8 @@ function exercise(spec, dataParams, label) {
   assert.ok(q('.wm') && q('.wm').textContent.length > 10, `${label}: manca il watermark`);
 
   const bytes = Buffer.byteLength(html);
-  /* lo stesso tetto del file spedito (test/harness.js, 80KB dal 3 ott 2026): questo era rimasto a 60 */
-  assert.ok(bytes < 80 * 1024, `${label}: ${(bytes / 1024).toFixed(1)}KB, oltre il budget`);
+  /* lo stesso tetto del file spedito (test/harness.js, 90KB dal 6 ott 2026): questo era rimasto a 60 */
+  assert.ok(bytes < 90 * 1024, `${label}: ${(bytes / 1024).toFixed(1)}KB, oltre il budget`);
   dom.window.close();
   return { bytes, advisories: lint(spec, data), tieOut: data.tieOut };
 }

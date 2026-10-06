@@ -108,7 +108,8 @@ const spec = {
       { id: 'impr', label: 'Impression', agg: 'sum', field: 'impr', unit: 'count', format: 'N' },
       { id: 'eng', label: 'Interazioni', agg: 'sum', field: 'eng', unit: 'count', format: 'N' },
       { id: 'spend', label: 'Spesa paid', agg: 'sum', field: 'spend', unit: 'money', format: 'eur' },
-      { id: 'folNew', label: 'Nuovi follower', agg: 'sum', field: 'folNew', unit: 'count', format: 'N' },
+      /* un saldo (nuovi meno persi), non un conteggio: Facebook perde follower, ed e la storia */
+      { id: 'folNew', label: 'Follower netti', agg: 'sum', field: 'folNew', unit: 'count', format: 'N', signed: true },
       { id: 'clicks', label: 'Click', agg: 'sum', field: 'clicks', unit: 'count', format: 'N' },
       { id: 'paidImpr', label: 'Impression paid', agg: 'sum', field: 'paidImpr', unit: 'count', format: 'N' },
       { id: 'er', label: 'Engagement rate', agg: 'ratio', num: 'eng', den: 'impr', unit: 'pct', format: 'pc' },
@@ -127,7 +128,7 @@ const spec = {
   kpiBand: [
     { id: 'reach', label: 'Reach', measure: 'reach', span: 1 },
     { id: 'er', label: 'Engagement rate', measure: 'er', span: 1 },
-    { id: 'fol', label: 'Nuovi follower', measure: 'folNew', span: 1 },
+    { id: 'fol', label: 'Follower netti', measure: 'folNew', span: 1 },
     { id: 'post', label: 'Pubblicazioni', measure: 'post', span: 1 },
     { id: 'spend', label: 'Spesa paid', measure: 'spend', span: 1 }
   ],

@@ -142,6 +142,11 @@ export interface Palette {
  *  columns MUST equal kpiBand.length. */
 export interface Grid { contentWidth: number; gutter: number; columns: number; }
 
+/** Campi comuni a ogni misura: `target` (sopra verde, sotto rosso, o il contrario con inv),
+ *  `description` (cosa e, in parole per chi non sa nulla: va nella scheda "How to use"),
+ *  `signed` (un conteggio che puo essere negativo, un saldo: nuovi meno persi). */
+export interface MeasureCommon { target?: number; description?: string; signed?: boolean }
+
 export type Measure =
   | { id: string; label?: string; agg: 'sum'; field?: string; unit: Unit; format?: Format; inv?: boolean }
   | { id: string; label?: string; agg: 'diff'; a: string; b: string; unit: Unit; format?: Format; inv?: boolean }
@@ -433,6 +438,8 @@ export interface FactsSpec {
    *  regione x segmento cliente. Celle: membri(dim) x membri(split) <= 60 per ogni split, e il
    *  prodotto di tutti <= 120. */
   split?: SplitSpec | [SplitSpec, SplitSpec];
+  /** parti di un intero che sommano l'intero in ogni riga: [{ of: "late", parts: ["cClient", ...] }] */
+  parts?: Array<{ of: string; parts: string[] }>;
   /** fields[0] must be the primary measure, kind:'seasonal' */
   fields: NonEmpty<FieldSpec>;
 }

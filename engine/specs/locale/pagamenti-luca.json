@@ -24,8 +24,9 @@
     "Dec"
    ],
    "updated": "Data as of Dec 31, 2025",
-   "source": "Source: payment hub and SWIFT gateway",
-   "watermark": "Demo mockup · synthetic data"
+   "source": "Source: payment hub and SWIFT gateway · cut-offs in CET",
+   "watermark": "Demo mockup · synthetic data",
+   "varianze": "finanza"
   },
   "aesthetic": "corporate-sober",
   "skin": {
@@ -58,6 +59,7 @@
     "vdb",
     "cost",
     "queueN",
+    "queueVal",
     "riskN",
     "riskVal"
    ],
@@ -68,7 +70,8 @@
      "agg": "sum",
      "field": "payments",
      "unit": "count",
-     "format": "N"
+     "format": "N",
+     "description": "Every outgoing payment instructed in the period, whatever its status"
     },
     {
      "id": "value",
@@ -85,7 +88,8 @@
      "field": "late",
      "unit": "count",
      "format": "N",
-     "inv": true
+     "inv": true,
+     "description": "Payments executed after the cut-off of their currency, so they lose the requested value date"
     },
     {
      "id": "lateVal",
@@ -111,7 +115,20 @@
      "num": "ontime",
      "den": "payments",
      "unit": "pct",
-     "format": "pc"
+     "format": "pc",
+     "target": 0.98,
+     "description": "The share of payments executed before the cut-off of their currency (CHF 16:00, SEPA 14:00, other EUR 15:00, USD 18:00, GBP 16:15, JPY/HKD/SGD 16:00 the day before value date)"
+    },
+    {
+     "id": "lateRate",
+     "label": "Late %",
+     "agg": "ratio",
+     "num": "late",
+     "den": "payments",
+     "unit": "pct",
+     "format": "pc",
+     "inv": true,
+     "target": 0.02
     },
     {
      "id": "cClient",
@@ -227,7 +244,8 @@
      "num": "stpN",
      "den": "payments",
      "unit": "pct",
-     "format": "pc"
+     "format": "pc",
+     "target": 0.95
     },
     {
      "id": "vdb",
@@ -245,19 +263,28 @@
      "field": "cost",
      "unit": "money",
      "format": "eur",
-     "inv": true
+     "inv": true,
+     "description": "Interest compensation paid to clients and fees for payments that missed their value date"
     },
     {
      "id": "queueN",
-     "label": "In queue",
+     "label": "Payments in queue",
      "agg": "last",
      "field": "queueN",
      "unit": "count",
      "format": "N"
     },
     {
+     "id": "queueVal",
+     "label": "Value in queue",
+     "agg": "last",
+     "field": "queueVal",
+     "unit": "money",
+     "format": "eur"
+    },
+    {
      "id": "riskN",
-     "label": "At risk (<30 min)",
+     "label": "Payments at risk",
      "agg": "last",
      "field": "riskN",
      "unit": "count",
@@ -271,7 +298,8 @@
      "field": "riskVal",
      "unit": "money",
      "format": "eur",
-     "inv": true
+     "inv": true,
+     "description": "The value of payments still waiting in the queue with less than 30 minutes left before the cut-off of their currency, on the last day of the period"
     }
    ]
   },
@@ -297,11 +325,11 @@
      "pill": "Currency"
     },
     {
-     "id": "chan",
-     "label": "Channel",
+     "id": "div",
+     "label": "Division",
      "control": "dropdown",
-     "allLabel": "All channels",
-     "pill": "Channel"
+     "allLabel": "All divisions",
+     "pill": "Division"
     },
     {
      "id": "ptype",
@@ -315,7 +343,7 @@
   "kpiBand": [
    {
     "id": "comp",
-    "label": "Cut-off compliance (target 98%)",
+    "label": "Cut-off compliance",
     "measure": "comp",
     "span": 1
    },
@@ -324,14 +352,16 @@
     "label": "Late payments",
     "measure": "late",
     "span": 1,
-    "inv": true
+    "inv": true,
+    "of": "payments"
    },
    {
     "id": "riskVal",
     "label": "Value at risk in queue",
     "measure": "riskVal",
     "span": 1,
-    "inv": true
+    "inv": true,
+    "of": "queueVal"
    },
    {
     "id": "cost",
@@ -345,7 +375,7 @@
    {
     "id": "monitor",
     "title": "Cut-off monitor",
-    "subtitle": "USD and other SWIFT currencies miss the cut-off most, and relationship-manager payments are the weakest channel",
+    "subtitle": "Above target overall, but 1 USD payment in 25 and 1 JPY/HKD/SGD payment in 16 arrive late",
     "nav": "Cut-off monitor",
     "rows": [
      {
@@ -354,24 +384,24 @@
         "type": "heatmap",
         "span": 2,
         "h": 170,
-        "title": "Cut-off compliance by currency and channel · {period}",
-        "subtitle": "darker = better; click a row to filter the currency",
+        "title": "Cross-border currencies miss the cut-off in every division",
+        "subtitle": "cut-off compliance by currency and division · {period}",
         "bind": {
          "dim": "ccy",
          "measure": "comp",
-         "by": "chan"
+         "by": "div"
         }
        },
        {
         "type": "colline",
         "span": 2,
-        "title": "Late payments per month, {y} vs {py}, with compliance",
+        "h": 170,
+        "title": "Above the 98% target every month: the average hides the cross-border gap",
+        "subtitle": "payments per month, {y} vs {py}, with compliance against the 98% target",
         "bind": {
-         "measure": "late",
-         "line": "comp",
-         "target": 0.98
-        },
-        "h": 170
+         "measure": "payments",
+         "line": "comp"
+        }
        }
       ]
      },
@@ -379,67 +409,115 @@
       "flex": true,
       "visuals": [
        {
-        "type": "matrix",
+        "id": "queue",
         "span": 3,
-        "title": "Queue vs cut-off by currency · latest day of {period}",
-        "bind": {
-         "dim": "ccy",
-         "label": "Currency · cut-off",
-         "sort": "riskVal",
-         "drill": true,
-         "totalsLabel": "All currencies",
-         "columns": [
-          {
-           "measure": "queueN",
-           "label": "In queue"
-          },
-          {
-           "measure": "riskN",
-           "label": "At risk (<30 min)",
-           "inv": true
-          },
-          {
-           "measure": "riskVal",
-           "label": "Value at risk",
-           "inv": true
-          },
-          {
-           "measure": "comp",
-           "label": "Compliance",
-           "kind": "heat",
-           "scale": [
-            0.95,
-            0.995
+        "viste": [
+         {
+          "type": "matrix",
+          "etichetta": "By currency",
+          "title": "USD and JPY/HKD/SGD carry the late payments and the value at risk · {period}",
+          "bind": {
+           "dim": "ccy",
+           "label": "Currency · cut-off",
+           "sort": "payments",
+           "drill": true,
+           "totalsLabel": "All currencies",
+           "columns": [
+            {
+             "measure": "payments",
+             "label": "Payments"
+            },
+            {
+             "measure": "late",
+             "label": "Late",
+             "inv": true
+            },
+            {
+             "measure": "lateRate",
+             "label": "Late %"
+            },
+            {
+             "measure": "comp",
+             "label": "Compliance {basis}",
+             "kind": "var"
+            },
+            {
+             "measure": "riskN",
+             "label": "At risk (<30 min)",
+             "inv": true
+            },
+            {
+             "measure": "riskVal",
+             "label": "Value at risk",
+             "inv": true
+            },
+            {
+             "measure": "lateVal",
+             "label": "Late value",
+             "inv": true
+            }
            ]
-          },
-          {
-           "measure": "comp",
-           "label": "Compliance {basis}",
-           "kind": "var"
-          },
-          {
-           "measure": "late",
-           "label": "Late",
-           "inv": true
-          },
-          {
-           "measure": "lateVal",
-           "label": "Late value",
-           "inv": true
           }
-         ]
-        }
+         },
+         {
+          "type": "matrix",
+          "etichetta": "By destination country",
+          "title": "UAE and Hong Kong: 1 payment in 15 arrives late, half of them held by sanctions screening · {period}",
+          "bind": {
+           "dim": "country",
+           "label": "Destination country",
+           "sort": "value",
+           "drill": false,
+           "totalsLabel": "All countries",
+           "columns": [
+            {
+             "measure": "value",
+             "label": "Value sent"
+            },
+            {
+             "measure": "value",
+             "label": "Share",
+             "kind": "share"
+            },
+            {
+             "measure": "payments",
+             "label": "Payments"
+            },
+            {
+             "measure": "late",
+             "label": "Late",
+             "inv": true
+            },
+            {
+             "measure": "lateRate",
+             "label": "Late %"
+            },
+            {
+             "measure": "pSanct",
+             "label": "Late for sanctions hold",
+             "kind": "heat",
+             "scale": [
+              0.02,
+              0.4
+             ]
+            }
+           ]
+          }
+         }
+        ],
+        "motivo": "altro-taglio"
        },
        {
         "type": "hbar",
         "span": 1,
-        "title": "Value at risk in queue",
+        "h": 290,
+        "title": "USD: as many payments at risk as CHF, six times the value",
         "bind": {
          "dim": "ccy",
          "measure": "riskVal",
          "top": 6,
          "subMeasure": "riskN",
-         "subUnit": " at risk"
+         "subUnit": " payments"
         }
        }
       ]
@@ -448,8 +526,8 @@
    },
    {
     "id": "causes",
-    "title": "Trends and root causes",
-    "subtitle": "Why payments miss the cut-off, what it costs, and where STP breaks",
+    "title": "Root causes and STP",
+    "subtitle": "Private Banking and Wealth Management repair 1 payment in 10 by hand; Corporate and Treasury run straight through",
     "nav": "Root causes & STP",
     "rows": [
      {
@@ -458,10 +536,10 @@
         "type": "heatmap",
         "span": 2,
         "h": 170,
-        "title": "STP rate by channel and payment type · {period}",
-        "subtitle": "darker = better",
+        "title": "Payments from Private Banking and Wealth Management need the most manual repair",
+        "subtitle": "STP rate by division and payment type · {period}",
         "bind": {
-         "dim": "chan",
+         "dim": "div",
          "measure": "stpR",
          "by": "ptype"
         }
@@ -470,11 +548,11 @@
         "type": "hbar",
         "span": 1,
         "h": 170,
-        "title": "Manual repairs by channel",
+        "title": "Manual repairs by division",
         "bind": {
-         "dim": "chan",
+         "dim": "div",
          "measure": "manual",
-         "top": 4,
+         "top": 5,
          "subMeasure": "stpR",
          "subUnit": " STP"
         }
@@ -483,7 +561,7 @@
         "type": "hbar",
         "span": 1,
         "h": 170,
-        "title": "Cost of late payments by currency",
+        "title": "USD late payments cost the most",
         "bind": {
          "dim": "ccy",
          "measure": "cost",
@@ -500,7 +578,7 @@
        {
         "type": "matrix",
         "span": 4,
-        "title": "Root cause of late payments by currency · {period}",
+        "title": "CHF and EUR are late because clients instruct late; USD because of sanctions holds · {period}",
         "bind": {
          "dim": "ccy",
          "label": "Currency",
@@ -509,9 +587,17 @@
          "totalsLabel": "All currencies",
          "columns": [
           {
+           "measure": "payments",
+           "label": "Payments"
+          },
+          {
            "measure": "late",
            "label": "Late",
            "inv": true
+          },
+          {
+           "measure": "lateRate",
+           "label": "Late %"
           },
           {
            "measure": "pClient",
@@ -519,7 +605,7 @@
            "kind": "heat",
            "scale": [
             0.1,
-            0.5
+            0.6
            ]
           },
           {
@@ -537,7 +623,7 @@
            "kind": "heat",
            "scale": [
             0.02,
-            0.3
+            0.35
            ]
           },
           {
@@ -559,11 +645,6 @@
            ]
           },
           {
-           "measure": "vdb",
-           "label": "Value date breaches",
-           "inv": true
-          },
-          {
            "measure": "cost",
            "label": "Cost",
            "inv": true
@@ -583,7 +664,7 @@
     "title": "{drill}",
     "drillHeader": "{period} · {basis}",
     "backLabel": "Back to all currencies",
-    "subtitle": "Late payments, compliance and STP by channel for this currency",
+    "subtitle": "Late payments, compliance and STP by division for this currency",
     "rows": [
      {
       "flex": true,
@@ -592,25 +673,23 @@
         "type": "colline",
         "span": 2,
         "h": 300,
-        "title": "Late payments per month with compliance",
+        "title": "Payments per month with cut-off compliance",
         "bind": {
-         "measure": "late",
-         "line": "comp",
-         "target": 0.98
+         "measure": "payments",
+         "line": "comp"
         }
        },
        {
         "type": "hbar",
         "span": 2,
         "h": 300,
-        "title": "STP by channel, weakest first",
+        "title": "Late % by division, worst first",
         "bind": {
-         "dim": "chan",
-         "measure": "stpR",
-         "order": "asc",
-         "top": 4,
-         "subMeasure": "manual",
-         "subUnit": " repairs"
+         "dim": "div",
+         "measure": "lateRate",
+         "top": 5,
+         "subMeasure": "late",
+         "subUnit": " late"
         }
        }
       ]
@@ -620,7 +699,7 @@
   }
  },
  "dataParams": {
-  "seed": 41207,
+  "seed": 61207,
   "years": [
    2024,
    2025
@@ -641,22 +720,26 @@
   ],
   "dims": {
    "ccy": {
+    "parentDim": "ptype",
     "members": [
      {
       "id": "chf",
-      "n": "CHF · SIC · 16:15",
+      "n": "CHF · SIC · 16:00",
+      "parent": "dom",
       "base": 52000,
       "growth": 0.04,
       "mix": {
-       "ptype": {
-        "dom": 1
+       "country": {
+        "ch": 0.94,
+        "de": 0.03,
+        "li": 0.03
        }
       },
       "attrs": {
        "avg": 18500,
        "lateR": [
-        0.014,
-        0.0078
+        0.012,
+        0.0085
        ],
        "pC": 0.52,
        "pR": 0.22,
@@ -666,193 +749,168 @@
        "vdb": 0.35,
        "cpb": 240,
        "q": 0.012,
-       "risk": 0.18
+       "risk": 0.18,
+       "pY": 0.06
       }
      },
      {
       "id": "sepa",
-      "n": "EUR · SEPA · 15:00",
+      "n": "EUR · SEPA · 14:00",
+      "parent": "eur",
       "base": 31000,
       "growth": 0.06,
       "mix": {
-       "ptype": {
-        "eur": 1
+       "country": {
+        "de": 0.36,
+        "fr": 0.22,
+        "it": 0.2,
+        "at": 0.12,
+        "nl": 0.1
        }
       },
       "attrs": {
        "avg": 9200,
        "lateR": [
-        0.017,
-        0.0095
+        0.018,
+        0.0125
        ],
-       "pC": 0.48,
-       "pR": 0.25,
-       "pS": 0.04,
+       "pC": 0.55,
+       "pR": 0.22,
+       "pS": 0.03,
        "pF": 0.12,
        "rep": 0.042,
        "vdb": 0.3,
        "cpb": 160,
        "q": 0.014,
-       "risk": 0.2
+       "risk": 0.22,
+       "pY": 0.06
       }
      },
      {
-      "id": "esic",
-      "n": "EUR · euroSIC · 16:00",
+      "id": "eur",
+      "n": "EUR · other · 15:00",
+      "parent": "eur",
       "base": 7800,
       "growth": 0.02,
       "mix": {
-       "ptype": {
-        "eur": 1
+       "country": {
+        "de": 0.3,
+        "fr": 0.25,
+        "it": 0.2,
+        "ch": 0.15,
+        "ae": 0.1
        }
       },
       "attrs": {
        "avg": 64000,
        "lateR": [
-        0.018,
-        0.0115
+        0.017,
+        0.013
        ],
-       "pC": 0.44,
+       "pC": 0.42,
        "pR": 0.27,
-       "pS": 0.05,
+       "pS": 0.08,
        "pF": 0.13,
        "rep": 0.05,
        "vdb": 0.42,
        "cpb": 520,
        "q": 0.016,
-       "risk": 0.22
+       "risk": 0.22,
+       "pY": 0.06
       }
      },
      {
       "id": "usd",
-      "n": "USD · SWIFT · 17:00",
+      "n": "USD · 18:00",
+      "parent": "xb",
       "base": 9400,
       "growth": 0.08,
       "mix": {
-       "ptype": {
-        "xb": 1
+       "country": {
+        "us": 0.66,
+        "ae": 0.12,
+        "sg": 0.1,
+        "hk": 0.07,
+        "uk": 0.05
        }
       },
       "attrs": {
        "avg": 142000,
        "lateR": [
-        0.03,
-        0.035
+        0.028,
+        0.031
        ],
-       "pC": 0.28,
-       "pR": 0.27,
-       "pS": 0.27,
+       "pC": 0.24,
+       "pR": 0.3,
+       "pS": 0.28,
        "pF": 0.08,
        "rep": 0.11,
        "vdb": 0.55,
        "cpb": 1450,
        "q": 0.03,
-       "risk": 0.34
+       "risk": 0.34,
+       "pY": 0.06
       }
      },
      {
       "id": "gbp",
-      "n": "GBP · SWIFT · 15:30",
+      "n": "GBP · 16:15",
+      "parent": "xb",
       "base": 4100,
       "growth": 0.03,
       "mix": {
-       "ptype": {
-        "xb": 1
+       "country": {
+        "uk": 0.95,
+        "ae": 0.05
        }
       },
       "attrs": {
        "avg": 96000,
        "lateR": [
-        0.026,
-        0.021
+        0.022,
+        0.019
        ],
-       "pC": 0.36,
+       "pC": 0.38,
        "pR": 0.3,
-       "pS": 0.12,
+       "pS": 0.1,
        "pF": 0.1,
        "rep": 0.085,
        "vdb": 0.48,
        "cpb": 980,
        "q": 0.022,
-       "risk": 0.27
+       "risk": 0.27,
+       "pY": 0.06
       }
      },
      {
-      "id": "oth",
-      "n": "Other · SWIFT · 12:00",
+      "id": "apac",
+      "n": "JPY · HKD · SGD · 16:00 D-1",
+      "parent": "xb",
       "base": 2900,
-      "growth": 0.05,
+      "growth": 0.09,
       "mix": {
-       "ptype": {
-        "xb": 1
+       "country": {
+        "jp": 0.35,
+        "sg": 0.33,
+        "hk": 0.32
        }
       },
       "attrs": {
        "avg": 71000,
        "lateR": [
-        0.043,
-        0.048
+        0.046,
+        0.052
        ],
-       "pC": 0.24,
-       "pR": 0.31,
-       "pS": 0.24,
-       "pF": 0.07,
-       "rep": 0.14,
+       "pC": 0.58,
+       "pR": 0.18,
+       "pS": 0.12,
+       "pF": 0.06,
+       "rep": 0.12,
        "vdb": 0.6,
        "cpb": 1100,
        "q": 0.035,
-       "risk": 0.4
-      }
-     }
-    ]
-   },
-   "chan": {
-    "members": [
-     {
-      "id": "eb",
-      "n": "E-banking",
-      "base": 1,
-      "attrs": {
-       "lateM": 1.12,
-       "repM": 0.7
-      }
-     },
-     {
-      "id": "rm",
-      "n": "Relationship manager",
-      "base": 1,
-      "attrs": {
-       "lateM": 1.45,
-       "repM": 2.6
-      }
-     },
-     {
-      "id": "mt",
-      "n": "SWIFT MT",
-      "base": 1,
-      "growth": -0.12,
-      "attrs": {
-       "lateM": [
-        0.85,
-        0.95
-       ],
-       "repM": [
-        1.3,
-        1.55
-       ]
-      }
-     },
-     {
-      "id": "iso",
-      "n": "ISO 20022",
-      "base": 1,
-      "growth": 0.25,
-      "attrs": {
-       "lateM": 0.62,
-       "repM": [
-        0.5,
-        0.4
-       ]
+       "risk": 0.4,
+       "pY": 0.06
       }
      }
     ]
@@ -861,18 +919,176 @@
     "members": [
      {
       "id": "dom",
-      "n": "Domestic CHF",
-      "base": 1
+      "n": "Domestic CHF"
      },
      {
       "id": "eur",
-      "n": "EUR (SEPA / euroSIC)",
-      "base": 1
+      "n": "EUR (SEPA and other)"
      },
      {
       "id": "xb",
-      "n": "Cross-border SWIFT",
-      "base": 1
+      "n": "Cross-border"
+     }
+    ]
+   },
+   "div": {
+    "members": [
+     {
+      "id": "pb",
+      "n": "Private Banking",
+      "base": 1,
+      "attrs": {
+       "lateM": 1.35,
+       "repM": 2.1
+      }
+     },
+     {
+      "id": "wm",
+      "n": "Wealth Management",
+      "base": 1,
+      "attrs": {
+       "lateM": 1.2,
+       "repM": 1.6
+      }
+     },
+     {
+      "id": "ci",
+      "n": "Corporate & Institutional",
+      "base": 1,
+      "growth": 0.06,
+      "attrs": {
+       "lateM": 0.7,
+       "repM": [
+        0.6,
+        0.45
+       ]
+      }
+     },
+     {
+      "id": "rs",
+      "n": "Retail & SME",
+      "base": 1,
+      "attrs": {
+       "lateM": 0.95,
+       "repM": 0.8
+      }
+     },
+     {
+      "id": "tm",
+      "n": "Treasury & Markets",
+      "base": 1,
+      "attrs": {
+       "lateM": 0.6,
+       "repM": 0.35
+      }
+     }
+    ]
+   },
+   "country": {
+    "members": [
+     {
+      "id": "ch",
+      "n": "Switzerland",
+      "base": 1,
+      "attrs": {
+       "sM": 0.8
+      }
+     },
+     {
+      "id": "li",
+      "n": "Liechtenstein",
+      "base": 1,
+      "attrs": {
+       "sM": 0.9
+      }
+     },
+     {
+      "id": "de",
+      "n": "Germany",
+      "base": 1,
+      "attrs": {
+       "sM": 0.9
+      }
+     },
+     {
+      "id": "fr",
+      "n": "France",
+      "base": 1,
+      "attrs": {
+       "sM": 0.9
+      }
+     },
+     {
+      "id": "it",
+      "n": "Italy",
+      "base": 1,
+      "attrs": {
+       "sM": 1.05
+      }
+     },
+     {
+      "id": "at",
+      "n": "Austria",
+      "base": 1,
+      "attrs": {
+       "sM": 0.9
+      }
+     },
+     {
+      "id": "nl",
+      "n": "Netherlands",
+      "base": 1,
+      "attrs": {
+       "sM": 0.9
+      }
+     },
+     {
+      "id": "uk",
+      "n": "United Kingdom",
+      "base": 1,
+      "attrs": {
+       "sM": 1.0
+      }
+     },
+     {
+      "id": "us",
+      "n": "United States",
+      "base": 1,
+      "attrs": {
+       "sM": 1.0
+      }
+     },
+     {
+      "id": "ae",
+      "n": "United Arab Emirates",
+      "base": 1,
+      "attrs": {
+       "sM": 2.6
+      }
+     },
+     {
+      "id": "sg",
+      "n": "Singapore",
+      "base": 1,
+      "attrs": {
+       "sM": 1.1
+      }
+     },
+     {
+      "id": "hk",
+      "n": "Hong Kong",
+      "base": 1,
+      "attrs": {
+       "sM": 1.6
+      }
+     },
+     {
+      "id": "jp",
+      "n": "Japan",
+      "base": 1,
+      "attrs": {
+       "sM": 0.9
+      }
      }
     ]
    }
@@ -881,20 +1097,31 @@
    "dim": "ccy",
    "split": [
     {
-     "dim": "chan",
+     "dim": "div",
      "shares": [
-      0.46,
-      0.12,
+      0.26,
+      0.22,
       0.24,
-      0.18
+      0.18,
+      0.1
      ]
     },
     {
-     "dim": "ptype",
+     "dim": "country",
      "shares": [
-      0.48,
       0.36,
-      0.16
+      0.02,
+      0.12,
+      0.08,
+      0.07,
+      0.04,
+      0.03,
+      0.06,
+      0.08,
+      0.04,
+      0.04,
+      0.03,
+      0.03
      ]
     }
    ],
@@ -926,10 +1153,16 @@
       0.8,
       1.25
      ],
-     "mod": {
-      "from": "chan",
-      "attr": "lateM"
-     }
+     "mod": [
+      {
+       "from": "div",
+       "attr": "lateM"
+      },
+      {
+       "from": "country",
+       "attr": "sM"
+      }
+     ]
     },
     {
      "id": "lateVal",
@@ -971,10 +1204,9 @@
       1.15
      ],
      "mod": {
-      "from": "chan",
+      "from": "div",
       "attr": "repM"
-     },
-     "cap": 0.6
+     }
     },
     {
      "id": "cSanct",
@@ -984,7 +1216,11 @@
      "jitter": [
       0.8,
       1.2
-     ]
+     ],
+     "mod": {
+      "from": "country",
+      "attr": "sM"
+     }
     },
     {
      "id": "cFunds",
@@ -998,15 +1234,12 @@
     },
     {
      "id": "cSystem",
-     "kind": "combine",
-     "plus": [
-      "late"
-     ],
-     "minus": [
-      "cClient",
-      "cRepair",
-      "cSanct",
-      "cFunds"
+     "kind": "share",
+     "of": "late",
+     "attr": "pY",
+     "jitter": [
+      0.7,
+      1.3
      ]
     },
     {
@@ -1019,7 +1252,7 @@
       1.1
      ],
      "mod": {
-      "from": "chan",
+      "from": "div",
       "attr": "repM"
      }
     },
@@ -1064,6 +1297,16 @@
      ]
     },
     {
+     "id": "queueVal",
+     "kind": "share",
+     "of": "queueN",
+     "attr": "avg",
+     "jitter": [
+      0.8,
+      1.25
+     ]
+    },
+    {
      "id": "riskN",
      "kind": "share",
      "of": "queueN",
@@ -1081,6 +1324,18 @@
      "jitter": [
       0.7,
       1.4
+     ]
+    }
+   ],
+   "parts": [
+    {
+     "of": "late",
+     "parts": [
+      "cClient",
+      "cRepair",
+      "cSanct",
+      "cFunds",
+      "cSystem"
      ]
     }
    ]

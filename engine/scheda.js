@@ -38,6 +38,13 @@ const T = {
     titolo: 'Come si usa questo mockup',
     intro: 'Non e un\'immagine: e un report vero, con i dati sintetici. Tutto quello che segue funziona.',
     filtri: 'Filtri',
+    kpi: 'Come si calcolano i KPI',
+    kpiIntro: 'Ogni numero della fascia in alto, spiegato senza dare nulla per scontato.',
+    formula: { sum: a => 'somma di ' + a, ratio: (a, b) => a + ' diviso ' + b,
+      diff: (a, b) => a + ' meno ' + b, last: a => a + ' alla fine del periodo' },
+    calcolo: 'Calcolo', target: 'Obiettivo', sopraOk: 'sopra l\u2019obiettivo e verde, sotto e rosso',
+    sottoOk: 'sotto l\u2019obiettivo e verde, sopra e rosso', base: q => 'si legge insieme al totale: ' + q,
+    confronto: 'Il confronto e col periodo precedente (stesso periodo dell\u2019anno prima, o mese prima se scegli un mese).',
     periodo: 'Periodo',
     periodoTxt: (liv, anni) => 'In alto il selettore del periodo: ' + liv +
       '. Anni disponibili: ' + anni.join(', ') + '.',
@@ -77,6 +84,13 @@ const T = {
     titolo: 'How to use this mockup',
     intro: 'This is not a picture: it is a working report on synthetic data. Everything below works.',
     filtri: 'Filters',
+    kpi: 'How the KPIs are calculated',
+    kpiIntro: 'Every figure in the top band, explained without assuming anything.',
+    formula: { sum: a => 'total of ' + a, ratio: (a, b) => a + ' divided by ' + b,
+      diff: (a, b) => a + ' minus ' + b, last: a => a + ' at the end of the period' },
+    calcolo: 'Calculation', target: 'Target', sopraOk: 'above target is green, below is red',
+    sottoOk: 'below target is green, above is red', base: q => 'read it together with the total: ' + q,
+    confronto: 'Each card compares with the same period a year earlier, or with the previous month when you pick a month.',
     periodo: 'Period',
     periodoTxt: (liv, anni) => 'The period selector sits at the top: ' + liv +
       '. Years available: ' + anni.join(', ') + '.',
@@ -213,6 +227,38 @@ function testo(spec, data) {
   };
   const s = [];
   s.push('# ' + L.titolo, '', L.intro, '');
+
+  /* COME SI CALCOLANO I KPI (Luca, 6 ott 2026: "in how to use this mockup meglio inserire come i
+     kpi vengono calcolati, fai finta che chi stia guardando il report non sappia nulla"). Per ogni
+     card: cosa e (`description` della misura, se c'e), come si calcola in parole, l'obiettivo e da
+     che parte e buono, e su quale totale si legge. */
+  const mis = {};
+  ((spec.model && spec.model.measures) || []).forEach(m => { mis[m.id] = m; });
+  const nome = id => (mis[id] && mis[id].label) || id;
+  const formula = id => {
+    const m = mis[id];
+    if (!m) return L.formula.sum(id);
+    if (m.agg === 'ratio') return L.formula.ratio(nome(m.num), nome(m.den));
+    if (m.agg === 'diff') return L.formula.diff(nome(m.a), nome(m.b));
+    if (m.agg === 'last') return L.formula.last(nome(m.field || id));
+    return L.formula.sum(nome(m.field || id));
+  };
+  if ((spec.kpiBand || []).length && L.kpi) {
+    s.push('## ' + L.kpi, '');
+    spec.kpiBand.forEach(k => {
+      const m = mis[k.measure] || {};
+      const pezzi = [];
+      if (m.description) pezzi.push(m.description.replace(/\.?$/, '.'));
+      pezzi.push(L.calcolo + ': ' + formula(k.measure) + '.');
+      if (typeof m.target === 'number') {
+        const pct = m.unit === 'pct' || m.format === 'pc';
+        pezzi.push(L.target + ': ' + (pct ? (Math.round(m.target * 1000) / 10) + '%' : m.target) + ' — ' + (m.inv ? L.sottoOk : L.sopraOk) + '.');
+      }
+      if (k.of) pezzi.push(L.base(nome(k.of)) + '.');
+      s.push('- **' + k.label + '** — ' + pezzi.join(' '));
+    });
+    s.push('', L.confronto, '');
+  }
 
   s.push('## ' + L.filtri, '');
   const LV = LIVELLI[lingua(spec)];

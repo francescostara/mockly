@@ -568,6 +568,19 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       return A.agg(A.slice(Object.assign(o, { y: S.y - 1, months: A.QMON(S.q) })));
     };
     A.meas = id => MEASBY[id] || { id: id, format: 'N', label: id };
+    A.statoT = () => '';   /* senza target nella spec: nessuno stato (il codice vero sta in #tgt) */
+    /*#tgt*/
+    /* lo stato di un valore rispetto al target della sua misura: 'tok' sopra (o sotto, per una
+       misura dove meno e meglio), 'tko' dall'altra parte, '' senza target */
+    A.statoT = function (ms, v) {
+      var m = A.meas(ms);
+      if (typeof m.target !== 'number' || !isFinite(v)) return '';
+      /* si giudica il numero che il lettore vede: 97,96% si legge "98,0%", e in rosso accanto a un
+         target del 98% sembrava un errore (gate test/lettura.test.js) */
+      if (m.format === 'pc') v = Math.round(v * 1000) / 1000;
+      return (m.inv ? v <= m.target : v >= m.target) ? 'tok' : 'tko';
+    };
+    /*#/tgt*/
     A.mv = (id, a) => a[id] || 0;
     A.mfmt = function (id, v) { var m = A.meas(id); return f.apply(m.format || 'N', v); };
     A.delta = (c, p) => (p && isFinite(p) && Math.abs(p) > 1e-9) ? (c - p) / Math.abs(p) : 0;
@@ -673,7 +686,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       }
       var kb = (SPEC.__pelle || {}).banda === 'blocco';
       var geo = kb ? 'flex:' + (k.span || 1) + ' 1 0;min-width:0' : 'width:' + g.span(k.span || 1) + 'px';
-      return '<div class="card kpi" style="' + geo + '"><div><div class="k">' + M.esc(k.label) + '</div><div class="vr"><div class="v tnum">' +
+      return '<div class="card kpi" style="' + geo + '"><div><div class="k">' + M.esc(k.label) + '</div><div class="vr"><div class="v tnum ' + A.statoT(ms, cv) + '">' +
         (A.definita(ms, c) ? A.mfmt(ms, cv) : '—') + '</div></div></div>' + html + '</div>';
     };
     /*#/fin*/
@@ -700,9 +713,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var geo = kb ? 'flex:' + (k.span || 1) + ' 1 0;min-width:0' : 'width:' + g.span(k.span || 1) + 'px';
       return '<div class="card kpi" style="' + geo + '">' +
         '<div><div class="k">' + M.esc(k.label) + '</div><div class="vr">' +
-        '<div class="v tnum">' + (defin ? A.mfmt(k.measure, cv) : '—') + '</div>' +
+        '<div class="v tnum ' + A.statoT(k.measure, cv) + '">' + (defin ? A.mfmt(k.measure, cv) : '—') + '</div>' +
         '<div class="d ' + cls + ' tnum">' + (ar ? ar + ' ' : '') + ent + (ent === '—' || nuova ? '' : ' ' + A.basis()) + '</div></div></div>' +
-        '<div class="det tnum">' + A.detail(k, cv, pv) + '</div></div>';
+        '<div class="det tnum">' + (k.of ? A.base(k, c, p) : A.detail(k, cv, pv)) + A.tgt(k.measure, cv) + '</div></div>';
     };
     /* Riga descrittore: nomina i due periodi confrontati invece di abbreviarli.
        "AP"/"AC" (o "PY"/"CY") li capisce chi ha scritto il report, non il cliente che lo
@@ -716,6 +729,23 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var q = S.q !== null ? 'Q' + (S.q + 1) + ' ' : '', n = A.ampiezza();
       return { prev: q + A.annoLabel(S.y - n, S.y0 - n), cur: q + A.annoLabel() };
     };
+    A.tgt = () => '';
+    /*#tgt*/
+    /* UN CONTEGGIO NON SI LEGGE DA SOLO (Luca, 6 ott 2026: "late payments da solo non ha senso, devi
+       sempre confrontare a quanti non sono late"): con `of` la card dice su quanti e che quota, e la
+       quota dell'anno prima */
+    A.base = function (k, c, p) {
+      var b = A.mv(k.of, c), q = b ? A.mv(k.measure, c) / b : 0, bp = A.mv(k.of, p), qp = bp ? A.mv(k.measure, p) / bp : null;
+      return (T.of || 'su') + ' ' + A.mfmt(k.of, b) + ' ' + M.esc((A.meas(k.of).label || '').toLowerCase()) + ' · <b>' + f.pc(q) + '</b>' +
+        (qp !== null ? ' · ' + A.periodPair().prev + ' ' + f.pc(qp) : '');
+    };
+    /* il target accanto al valore, col verso */
+    A.tgt = function (ms, v) {
+      var m = A.meas(ms), st = A.statoT(ms, v);
+      if (!st) return '';
+      return ' · <span class="' + st + '">' + (st === 'tok' ? '▲ ' : '▼ ') + (T.target || 'target') + ' ' + A.mfmt(ms, m.target) + '</span>';
+    };
+    /*#/tgt*/
     A.detail = function (k, cv, pv) {
       var p = A.periodPair();
       var varTxt = (A.meas(k.measure).format === 'pc')
@@ -1518,7 +1548,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         ' data-tip="<b>' + M.esc(d.l) + '</b><br>' + val + (d.sub ? '<br>' + M.esc(d.sub) : '') + '">' +
         '<rect x="0" y="' + top.toFixed(1) + '" width="' + w + '" height="' + rh.toFixed(1) + '" fill="transparent"/>' +
         '<text x="' + x0 + '" y="' + (top + lblH - 2).toFixed(1) + '" font-size="9.5" fill="var(--ink2)">' + M.esc(nm) + '</text>' +
-        '<rect class="barra" x="' + x0 + '" y="' + yb.toFixed(1) + '" width="' + bl.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="1.5" fill="' + (d.c || 'var(--c1)') + '"/>' +
+        '<rect class="barra" x="' + x0 + '" y="' + yb.toFixed(1) + '" width="' + bl.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="1.5" fill="' + (A.statoT(ms, d.v) ? 'var(--' + A.statoT(ms, d.v).slice(1) + ')' : (d.c || 'var(--c1)')) + '"/>' +
         et + '</g>';
     });
     return A.card(v, lgd + '<div style="flex:1;display:flex;align-items:center;padding-bottom:6px">' + s + '</svg></div>', { flex: true });
@@ -1596,9 +1626,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       if (c.kind === 'share') return '<td class="tnum">' + f.pc(base ? cv / base : 0, 0) + '</td>';
       if (c.kind === 'heat') {                    /* conditional formatting — house signature */
         var lim = c.scale || [0, 1], t = Math.max(0, Math.min(1, (cv - lim[0]) / ((lim[1] - lim[0]) || 1)));
-        return '<td class="tnum" style="background:' + (t > .66 ? 'var(--heatHi)' : t > .33 ? 'var(--heatMid)' : 'var(--heatLo)') + '">' + A.mfmt(c.measure, cv) + '</td>';
+        return '<td class="tnum ' + A.statoT(c.measure, cv) + '" style="background:' + (t > .66 ? 'var(--heatHi)' : t > .33 ? 'var(--heatMid)' : 'var(--heatLo)') + '">' + A.mfmt(c.measure, cv) + '</td>';
       }
-      return '<td class="tnum' + (A.bud[c.measure] && !c.kind ? ' bdg' : '') + '">' + A.mfmt(c.measure, cv) + '</td>';
+      return '<td class="tnum' + (A.bud[c.measure] && !c.kind ? ' bdg' : '') + ' ' + A.statoT(c.measure, cv) + '">' + A.mfmt(c.measure, cv) + '</td>';
     };
     var body = rows.map(function (r) {
       var cl = A.hl(dim) ? (A.hl(dim) === r.m.id ? 'sel' : 'dim') : '';
@@ -1648,7 +1678,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        mesi visibili, con tacche tonde scritte a destra nel colore della linea, e si ricalcola a
        ogni filtro. La linea occupa la meta alta del grafico, sopra le colonne quando puo. */
     /* il target entra nella scala: una linea fissa fuori dall'asse non si vedrebbe */
-    var lv = line.filter(x => x !== null), aL = null, tg = typeof b.target === 'number' ? b.target : null;
+    var lv = line.filter(x => x !== null), aL = null, tg = typeof b.target === 'number' ? b.target : (ln && typeof A.meas(ln).target === 'number' ? A.meas(ln).target : null);
     var lvT = tg === null ? lv : lv.concat([tg]);
     if (ln && lv.length) aL = M.asseStretto(Math.min.apply(null, lvT), Math.max.apply(null, lvT));
     var max = Math.max.apply(null, cur.concat(pri)) * 1.14 || 1, tk = M.ticks(max), top = tk[tk.length - 1] || 1;
@@ -1710,7 +1740,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           (k && line[k - 1] !== null ? ' (' + A.varia(ln, val, line[k - 1]).t + ' ' + M.esc(A.MON[k - 1]) + ')' : '') +
           '<br>' + M.esc(A.meas(ms).label) + ': ' + A.mfmt(ms, cur[k]);
         /* il bordo trasparente largo e il bersaglio del mouse: il pallino resta piccolo */
-        s += '<circle class="hit l2p" cx="' + cx + '" cy="' + cy + '" r="2.6" fill="' + lc + '" stroke="transparent" stroke-width="11" data-tip="' + tip.replace(/"/g, '&quot;') + '"/>';
+        var vR = A.meas(ln).format === 'pc' ? Math.round(val * 1000) / 1000 : val;
+        var stP = tg !== null ? ((A.meas(ln).inv ? vR <= tg : vR >= tg) ? 'var(--ok)' : 'var(--ko)') : lc;
+        s += '<circle class="hit l2p" cx="' + cx + '" cy="' + cy + '" r="' + (tg !== null ? 3.2 : 2.6) + '" fill="' + stP + '" stroke="transparent" stroke-width="11" data-tip="' + tip.replace(/"/g, '&quot;') + '"/>';
       });
       /* L'ETICHETTA STA SOPRA L'ULTIMO PUNTO, non nell'angolo: li era a mezza card dalla curva
          che nomina ("non si capisce subito a cosa fa riferimento", due volte). A destra ci sono
@@ -2103,7 +2135,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           /* sui due gradini piu caldi il fondo e piu carico: l'inchiostro chiaro si stacca meglio */
           s += '<text x="' + (lw + cw * ci + cw / 2).toFixed(1) + '" y="' + (y + ch / 2 + 3).toFixed(1) +
             '" text-anchor="middle" font-size="8.5" class="tnum" fill="' +
-            (liv >= 3 ? 'var(--heatInk)' : 'var(--ink2)') + '" style="pointer-events:none">' +
+            (A.statoT(ms, x) ? 'var(--' + A.statoT(ms, x).slice(1) + ')' : (liv >= 3 ? 'var(--heatInk)' : 'var(--ink2)')) + '"' +
+            (A.statoT(ms, x) ? ' font-weight="700"' : '') + ' style="pointer-events:none">' +
             M.esc(testo) + '</text>';
         }
       });
@@ -2354,6 +2387,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        disegnato a y negativa. E' lo stesso accorgimento che il trend ha da sempre e che qui
        mancava. */
     var tkY = M.ticks(ymax), top = tkY[tkY.length - 1] || ymax;
+    /* il margine vale quanto la tacca piu larga: "CHF 30.0M" in 46px usciva tagliato (Luca, v4) */
+    mgn.l = Math.max(46, Math.ceil(Math.max.apply(null, tkY.map(t => M.larghN(A.mfmt(b.y, t), 8.5)))) + 12);
+    iw = w - mgn.l - mgn.r;
     var X = val => mgn.l + (val / xmax) * iw, Y = val => mgn.t + ih - (val / top) * ih;
     var mx = med(pts.map(p => p.x)), my = med(pts.map(p => p.y));
     var smax = Math.max.apply(null, pts.map(p => p.s)) || 1;

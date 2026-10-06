@@ -305,6 +305,13 @@ function misure(spec, dp) {
     if (v.type === 'statement') (b.lines || []).forEach(l => { aggYtd(l.measure); if (l.budget) { aggYtd(l.budget); aggBud(l.measure, l.budget); } });
   });
   ytd.concat(bud).forEach(x => extra.push(x));
+  /* IL TARGET DI UNA MISURA: il valore e il colore per la formattazione condizionale (Format →
+     Conditional formatting → Font color → Field value), verde dal lato giusto, rosso dall'altro */
+  ((spec.model && spec.model.measures) || []).filter(m => typeof m.target === 'number').forEach(m => {
+    extra.push({ nome: 'Target ' + N[m.id], formato: formatoPbi(m), expr: String(m.target) });
+    extra.push({ nome: N[m.id] + ' status colour', formato: 'General',
+      expr: 'IF ( [' + N[m.id] + '] ' + (m.inv ? '<=' : '>=') + ' [Target ' + N[m.id] + '], "#1E8449", "#C0392B" )' });
+  });
   /* il conto economico: una tabella delle voci in ordine e una misura SWITCH per colonna, cosi i
      subtotali restano le loro misure e non si sommano mai dalle righe */
   const NL = '\n';

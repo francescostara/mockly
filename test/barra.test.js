@@ -187,6 +187,17 @@ function tuttiIFiltri() {
           return out.map(x => '"' + tit + '": ' + x);
         }).flat());
         barre.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
+        /* NIENTE ESCE DALLA SUA CARD: le ultime barre di un hbar sotto il fondo (Luca v4) */
+        const fuori = await page.evaluate(() => [...document.querySelectorAll('#page .card')].map(k => {
+          const R = k.getBoundingClientRect(), sv = k.querySelector('svg');
+          if (!sv) return '';
+          const S2 = sv.getBoundingClientRect();
+          return S2.bottom > R.bottom + 1 || S2.right > R.right + 1 ? '"' + ((k.querySelector('h3') || {}).textContent || '') + '": il grafico esce dalla card di ' + Math.round(Math.max(S2.bottom - R.bottom, S2.right - R.right)) + 'px' : '';
+        }).filter(Boolean));
+        fuori.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
+        /* il sottotitolo della pagina sta su una riga sola */
+        const sub = await page.evaluate(() => { const e = document.getElementById('hSub'); if (!e) return 0; const lh = parseFloat(getComputedStyle(e).lineHeight) || 14; return e.getBoundingClientRect().height > lh * 1.5 ? Math.round(e.getBoundingClientRect().height) : 0; });
+        if (sub) guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · il sottotitolo va a capo (' + sub + 'px): accorcialo');
         /* LA LINEA DEL COLLINE SI STACCA DALLE COLONNE, e il target ha il suo colore (Fra su Luca,
            3 ott 2026: l'ambra accanto alle colonne oliva del 2025 non aveva contrasto) */
         const linee = await page.evaluate(() => {

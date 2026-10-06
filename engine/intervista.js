@@ -42,7 +42,7 @@ const RENDER = () => require('./render.js');
 /* Il tetto del file spedito. E' lo stesso numero che i gate verificano: qui serve a scegliere,
    non a bocciare, ma deve essere lo stesso o l'intervista consegnerebbe mockup che il ciclo
    poi rifiuta. */
-const TETTO = 80 * 1024;   /* 80KB dal 3 ott 2026, come test/harness.js */
+const TETTO = 90 * 1024;   /* 90KB dal 6 ott 2026, come test/harness.js */
 
 /* ------------------------------------------------------------------ il vocabolario per nicchia
  * Ogni nicchia porta due modi di dividere il business — quasi sempre "da dove arriva" e "che

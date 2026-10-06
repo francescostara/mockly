@@ -122,6 +122,27 @@ name's line, right-aligned. What that asks of the spec:
   unless the parent is the point.
 - **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
 
+## Tell the story, in every title (call with Luca, 6 Oct 2026)
+
+A finance reader opens the report knowing nothing about it. Three rules:
+- **Every title states the finding, with a number when there is one.** Not "Late payments by
+  currency" but "USD and JPY/HKD/SGD carry the late payments and the value at risk"; not "STP by
+  division" but "Payments from Private Banking and Wealth Management need the most manual repair".
+  The page subtitle is the one-line story of the page (one line: the engine checks it). Compute the
+  numbers from the data before writing the titles; a title that the data contradicts is worse than
+  a neutral one.
+- **A count is never shown alone.** Late payments, errors, complaints: always next to their base —
+  a `kpiBand` card with `"of": "<base measure>"` ("of 1,338,483 payments · 1.4%"), a rate column
+  next to the count in tables ("Late" then "Late %").
+- **A measure with a target carries it in the model:** `"target": 0.98` on the measure (and `inv`
+  when lower is better). The engine colours it everywhere — card value, table cells, bars, heatmap
+  numbers, line points: green on the right side of the target, red on the wrong one — and the
+  guide explains it. Give every KPI measure a `description` in plain words: the guide ("How to use
+  this mockup") shows it with the calculation, for a reader who knows nothing.
+- **The client's official colours go to the layout** with `"skin": { "brand": ["#hex", ...] }`
+  (main colour first): the rail and the frame take them, the data scale stays the verified one
+  (a brand rarely leaves six colours distinguishable for colour-blind readers).
+
 ## Filters filter, clicks highlight (4 Oct 2026)
 
 The toolbar filters behave like Power BI slicers: they filter every visual, the ones broken down

@@ -757,6 +757,78 @@ const INTERVENTI = [
     fatto: "Regola generale: un clic filtra cio su cui si clicca. Una lista di una dimensione che non e un filtro del report (i clienti, i prodotti di una top N) non e piu cliccabile: prima il clic filtrava il suo padre (il segmento) e ne evidenziava tutti i membri. La lista segue solo gli slicer. `crossFilter: false` toglie i clic a qualunque visual (Power BI: Edit interactions → None dal visual verso gli altri), e il kit lo scrive, anche per le liste di dettaglio. La scheda e lo script del video non promettono piu quei clic. Gate: test/interazioni.test.js (i clienti non sono cliccabili, nessuna lista del corpus filtra piu di una dimensione, crossFilter toglie i clic).",
     stato: "fatto"
   }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "studia bene i cutoff",
+    dove: "dati · corpus",
+    fatto: "Cut-off presi dalle tabelle pubblicate da due banche svizzere (UBS, giugno 2026; Zurcher Kantonalbank, febbraio 2026; CET, pagamenti singoli elettronici, data valuta): CHF 16:00, EUR SEPA 14:00, altri EUR 15:00, USD 18:00, GBP 16:15, JPY/HKD/SGD 16:00 del giorno prima della valuta. La voce 'Other 12:00' del primo mockup era sbagliata: le valute asiatiche chiudono il giorno prima, ed e anche la causa principale dei loro ritardi (istruzioni arrivate dopo il cut-off).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "se superiore al target farlo verde ed inferiore rosso in generale",
+    dove: "misure · runtime · skin · kit · skill",
+    fatto: "Una misura con `target` (e `inv` se meno e meglio) colora i suoi valori ovunque: valore della card, celle delle tabelle, barre, numeri della heatmap, punti della linea del colline; verde dal lato giusto, rosso dall'altro (token --ok/--ko, sempre con freccia o segno accanto). Lo stato si decide sul valore come viene mostrato (97,96% si legge 98,0% e non e rosso contro un target del 98%). Il kit Power BI scrive il target e la misura del colore per la formattazione condizionale. Gate: test/lettura.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "in how to use this mockup meglio inserire come i kpi vengono calcolati, fai finta che chi stia guardando il report non sappia nulla",
+    dove: "scheda · skill",
+    fatto: "La guida ha la sezione 'How the KPIs are calculated': per ogni card la definizione in parole (`description` della misura), il calcolo (somma di, A diviso B, A meno B, valore a fine periodo), il target e da che parte e buono, il totale su cui si legge. Gate: test/lettura.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "manca storytelling; titoli impattanti e che spiegano sempre",
+    dove: "skill · corpus",
+    fatto: "Regola nella skill: ogni titolo dice il fatto con un numero, calcolato dai dati prima di scriverlo; il sottotitolo della pagina e la storia della pagina su una riga (gate in Chrome: non va a capo). Il mockup v4 lo applica su ogni visual.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "lui farebbe il numero di pagamenti vs value at risk",
+    dove: "corpus",
+    fatto: "Le barre del valore a rischio portano accanto il numero di pagamenti a rischio, e la tabella per valuta ha le due colonne affiancate. Il grafico a dispersione provato prima in una colonna sola tagliava l'asse ed era illeggibile: il margine dello scatter ora vale quanto la tacca piu larga.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "una cosa importante da valutare e la disposizione geografica (Fra: bookmark per valuta o paese, nella tabella, niente mappe)",
+    dove: "generatore · corpus",
+    fatto: "La tabella della coda ha due viste (bookmark): per valuta e per paese di destinazione (13 paesi, composizione dichiarata per valuta). Il generatore ha la dimensione padre (`parentDim`): il tipo di pagamento si ricava dalla valuta, cosi valuta, divisione e paese restano le tre dimensioni dei fatti e il filtro del tipo funziona. Due controlli del motore corretti: due viste matrice con le stesse colonne sono la stessa domanda; il filtro di una dimensione padre non e inerte.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "pagina 2: meglio by division che channel; nella tabella mostra vs total number of payments; late payments da solo non ha senso",
+    dove: "kpi · corpus",
+    fatto: "Divisioni (Private Banking, Wealth Management, Corporate & Institutional, Retail & SME, Treasury & Markets) al posto dei canali. Una card con `of` dice su quale totale si legge ('of 1,338,483 payments · 1.4% · 2024 1.7%'); le tabelle hanno Payments, Late e Late % affiancati.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "il layout andrebbe adattato ai colori ufficiali della banca (commento generale)",
+    dove: "skin · skill",
+    fatto: "`skin.brand` (la funzione esisteva ma nessuno la chiamava): i colori ufficiali del cliente danno la cornice (rail, voce attiva, etichette); la scala dei dati resta quella verificata, perche un marchio lascia quattro o cinque colori distinguibili anche per chi non vede bene i colori, non sei. La palette del marchio non viene piu presa dalla memoria (due marchi avrebbero condiviso i token).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "(visto rifacendo il mockup) La causa 'Counterparty / system', calcolata per differenza, usciva -2,4%; un grafico in una riga flessibile usciva dal fondo della card; un titolo su due righe non era contato.",
+    dove: "generatore · validazione · fit · gate",
+    fatto: "`facts.parts`: le parti di un intero si riscalano in ogni riga perche lo sommino, intere e mai negative; la validazione rifiuta un conteggio con valori negativi (un saldo si dichiara `signed`; i 'Nuovi follower' del caso social erano un saldo e ora si chiamano 'Follower netti'); mai -0 nei dati. Un grafico con altezza fissa in una riga flessibile si riduce allo spazio della riga, e l'intestazione si stima sulla larghezza della card. Gate in Chrome: niente esce dalla sua card. Tetto del file a 90KB (decisione di Fra).",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

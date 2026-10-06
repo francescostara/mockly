@@ -62,6 +62,7 @@ the canvas. La decide la SHELL, non il gusto: rail 1044, rail-slim 1116, top e b
 | `updated` | the "last refreshed" line — a literal string, never a live clock |
 | `source` | rail footnote ("Fonte: gestionale negozio") |
 | `watermark` | the synthetic-data watermark (required) |
+| `skin.brand` | the client's official colours, main first (`["#0B2545", "#C8102E"]`): the rail and the frame take them; the data scale stays the verified palette |
 | `numberFormat` | `"k1"`: every amount in thousands with one decimal (`€52,134.5K`), cards and tooltips included — the finance convention |
 | `varianze` | `"finanza"`: favourable variances green, unfavourable red (arrows and signs stay, for colour-blind readers). Default: blue/orange |
 
@@ -89,6 +90,12 @@ The engine never evaluates expressions from the spec. Measures are declared, not
 
 - `sum` — additive over the filtered rows (flow metrics: revenue, orders, spend).
 - `diff` — `a − b` of two aggregates.
+- Any measure can carry `target` (a number on its scale: `0.98` for 98%) — the engine colours its
+  values green on the right side of the target and red on the wrong side (`inv` decides which side
+  is right), in cards, tables, bars, heatmaps and line points — and `description`, a plain-words
+  definition shown in the report's guide next to how it is calculated. A `count` that can go below
+  zero (a balance: new minus lost) is `signed: true`; any other count with negative values is
+  rejected.
 - `ratio` — `num / den`, **guarded**: a zero denominator yields `0`, never `NaN`/`Infinity`.
 - `last` — point-in-time snapshot: the value at the latest `(y,m)` in the window, never summed
   (net debt, headcount, followers — `data-realism.md` "point-in-time vs flow").
@@ -144,6 +151,10 @@ debt/EBITDA) so the variance colours flip.
   { "id": "mg",  "label": "Margine",   "measure": "mg",  "span": 1, "inv": false }
 ]
 ```
+
+**A count with its base:** `"of": "<base measure>"` makes the card say "of 1,338,483 payments ·
+1.4% · PY 1.7%" instead of the plain prior/current line. Use it on every count that only makes sense
+against a total (late payments, errors, returns).
 
 **Finance card:** add `"budget": "<budget measure>"` and/or `"ytd": true`. The card shows the
 period value with **vs budget** and **vs PY**, and below it **YTD up to the selected month** with the

@@ -311,7 +311,7 @@ function build(dp) {
           continue;
         }
         const k = serie + f.id, v = evalField(f, r, r.__own, r.__split, ctx, r.__splits) + (resti[k] || 0);
-        r[f.id] = Math.round(v);
+        r[f.id] = Math.round(v) || 0;   /* mai -0: un arrotondamento di un negativo minuscolo */
         resti[k] = v - r[f.id];
         /* Un campo puo esistere SOLO per certi membri di una dimensione: la spesa paid non
            esiste sull'organico, il costo di spedizione non esiste sul ritiro in negozio.
@@ -331,9 +331,25 @@ function build(dp) {
   /* `brand` viaggia fino al render: e il flag che dice "questa tinta e l'identita, non una
      scelta estetica" — Instagram rosa, TikTok nero — e senza di lui il motore sostituirebbe
      quei colori con la scala verificata della palette, che qui sarebbe la cosa sbagliata. */
-  const cm = m => Object.assign({ id: m.id, n: m.n, c: m.c }, m.brand ? { brand: true } : {});
-  const dims = { [dimId]: own.map(cm) };
-  splitList.forEach((sc, k) => { dims[sc.dim] = splitsM[k].map(cm); });
+  /* UNA DIMENSIONE PADRE (Luca, 6 ott 2026): il tipo di pagamento non e una dimensione dei fatti
+     ma un raggruppamento delle valute — CHF e "Domestic", USD e GBP "Cross-border". Una dimensione
+     dei fatti dichiara `parentDim` e ogni suo membro il suo `parent`: il runtime ricava la colonna
+     del padre da quella del figlio, il filtro del padre funziona, e i fatti restano tre dimensioni.
+     Il padre e una dimensione di dataParams.dims con i suoi membri (base non serve). */
+  const padreDi = id => (dp.dims[id] || {}).parentDim;
+  const cm = (m, dimK) => Object.assign({ id: m.id, n: m.n, c: m.c }, m.brand ? { brand: true } : {},
+    padreDi(dimK) ? { parent: m.parent, parentDim: padreDi(dimK) } : {});
+  const dims = { [dimId]: own.map(m => cm(m, dimId)) };
+  splitList.forEach((sc, k) => { dims[sc.dim] = splitsM[k].map(m => cm(m, sc.dim)); });
+  [dimId].concat(splitList.map(sc => sc.dim)).forEach(dk => {
+    const pd = padreDi(dk);
+    if (!pd) return;
+    const pm = ((dp.dims[pd] || {}).members || []);
+    if (!pm.length) fail(`dims["${dk}"].parentDim "${pd}": la dimensione padre va dichiarata in dataParams.dims coi suoi membri`);
+    if (dims[pd]) fail(`dims["${dk}"].parentDim "${pd}": il padre non puo essere anche una dimensione dei fatti`);
+    dims[dk].forEach(m => { if (!pm.some(x => x.id === m.parent)) fail(`dims["${dk}"] membro "${m.id}": parent "${m.parent}" non e un membro di "${pd}" (${pm.map(x => x.id).join(', ')})`); });
+    dims[pd] = pm.map(m => ({ id: m.id, n: m.n, c: m.c }));
+  });
 
   let detailModel = null;
   if (dp.detail && dp.detail.dim) {
@@ -397,6 +413,25 @@ function build(dp) {
     });
     if (Object.keys(mult).length) detailModel.mult = mult;
   }
+
+  /* ---- 4.4 LE PARTI DI UN INTERO SOMMANO L'INTERO ----
+     Le cause dei ritardi (cliente, riparazione, sanzioni, fondi, sistema) sono quote dei ritardi,
+     ciascuna col suo tasso e i suoi correttivi: indipendenti, in una riga sommavano a piu del
+     totale, e la causa calcolata per differenza usciva negativa (-2,4% nel mockup di Luca, 6 ott
+     2026). Con `facts.parts` le parti dichiarate si riscalano in ogni riga perche sommino il loro
+     intero, intere e senza negativi (resto piu grande). */
+  (dp.facts.parts || []).forEach(pt => {
+    if (!pt || !pt.of || !Array.isArray(pt.parts) || pt.parts.length < 2) fail('facts.parts: ogni voce e { "of": <campo intero>, "parts": [<campi parte>, ...] }');
+    pt.parts.concat([pt.of]).forEach(id => { if (!fields.some(f => f.id === id)) fail(`facts.parts: "${id}" non e un campo dichiarato`); });
+    grain.forEach(r => {
+      const tot = r[pt.of] || 0, raw = pt.parts.map(id => Math.max(0, r[id] || 0)), s = raw.reduce((a, x) => a + x, 0);
+      if (!tot) { pt.parts.forEach(id => { r[id] = 0; }); return; }
+      const w = s ? raw : pt.parts.map(() => 1);
+      const quote = DM.allocInt ? DM.allocInt(w, tot) : null;
+      const out = quote || (() => { const ws = w.reduce((a, x) => a + x, 0), id = w.map(x => x / ws * tot), fl = id.map(Math.floor); let d = tot - fl.reduce((a, x) => a + x, 0); id.map((x, i) => [x - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (d-- > 0) fl[i]++; }); return fl; })();
+      pt.parts.forEach((id, i) => { r[id] = out[i]; });
+    });
+  });
 
   /* ---- 4.5 LA STORIA LONTANA COSTA, E NON LA GUARDA NESSUNO PER MESE ----
      Ogni anno in piu sono dodici righe per membro dentro l'HTML: circa sei kilobyte. Dieci anni

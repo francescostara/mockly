@@ -30,6 +30,9 @@ const FINESTRA = /\/\*#finestra\*\/[\s\S]*?\/\*#\/finestra\*\//g;
 const BREVE = /\/\*#breve\*\/[\s\S]*?\/\*#\/breve\*\//g;
 /* IL CODICE FINANCE VIAGGIA SOLO NEI REPORT FINANCE: la card con budget e YTD, gli scostamenti
    dal budget. In un report senza budget sarebbero un chilo in piu dentro il tetto del file. */
+/* IL CODICE DEI TARGET viaggia solo dove una misura ha un target o una card ha la sua base (`of`) */
+const TGT = /\/\*#tgt\*\/[\s\S]*?\/\*#\/tgt\*\//g;
+const usaTarget = spec => ((spec.model || {}).measures || []).some(m => typeof m.target === 'number') || (spec.kpiBand || []).some(k => k.of);
 const FIN = /\/\*#fin\*\/[\s\S]*?\/\*#\/fin\*\//g;
 const usaFinanza = spec => (spec.kpiBand || []).some(k => k.budget || k.ytd) || (spec.meta || {}).numberFormat === 'k1' ||
   JSON.stringify(spec.pages || []).concat(JSON.stringify((spec.drill || {}).page || {})).search(/"kind":"bud"|"type":"statement"/) >= 0;
@@ -44,6 +47,7 @@ function bundle(types, opts) {
   let src = parts.join('\n');
   src = (opts && opts.finestra === false) ? src.replace(FINESTRA, '') : src.replace(BREVE, '');
   if (opts && opts.fin === false) src = src.replace(FIN, '');
+  if (opts && opts.tgt === false) src = src.replace(TGT, '');
   return (opts && opts.raw) ? src : strip(src);
 }
 
@@ -199,7 +203,15 @@ function flexNeed(row, data, rowH, drillDim) {
    l'anno prima e una linea tratteggiata nel trend e una seconda colonna nel colline, e una
    legenda scritta a mano doveva indovinare quale — ha sbagliato tre volte. */
 const LEGENDA_AUTO = { trend: true, colline: true };
-const chromeOf = v => (v.title ? CHROME_H : 0) + (LEGENDA_AUTO[v.type] ? LEGEND_H : 0);
+/* L'INTESTAZIONE PUO ANDARE A CAPO. Un titolo lungo in una card stretta occupa due righe, e
+   stimarne sempre una faceva uscire il grafico dal fondo della card (Luca v4: 30px). Con la
+   larghezza della card (v.__w, scritta dal fit) si contano le righe di titolo e sottotitolo. */
+const righeTitolo = v => {
+  if (!v.title || !v.__w) return 1;
+  const testo = String(v.title).replace(/\{[a-z]+\}/g, 'Dec 2026') + (v.subtitle ? '   ' + String(v.subtitle).replace(/\{[a-z]+\}/g, 'Dec 2026') : '');
+  return Math.min(3, Math.max(1, Math.ceil(testo.length * 6.4 / Math.max(80, v.__w - 30))));
+};
+const chromeOf = v => (v.title ? CHROME_H + (righeTitolo(v) - 1) * 15 : 0) + (LEGENDA_AUTO[v.type] ? LEGEND_H : 0);
 
 /** Altezza utile della pagina, al netto di shell, padding e gutter. */
 function pageBudget(spec, page, gutter) {
@@ -285,6 +297,21 @@ function fitPage(spec, page, data) {
      registrarla, chi rilegge il file emesso misura la pagina con il budget sbagliato e la vede
      sforare quando invece ci sta. L'artefatto deve portarsi dietro cio che serve per rileggerlo. */
   if (plan.dense) page.__dense = true;
+  /* UN GRAFICO CON ALTEZZA FISSA IN UNA RIGA FLESSIBILE NON NE ESCE. La riga flex riceve lo spazio
+     che resta; un hbar con "h": 290 accanto alla tabella ne chiedeva di piu e le ultime barre
+     uscivano dal fondo della card (Luca v4, 6 ott 2026). Si riduce all'altezza della riga. */
+  const flexRows = page.rows.filter(r => r.flex);
+  if (flexRows.length === 1) {
+    const dense = !!plan.dense, gutter = dense ? DENSE_GUTTER : spec.grid.gutter;
+    let budget = pageBudget(spec, page, gutter) + (dense ? (padDi(spec) - DENSE_PAD) : 0);
+    if (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
+    if (page.drillHeader) budget -= 46;
+    const avail = budget - page.rows.filter(r => !r.flex).reduce((a2, r) => a2 + rowHeight(r), 0);
+    flexRows[0].visuals.forEach(v => {
+      if (v.h && v.type !== 'matrix' && v.type !== 'statement' && v.h + chromeOf(v) > avail - 4)
+        v.h = Math.max(MIN_CHART_H, Math.floor(avail - chromeOf(v) - 4));
+    });
+  }
   return plan;
 }
 
@@ -324,6 +351,11 @@ function fitSpec(spec, data) {
   const report = [];
   copy.__fit = true;
   espandiViste(copy);
+  /* la larghezza di ogni card, per contare le righe della sua intestazione */
+  const colW = (copy.grid.contentWidth - copy.grid.gutter * (copy.grid.columns - 1)) / copy.grid.columns;
+  copy.pages.concat(copy.drill && copy.drill.page ? [copy.drill.page] : []).forEach(pg => (pg.rows || []).forEach(r => r.visuals.forEach(v => {
+    Object.defineProperty(v, '__w', { value: colW * (v.span || 1) + copy.grid.gutter * ((v.span || 1) - 1), enumerable: false, writable: true });
+  })));
   copy.pages.forEach(p => { const r = fitPage(copy, p, data); if (r && r.scaled) report.push({ page: p.id, ...r }); });
   if (copy.drill && copy.drill.page) {
     const r = fitPage(copy, copy.drill.page, data);
@@ -512,6 +544,16 @@ function validate(specIn, data) {
   spec.kpiBand.forEach(k => { if (!measures.has(k.measure)) e.push(`kpi "${k.id}": unknown measure "${k.measure}"`); });
   /* la card finance: il budget e una misura del modello */
   spec.kpiBand.forEach(k => { if (k.budget && !measures.has(k.budget)) e.push(`kpi "${k.id}": budget "${k.budget}" non e una misura del modello`); });
+  /* UN CONTEGGIO NON E MAI NEGATIVO: una causa calcolata per differenza usciva -2,4% (Luca, v4) */
+  if (data && data.facts && data.facts.cols) {
+    (spec.model.measures || []).filter(m => m.agg === 'sum' && m.unit === 'count' && !m.signed).forEach(m => {
+      const i = data.facts.cols.indexOf(m.field || m.id);
+      if (i >= 0 && data.facts.rows.some(r => r[i] < 0)) e.push(`measure "${m.id}" (${m.label || ''}): un conteggio con valori negativi nei dati — se e una parte di un totale calcolata per differenza, dichiara le parti in facts.parts; se e un saldo (nuovi meno persi) dichiaralo con signed:true e chiamalo saldo`);
+    });
+  }
+  /* un conteggio si legge col suo totale: `of` e la misura base, nella stessa unita */
+  spec.kpiBand.forEach(k => { if (k.of && !measures.has(k.of)) e.push(`kpi "${k.id}": of "${k.of}" non e una misura del modello`); });
+  (spec.model.measures || []).forEach(m => { if (m.target !== undefined && (typeof m.target !== 'number' || !isFinite(m.target))) e.push(`measure "${m.id}": target deve essere un numero sulla scala della misura (0.98 per il 98%)`); });
   (spec.model.measures || []).forEach((m, i) => {
     const deps = m.agg === 'diff' ? [m.a, m.b] : m.agg === 'ratio' ? [m.num, m.den] : [];
     const before = new Set([...(spec.model.sums || []), ...spec.model.measures.slice(0, i).map(x => x.id)]);
@@ -549,7 +591,9 @@ function validate(specIn, data) {
        morto in cima alla pagina: o la dimensione sta nel grano dei fatti, o il grano di
        dettaglio che la contiene porta almeno una misura usata dalle KPI (data-params.md). */
     const factCols = new Set((data.facts && data.facts.cols) || []);
-    if (!factCols.has(fd.id)) {
+    /* una dimensione padre (parentDim) si ricava dalla colonna del figlio: filtra come lui */
+    const padre = Object.keys(data.dims || {}).some(k => factCols.has(k) && (data.dims[k] || []).some(m => m.parentDim === fd.id));
+    if (!factCols.has(fd.id) && !padre) {
       const dm = data.detailModel;
       const detailFields = new Set(dm && dm.dim === fd.id ? (dm.fields || []) : []);
       const reaches = (spec.kpiBand || []).some(k => {
@@ -1003,6 +1047,10 @@ const SOLO_MOTORE = { aesthetic: 1, archetype: 1, skin: 1 };
 const META_RUNTIME = { locale: 1, currency: 1, decimal: 1, numberFormat: 1, months: 1, strings: 1 };
 function css(spec, compact) {
   const P = pelle(spec);
+  /* i tipi di visual della spec: le regole di un visual che non c'e non viaggiano */
+  const tipi = new Set();
+  JSON.stringify(spec.pages || [], (k, v) => { if (k === 'type') tipi.add(v); return v; });
+  JSON.stringify((spec.drill || {}).page || {}, (k, v) => { if (k === 'type') tipi.add(v); return v; });
   const t = Object.assign({}, P.tokens, spec.palette || {});
   /* con una palette propria della spec il periodo corrente si sceglie sui colori che si vedono davvero */
   if (spec.palette) t.cur = SKIN.scegliCur(t, Array.isArray(spec.palette.series) ? spec.palette.series : [1, 2, 3, 4, 5, 6].map(i => t['c' + i]));
@@ -1073,7 +1121,7 @@ ${rail ? `#rail{width:${sh.rail}px;flex:0 0 ${sh.rail}px;background:var(--rail);
 #rail .ddp{top:calc(100% + 4px);max-height:min(300px,55vh);overflow:auto}#rail .ddp.su{top:auto;bottom:42px}
 /* nell'intestazione il menu sta sotto il suo bottone qualunque sia la pelle: con la rail prendeva
    la posizione pensata per la rail e si apriva trenta pixel piu in basso (trasporti-verona) */
-.fgrp .ddp{top:calc(100% + 4px);left:0;right:auto;min-width:100%;max-height:min(300px,60vh);overflow:auto}
+${P.shell.tools ? `.fgrp .ddp{top:calc(100% + 4px);left:0;right:auto;min-width:100%;max-height:min(300px,60vh);overflow:auto}` : ''}
 .railfoot{margin-top:auto;padding:0 16px;font-size:8.5px;color:var(--muted2);line-height:1.5}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}` : ``}
 ${sh.topbar ? `#topbar{height:46px;flex:0 0 46px;background:var(--rail);display:flex;align-items:center;gap:10px;padding:0 16px}
@@ -1084,7 +1132,7 @@ ${!rail ? `.navbtn{border:0;background:transparent;color:${sh.topbar ? 'var(--ra
 .navbtn.on{background:${sh.topbar ? 'rgba(255,255,255,.14)' : 'var(--line2)'};color:${sh.topbar ? '#fff' : 'var(--ink)'}}` : ``}
 ${tools ? `#tools{height:40px;flex:0 0 40px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 16px;position:relative}
 .slgrp{position:relative;width:${W_DATE}px}
-.fgrp{display:flex;align-items:center;gap:7px}
+${P.shell.tools ? `.fgrp{display:flex;align-items:center;gap:7px}
 .fgrp .flab{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flab);white-space:nowrap}
 .fgrp .fitems{position:relative}
 .fgrp.dd .fitems{width:${W_DROPDOWN}px}
@@ -1095,7 +1143,7 @@ ${tools ? `#tools{height:40px;flex:0 0 40px;background:var(--card);border-bottom
 /* niente grassetto sul chip acceso della barra: il grassetto lo allarga e sposta tutto quello che
    viene dopo — lo dice gia il fondo pieno */
 .fgrp.chips .fitems>.catitem.on{background:var(--c2);border-color:var(--c2);color:#fff;font-weight:inherit}
-.fgrp.chips .fitems>.catitem.on .dot{background:#fff!important}
+.fgrp.chips .fitems>.catitem.on .dot{background:#fff!important}` : ''}
 ` : ``}
 ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}` : ``}
 .rlbl{font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--flabRail);padding:0 0 7px}
@@ -1124,7 +1172,7 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
 .catitem:hover{background:rgba(127,127,127,.12)}
 .catitem .dot{width:8px;height:8px;flex:0 0 8px;border-radius:2px}
 .catitem.on{color:${rail ? '#fff' : 'var(--ink)'};font-weight:600;background:rgba(127,127,127,.14)}
-.hbrand{font-size:11px;font-weight:700;letter-spacing:1.4px;color:var(--ink);padding-right:14px;border-right:1px solid var(--line);white-space:nowrap}
+${!P.shell.rail ? `.hbrand{font-size:11px;font-weight:700;letter-spacing:1.4px;color:var(--ink);padding-right:14px;border-right:1px solid var(--line);white-space:nowrap}` : ''}
 #hdr{height:58px;flex:0 0 58px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:14px}
 #hdr .ttl{font-family:var(--fontDisp);font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
 #hdr .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
@@ -1133,7 +1181,7 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
    la mano (Fra, 28 set 2026). Larghezza propria, con un tetto fisso: la sua forma non dipende dai filtri. */
 #hdr .htit{flex:0 0 auto;max-width:56%;min-width:0}
 #hdr .spacer{flex:1}
-.hnav{display:flex;gap:4px;margin-left:14px}
+${!P.shell.rail ? `.hnav{display:flex;gap:4px;margin-left:14px}` : ''}
 /* LA BARRA NON SI MUOVE QUANDO SI FILTRA. Con un filtro attivo compaiono le pillole del contesto
    nella stessa riga: se la riga non basta, i bottoni andavano a capo (da 26 a 40px) e i chip dei
    filtri scivolavano sotto il cursore di chi stava cliccando. Ora nessun controllo va a capo e
@@ -1189,9 +1237,9 @@ ${usaFinanza(spec) ? `td.bdg,th.bdg{background:var(--bud)}th.bdg{color:var(--ink
 .st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
 .kpi .kf{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;display:flex;gap:10px}.kpi .kf b{font-weight:600}
 .kpi .ky{border-top:1px solid var(--line2);margin-top:7px;padding-top:5px;font-size:10px;color:var(--ink2);font-weight:600;white-space:nowrap}` : ''}
-.up{color:var(--good)}.dn{color:var(--bad)}.fl{color:var(--muted)}
-.dcv{font-size:31px;font-weight:600;line-height:1;letter-spacing:-1.2px}
-.dcd{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.45}
+.up{color:var(--good)}.dn{color:var(--bad)}.fl{color:var(--muted)}${usaTarget(spec) ? '.tok{color:var(--ok)}.tko{color:var(--ko)}td.tok,td.tko{font-weight:600}.kpi .v.tok{color:var(--ok)}.kpi .v.tko{color:var(--ko)}' : ''}
+${tipi.has('delta-card') ? `.dcv{font-size:31px;font-weight:600;line-height:1;letter-spacing:-1.2px}
+.dcd{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.45}` : ''}
 .narr{padding:12px 14px;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.55;color:var(--ink)}
 .mx{padding:2px 8px 8px;overflow:hidden}
 /* LA TABELLA RESTA ALTA QUANTO LE SUE RIGHE.
@@ -1224,7 +1272,7 @@ tr.r:hover .dg{opacity:1}
 .lgd{display:flex;gap:12px;padding:0 13px 8px;font-size:9.5px;color:var(--muted)}
 .lgd i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .lgd .ln{display:inline-block;width:11px;height:0;border-top:2px dashed var(--prior);margin-right:5px;vertical-align:3px}
-svg{display:block}svg .hit{cursor:pointer}svg .dimd{opacity:.3}.gnote{font-size:10.5px;color:var(--muted);text-align:center;padding:0 10px 8px;line-height:1.4}
+svg{display:block}svg .hit{cursor:pointer}svg .dimd{opacity:.3}${tipi.has('gauge') ? '.gnote{font-size:10.5px;color:var(--muted);text-align:center;padding:0 10px 8px;line-height:1.4}' : ''}
 #tip{position:fixed;pointer-events:none;background:var(--c1);color:#fff;font-size:10.5px;padding:6px 9px;border-radius:2px;opacity:0;transition:opacity .1s;z-index:60;line-height:1.55;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 #tip b{font-weight:600}
 .backb{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);background:transparent;border:1px solid var(--line);padding:6px 10px;border-radius:2px;cursor:pointer;font-family:var(--font)}
@@ -1332,7 +1380,7 @@ function shell(spec, data) {
 
 /* ---------- deterministic, compact JSON ---------- */
 /* L'ANNO VIAGGIA COME SCARTO DAL PRIMO: "2024," ripetuto in ogni riga dei fatti erano cinque byte
-   a riga, un chilo e mezzo in un mockup medio, dentro un file col tetto di 80KB. Il runtime
+   a riga, un chilo e mezzo in un mockup medio, dentro un file col tetto di 90KB. Il runtime
    (M.materialize) lo riporta all'anno vero leggendo y0. */
 function tableJSON(t) {
   const iy = t.cols.indexOf('y');
@@ -1364,7 +1412,7 @@ function dataJSON(data) {
 const INGLESE = {
   period: 'Period', spanLong: 'How many years', year: 'Year', qtrLong: 'Quarter', monthLong: 'Month',
   reset: 'Reset filters', updatedLabel: 'Last updated', report: 'Report',
-  all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var', actual: 'Actual', opening: 'Opening', closing: 'Closing', vsBud: 'vs Bud', vsPY: 'vs PY', bud: 'Budget', py: 'PY',
+  all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var', actual: 'Actual', of: 'of', target: 'target', opening: 'Opening', closing: 'Closing', vsBud: 'vs Bud', vsPY: 'vs PY', bud: 'Budget', py: 'PY',
   spanUno: '1 year', spanTutti: 'All', anni: 'years', others: 'Others', target: 'target',
   conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory',
   sopra: 'above', sotto: 'below', inLinea: 'in line with', nuova: 'new'
@@ -1453,7 +1501,7 @@ ${cssMinimo(css(spec, compact))}
 </div></div>
 <div id="tip"></div>
 <script>
-${bundle(types, { finestra: ((data && data.years) || []).length > 2, fin: usaFinanza(spec) })}
+${bundle(types, { finestra: ((data && data.years) || []).length > 2, fin: usaFinanza(spec), tgt: usaTarget(spec) })}
 var SPEC=${JSON.stringify(spec, function (k, v) { return (this === spec && SOLO_MOTORE[k]) || (this === spec.meta && !META_RUNTIME[k]) ? undefined : v; })};
 var DATA=${dataJSON(data)};
 MK.__A=MK.boot(SPEC,DATA,document);

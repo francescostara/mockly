@@ -227,6 +227,26 @@ year after year (`(1+growth)^year`, renormalised; `shares` then describes the fi
 it every region grows exactly like the total, and "the region that grows while its margin falls"
 cannot be told apart from the one that simply grows.
 
+### Parts of a whole: `facts.parts`
+
+When several fields are parts of another one — the causes of the late payments, the channels of the
+orders — declare them: `"parts": [ { "of": "late", "parts": ["cClient", "cRepair", "cSanct", "cFunds", "cSystem"] } ]`.
+Each part keeps its own rate and modifiers, and in every row the parts are rescaled to add up to the
+whole exactly (integers, never negative). Never compute the last part as a difference: with
+independent rates it goes negative, and the engine rejects a count with negative values.
+
+### A parent dimension: `parentDim`
+
+A grouping of a fact dimension that is not itself in the facts: payment type over currency, region
+over country, category over product. Declare `"parentDim": "ptype"` on the fact dimension and a
+`"parent"` on each of its members; declare the parent dimension in `dims` with its members (no
+`base`). The parent filters like any dimension, and the facts stay at three dimensions.
+
+```jsonc
+"ccy":   { "parentDim": "ptype", "members": [ { "id": "chf", "n": "CHF · SIC", "base": 52000, "parent": "dom" }, ... ] },
+"ptype": { "members": [ { "id": "dom", "n": "Domestic CHF" }, { "id": "xb", "n": "Cross-border" } ] }
+```
+
 ## `detail` — the drill-down grain (optional)
 
 A child dimension (models within a category, formats within a platform). It ships as a share
