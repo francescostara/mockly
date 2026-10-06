@@ -1893,6 +1893,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }).join('') + '</div>');
   };
   function disegna(A, v, b, w, h, piccolo) {
+    var tocca = false;   /* l'etichetta del bersaglio toccherebbe il valore */
     var ms = b.measure, tg = b.target;
     /* un pannello stretto prende solo l'altezza che il suo arco usa (raggio dalla larghezza) */
     if (piccolo) h = Math.min(h, Math.round((w / 2 - 6) + 15 + 34 + 6));
@@ -1977,7 +1978,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          inchiostro scuro sopra e leggibile in tutti e due i casi. */
       /* nel pannello stretto la scritta del bersaglio copriva il valore: resta la tacca, e il
          bersaglio va nella nota sotto l'arco */
-      if (!piccolo) s += M.testoVelato(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target),
+      /* SE L'ETICHETTA DEL BERSAGLIO TOCCA IL VALORE, resta la tacca e il bersaglio va nella nota:
+         con un valore vicino al target (100% contro 100%) "Target 100.0%" copriva "100.0%" (Parsa,
+         visto dal gate in Chrome esteso a tutti i grafici, 6 ott 2026) */
+      var fsV = Math.round(r * .38), wV = M.larghN(A.mfmt(ms, val), fsV);
+      var lx0 = anc === 'end' ? lblX - wLbl : anc === 'start' ? lblX : lblX - wLbl / 2, ly = Math.max(10, lblY);
+      if (lx0 < cx + wV / 2 + 2 && lx0 + wLbl > cx - wV / 2 - 2 && ly - 10 < cy - 6 && ly + 2 > cy - 6 - fsV) tocca = true;
+      if (!piccolo && !tocca) s += M.testoVelato(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target),
         lblX, Math.max(10, lblY), { px: 8.5, anc: anc, velo: 'var(--card)', opacita: 0.88,
           ink: 'var(--ink)', padX: 4, padY: 2 });
     }
@@ -1998,7 +2005,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var testo = pct ? A.f.pp(ass).replace(/^[+−-]\s*/, '') : A.mfmt(ms, ass);
       nota = '<div class="gnote">' + (piccolo ? '' : M.esc(A.meas(ms).label || ms) + ' ' + A.mfmt(ms, val) + ', ') +
         (inLinea ? (A.T.inLinea || 'in linea con') : testo + ' ' + (scarto >= 0 ? (A.T.sopra || 'sopra') : (A.T.sotto || 'sotto'))) + ' ' +
-        M.esc(A.tpl(b.targetLabel || 'target')) + (piccolo ? ' ' + A.mfmt(ms, target) : '') + '</div>';
+        M.esc(A.tpl(b.targetLabel || 'target')) + (piccolo || tocca ? ' ' + A.mfmt(ms, target) : '') + '</div>';
     }
     /* nel gauge multiplo ogni pannello porta il nome della sua misura sopra l'arco */
     var nome = piccolo ? '<div class="gnote" style="font-weight:600;color:var(--ink2)">' + M.esc(b.label || A.meas(ms).label || ms) + '</div>' : '';
@@ -2100,8 +2107,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 
     righe.forEach(function (r, ri) {
       var y = m.t + ch * ri;
+      /* un nome piu largo della colonna si accorcia coi puntini: usciva a sinistra del riquadro
+         ("JPY · HKD · SGD" tagliato, Luca v4) */
+      var nmH = r.n;
+      if (M.largh(nmH, 9) > lw - 8) { while (nmH.length > 3 && M.largh(nmH + '…', 9) > lw - 8) nmH = nmH.slice(0, -1); nmH = nmH.replace(/[\s·,-]+$/, '') + '…'; }
       s += '<text x="' + (lw - 6) + '" y="' + (y + ch / 2 + 3).toFixed(1) + '" text-anchor="end" ' +
-        'font-size="9" fill="var(--ink2)">' + M.esc(r.n) + '</text>';
+        'font-size="9" fill="var(--ink2)"><title>' + M.esc(r.n) + '</title>' + M.esc(nmH) + '</text>';
       celle[ri].forEach(function (x, ci) {
         if (x === null) {
           s += '<rect class="vuota" x="' + (lw + cw * ci + gap / 2).toFixed(1) + '" y="' + (y + gap / 2).toFixed(1) +

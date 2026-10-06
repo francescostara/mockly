@@ -829,6 +829,14 @@ const INTERVENTI = [
     fatto: "`facts.parts`: le parti di un intero si riscalano in ogni riga perche lo sommino, intere e mai negative; la validazione rifiuta un conteggio con valori negativi (un saldo si dichiara `signed`; i 'Nuovi follower' del caso social erano un saldo e ora si chiamano 'Follower netti'); mai -0 nei dati. Un grafico con altezza fissa in una riga flessibile si riduce allo spazio della riga, e l'intestazione si stima sulla larghezza della card. Gate in Chrome: niente esce dalla sua card. Tetto del file a 90KB (decisione di Fra).",
     stato: "fatto"
   }
+  ,{
+    id: "locale/pagamenti-luca",
+    versione: 4,
+    commento: "(visto rifacendo il mockup) La vista per paese usciva dal fondo della card; nella heatmap 'JPY · HKD · SGD' era tagliato a sinistra; nella guida una frase cominciava con la minuscola.",
+    dove: "fit · heatmap · gauge · scheda · gate in Chrome",
+    fatto: "Lo spazio di una card a viste vale quanto la sua vista piu alta; un'etichetta di riga della heatmap troppo lunga si accorcia coi puntini (il nome intero nel tooltip). Il gate in Chrome ora apre ogni vista di ogni card a viste e controlla i testi di TUTTI i grafici (prima solo hbar, colline e trend): ha trovato subito il gauge di Parsa, dove con valore e target entrambi al 100% l'etichetta del bersaglio copriva il valore — ora il bersaglio passa nella nota sotto l'arco.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

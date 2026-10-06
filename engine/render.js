@@ -178,6 +178,10 @@ const TABLE_ROW_H_CMP = 20; /* la stessa riga in modalita compatta */
    ultime righe della tabella, che e proprio il bug segnalato. */
 function flexNeed(row, data, rowH, drillDim) {
   return Math.max(MIN_FLEX_H, ...row.visuals.map(v => {
+    /* UNA CARD A VISTE E ALTA QUANTO LA SUA VISTA PIU ALTA: la tabella per paese (13 righe) usciva
+       dal fondo perche lo spazio era stato misurato sulla vista per valuta (6), quella che si vede
+       aprendo il file (Luca v4, 6 ott 2026) */
+    if (v.viste && v.viste.length > 1) return Math.max(...v.viste.map(vi => flexNeed({ visuals: [Object.assign({}, vi, { span: v.span })] }, data, rowH, drillDim)));
     /* il conto economico si allunga con le sue voci come la matrice coi suoi membri, piu la
        seconda riga d'intestazione (periodo / YTD) */
     if (v.type === 'statement') return chromeOf(v) + TABLE_HEAD_H * 2 + ((v.bind || {}).lines || []).length * (rowH || TABLE_ROW_H) + 12;

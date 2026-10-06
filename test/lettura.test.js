@@ -57,7 +57,7 @@ ok('la guida spiega come si calcola ogni KPI, con la definizione e il target', (
   c.caso.spec.kpiBand.forEach(k => assert(t.indexOf('**' + k.label + '**') >= 0, 'manca ' + k.label));
   assert(/Calculation: Before cut-off divided by Payments/.test(t), 'la formula della compliance in parole');
   assert(/Target: 98%/.test(t) && /above target is green/.test(t), 'il target e il suo verso');
-  assert(/read it together with the total: Payments/.test(t), 'la base della card dei ritardi');
+  assert(/Read it together with the total: Payments/.test(t), 'la base della card dei ritardi');
   assert(/cut-off of their currency \(CHF 16:00/.test(t), 'la definizione scritta nella spec');
 });
 

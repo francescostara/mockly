@@ -167,6 +167,17 @@ function tuttiIFiltri() {
         const tagli = await page.evaluate(() => [...document.querySelectorAll('#page .mx')].filter(c => c.querySelector('table'))
           .map(c => c.scrollHeight - c.clientHeight).filter(x => x > 1));
         tagli.forEach(x => guastiTabelle.push(dove0 + ' · pagina ' + pg.id + ': una tabella e tagliata di ' + x + 'px'));
+        /* OGNI VISTA DI UNA CARD A VISTE: la tabella per paese (13 righe) usciva dal fondo, ma il
+           gate guardava solo la vista che si vede aprendo il file (Luca v4) */
+        const nViste = await page.evaluate(() => document.querySelectorAll('#page [data-vista]').length);
+        for (let vi = 0; vi < nViste; vi++) {
+          await page.evaluate(i => { const t = document.querySelectorAll('#page [data-vista]')[i]; if (t) t.click(); }, vi);
+          await layout();
+          const tv = await page.evaluate(() => [...document.querySelectorAll('#page .mx')].filter(c => c.querySelector('table'))
+            .map(c => c.scrollHeight - c.clientHeight).filter(x => x > 1));
+          tv.forEach(x => guastiTabelle.push(dove0 + ' · pagina ' + pg.id + ' · vista ' + (vi + 1) + ': una tabella e tagliata di ' + x + 'px'));
+        }
+        if (nViste) { await page.evaluate(() => { const t = document.querySelector('#page [data-vista$=":0"]'); if (t) t.click(); }); await layout(); }
         /* LE BARRE SI CONFRONTANO E LE SCRITTE SONO INTERE (Fra su Luca, 3 ott 2026: barre sottili,
            sei colori, la scritta fuori dal riquadro). Su ogni hbar: barre alte almeno 8px, la piu
            lunga occupa almeno il 55% della card, un colore solo se non c'e un padre, ogni testo
@@ -203,7 +214,7 @@ function tuttiIFiltri() {
         const linee = await page.evaluate(() => {
           const rgb = c => { const m = /rgba?\((\d+), (\d+), (\d+)/.exec(c); return m ? [+m[1], +m[2], +m[3]] : null; };
           const dist = (a, b) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) / 441.7; };
-          return [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('path.l2l') || s.querySelector('[data-et]')).map(s => {
+          return [...document.querySelectorAll('#page svg')].filter(s => !s.querySelector('rect.barra')).map(s => {
             const out = [];
             if (!s.querySelector('path.l2l')) { const R0 = s.getBoundingClientRect(), t0 = [...s.querySelectorAll('text')].map(x => x.getBoundingClientRect()).filter(x => x.width);
               t0.forEach(x => { if (x.left < R0.left - 0.5 || x.right > R0.right + 0.5) out.push('una scritta esce dal riquadro'); });
@@ -226,7 +237,7 @@ function tuttiIFiltri() {
             return out;
           }).flat();
         });
-        linee.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · colline: ' + x));
+        linee.forEach(x => guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · grafico: ' + x));
         /* i gradini di un ponte si vedono: con l'asse da zero erano strisce di un pixel (Bodan) */
         const gradini = await page.evaluate(() => [...document.querySelectorAll('#page rect.wfs')].filter(r => r.getBoundingClientRect().height < 4).length);
         if (gradini) guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · waterfall: ' + gradini + ' gradini piu bassi di 4px');

@@ -43,7 +43,7 @@ const T = {
     formula: { sum: a => 'somma di ' + a, ratio: (a, b) => a + ' diviso ' + b,
       diff: (a, b) => a + ' meno ' + b, last: a => a + ' alla fine del periodo' },
     calcolo: 'Calcolo', target: 'Obiettivo', sopraOk: 'sopra l\u2019obiettivo e verde, sotto e rosso',
-    sottoOk: 'sotto l\u2019obiettivo e verde, sopra e rosso', base: q => 'si legge insieme al totale: ' + q,
+    sottoOk: 'sotto l\u2019obiettivo e verde, sopra e rosso', base: q => 'Si legge insieme al totale: ' + q,
     confronto: 'Il confronto e col periodo precedente (stesso periodo dell\u2019anno prima, o mese prima se scegli un mese).',
     periodo: 'Periodo',
     periodoTxt: (liv, anni) => 'In alto il selettore del periodo: ' + liv +
@@ -89,7 +89,7 @@ const T = {
     formula: { sum: a => 'total of ' + a, ratio: (a, b) => a + ' divided by ' + b,
       diff: (a, b) => a + ' minus ' + b, last: a => a + ' at the end of the period' },
     calcolo: 'Calculation', target: 'Target', sopraOk: 'above target is green, below is red',
-    sottoOk: 'below target is green, above is red', base: q => 'read it together with the total: ' + q,
+    sottoOk: 'below target is green, above is red', base: q => 'Read it together with the total: ' + q,
     confronto: 'Each card compares with the same period a year earlier, or with the previous month when you pick a month.',
     periodo: 'Period',
     periodoTxt: (liv, anni) => 'The period selector sits at the top: ' + liv +
