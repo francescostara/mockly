@@ -61,7 +61,8 @@ casi().forEach(c => perPagina(c, (pg, doc) => {
     /* l'asse della linea e popolato su tutta l'altezza, come in Power BI (Fra, 3 ott 2026) */
     const H = +s.getAttribute('height'), ty = [...s.querySelectorAll('text.l2')].map(t => +t.getAttribute('y'));
     if (ty.length >= 2 && Math.max(...ty) - Math.min(...ty) < H * 0.6) guastiC.push(`${c.id} · ${pg.id}: le tacche dell'asse della linea coprono ${Math.round(100 * (Math.max(...ty) - Math.min(...ty)) / H)}% dell'altezza`);
-    if (valori.size > 2 && Math.max(...ys) - Math.min(...ys) < 20)
+    /* con un target la scala lo include: una linea che si muove di due decimi occupa pochi pixel, giustamente */
+    if (valori.size > 2 && !s.querySelector('line.tgt') && Math.max(...ys) - Math.min(...ys) < 20)
       guastiC.push(`${c.id} · ${pg.id}: la linea cambia valore ma i punti stanno in ${(Math.max(...ys) - Math.min(...ys)).toFixed(1)}px (asse non adattato)`);
   });
   /* un colline con il target lo disegna: una linea fissa dentro l'area del grafico */
