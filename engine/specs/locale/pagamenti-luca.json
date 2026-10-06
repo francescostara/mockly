@@ -462,7 +462,7 @@
          {
           "type": "matrix",
           "etichetta": "By destination country",
-          "title": "UAE and Hong Kong: 1 payment in 15 arrives late, half of them held by sanctions screening · {period}",
+          "title": "Hong Kong and UAE: 1 in 15 late; UAE: 4 in 10 held by sanctions · {period}",
           "bind": {
            "dim": "country",
            "label": "Destination country",
@@ -511,7 +511,7 @@
         "type": "hbar",
         "span": 1,
         "h": 290,
-        "title": "USD: as many payments at risk as CHF, six times the value",
+        "title": "USD: fewer payments at risk than CHF, five times the value",
         "bind": {
          "dim": "ccy",
          "measure": "riskVal",
