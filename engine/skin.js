@@ -38,6 +38,15 @@ const str = ([r, g, b]) => '#' + [r, g, b].map(v =>
    colore della serie (0,13) e dal grigio dell'anno prima (0,27); se nessuno ci riesce, quello che ci
    va piu vicino. Lo usa lo skin e, quando la spec porta la sua palette, il CSS dopo l'unione.
    Gate: test/interazioni.test.js. */
+/* IL TOOLTIP: il primo colore della scala solo se il bianco ci sta sopra a 4,5:1; altrimenti
+   l'inchiostro del report con il colore della card sopra. Era sempre var(--c1) con testo bianco:
+   nelle famiglie scure il c1 e un giallo chiaro e il tooltip usciva bianco su giallo, circa 1,3:1
+   (Fra, 13 ott 2026: "never do again the yellow white for the labels"). */
+function scegliTip(t) {
+  if (t.c1 && /^#[0-9a-f]{6}$/i.test(t.c1) && contrasto('#FFFFFF', t.c1) >= 4.5) return { tip: t.c1, tipInk: '#FFFFFF' };
+  return { tip: t.ink, tipInk: t.card };
+}
+
 function scegliCur(t, serie) {
   const d = (x, y) => { const X = hex(x), Y = hex(y); return Math.hypot(X[0] - Y[0], X[1] - Y[1], X[2] - Y[2]) / 441.7; };
   const cand = [mix(t.ink, t.card, 0.18), t.ink, mix(t.ink, t.card, 0.32), mix(mix(t.ink, '#2B3A55', 0.55), t.card, 0.12),
@@ -270,6 +279,7 @@ function calcolaPalette(id, opz) {
   for (let k = serie.length; k < 6; k++) t['c' + (k + 1)] = serie[k % serie.length];
   t.serie = serie;
   t.cur = scegliCur(t, serie);
+  Object.assign(t, scegliTip(t));
 
   /* SEQUENZIALE: Viridis o Cividis, percettivamente uniformi. Sostituiscono qualunque rampa
      arcobaleno e valgono per la heatmap e per le celle heat della matrice — dove il messaggio
@@ -570,7 +580,7 @@ function scegliPelle(v) {
   };
 }
 
-module.exports = { scegliCur,
+module.exports = { scegliCur, scegliTip,
   SHELLS, FAMIGLIE, TIPOGRAFIE, DENSITA, BANDE, PRESET, ALIAS_TIPO, famigliaBrand,
   palette, pelleDi, scegliPelle, seme,
   mix, contrasto

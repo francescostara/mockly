@@ -61,6 +61,37 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     } catch (e) { return null; }
   };
   M.lum = function (col) { var c = M.rgb(col); return c ? (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255 : null; };
+  /* gli inchiostri su un colore stanno nel nucleo: le usano donut, pile, funnel, heatmap e hbar, e un
+     helper dentro la regione di un grafico sparisce quando quel grafico non c'e (il drill di Verona
+     senza hbar: "M.inkSu is not a function", 13 ott 2026) */
+  /* L'INCHIOSTRO SU UN COLORE si sceglie misurando il contrasto WCAG fra il colore e i due
+     candidati, scuro e bianco, e vince il piu alto. Prima era bianco sotto una soglia di
+     luminanza e var(--ink) sopra: nei temi scuri --ink e chiaro, quindi su un giallo usciva
+     comunque chiaro su chiaro (Fra, 13 ott 2026). Gate: test/barra.test.js, ogni testo su una forma
+     colorata a 4,5:1. */
+  M.relLum = function (col) {
+    var c = M.rgb(col); if (!c) return null;
+    var f = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+  };
+  /* UN COLORE CHE DEVE RESTARE SE STESSO (il verde sopra il target, il rosso sotto) su un fondo
+     colorato: si scurisce (fondo chiaro) o si schiarisce (fondo scuro) a passi, finche arriva a
+     4,5:1. Il verde dello stato su una cella carica della heatmap stava a 2,3:1 (Luca v4). */
+  M.inkVerso = function (col, bg) {
+    var c = M.rgb(col), f = M.rgb(bg); if (!c || !f) return col;
+    var lr = function (x) { var g = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * g(x[0]) + 0.7152 * g(x[1]) + 0.0722 * g(x[2]); };
+    var Lf = lr(f), verso = Lf > 0.18 ? 0 : 255;
+    for (var q = 0; q <= 1.001; q += 0.08) {
+      var x = c.map(function (v) { return Math.round(v + (verso - v) * q); }), L = lr(x);
+      if ((Math.max(L, Lf) + 0.05) / (Math.min(L, Lf) + 0.05) >= 4.5) return '#' + x.map(function (v) { return (v < 16 ? '0' : '') + v.toString(16); }).join('');
+    }
+    return verso ? '#ffffff' : '#111110';
+  };
+  M.inkSu = function (col) {
+    var L = M.relLum(col); if (L === null) return '#fff';
+    var conBianco = 1.05 / (L + 0.05), conScuro = (L + 0.05) / (0.0058 + 0.05);   /* #111110 */
+    return conScuro > conBianco ? '#111110' : '#fff';
+  };
   /* quanto due colori si distinguono (0-1): distanza nello spazio rgb, che conta tinta e luce —
      l'ambra accanto al blu si legge anche a pari luminosita, l'ambra accanto all'oliva no */
   M.distanza = function (a, b) { var x = M.rgb(a), y = M.rgb(b); return x && y ? Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) / 441.7 : null; };
@@ -121,7 +152,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var h = px + (o.padY === undefined ? 3 : o.padY) * 2;
     var rx = anc === 'end' ? x - w + 3 : anc === 'start' ? x - 3 : x - w / 2;
     return '<rect x="' + rx.toFixed(1) + '" y="' + (y - px + 1).toFixed(1) + '" width="' + w.toFixed(1) +
-      '" height="' + h.toFixed(1) + '" rx="' + (h / 2).toFixed(1) + '" fill="' + (o.velo || 'var(--ink)') +
+      '" height="' + h.toFixed(1) + '" rx="' + (h / 2).toFixed(1) + '" fill="' + (o.velo || '#111110') +
       '" opacity="' + (o.opacita === undefined ? 0.55 : o.opacita) + '" style="pointer-events:none"/>' +
       '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="' + anc +
       '" font-size="' + px + '" font-weight="' + (o.peso || 600) + '" fill="' + (o.ink || '#fff') +
@@ -1422,7 +1453,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       if (d.v / tot >= 0.09 && !dim2) {
         var am = (ang + a2) / 2, rm = (rO + rI) / 2;
         s += '<text' + tr + ' x="' + (cx + rm * Math.cos(am)).toFixed(1) + '" y="' + (cy + rm * Math.sin(am) + 3).toFixed(1) +
-          '" text-anchor="middle" font-size="9" font-weight="600" fill="' + (d.coda ? 'var(--altriInk)' : '#fff') + '" class="tnum" ' +
+          '" text-anchor="middle" font-size="9" font-weight="600" fill="' + (d.coda ? 'var(--altriInk)' : M.inkSu(col)) + '" class="tnum" ' +
           'style="pointer-events:none">' + f.pc(d.v / tot, 0) + '</text>';
       }
       ang = a2;
@@ -1461,7 +1492,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 (function (M) {
   /* l'inchiostro leggibile SOPRA un colore della palette: chiaro sui fondi scuri, scuro sui chiari.
      Un valore dentro una barra col colore fisso del tema era scuro su scuro (Luca, 3 ott 2026). */
-  M.inkSu = function (col) { var l = M.lum(col); return l !== null && l >= 0.6 ? 'var(--ink)' : '#fff'; };
+
   M.V.hbar = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, dim = b.dim, ms = b.measure;
     h = v.h || h || 190;
@@ -1500,19 +1531,25 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     /* COLORATE PER IL PADRE, LE BARRE DICONO QUALE PADRE: la legenda dei padri presenti. Senza,
        i Top 10 clienti di Bodan avevano tre colori che nessuno spiegava (3 ott 2026). */
     var lgd = '';
-    if (b.parent) {
-      var visti = [];
-      data.forEach(d => { if (d.cat && visti.indexOf(d.cat) < 0) visti.push(d.cat); });
-      lgd = A.legend(visti.map(id => ({ l: A.dimLabel(b.parent, id), c: A.color(b.parent, id) })));
-      h -= 20;
-    }
+    if (b.parent) h -= 20;
     var px = 9, lblH = 12, n = data.length || 1;
     var x0 = M.PAD, full = w - 2 * M.PAD;
     /* il valore sta alla fine della barra; il dettaglio sulla riga del nome, a destra: cosi la
        barra piu lunga ha quasi tutta la card */
     var valW = Math.max.apply(null, data.map(d => M.larghN(A.mfmt(ms, d.v), px))) + 8;
     var maxBar = Math.max(full * .7, full - valW);
-    var m = { t: 4, b: 4 }, rh = (h - m.t - m.b) / n;
+    /* QUANTE RIGHE CI STANNO: nome (12px), barra (almeno 8px) e respiro. Con nove topic in una
+       card bassa le righe scendevano a 21px e il nome della riga dopo si stampava sulla barra di
+       quella prima (app-lingue, trovato dal gate del contrasto il 13 ott 2026). */
+    var m = { t: 4, b: 4 }, nMax = Math.max(1, Math.floor((h - m.t - m.b) / (lblH + 14)));
+    if (data.length > nMax) { data = data.slice(0, nMax); n = data.length; }
+    /* la legenda dice i padri delle barre che si vedono, non di quelle tagliate */
+    if (b.parent) {
+      var visti = [];
+      data.forEach(d => { if (d.cat && visti.indexOf(d.cat) < 0) visti.push(d.cat); });
+      lgd = A.legend(visti.map(id => ({ l: A.dimLabel(b.parent, id), c: A.color(b.parent, id) })));
+    }
+    var rh = (h - m.t - m.b) / n;
     var bh = Math.max(8, Math.min(18, rh - lblH - 6));
     var max = Math.max.apply(null, data.map(d => d.v)) || 1;
     var mm = A.meas(ms), quota = (b.share !== false && mm.agg === 'sum' && data.every(d => d.v >= 0))
@@ -1632,7 +1669,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     };
     var body = rows.map(function (r) {
       var cl = A.hl(dim) ? (A.hl(dim) === r.m.id ? 'sel' : 'dim') : '';
-      return '<tr class="r ' + cl + '" data-f="' + dim + ':' + r.m.id + '"' + (b.drill === false ? '' : ' data-drill="' + dim + ':' + r.m.id + '"') + '>' +
+      return '<tr class="r ' + cl + '" data-f="' + dim + ':' + r.m.id + '"' + (b.drill === false || !SPEC.drill || SPEC.drill.dim !== dim ? '' : ' data-drill="' + dim + ':' + r.m.id + '"') + '>' +
         '<td><span class="sw" style="background:' + r.m.c + '"></span>' + M.esc(r.m.n) + '<span class="dg">›</span></td>' +
         cols.map(c => cell(c, r.a, r.b, A.mv(c.measure, tot))).join('') + '</tr>';
     }).join('');
@@ -1754,12 +1791,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          nel mockup di Bodan, 3 ott 2026) */
       var yL = Math.max(mgn.t + 8, Y2(line[k]) - 10);
       if (tg !== null && Math.abs(yL - (Y2(tg) - 4)) < 11) yL = Y2(line[k]) + 16;
-      s += M.testoVelato(lm.label || '', Math.min(Math.max(xU, mgn.l + wLbl / 2), mgn.l + iw - wLbl / 2),
-        yL,
+      var xN = Math.min(Math.max(xU, mgn.l + wLbl / 2), mgn.l + iw - wLbl / 2);
+      /* con l'ultimo punto in cima all'area il nome finiva sopra il pallino, lettere del colore della
+         linea sul pallino dello stesso colore ("DSO" a 1:1, Bodan): allora il nome va a SINISTRA del
+         punto, alla sua altezza, e l'ultimo valore resta sotto */
+      if (yL !== Y2(line[k]) + 16 && Y2(line[k]) - 10 < mgn.t + 8 + 2) { yL = Y2(line[k]) + 3; xN = Math.max(mgn.l + wLbl / 2, xU - 26 - wLbl / 2); }
+      s += M.testoVelato(lm.label || '', xN, yL,
         { px: 8.5, anc: 'middle', velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 4, padY: 2 });
       /* minimo, massimo e ultimo valore della linea; l'ultimo sta sotto il punto, perche sopra c'e
          il nome della serie, e nessuno tocca il nome o la scritta del target */
-      var xN = Math.min(Math.max(xU, mgn.l + wLbl / 2), mgn.l + iw - wLbl / 2), evita = [{ l: xN - wLbl / 2 - 4, r: xN + wLbl / 2 + 4, t: yL - 10, b: yL + 3 }];
+      var evita = [{ l: xN - wLbl / 2 - 4, r: xN + wLbl / 2 + 4, t: yL - 10, b: yL + 3 }];
       if (tg !== null) evita.push({ l: mgn.l, r: mgn.l + 8 + M.larghN((b.targetLabel || 'Target') + ' ' + A.mfmt(ln, tg), 8.5), t: Y2(tg) - 14, b: Y2(tg) });
       if (b.labels !== false) s += M.etichettePunti(line.map((val, k2) => ({ x: mgn.l + cw * k2 + cw / 2, y: val === null ? 0 : Y2(val), v: val })),
         { fmt: x => A.mfmt(ln, x), col: lc, l: mgn.l, r: mgn.l + iw, t: mgn.t, b: mgn.t + ih, ultimoGiu: true, evita: evita });
@@ -1857,7 +1898,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + x.toFixed(1) + '" y="' + (y - bh / 2).toFixed(1) + '" width="' + Math.max(0, bl - 1).toFixed(1) +
           '" height="' + bh + '" fill="' + c.c + '" data-f="' + dim + ':' + c.id + '" data-tip="<b>' + M.esc(grp.l + ' · ' + c.n) + '</b><br>' +
           A.mfmt(ms, val) + '<br>' + f.pc(val / tot) + '"/>';
-        if (bl > 34) s += '<text x="' + (x + bl / 2).toFixed(1) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="middle" font-size="8.5" fill="#fff">' + Math.round(val / tot * 100) + '%</text>';
+        if (bl > 34) s += '<text x="' + (x + bl / 2).toFixed(1) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="middle" font-size="8.5" fill="' + M.inkSu(c.c) + '">' + Math.round(val / tot * 100) + '%</text>';
         x += bl;
       });
     });
@@ -2119,7 +2160,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
             '" width="' + Math.max(1, cw - gap).toFixed(1) + '" height="' + Math.max(1, ch - gap).toFixed(1) +
             '" rx="1" fill="var(--card)" stroke="var(--line2)"/>' +
             (ch >= 17 ? '<text x="' + (lw + cw * ci + cw / 2).toFixed(1) + '" y="' + (y + ch / 2 + 3).toFixed(1) +
-              '" text-anchor="middle" font-size="8.5" fill="var(--muted3)" style="pointer-events:none">—</text>' : '');
+              '" text-anchor="middle" font-size="8.5" fill="var(--ink2)" style="pointer-events:none">—</text>' : '');
           return;
         }
         /* Il gradino della cella, dal piu freddo al piu caldo. Sono velature della rampa
@@ -2146,8 +2187,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           /* sui due gradini piu caldi il fondo e piu carico: l'inchiostro chiaro si stacca meglio */
           s += '<text x="' + (lw + cw * ci + cw / 2).toFixed(1) + '" y="' + (y + ch / 2 + 3).toFixed(1) +
             '" text-anchor="middle" font-size="8.5" class="tnum" fill="' +
-            (A.statoT(ms, x) ? 'var(--' + A.statoT(ms, x).slice(1) + ')' : (liv >= 3 ? 'var(--heatInk)' : 'var(--ink2)')) + '"' +
-            (A.statoT(ms, x) ? ' font-weight="700"' : '') + ' style="pointer-events:none">' +
+            (A.statoT(ms, x) ? M.inkVerso('var(--' + A.statoT(ms, x).slice(1) + ')', col) : (liv >= 3 ? 'var(--heatInk)' : 'var(--ink2)')) + '"' +
+            (A.statoT(ms, x) ? ' font-weight="700" data-st="' + A.statoT(ms, x).slice(1) + '"' : '') + ' style="pointer-events:none">' +
             M.esc(testo) + '</text>';
         }
       });
@@ -2246,7 +2287,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (alt >= 13 && !dimd) {
           /* Sul velo, non sul nastro: ai due estremi il numero sporge sul fondo chiaro della
              card, e in bianco non si legge piu. Il velo lo accompagna ovunque vada. */
-          s += M.testoVelato(A.mfmt(ms, o.v), X(p), o.y0 + alt / 2 + 3, { px: 8.5, opacita: 0.55 });
+          /* velo scuro all'80% sotto il bianco: col velo dell'inchiostro al 55% le cifre stavano a 2,2:1
+             nei temi scuri, dove l'inchiostro e chiaro (Fra, 13 ott 2026) */
+          s += M.testoVelato(A.mfmt(ms, o.v), X(p), o.y0 + alt / 2 + 3, { px: 8.5, opacita: 0.8 });
         }
       });
     });
@@ -2294,8 +2337,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var yt = (y + bh / 2 + 3.5).toFixed(1);
       var wNome = M.largh(st.label, 10), wVal = M.largh(A.mfmt(st.measure, vals[i]), 10);
       if (bw >= wNome + wVal + 26) {
-        s += '<text x="' + (x + 8) + '" y="' + yt + '" font-size="10" fill="#fff">' + M.esc(st.label) + '</text>';
-        s += '<text x="' + (x + bw - 8) + '" y="' + yt + '" text-anchor="end" font-size="10" fill="#fff" class="tnum">' + A.mfmt(st.measure, vals[i]) + '</text>';
+        var inkF = M.inkSu(st.c || 'var(--c2)');
+        s += '<text x="' + (x + 8) + '" y="' + yt + '" font-size="10" fill="' + inkF + '">' + M.esc(st.label) + '</text>';
+        s += '<text x="' + (x + bw - 8) + '" y="' + yt + '" text-anchor="end" font-size="10" fill="' + inkF + '" class="tnum">' + A.mfmt(st.measure, vals[i]) + '</text>';
       } else {
         s += '<text x="' + (x + bw + 7).toFixed(1) + '" y="' + yt + '" font-size="10" fill="var(--ink2)">' +
           M.esc(st.label) + ' <tspan class="tnum" fill="var(--ink)">' + A.mfmt(st.measure, vals[i]) + '</tspan></text>';

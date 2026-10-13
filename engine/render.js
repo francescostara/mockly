@@ -1058,6 +1058,8 @@ function css(spec, compact) {
   const t = Object.assign({}, P.tokens, spec.palette || {});
   /* con una palette propria della spec il periodo corrente si sceglie sui colori che si vedono davvero */
   if (spec.palette) t.cur = SKIN.scegliCur(t, Array.isArray(spec.palette.series) ? spec.palette.series : [1, 2, 3, 4, 5, 6].map(i => t['c' + i]));
+  /* il tooltip si riverifica sui colori che si vedono davvero (una palette della spec o del marchio) */
+  Object.assign(t, SKIN.scegliTip(t));
   /* GLI SCOSTAMENTI DI UN REPORT FINANCE SONO ROSSO E VERDE, se il brief lo chiede
      (meta.varianze "finanza"; Bodan, 3 ott 2026: "costs above budget and revenue below budget are
      unfavourable (red)"). La casa usa blu e arancio, che reggono le dicromazie: qui restano le
@@ -1277,7 +1279,7 @@ tr.r:hover .dg{opacity:1}
 .lgd i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .lgd .ln{display:inline-block;width:11px;height:0;border-top:2px dashed var(--prior);margin-right:5px;vertical-align:3px}
 svg{display:block}svg .hit{cursor:pointer}svg .dimd{opacity:.3}${tipi.has('gauge') ? '.gnote{font-size:10.5px;color:var(--muted);text-align:center;padding:0 10px 8px;line-height:1.4}' : ''}
-#tip{position:fixed;pointer-events:none;background:var(--c1);color:#fff;font-size:10.5px;padding:6px 9px;border-radius:2px;opacity:0;transition:opacity .1s;z-index:60;line-height:1.55;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#tip{position:fixed;pointer-events:none;background:var(--tip);color:var(--tipInk);font-size:10.5px;padding:6px 9px;border-radius:2px;opacity:0;transition:opacity .1s;z-index:60;line-height:1.55;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 #tip b{font-weight:600}
 .backb{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);background:transparent;border:1px solid var(--line);padding:6px 10px;border-radius:2px;cursor:pointer;font-family:var(--font)}
 .dhd{display:flex;align-items:center;gap:12px}

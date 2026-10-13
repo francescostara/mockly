@@ -37,9 +37,9 @@ ok('una misura col target colora card, celle, celle della heatmap e punti della 
   const celle = [...doc.querySelectorAll('#page td.tok, #page td.tko')];
   assert(celle.length >= 6, 'le celle del Late % devono dire sopra o sotto il target');
   celle.forEach(td => { const x = num(td.textContent); if (/%$/.test(td.textContent.trim()) && x < 50) assert.strictEqual(td.classList.contains('tok'), x <= 2, 'Late % ' + x + ': colore sbagliato'); });
-  const heat = [...doc.querySelectorAll('#page svg text[font-weight="700"]')].filter(t => /var\(--(ok|ko)\)/.test(t.getAttribute('fill') || ''));
+  const heat = [...doc.querySelectorAll('#page svg text[data-st]')];
   assert(heat.length >= 10, 'le celle della heatmap della compliance');
-  heat.forEach(t => assert.strictEqual(t.getAttribute('fill') === 'var(--ok)', num(t.textContent) >= 98, 'heatmap ' + t.textContent));
+  heat.forEach(t => assert.strictEqual(t.getAttribute('data-st') === 'ok', num(t.textContent) >= 98, 'heatmap ' + t.textContent));
   assert(doc.querySelectorAll('#page circle.l2p[fill="var(--ok)"], #page circle.l2p[fill="var(--ko)"]').length >= 12, 'i punti della linea della compliance');
 });
 

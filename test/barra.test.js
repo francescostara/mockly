@@ -64,11 +64,52 @@ function tuttiIFiltri() {
   return dims.size;
 }
 
+/* Gira nella pagina: ogni testo su una forma colorata e il suo contrasto col fondo reale. */
+function contrastoPagina() {
+          const st = document.createElement('style');
+          st.textContent = '#page svg *{pointer-events:auto !important}';
+          document.head.appendChild(st);
+          const rgb = s => { const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/.exec(s || ''); return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]] : null; };
+          const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+          const contr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+          const opac = el => { let o = 1; for (let e = el; e && e.tagName && e.tagName.toLowerCase() !== 'svg'; e = e.parentNode) o *= parseFloat(getComputedStyle(e).opacity); return o; };
+          const out = [];
+          [...document.querySelectorAll('#page svg text')].forEach(t => {
+            const testo = t.textContent.trim(); if (!testo) return;
+            const r = t.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
+            if (opac(t) < 0.9) return;                 /* un testo attenuato apposta (fuori filtro) */
+            const svg = t.ownerSVGElement;
+            const sotto = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+              .filter(e => e !== t && svg.contains(e) && /^(rect|path|circle|ellipse|polygon)$/i.test(e.tagName));
+            const card = t.closest('.card') || document.body;
+            let bg = rgb(getComputedStyle(card).backgroundColor);
+            if (!bg || bg[3] === 0) bg = rgb(getComputedStyle(document.body).backgroundColor) || [255, 255, 255, 1];
+            let forme = 0;
+            sotto.reverse().forEach(e => {
+              const cs = getComputedStyle(e), c = rgb(cs.fill); if (!c) return;
+              const a = c[3] * parseFloat(cs.fillOpacity || 1) * opac(e);
+              if (a >= 0.3) forme++;
+              bg = [0, 1, 2].map(i => bg[i] * (1 - a) + c[i] * a);
+            });
+            if (!forme) return;                        /* sta sulla card: non e un testo su un colore */
+            const ink = rgb(getComputedStyle(t).fill); if (!ink) return;
+            const k = contr(ink, bg);
+            if (k < 4.5) out.push('"' + testo.slice(0, 24) + '" a ' + k.toFixed(1) + ':1 (' + (((t.closest('.card') || {}).querySelector || (() => null)).call(t.closest('.card'), '.ch h3') || { textContent: '?' }).textContent.trim().slice(0, 40) + ')');
+          });
+          st.remove();
+          return out;
+}
+
 (async () => {
   if (!disponibile().ok) { console.log('  --  saltato: qui non c e un Chrome da guidare'); console.log('  0 checks'); return; }
   const { chromium } = require('playwright');
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+  /* UN ERRORE NELLA PAGINA E UN GUASTO: il drill di Verona non si disegnava (M.inkSu in una regione
+     tolta dal bundler) e il controllo del contrasto passava lo stesso, su una pagina vuota */
+  const erroriPagina = [];
+  let doveOra = '';
+  page.on('pageerror', e => erroriPagina.push(doveOra + ': ' + e.message));
 
   /* UN SOLO GIRO. I due controlli qui sotto caricavano ogni mockup due volte, in due lingue, con
      un'attesa fissa di 120ms dopo ogni passo: mezzo minuto a ogni suite. Ora ogni mockup si
@@ -77,6 +118,8 @@ function tuttiIFiltri() {
      due fotogrammi, cioe il layout fatto — non un numero di millisecondi scelto a occhio. */
   const layout = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const guastiCapo = [], guastiStima = [], guastiTabelle = [], guastiBarre = [];
+  const guastiContrasto = [], guastiTip = [];
+  let testiSuColore = 0;
   let viste2 = 0, menu = 0;
   let viste = 0, misure = 0;
   for (const c of casi()) {
@@ -87,6 +130,17 @@ function tuttiIFiltri() {
       await page.setContent(renderCaso(c, spec), { waitUntil: 'load' });
       await layout();
       const dove0 = c.id + ' (' + (lingua === 'propria' ? (spec.meta.locale || 'it') : lingua) + ')';
+      doveOra = dove0;
+      /* il tooltip: il suo testo sul suo fondo, 4,5:1 */
+      const tip = await page.evaluate(() => {
+        const t = document.getElementById('tip'); if (!t) return null;
+        const rgb = s => { const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(s || ''); return m ? [+m[1], +m[2], +m[3]] : null; };
+        const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+        const a = rgb(getComputedStyle(t).backgroundColor), b = rgb(getComputedStyle(t).color);
+        if (!a || !b) return null;
+        const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      });
+      if (tip !== null && tip < 4.5) guastiTip.push(dove0 + ' · tooltip a ' + tip.toFixed(1) + ':1');
 
       /* IL CONTO DEL MOTORE NON E MAI PIU OTTIMISTA DELLA BARRA VERA. Il motore decide se una
          barra ci sta prima di disegnarla; se la sua stima e sotto la misura reale, approva barre
@@ -241,6 +295,23 @@ function tuttiIFiltri() {
         /* i gradini di un ponte si vedono: con l'asse da zero erano strisce di un pixel (Bodan) */
         const gradini = await page.evaluate(() => [...document.querySelectorAll('#page rect.wfs')].filter(r => r.getBoundingClientRect().height < 4).length);
         if (gradini) guastiBarre.push(dove0 + ' · pagina ' + pg.id + ' · waterfall: ' + gradini + ' gradini piu bassi di 4px');
+        /* OGNI TESTO SU UNA FORMA COLORATA SI LEGGE: 4,5:1 (WCAG AA). Il bianco su giallo del tooltip
+           e delle quote del donut stava intorno a 1,3:1 (Fra, 13 ott 2026). Il fondo e la composizione
+           reale di cio che sta sotto il centro del testo: la card, poi ogni forma con la sua opacita. */
+        const illeggibili = await page.evaluate(contrastoPagina);
+        illeggibili.slice(0, 3).forEach(x => guastiContrasto.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
+        testiSuColore++;
+      }
+      /* anche la pagina di drill-through: il donut dei costi di Verona aveva il 15% bianco su giallo */
+      {
+        await page.evaluate(() => { const r = document.getElementById('btnReset'); if (r) r.click(); });
+        const aperto = await page.evaluate(() => { const r = document.querySelector('[data-drill]'); if (!r) return false; r.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); return true; });
+        if (aperto) {
+          await layout();
+          (await page.evaluate(contrastoPagina)).slice(0, 3).forEach(x => guastiContrasto.push(dove0 + ' · drill-through · ' + x));
+          await page.evaluate(() => { const b = document.getElementById('btnBack'); if (b) b.click(); });
+          await layout();
+        }
         viste2 += await page.evaluate(() => [...document.querySelectorAll('#page svg')].filter(s => s.querySelector('rect.barra')).length);
       }
     }
@@ -257,6 +328,14 @@ function tuttiIFiltri() {
     assert.ok(viste2 >= 10, 'solo ' + viste2 + ' hbar misurate');
     assert.ok(menu >= 10, 'solo ' + menu + ' menu a tendina aperti');
     assert.deepStrictEqual([...new Set(guastiBarre)].slice(0, 10), [], [...new Set(guastiBarre)].slice(0, 10).join(String.fromCharCode(10) + '       '));
+  });
+  await okAsync('nessun errore JavaScript in nessuna pagina, drill-through compreso', async () => {
+    assert.deepStrictEqual([...new Set(erroriPagina)].slice(0, 10), []);
+  });
+  await okAsync('ogni testo su una forma colorata e il tooltip si leggono: almeno 4,5:1 (mai bianco su giallo)', async () => {
+    assert.ok(testiSuColore >= 20, 'solo ' + testiSuColore + ' pagine controllate');
+    const g = [...new Set(guastiTip.concat(guastiContrasto))];
+    assert.deepStrictEqual(g.slice(0, 400), [], g.length + ' casi:' + String.fromCharCode(10) + '       ' + g.slice(0, 15).join(String.fromCharCode(10) + '       '));
   });
   await okAsync('la stima della barra non e mai sotto la barra vera: gruppi di filtri e bottoni di destra', async () => {
     assert.ok(misure >= 10, 'solo ' + misure + ' gruppi misurati');

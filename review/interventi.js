@@ -837,6 +837,22 @@ const INTERVENTI = [
     fatto: "Lo spazio di una card a viste vale quanto la sua vista piu alta; un'etichetta di riga della heatmap troppo lunga si accorcia coi puntini (il nome intero nel tooltip). Il gate in Chrome ora apre ogni vista di ogni card a viste e controlla i testi di TUTTI i grafici (prima solo hbar, colline e trend): ha trovato subito il gauge di Parsa, dove con valore e target entrambi al 100% l'etichetta del bersaglio copriva il valore — ora il bersaglio passa nella nota sotto l'arco.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/trasporti-verona",
+    versione: 2,
+    commento: "(Fra, guardando il video per LinkedIn) Never do again the yellow white for the labels, is not accessible/visible.",
+    dove: "tooltip · runtime · skin · skill · gate",
+    fatto: "Il tooltip era sempre il primo colore della scala con testo bianco: nelle famiglie scure il primo colore e un giallo chiaro, e il tooltip usciva bianco su giallo a circa 1,3:1. Ora il fondo del tooltip e il primo colore solo se il bianco ci sta sopra a 4,5:1, altrimenti l'inchiostro del report con il colore della card (skin.scegliTip, ricalcolato dopo la palette della spec). L'inchiostro su un colore (quote del donut, percentuali delle pile 100%, stadi del funnel, valori dentro le barre) si sceglie misurando il contrasto WCAG fra scuro e bianco, invece di una soglia di luminanza che nei temi scuri dava comunque chiaro su chiaro; i numeri verde/rosso della heatmap col target tengono la tinta e si scuriscono o schiariscono fino a 4,5:1; il velo delle cifre del ribbon e scuro all'80%. Regola nella skill (chart-selection.md). Gate in Chrome (test/barra.test.js): ogni testo su una forma colorata, il tooltip e la pagina di drill-through, su ogni mockup del corpus in due lingue, a 4,5:1.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/trasporti-verona",
+    versione: 2,
+    commento: "(trovato dal gate del contrasto e dal gate degli errori, 13 ott 2026) Testi sovrapposti, un drill-through che andava in errore, un helper sparito.",
+    dove: "hbar · colline · matrice · runtime · gate",
+    fatto: "Quattro difetti, ognuno corretto: (1) hbar di app-lingue con nove topic in una card bassa: righe da 21px, il nome della riga dopo stampato sulla barra di quella prima; ora le righe sono quante ne stanno (nome, barra di almeno 8px, respiro) e la legenda dei padri dice solo quelle mostrate. (2) Colline di Bodan: con l'ultimo punto in cima all'area il nome \"DSO\" finiva sul pallino dello stesso colore; ora va a sinistra del punto. (3) Ribbon-sorpasso: la tabella dichiarava il drill-through senza che il report avesse la pagina di dettaglio, e il tasto destro andava in errore; ora data-drill esiste solo se c'e la pagina. (4) Gli inchiostri su un colore stavano nella regione dell'hbar, che il bundler toglie quando l'hbar non c'e: il drill di Verona non si disegnava. Ora stanno nel nucleo, e il test in Chrome fallisce su qualunque errore JavaScript della pagina, drill-through compreso.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

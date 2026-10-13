@@ -121,6 +121,13 @@ name's line, right-aligned. What that asks of the spec:
   colour of its bar in the ranked list; the engine does it, so do not fight it with a `parent`
   unless the parent is the point.
 - **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
+- **Text on a colour is chosen by measured contrast, never white by default (Fra, 13 Oct 2026).**
+  White on yellow, pale blue or pink is around 1.3–2:1: unreadable on a phone, in a projector,
+  and for anyone with low vision. Every label drawn on a coloured shape (bar value, donut share,
+  stacked percentage, funnel stage) and the tooltip itself must reach WCAG AA, 4.5:1. The engine
+  picks dark or white ink by measuring each colour, and the tooltip uses the first series colour
+  only when white text passes on it, otherwise the report's ink. Do not override member colours
+  with pale tints to "make labels fit": the ink follows the colour, not the other way round.
 
 ## Tell the story, in every title (call with Luca, 6 Oct 2026)
 
