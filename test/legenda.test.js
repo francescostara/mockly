@@ -45,8 +45,26 @@ ok('ogni segno della legenda esiste nel disegno, su ogni pagina di ogni mockup',
     const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
     const doc = dom.window.document, win = dom.window;
     const pagine = [...doc.querySelectorAll('.navbtn')].map(b => b.dataset.page);
-    (pagine.length ? pagine : [null]).forEach(p => {
-      if (p) doc.querySelector('.navbtn[data-page="' + p + '"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    /* anche il drill-through: il donut dei costi di Verona aveva in legenda un colore diverso dallo spicchio */
+    const pg2 = (pagine.length ? pagine : [null]).concat(doc.querySelector('[data-drill]') ? ['__drill__'] : []);
+    pg2.forEach(p => {
+      if (p === '__drill__') {
+        /* la riga col drill sta sulla sua pagina: si torna su ognuna finche la si trova */
+        let r = doc.querySelector('[data-drill]');
+        for (const q of pagine) { if (r) break; doc.querySelector('.navbtn[data-page="' + q + '"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true })); r = doc.querySelector('[data-drill]'); }
+        if (!r) return;
+        r.dispatchEvent(new win.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+      }
+      else if (p) doc.querySelector('.navbtn[data-page="' + p + '"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+      /* il donut disegna la sua legenda dentro l'svg: ogni quadratino ha il colore di uno spicchio */
+      [...doc.querySelectorAll('#page svg')].forEach(svg => {
+        const spicchi = new Set([...svg.querySelectorAll('path.hit')].map(e => e.getAttribute('fill')));
+        if (!spicchi.size) return;
+        [...svg.querySelectorAll('rect[width="8"][height="8"]')].forEach(q => {
+          if (!spicchi.has(q.getAttribute('fill'))) guasti.push(c.id + ' · ' + (p || '') + ': la legenda del donut mostra ' + q.getAttribute('fill') + ', che nessuno spicchio ha');
+        });
+        viste++;
+      });
       [...doc.querySelectorAll('#page .card')].forEach(card => {
         const lgd = card.querySelector('.lgd'), svg = card.querySelector('svg');
         if (!lgd || !svg) return;

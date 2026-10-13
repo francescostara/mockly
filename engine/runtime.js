@@ -1441,6 +1441,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var p1 = P(rO, ang), p2 = P(rO, a2), p3 = P(rI, a2), p4 = P(rI, ang);
       var dim2 = A.hl(dim) && A.hl(dim) !== d.id;
       /* Rosso solo al problema: lo spicchio segnalato dalla spec, mai una tinta a caso. */
+      /* lo spicchio problema e rosso, e la legenda lo dice nello stesso colore: era blu accanto a uno
+         spicchio arancio (i carrier del drill di Verona, 13 ott 2026) */
       var col = (b.alert && b.alert === d.id) ? 'var(--bad)' : d.c;
       var sp = d.coda ? STACCO : 0, amS = (ang + a2) / 2;
       var tr = sp ? ' transform="translate(' + (sp * Math.cos(amS)).toFixed(2) + ',' + (sp * Math.sin(amS)).toFixed(2) + ')"' : '';
@@ -1475,7 +1477,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += '<g class="hit ' + (dimd ? 'dimd' : '') + '" data-f="' + dim + ':' + d.id +
         '" data-tip="<b>' + M.esc(d.l) + '</b><br>' + A.mfmt(ms, d.v) + '<br>' + f.pc(d.v / tot) + '">' +
         '<rect x="' + lx + '" y="' + (ly - 7.5) + '" width="' + wLeg + '" height="' + Math.min(step, 15) + '" fill="transparent"/>' +
-        '<rect x="' + lx + '" y="' + (ly - 6.5) + '" width="8" height="8" rx="1.5" fill="' + d.c + '"/>' +
+        '<rect x="' + lx + '" y="' + (ly - 6.5) + '" width="8" height="8" rx="1.5" fill="' + ((b.alert && b.alert === d.id) ? 'var(--bad)' : d.c) + '"/>' +
         '<text x="' + (lx + 12) + '" y="' + ly + '" font-size="9.5" fill="var(--ink2)">' + M.esc(d.l) + '</text>' +
         (wide ? '<text x="' + (lx + wLeg - 32) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted)" class="tnum">' + A.mfmt(ms, d.v) + '</text>' : '') +
         '<text x="' + (lx + wLeg) + '" y="' + ly + '" text-anchor="end" font-size="9" fill="var(--muted2)" class="tnum">' + f.pc(d.v / tot, 0) + '</text></g>';

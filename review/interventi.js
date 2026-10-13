@@ -853,6 +853,14 @@ const INTERVENTI = [
     fatto: "Quattro difetti, ognuno corretto: (1) hbar di app-lingue con nove topic in una card bassa: righe da 21px, il nome della riga dopo stampato sulla barra di quella prima; ora le righe sono quante ne stanno (nome, barra di almeno 8px, respiro) e la legenda dei padri dice solo quelle mostrate. (2) Colline di Bodan: con l'ultimo punto in cima all'area il nome \"DSO\" finiva sul pallino dello stesso colore; ora va a sinistra del punto. (3) Ribbon-sorpasso: la tabella dichiarava il drill-through senza che il report avesse la pagina di dettaglio, e il tasto destro andava in errore; ora data-drill esiste solo se c'e la pagina. (4) Gli inchiostri su un colore stavano nella regione dell'hbar, che il bundler toglie quando l'hbar non c'e: il drill di Verona non si disegnava. Ora stanno nel nucleo, e il test in Chrome fallisce su qualunque errore JavaScript della pagina, drill-through compreso.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/trasporti-verona",
+    versione: 2,
+    commento: "(visto rifacendo il video) Nel drill-through la legenda del donut dei costi mostrava i carrier in blu, accanto a uno spicchio arancio.",
+    dove: "donut · runtime · gate",
+    fatto: "Lo spicchio dichiarato `alert` si colora di rosso, ma la sua legenda (disegnata dentro l'svg) restava nel colore del membro. Ora il quadratino ha il colore dello spicchio. Gate: test/legenda.test.js controlla anche la legenda interna del donut e la pagina di drill-through; sul codice vecchio trova Verona e banco/concentrazione.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
