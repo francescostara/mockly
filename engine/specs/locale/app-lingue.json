@@ -850,29 +850,45 @@
      {
       "visuals": [
        {
-        "type": "hbar",
+        "id": "topicDrill",
         "span": 2,
         "h": 170,
-        "title": "Most practised topics — {drill}",
-        "subtitle": "lessons completed",
-        "bind": {
-         "dim": "topic",
-         "measure": "lessons",
-         "detail": true,
-         "top": 5
-        }
+        "motivo": "due-lenti",
+        "viste": [
+         {
+          "type": "hbar",
+          "title": "Most practised topics — {drill}",
+          "subtitle": "lessons completed",
+          "bind": {
+           "dim": "topic",
+           "measure": "lessons",
+           "detail": true,
+           "top": 5
+          },
+          "etichetta": "Most practised"
+         },
+         {
+          "type": "hbar",
+          "title": "Hardest topics — {drill}",
+          "subtitle": "mistake rate per attempt",
+          "bind": {
+           "dim": "topic",
+           "measure": "mistakeRate",
+           "detail": true,
+           "top": 5
+          },
+          "etichetta": "Hardest"
+         }
+        ]
        },
        {
-        "type": "hbar",
+        "type": "colline",
         "span": 2,
         "h": 170,
-        "title": "Hardest topics — {drill}",
-        "subtitle": "mistake rate per attempt",
+        "title": "Lessons by month, with the mistake rate — {drill}",
         "bind": {
-         "dim": "topic",
-         "measure": "mistakeRate",
-         "detail": true,
-         "top": 5
+         "measure": "lessons",
+         "line": "mistakeRate"
         }
        }
       ]

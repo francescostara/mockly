@@ -622,6 +622,25 @@ function validate(specIn, data) {
      Sports era dello stesso colore di Footwear: in un visual dove il colore e l'unico modo di
      riconoscere la categoria, e un'informazione falsa. Dove il colore identifica il membro, i
      membri a schermo non possono superare i colori distinti. */
+  /* LO STESSO GRAFICO DUE VOLTE NELLA STESSA PAGINA E UNA DOMANDA FATTA DUE VOLTE (Fra, 15 ott 2026:
+     "questa ripetizione dello stesso grafico non mi piace per niente, usa i bookmark"). Valore
+     aggiunto e occupati per settore, due pile 100% per paese affiancate (Nicola): vanno in una card
+     sola a viste, e lo spazio liberato prende un altro visual. Uguali = stesso tipo sulla stessa
+     dimensione (e lo stesso asse `by`); per i grafici nel tempo basta il tipo. Le card a viste sono
+     gia il bookmark; le card delta, i gauge e le tabelle hanno le loro regole. */
+  const RIPETIBILI = new Set(['matrix', 'delta-card', 'gauge', 'narrative', 'sparkline', 'statement']);
+  spec.pages.concat(spec.drill ? [spec.drill.page] : []).forEach(pg => {
+    const visti = {};
+    (pg.rows || []).forEach(row => row.visuals.forEach(v => {
+      if ((v.viste && v.viste.length > 1) || !v.type || RIPETIBILI.has(v.type)) return;
+      const b = v.bind || {};
+      const k = v.type + '|' + (b.dim || '') + '|' + (b.by || '') + '|' + (b.detail ? 'det' : '');
+      if (visti[k]) e.push(`page "${pg.id}": due ${v.type}${b.dim ? ' su "' + b.dim + '"' : ''} nella stessa pagina ` +
+        `("${visti[k]}" e "${v.title || '?'}"): e lo stesso grafico ripetuto. Mettili in UNA card con "viste" ` +
+        `(il bookmark di Power BI, "motivo": "due-lenti") e usa lo spazio per un visual diverso.`);
+      else visti[k] = v.title || v.type;
+    }));
+  });
   const coloriDistinti = (() => { try { return new Set(pelle(spec).tokens.serie || []).size; } catch (x) { return 0; } })();
   if (coloriDistinti && !(spec.meta || {}).brandColors) {
     const conPiuColori = Object.keys(SKIN.FAMIGLIE).filter(f => { try { return new Set(SKIN.palette(f).serie).size >= 6; } catch (x) { return false; } });

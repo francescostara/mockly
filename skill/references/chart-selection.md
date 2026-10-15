@@ -121,6 +121,19 @@ name's line, right-aligned. What that asks of the spec:
   colour of its bar in the ranked list; the engine does it, so do not fight it with a `parent`
   unless the parent is the point.
 - **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
+- **Never the same chart twice on a page: use a bookmark (Fra, 15 Oct 2026).** Two visuals of the
+  same type on the same dimension (value added by sector and employment by sector, both as 100%
+  stacked bars by country; capital/output and investment rate, both as ranked bars by country)
+  are one question asked twice. Put them in ONE card with `viste` (the Power BI bookmark),
+  `"motivo": "due-lenti"`, and use the freed space for a different visual. The engine rejects the
+  repetition.
+- **A line shows its movement (Fra, 15 Oct 2026).** A line chart whose axis starts at zero turns
+  GDP per capita between $60,000 and $61,000 into a flat line. Lines and trends fit their axis to
+  the data, as Power BI does; bars and columns keep the zero baseline. The engine does it.
+- **Yearly data gets a yearly line.** Macro series, annual accounts, anything with one value per
+  year: a monthly axis draws twelve identical points and hides the history. Declare
+  `"grain": "year"` on the `trend`: it draws one point per year over all the years in the data,
+  with the selected year highlighted, while the KPI cards keep the selected year.
 - **Text on a colour is chosen by measured contrast, never white by default (Fra, 13 Oct 2026).**
   White on yellow, pale blue or pink is around 1.3–2:1: unreadable on a phone, in a projector,
   and for anyone with low vision. Every label drawn on a coloured shape (bar value, donut share,

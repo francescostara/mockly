@@ -213,7 +213,7 @@ export interface MatrixColumn {
 }
 
 export type Bind =
-  | { measure: string; labels?: boolean }                                     // trend (labels:false spegne min/max/ultimo), sparkline
+  | { measure: string; labels?: boolean; grain?: 'year' }                    // trend (labels:false spegne min/max/ultimo; grain:'year' = un punto per anno su tutti gli anni), sparkline
   | { measure: string; line?: string; target?: number; targetLabel?: string; labels?: boolean }  // colline: target = bersaglio della linea; labels:false spegne min/max/ultimo
   | { dim: string; measure: string }                                          // donut
   /** hbar — classifica. `order: "asc"` mostra la CODA: i `top` peggiori per la misura (i prodotti

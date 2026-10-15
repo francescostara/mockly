@@ -193,7 +193,7 @@ Common visual fields: `type`, `span`, `h`, `title`, `subtitle`, `note` (right-al
 
 | type | bind | answers |
 |---|---|---|
-| `trend` | `{measure}` | one measure over time. **Timeline-exempt**: always the full 12 months of the selected year vs prior, highlighting the selected span |
+| `trend` | `{measure, grain}` | one measure over time. **Timeline-exempt**: always the full 12 months of the selected year vs prior, highlighting the selected span. `"grain": "year"` for yearly data (macro, annual accounts): one point per year over all the years, the selected year highlighted |
 | `statement` | `{label, lines:[{label, measure, budget, kind, inv, accounts:[{label, w}]}], ytd}` | **the income statement**: rows are the lines in account order; `kind` `"sub"` (subtotal: Gross profit, EBITDA — a calculated measure, never a sum of rows), `"total"` (EBIT, net income), `"pct"` (a margin row, varies in points). Columns Actual · Budget · Var · Var % for the period and, with a month or quarter selected, for YTD. A line with `accounts` expands in place into its accounts (weights `w`). Closes a page like a matrix |
 | `colline` | `{measure, line, target, targetLabel, labels}` | actual vs prior columns + a rate line on a secondary axis that fits the data. `target` (on the line's scale: `0.98` for 98%) draws a fixed dashed target line; **declare it whenever the line's measure has a target in the brief** |
 | `donut` | `{dim, measure}` | part-to-whole. **2-5 members only** — above that use `hbar`/`stack100` |

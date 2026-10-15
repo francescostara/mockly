@@ -132,4 +132,62 @@ ok('nessuna heatmap su un rapporto scrive 0.0% dove manca la base; le corsie vuo
   assert(heat >= 1 && vuote >= 1, `heatmap su rapporti ${heat}, celle vuote ${vuote}`);
   assert.deepStrictEqual(guastiH.slice(0, 8), [], guastiH.slice(0, 8).join('\n'));
 });
+/* LA LINEA SI MUOVE (Fra su Nicola, 15 ott 2026: "il primo line chart devi lavorare sugli assi: cosi non
+   si vede l'evoluzione ma sembra una linea dritta"). Un trend con l'asse da zero e tutti i punti nella
+   meta alta del grafico schiaccia l'evoluzione: l'asse deve partire vicino ai dati. */
+ok('ogni trend: se i punti stanno tutti nella meta alta, l asse non parte da zero', () => {
+  const guasti = [];
+  let visti = 0;
+  casi().forEach(c => perPagina(c, (pg, doc) => {
+    [...doc.querySelectorAll('#page svg')].forEach(svg => {
+      const linea = svg.querySelector('path[stroke="var(--cur)"][stroke-width="2"]');
+      const punti = [...svg.querySelectorAll('circle.hit')].map(e => +e.getAttribute('cy'));
+      if (!linea || punti.length < 6) return;
+      const h = +svg.getAttribute('height'), t = 14, ih = h - 14 - 22;
+      const tacche = [...svg.querySelectorAll('text[text-anchor="end"]')].filter(e => e.getAttribute('fill') === 'var(--muted2)');
+      if (!tacche.length) return;
+      visti++;
+      const fondo = tacche.reduce((a, e) => +e.getAttribute('y') > +a.getAttribute('y') ? e : a);
+      const zero = /^[^1-9]*0([.,]0+)?[^0-9]*$/.test(fondo.textContent.trim());
+      const piuBasso = Math.max.apply(null, punti);
+      if (zero && piuBasso < t + ih * 0.5) guasti.push(c.id + ' · ' + (pg ? pg.id : '') + ': asse da zero e linea tutta nella meta alta');
+    });
+  }));
+  assert.ok(visti >= 5, 'solo ' + visti + ' trend guardati');
+  assert.deepStrictEqual(guasti, [], guasti.join(String.fromCharCode(10) + '       '));
+});
+
+/* LO STESSO GRAFICO DUE VOLTE NELLA STESSA PAGINA si rifiuta: si usa il bookmark (Fra su Nicola) */
+ok('due visual dello stesso tipo sulla stessa dimensione nella stessa pagina sono rifiutati: si usa una card a viste', () => {
+  const { validate } = require('../engine/render.js');
+  const c = casi().find(x => x.id === 'locale/app-lingue');
+  const s = JSON.parse(JSON.stringify(c.caso.spec));
+  const card = s.drill.page.rows[0].visuals[0];
+  s.drill.page.rows[0].visuals = card.viste.map(v => Object.assign({}, v, { span: 2, h: 170 }));
+  s.drill.page.rows[0].visuals.forEach(v => { delete v.etichetta; });
+  assert.throws(() => validate(s, c.caso.build()), /stesso grafico ripetuto/);
+  assert.doesNotThrow(() => validate(c.caso.spec, c.caso.build()), 'con la card a viste passa');
+});
+
+/* I DATI ANNUALI HANNO UNA LINEA ANNUALE: `grain: "year"` disegna un punto per anno su tutti gli anni
+   (Nicola: il PIL pro capite mese per mese era dodici punti uguali) */
+ok('un trend con grain "year" disegna un punto per ogni anno dei dati, con l asse adattato', () => {
+  const c = casi().find(x => x.id === 'locale/supply-chain-muttahar');
+  const spec = JSON.parse(JSON.stringify(c.caso.spec)), data = c.caso.build();
+  const pg = spec.pages.find(p => p.rows.some(r => r.visuals.some(v => v.type === 'colline')));
+  const row = pg.rows.find(r => r.visuals.some(v => v.type === 'colline'));
+  const i = row.visuals.findIndex(v => v.type === 'colline');
+  row.visuals[i] = { type: 'trend', span: row.visuals[i].span, h: row.visuals[i].h, title: 'OTIF per anno', bind: { measure: 'otif', grain: 'year' } };
+  const { render } = require('../engine/render.js');
+  const dom = new JSDOM(render(spec, data), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const doc = dom.window.document;
+  doc.querySelector('.navbtn[data-page="' + pg.id + '"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  const card = [...doc.querySelectorAll('#page .card')].find(k => /OTIF per anno/.test(k.textContent));
+  const punti = card.querySelectorAll('circle.hit').length;
+  assert.strictEqual(punti, data.years.length, 'un punto per anno: ' + punti + ' su ' + data.years.length);
+  /* e nessuna legenda "anno / anno prima tratteggiato": la serie per anni non la disegna */
+  assert.ok(!card.querySelector('.lgd .ln'), 'la legenda promette un tratteggio che il trend per anni non disegna');
+  dom.window.close();
+});
+
 console.log('  ' + n + ' checks');

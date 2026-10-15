@@ -861,6 +861,30 @@ const INTERVENTI = [
     fatto: "Lo spicchio dichiarato `alert` si colora di rosso, ma la sua legenda (disegnata dentro l'svg) restava nel colore del membro. Ora il quadratino ha il colore dello spicchio. Gate: test/legenda.test.js controlla anche la legenda interna del donut e la pagina di drill-through; sul codice vecchio trova Verona e banco/concentrazione.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 2,
+    commento: "(Fra) Questa ripetizione dello stesso grafico non mi piace per niente. Usa i bookmark ti avevo detto.",
+    dove: "validazione · skill · corpus",
+    fatto: "Valore aggiunto e occupati per settore erano due pile 100% per paese affiancate, e capitale/prodotto e investimenti due classifiche per paese. Ora la validazione rifiuta due visual dello stesso tipo sulla stessa dimensione (e lo stesso asse by) nella stessa pagina, drill-through compreso, e chiede una card a viste (il bookmark). Nel corpus lo faceva solo il drill di app-lingue (due classifiche di topic), convertito in una card a viste con accanto un grafico colonne + linea. Regola nella skill. Gate: test/assi.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 2,
+    commento: "(Fra) Il primo line chart: devi lavorare sugli assi, cosi non si vede l'evoluzione ma sembra una linea dritta.",
+    dove: "trend · runtime · grammatica · skill",
+    fatto: "L'asse del trend partiva sempre da zero: un PIL pro capite fra 60.000 e 62.000 era una riga piatta. Ora l'asse delle linee segue i dati (M.asseLinea, nel nucleo): da zero solo se il minimo e gia vicino allo zero, altrimenti stretto sui valori, anche nel trend su piu anni. Per i dati annuali (macro, bilanci) il trend accetta grain \"year\": un punto per anno su tutti gli anni, con l'anno scelto evidenziato, mentre le card restano sull'anno; la legenda \"anno / anno prima\" non compare piu dove il tratteggio non c'e. Gate: test/assi.test.js (asse da zero con la linea tutta nella meta alta; un punto per anno; nessun tratteggio promesso), che sul codice vecchio trova quattro trend del corpus.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 2,
+    commento: "(visto rifacendo il mockup) \"$15115,7 Mld\": oltre i mille miliardi le cifre non erano raggruppate.",
+    dove: "formati · runtime",
+    fatto: "Gli importi oltre i mille miliardi si raggruppano (\"$15.115,7 Mld\", \"$2,523.4B\"). Gate: test/runtime.smoke.js.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

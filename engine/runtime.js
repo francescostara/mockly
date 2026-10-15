@@ -179,6 +179,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        rallentava anche il mockup, a ogni filtro, per ogni cifra ridisegnata. Stesso risultato. */
     var nf = new Intl.NumberFormat(lang, { useGrouping: true, maximumFractionDigits: 0 });
     var num = v => nf.format(Math.round(v));
+    var nfG1 = new Intl.NumberFormat(lang, { useGrouping: true, minimumFractionDigits: 1, maximumFractionDigits: 1 });
     var f = {};
     /* compact currency, K/M — canonical eur() */
     /* MIGLIAIA CON UN DECIMALE, la convenzione dei report finance ("numbers in thousands with
@@ -197,7 +198,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       /* I MILIARDI HANNO LA LORO SIGLA: "CHF 1183.9M" nel totale di una tabella di Luca (3 ott
          2026) si legge solo contando le cifre. E il confine e quello dell'arrotondamento:
          999.960 fa "1.0M", non "1000K". */
-      if (a >= 999.95e6) return s + cur + d((a / 1e9).toFixed(1)) + (o.locale && o.locale.slice(0, 2) === 'it' ? ' Mld' : 'B');
+      /* oltre i mille miliardi le cifre si raggruppano: "$15115,7 Mld" si leggeva solo contandole
+         (Nicola, 15 ott 2026) */
+      if (a >= 999.95e6) return s + cur + (a >= 999.95e9 ? nfG1.format(a / 1e9) : d((a / 1e9).toFixed(1))) + (o.locale && o.locale.slice(0, 2) === 'it' ? ' Mld' : 'B');
       if (a >= 1e6 - 500 * Math.pow(10, -k)) return s + cur + d((a / 1e6).toFixed(1)) + 'M';
       if (a >= 1e3) return s + cur + d((a / 1e3).toFixed(k)) + 'K';
       return s + cur + Math.round(a);
@@ -245,6 +248,21 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var st = M.ticks((hi - lo) * 1.1, 5)[1], a = Math.floor(lo / st) * st, tk = [];
     for (var x = a; x <= hi + st * .999; x += st) tk.push(+x.toFixed(10));
     return { lo: a, hi: tk[tk.length - 1], tk: tk };
+  };
+
+  /* L'ASSE DI UNA LINEA SEGUE I DATI (Fra, 15 ott 2026: "cosi non si vede l'evoluzione ma sembra
+     una linea dritta"). Da zero, un PIL pro capite fra 60.000 e 61.000 e una riga piatta in cima al
+     grafico. Le barre tengono lo zero; le linee no, come in Power BI: si parte da zero solo se il
+     minimo e gia vicino allo zero, altrimenti l'asse stretto sui valori visibili. */
+  M.asseLinea = function (vals) {
+    var v = vals.filter(function (x) { return x !== null && isFinite(x); });
+    if (!v.length) return { lo: 0, hi: 1, tk: [0, 1] };
+    var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+    if (lo >= 0 && lo - (hi - lo) * .2 <= hi * .25) {
+      var tk = M.ticks(hi * 1.14 || 1);
+      return { lo: 0, hi: tk[tk.length - 1] || 1, tk: tk };
+    }
+    return M.asseStretto(lo, hi);
   };
 
   M.ticks = function (max, n) {
@@ -826,6 +844,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        spec, il modello copiava quella del trend dentro un colline: "2024 = tratteggio" sopra due
        serie di barre colorate, in tre mockup, due gia approvati. */
     A.legendaAuto = function (v) {
+      /* il trend per anni (grain "year", o una finestra di piu anni) non disegna l'anno prima
+         tratteggiato: le sue serie hanno il nome accanto alla linea, e la legenda "2025 / 2024"
+         prometteva un tratteggio che non c'era (Nicola, 15 ott 2026) */
+      if (v.type === 'trend' && ((v.bind || {}).grain === 'year' || (A.ampiezza && (A.ampiezza() > 1 || A.grossa())))) return null;
       if (v.type === 'trend') return [{ l: '{y}', c: 'var(--cur)' }, { l: '{py}', dash: true }];
       if (v.type === 'colline') return [{ l: '{y}', c: 'var(--cur)' }, { l: '{py}', c: 'var(--prior)' }];
       return null;
@@ -1251,14 +1273,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          6 anni e oltre -> un punto per anno: e la storia lunga, e i mesi non servono piu. */
     /*#finestra*/
     var nA = A.ampiezza();
-    if (nA > 1 || A.grossa()) {
+    /* `grain: "year"`: i dati sono annuali (macro, bilanci) e i mesi sarebbero dodici punti uguali —
+       la serie lunga, un punto per anno, con l'anno scelto evidenziato (Fra su Nicola, 15 ott 2026) */
+    if (nA > 1 || A.grossa() || b.grain === 'year') {
       var anniW = A.anniSel().filter(function (y) { return (A.DATA.years || []).indexOf(y) >= 0; });
       if (!anniW.length) anniW = [S.y];
       /* "lungo" e il disegno per anni. Ci si arriva in due modi: perche gli anni scelti sono
          tanti, o perche fra loro c'e un anno della storia lontana, che i mesi non li ha piu.
          In quel caso l'asse porta TUTTA la storia e la finestra scelta si vede evidenziata —
          lo stesso mestiere che il trend fa gia col trimestre dentro l'anno. */
-      var lungo = anniW.length >= 6 || A.grossa();
+      var lungo = anniW.length >= 6 || A.grossa() || b.grain === 'year';
       if (lungo) anniW = (A.DATA.years || anniW).slice();
       var COLORI = ['var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--c1)'];
       var serie = lungo
@@ -1280,13 +1304,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var mgnW = { t: 14, r: rEt, b: 22, l: 46 };
       var iwW = w - mgnW.l - mgnW.r, ihW = h - mgnW.t - mgnW.b;
       var tutti = serie.reduce(function (a, s2) { return a.concat(s2.vals); }, []);
-      var maxW = Math.max.apply(null, tutti) * 1.14 || 1, tkW = M.ticks(maxW), topW = tkW[tkW.length - 1] || 1;
-      var YW = function (val) { return mgnW.t + ihW - (val / topW) * ihW; };
+      var axW = M.asseLinea(tutti), tkW = axW.tk;
+      var YW = function (val) { return mgnW.t + ihW - ((val - axW.lo) / ((axW.hi - axW.lo) || 1)) * ihW; };
       var XW = function (i) { return mgnW.l + (iwW / Math.max(1, nPunti - 1)) * i; };
       var sw = '<svg width="' + w + '" height="' + h + '">';
       tkW.forEach(function (t) {
         sw += '<line x1="' + mgnW.l + '" y1="' + YW(t).toFixed(1) + '" x2="' + (mgnW.l + iwW) + '" y2="' + YW(t).toFixed(1) +
-          '" stroke="' + (t ? 'var(--line2)' : 'var(--line)') + '"/>' +
+          '" stroke="' + (t !== axW.lo ? 'var(--line2)' : 'var(--line)') + '"/>' +
           '<text x="' + (mgnW.l - 7) + '" y="' + (YW(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted2)" class="tnum">' +
           A.mfmt(ms, t) + '</text>';
       });
@@ -1342,11 +1366,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }
     /*#/finestra*/
     var mgn = { t: 14, r: 14, b: 22, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
-    var max = Math.max.apply(null, cur.concat(prev)) * 1.14 || 1, tk = M.ticks(max), top = tk[tk.length - 1] || 1;
-    var Y = val => mgn.t + ih - (val / top) * ih, X = i => mgn.l + (iw / 11) * i;
+    var ax = M.asseLinea(cur.concat(prev)), tk = ax.tk;
+    var Y = val => mgn.t + ih - ((val - ax.lo) / ((ax.hi - ax.lo) || 1)) * ih, X = i => mgn.l + (iw / 11) * i;
     var s = '<svg width="' + w + '" height="' + h + '">';
     tk.forEach(function (t) {
-      s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="' + (t ? 'var(--line2)' : 'var(--line)') + '"/>' +
+      s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="' + (t !== ax.lo ? 'var(--line2)' : 'var(--line)') + '"/>' +
         '<text x="' + (mgn.l - 7) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted2)" class="tnum">' + A.mfmt(ms, t) + '</text>';
     });
     for (m = 0; m < 12; m++) if (A.inSel(m) && (S.q !== null || S.mo !== null))

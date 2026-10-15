@@ -26,6 +26,9 @@ ok('formatters match the canonical output (it-IT)', () => {
   assert.strictEqual(f.eur(1_183_900_000), '€1,2 Mld');
   assert.strictEqual(f.eur(999_700), '€1,0M');
   assert.strictEqual(MK.fmt({ locale: 'en-US', currency: 'CHF ' }).eur(1_183_900_000), 'CHF 1.2B');
+  /* oltre i mille miliardi le migliaia si raggruppano (Nicola, 15 ott 2026: "$15115,7 Mld") */
+  assert.strictEqual(f.eur(15_115_700_000_000), '€15.115,7 Mld');
+  assert.strictEqual(MK.fmt({ locale: 'en-US', currency: '$' }).eur(2_523_400_000_000), '$2,523.4B');
   // it-IT groups from 5 digits up (CLDR minimumGroupingDigits=2) — same as the canonical in a browser
   /* eurF significa "full grouped": raggruppa sempre. La regola "auto" dell'ICU ometteva il
      separatore sotto le cinquemila, e questo test ne congelava l'effetto — accanto alla riga
