@@ -953,6 +953,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
            solo e la finestra sembrerebbe non essersi allargata. */
         $('#slYear').innerHTML = YRS.map(y => '<button class="slchip ' +
           (S.y === y ? 'on' : (y >= S.y0 && y < S.y ? 'in' : '')) + '" data-y="' + y + '">' + y + '</button>').join('');
+        /* con piu di dodici anni la griglia scorre, e si apre sull'anno scelto */
+        $('#slYear').classList.toggle('molti', YRS.length > 12);
+        if (YRS.length > 12 && S.slOpen) {
+          var yOn = $('#slYear .slchip.on');
+          if (yOn) $('#slYear').scrollTop = Math.max(0, yOn.offsetTop - $('#slYear').offsetTop - 52);
+        }
         $('#slQtr').innerHTML = '<button class="slchip ' + (S.q === null ? 'on' : '') + '" data-q="all">' + (T.all || 'Tutto') + '</button>' +
           [0, 1, 2, 3].map(q => '<button class="slchip ' + (S.q === q ? 'on' : '') + '" data-q="' + q + '">Q' + (q + 1) + '</button>').join('');
         var grossa = A.grossa();

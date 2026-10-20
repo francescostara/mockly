@@ -329,6 +329,45 @@ function contrastoPagina() {
     assert.ok(menu >= 10, 'solo ' + menu + ' menu a tendina aperti');
     assert.deepStrictEqual([...new Set(guastiBarre)].slice(0, 10), [], [...new Set(guastiBarre)].slice(0, 10).join(String.fromCharCode(10) + '       '));
   });
+  /* IL PANNELLO DEL PERIODO RESTA NELLA PAGINA, e l'anno scelto si vede: con 54 anni (Nicola v3, dati
+     forniti 1970-2023) gli anni dal 2003 uscivano dal fondo, il 2023 compreso. Ogni mockup del corpus,
+     piu una serie lunga costruita qui. */
+  const guastiPeriodo = [];
+  const pannello = () => page.evaluate(() => {
+    const btn = document.getElementById('slBtn'); if (!btn) return null;
+    btn.click();
+    return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => {
+      const pn = document.getElementById('slPanel'), on = document.querySelector('#slYear .slchip.on'), yr = document.getElementById('slYear');
+      const cv = (document.getElementById('canvas') || document.body).getBoundingClientRect();
+      const P = pn.getBoundingClientRect(), O = on ? on.getBoundingClientRect() : null, Y = yr.getBoundingClientRect();
+      btn.click();
+      r({ fuori: P.bottom > cv.bottom + 1, anno: !O || O.top < Y.top - 1 || O.bottom > Y.bottom + 1 || O.bottom > cv.bottom });
+    })));
+  });
+  for (const c of casi()) {
+    await page.setContent(renderCaso(c), { waitUntil: 'load' }); await layout();
+    const x = await pannello();
+    if (x && (x.fuori || x.anno)) guastiPeriodo.push(c.id + (x.fuori ? ': il pannello del periodo esce dalla pagina' : ': l anno scelto non si vede nel pannello'));
+  }
+  {
+    const DF = require('../engine/dati-forniti.js');
+    const righe = [];
+    for (let y = 1970; y <= 2023; y++) ['aa', 'bb'].forEach((p, i) => righe.push({ anno: y, paese: p, pil: 100 + y - 1970 + i * 10, pop: 10 }));
+    const dati = DF.carica({ righe, dimensioni: [{ id: 'paese', colonna: 'paese', membri: [{ id: 'aa', n: 'A' }, { id: 'bb', n: 'B' }] }], campi: ['pil', 'pop'] });
+    const specL = { meta: { title: 'Serie lunga', locale: 'it-IT', currency: '$', watermark: 'prova' }, aesthetic: 'corporate-sober', archetype: 'scorecard',
+      grid: { contentWidth: 1044, gutter: 12, columns: 2 },
+      model: { sums: ['pil', 'pop'], measures: [{ id: 'pil', label: 'PIL', agg: 'sum', field: 'pil', unit: 'money', format: 'eurF' }, { id: 'pc', label: 'Pro capite', agg: 'ratio', num: 'pil', den: 'pop', unit: 'money', format: 'eurF' }] },
+      filters: { date: { levels: ['year'], default: { y: 2023 } }, dims: [{ id: 'paese', label: 'Paese', control: 'list', allLabel: 'Tutti', pill: 'Paese' }] },
+      kpiBand: [{ id: 'a', label: 'PIL', measure: 'pil', span: 1 }, { id: 'b', label: 'Pro capite', measure: 'pc', span: 1 }],
+      pages: [{ id: 'p', title: 'Serie lunga', rows: [{ visuals: [{ type: 'trend', span: 2, h: 170, title: 'PIL', bind: { measure: 'pil', grain: 'year' } }] },
+        { flex: true, visuals: [{ type: 'matrix', span: 2, title: 'Paesi', bind: { dim: 'paese', label: 'Paese', sort: 'pil', drill: false, columns: [{ measure: 'pil', label: 'PIL' }] } }] }] }] };
+    await page.setContent(require('../engine/render.js').render(specL, dati), { waitUntil: 'load' }); await layout();
+    const x = await pannello();
+    if (!x || x.fuori || x.anno) guastiPeriodo.push('serie 1970-2023: ' + (!x ? 'nessun pannello' : x.fuori ? 'il pannello esce dalla pagina' : 'il 2023 non si vede'));
+  }
+  await okAsync('il pannello del periodo resta nella pagina e mostra l anno scelto, anche con 54 anni', async () => {
+    assert.deepStrictEqual(guastiPeriodo, [], guastiPeriodo.join(String.fromCharCode(10) + '       '));
+  });
   await okAsync('nessun errore JavaScript in nessuna pagina, drill-through compreso', async () => {
     assert.deepStrictEqual([...new Set(erroriPagina)].slice(0, 10), []);
   });

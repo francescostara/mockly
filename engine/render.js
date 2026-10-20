@@ -1183,6 +1183,10 @@ ${!rail ? `#main{flex:1;display:flex;flex-direction:column;min-width:0;min-heigh
   background:${rail ? '#12283F' : 'var(--card)'};border:1px solid ${rail ? 'rgba(255,255,255,.18)' : 'var(--line)'};
   border-radius:4px;padding:11px;z-index:30;box-shadow:0 12px 30px rgba(0,0,0,.35);display:none;color:${rail ? 'var(--railInk)' : 'var(--ink2)'}}
 .slpanel.open{display:block}
+/* PIU DI DODICI ANNI (i dati forniti, 1970-2023 per Nicola): la griglia degli anni scorre dentro una
+   finestra di cinque righe, invece di uscire dal fondo della pagina con gli anni recenti */
+#slYear.molti{max-height:156px;overflow-y:auto;align-content:flex-start}
+#slYear.molti .slchip{flex:0 0 calc(25% - 3px)}
 .slsec{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:${rail ? 'var(--flabRail)' : 'var(--flab)'};margin:2px 0 6px}
 .slrow{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:9px}
 .slchip{flex:1 0 auto;min-width:26px;padding:5px 6px;text-align:center;font-size:10.5px;border:1px solid ${rail ? 'rgba(255,255,255,.16)' : 'var(--line)'};

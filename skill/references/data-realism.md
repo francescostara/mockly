@@ -255,6 +255,8 @@ months) and per member of each dimension, with numeric columns. What changes:
   state uses TREND parameters (long-run growth, smoothed population growth), never the year's
   realised growth — a steady state that jumps from 3.1 to 2.0 in a year while investment is flat
   contradicts the model (Nicola, Solow K/Y).
+- **Long series stay usable:** with more than 12 years the period panel shows the years in a
+  scrolling grid opened on the selected year; the engine does it and checks it never leaves the page.
 - **The source is named:** `meta.source`, the watermark ("Dati: PWT 11.0 · World Bank WDI") and the
   README, with the licence.
 

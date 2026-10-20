@@ -917,6 +917,14 @@ const INTERVENTI = [
     fatto: "Le pile 100% portano la legenda dei membri che compaiono, e un gruppo senza dati scrive \"dato non disponibile\"; lo scatter scrive il nome accanto a ogni punto (a destra, a sinistra, sotto, sopra: dove non tocca altri nomi) e non disegna un membro senza il dato. Gate: test/legenda.test.js (legenda e nomi su ogni pila e scatter del corpus, verificato che fallisce senza) e test/dati-forniti.test.js (niente punti senza dato).",
     stato: "fatto"
   }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 3,
+    commento: "(visto preparando il video della v3) Con 54 anni il pannello del periodo usciva dal fondo della pagina: dal 2003 al 2023 gli anni non si vedevano ne si potevano cliccare, l'anno scelto compreso.",
+    dove: "periodo · runtime · gate",
+    fatto: "Oltre i dodici anni la griglia degli anni scorre in una finestra di cinque righe, quattro anni per riga, e si apre sull'anno scelto. Regola nella skill (data-realism.md). Gate in Chrome (test/barra.test.js): su ogni mockup del corpus e su una serie 1970-2023 il pannello resta nella pagina e l'anno scelto si vede; sul codice vecchio la serie lunga fallisce.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */
