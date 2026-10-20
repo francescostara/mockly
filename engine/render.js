@@ -1444,7 +1444,7 @@ const INGLESE = {
   reset: 'Reset filters', updatedLabel: 'Last updated', report: 'Report',
   all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var', actual: 'Actual', of: 'of', target: 'target', opening: 'Opening', closing: 'Closing', vsBud: 'vs Bud', vsPY: 'vs PY', bud: 'Budget', py: 'PY',
   spanUno: '1 year', spanTutti: 'All', anni: 'years', others: 'Others', target: 'target',
-  conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory', nd: 'no data',
+  conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory', nd: 'no data', annoBreve: 'Y',
   sopra: 'above', sotto: 'below', inLinea: 'in line with', nuova: 'new'
 };
 

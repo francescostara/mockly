@@ -933,6 +933,14 @@ const INTERVENTI = [
     fatto: "Il dizionario inglese della guida ha la sua parola per piu anni; coi dati annuali la guida dice che i dati sono annuali, senza trimestri ne mesi, invece della frase sul dettaglio mensile con l'elenco vuoto; oltre sei anni gli anni disponibili si scrivono come intervallo (1970–2023). Gate: test/dati-forniti.test.js, guida italiana e inglese, verificato che fallisce sul testo vecchio.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 3,
+    commento: "(visto preparando il video in inglese con la finestra di cinque anni) Le card del report inglese dicevano \"5A vs 5A\": la A di anni.",
+    dove: "lingua · runtime · gate",
+    fatto: "La sigla dell'anno nel confronto fra finestre viene dal dizionario: 5A vs 5A in italiano, 5Y vs 5Y in inglese. Gate: test/dati-forniti.test.js, nelle due lingue, verificato che fallisce sul codice vecchio.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

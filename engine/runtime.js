@@ -465,7 +465,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     A.basis = function () {
       if (S.mo !== null) return 'MoM';
       var n = A.ampiezza();
-      return n > 1 ? (T.pop || (n + 'A vs ' + n + 'A')) : 'YoY';
+      /* la sigla dell'anno e del dizionario: "5A vs 5A" in un report inglese (Nicola v3, 20 ott 2026) */
+      var sa = T.annoBreve || 'A';
+      return n > 1 ? (T.pop || (n + sa + ' vs ' + n + sa)) : 'YoY';
     };
     /* L'etichetta dell'anno: "2025" quando la finestra e di uno, "2023–2025" quando e larga.
        Ci passano il pulsante del periodo, i titoli con {y} e le pillole di contesto, cosi il

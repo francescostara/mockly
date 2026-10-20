@@ -144,4 +144,18 @@ ok('la guida dei dati annuali: niente "dettaglio mensile su ;", gli anni come in
   assert.ok(!/piu anni|più anni/.test(t), 'una parola italiana nella guida inglese: ' + (t.match(/.{20}piu anni.{10}/) || [''])[0]);
 });
 
+ok('una finestra di piu anni dice il confronto nella lingua del report: 5Y vs 5Y in inglese, 5A vs 5A in italiano', () => {
+  const prova = (loc, atteso) => {
+    const s = JSON.parse(JSON.stringify(spec)); s.meta.locale = loc;
+    const dom = apri(s), doc = dom.window.document, win = dom.window;
+    const clic = el => el.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    clic(doc.getElementById('slBtn')); clic(doc.querySelector('#slSpan [data-span="5"]')); clic(doc.querySelector('#slYear [data-y="2009"]'));
+    const t = doc.querySelector('.kpi').textContent;
+    dom.window.close();
+    assert.ok(t.indexOf(atteso) >= 0, loc + ': la card dice "' + t.slice(0, 80) + '", atteso ' + atteso);
+  };
+  prova('en-GB', '5Y vs 5Y');
+  prova('it-IT', '5A vs 5A');
+});
+
 console.log('  ' + n + ' checks');
