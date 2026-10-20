@@ -89,4 +89,42 @@ ok('ogni segno della legenda esiste nel disegno, su ogni pagina di ogni mockup',
   assert.deepStrictEqual(guasti, [], guasti.join(String.fromCharCode(10) + '       '));
 });
 
+/* LE PILE 100% HANNO LA LEGENDA, LO SCATTER I NOMI (Mauricio e Nicola: "manca la legenda dei colori",
+   "i punti non riportano il nome del paese") */
+ok('ogni pila 100% ha la legenda dei suoi colori; ogni scatter scrive il nome di almeno meta dei punti', () => {
+  const guasti = [];
+  let pile = 0, scatter = 0;
+  CASI.forEach(c => {
+    const spec = c.caso.spec;
+    const tipi = JSON.stringify(spec);
+    if (!/"stack100"|"scatter"/.test(tipi)) return;
+    const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
+    const doc = dom.window.document, win = dom.window;
+    const pagine = [...doc.querySelectorAll('.navbtn')].map(b => b.dataset.page);
+    (pagine.length ? pagine : [null]).forEach(p => {
+      if (p) doc.querySelector('.navbtn[data-page="' + p + '"]').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+      [...doc.querySelectorAll('#page .card')].forEach(card => {
+        const svg = card.querySelector('svg'); if (!svg) return;
+        const tit = ((card.querySelector('.ch h3') || {}).textContent || '').trim();
+        const barre = [...svg.querySelectorAll('rect.hit[data-f]')].filter(r => +r.getAttribute('width') > 0);
+        if (svg.classList.contains('s100')) {
+          pile++;
+          const colori = new Set(barre.map(r => r.getAttribute('fill')));
+          const lg = card.querySelectorAll('.lgd i').length;
+          if (lg < colori.size) guasti.push(c.id + ' · "' + tit + '": la pila ha ' + colori.size + ' colori e la legenda ' + lg);
+        }
+        const punti = svg.querySelectorAll('circle.hit[data-f]');
+        if (svg.classList.contains('sct') && punti.length >= 3) {
+          scatter++;
+          const nomi = [...svg.querySelectorAll('text')].filter(t => t.getAttribute('fill') === 'var(--ink2)').length;
+          if (nomi < Math.ceil(punti.length / 2)) guasti.push(c.id + ' · "' + tit + '": ' + nomi + ' nomi per ' + punti.length + ' punti');
+        }
+      });
+    });
+    dom.window.close();
+  });
+  assert.ok(pile >= 2 && scatter >= 2, 'pile ' + pile + ', scatter ' + scatter + ': il test non prova niente');
+  assert.deepStrictEqual(guasti, [], guasti.join(String.fromCharCode(10) + '       '));
+});
+
 console.log('  ' + n + ' checks');

@@ -507,12 +507,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          non cambierebbe nulla e il filtro sembrerebbe rotto. In quel caso si aggrega dal
          dettaglio, che quelle colonne ce le ha. */
       var detailOnly = !o.detail && DT && DT.length && A.detailOnly(pin, ignore);
+      /* STACCATO DAL PERIODO (`ignoreFilters: ["date"]`, Edit interactions → None sullo slicer della
+         data): il visual tiene tutti gli anni — la crescita media per decennio di Nicola resta la
+         stessa qualunque anno guardino le card. Un anno o una finestra espliciti valgono comunque. */
+      var tuttiAnni = ignore.indexOf('date') >= 0;
       var keep = function (r) {
         if (yEsp !== null) { if (r.y !== yEsp) return false; }
         else if (fin) { if (r.y < fin[0] || r.y > fin[1]) return false; }
-        else if (r.y < S.y0 || r.y > S.y) return false;
+        else if (!tuttiAnni && (r.y < S.y0 || r.y > S.y)) return false;
         if (months) { if (!months.includes(r.m)) return false; }
-        else if (!o.timeline && !A.inSel(r.m)) return false;
+        else if (!o.timeline && !tuttiAnni && !A.inSel(r.m)) return false;
         for (var i = 0; i < DIMK.length; i++) {
           var k = DIMK[i];
           if (r[k] === undefined) continue;
@@ -1901,10 +1905,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var groups = by === 'q' ? [0, 1, 2, 3].map(q => ({ id: 'q' + q, l: 'Q' + (q + 1), months: A.QMON(q) }))
       : A.membri(by).map(m => ({ id: m.id, l: m.n, pin: { [by]: m.id } }));
     var cats = A.membri(dim);
+    /* LA LEGENDA DEI COLORI. Le pile non dicevano quale colore fosse quale settore o tipo di cliente
+       (Mauricio, Nicola: "manca la legenda"): ora la card la porta, con i soli membri che compaiono. */
+    h -= 20;
+    var visti = {};
     /* stessa regola dell'hbar: "Q1" non ha bisogno di novantasei pixel */
     var lw = M.colonnaEtichette(groups.map(g => g.l), 10, 96, 10);
     var m = { t: 6, r: M.PAD, b: 6 }, rh = (h - m.t - m.b) / groups.length, bh = Math.min(20, rh * .6), iw = w - lw - m.r;
-    var s = '<svg width="' + w + '" height="' + h + '">';
+    var s = '<svg class="s100" width="' + w + '" height="' + h + '">';
     groups.forEach(function (grp, i) {
       var y = m.t + rh * i + rh / 2, vals = {}, tot = 0;
       cats.forEach(function (c) {
@@ -1912,10 +1920,14 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         if (grp.months) o.months = grp.months;
         var val = A.mv(ms, A.agg(A.slice(o)));
         vals[c.id] = val; tot += val;
+        if (val > 0) visti[c.id] = true;
       });
+      var vuoto = !tot;
       tot = tot || 1;
       var x = lw;
       s += '<text x="' + (lw - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="10" fill="var(--ink2)">' + M.esc(grp.l) + '</text>';
+      /* un gruppo senza dati lo dice, invece di una riga vuota che sembra un errore */
+      if (vuoto) s += '<text x="' + (lw + 4) + '" y="' + (y + 3.5).toFixed(1) + '" font-size="9" fill="var(--ink2)">' + M.esc(A.T.nd || 'dato non disponibile') + '</text>';
       cats.forEach(function (c) {
         var val = vals[c.id], bl = val / tot * iw;
         /* il filtro sulla dimensione dei GRUPPI attenua gli altri gruppi, come quello sulle categorie
@@ -1928,7 +1940,8 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         x += bl;
       });
     });
-    return A.card(v, s + '</svg>');
+    var lgd = A.legend(cats.filter(c => visti[c.id]).map(c => ({ l: c.n, c: c.c })));
+    return A.card(v, lgd + s + '</svg>');
   };
 })(MK);
 /*#endregion*/
@@ -2458,7 +2471,9 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
   M.V.scatter = function (A, v, w, h) {
     var b = v.bind || {}, S = A.S, f = A.f, dim = b.dim;
     h = v.h || h || 206;
-    var pts = A.byDim(dim, {}).filter(r => r.a.n > 0).map(r => ({ id: r.m.id, l: r.m.n, c: r.m.c, x: A.mv(b.x, r.a), y: A.mv(b.y, r.a), s: b.size ? A.mv(b.size, r.a) : 0 }));
+    /* un punto senza il dato non si disegna: gli Stati Uniti senza quote settoriali dopo il 2021 finivano
+       sullo zero dell'asse, come se i servizi valessero 0% (Nicola v3, dati World Bank) */
+    var pts = A.byDim(dim, {}).filter(r => r.a.n > 0 && A.definita(b.x, r.a) && A.definita(b.y, r.a)).map(r => ({ id: r.m.id, l: r.m.n, c: r.m.c, x: A.mv(b.x, r.a), y: A.mv(b.y, r.a), s: b.size ? A.mv(b.size, r.a) : 0 }));
     var med = function (arr) { var s2 = arr.slice().sort((p, q) => p - q); var n = s2.length; return n ? (n % 2 ? s2[(n - 1) / 2] : (s2[n / 2 - 1] + s2[n / 2]) / 2) : 0; };
     var mgn = { t: 14, r: 14, b: 24, l: 46 }, iw = w - mgn.l - mgn.r, ih = h - mgn.t - mgn.b;
     var xmax = Math.max.apply(null, pts.map(p => p.x)) * 1.15 || 1, ymax = Math.max.apply(null, pts.map(p => p.y)) * 1.15 || 1;
@@ -2474,7 +2489,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var X = val => mgn.l + (val / xmax) * iw, Y = val => mgn.t + ih - (val / top) * ih;
     var mx = med(pts.map(p => p.x)), my = med(pts.map(p => p.y));
     var smax = Math.max.apply(null, pts.map(p => p.s)) || 1;
-    var s = '<svg width="' + w + '" height="' + h + '">';
+    var s = '<svg class="sct" width="' + w + '" height="' + h + '">';
     tkY.forEach(t => s += '<line x1="' + mgn.l + '" y1="' + Y(t).toFixed(1) + '" x2="' + (mgn.l + iw) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--line2)"/>' +
       '<text x="' + (mgn.l - 7) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted2)" class="tnum">' + A.mfmt(b.y, t) + '</text>');
     s += '<line x1="' + X(mx).toFixed(1) + '" y1="' + mgn.t + '" x2="' + X(mx).toFixed(1) + '" y2="' + (mgn.t + ih) + '" stroke="var(--muted2)" stroke-dasharray="3 3"/>';
@@ -2484,6 +2499,27 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       s += '<circle class="hit ' + (dimd ? 'dimd' : '') + '" cx="' + X(p.x).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + p.c +
         '" fill-opacity=".85" stroke="var(--card)" data-f="' + dim + ':' + p.id + '" data-tip="<b>' + M.esc(p.l) + '</b><br>' +
         M.esc(A.meas(b.x).label || b.x) + ': ' + A.mfmt(b.x, p.x) + '<br>' + M.esc(A.meas(b.y).label || b.y) + ': ' + A.mfmt(b.y, p.y) + '"/>';
+    });
+    /* IL NOME ACCANTO AL PUNTO (Nicola: "i punti non riportano il nome del paese, si legge solo col
+       mouse"). A destra del pallino; se tocca un nome gia scritto o esce dal grafico, a sinistra, poi
+       sotto; se non c'e posto, si omette e resta il tooltip. */
+    /* tutti i pallini sono ostacoli fin dall'inizio: un nome scritto sopra il pallino di un altro cliente
+       stava a 1,4:1 (canonical-quadrants, trovato dal gate del contrasto) */
+    var occupati = pts.map(function (p) { var r = b.size ? 4 + 7 * Math.sqrt(p.s / smax) : 6; return { l: X(p.x) - r - 1, r: X(p.x) + r + 1, t: Y(p.y) - r - 1, b: Y(p.y) + r + 1 }; });
+    var libero = function (bx) {
+      if (bx.l < mgn.l || bx.r > mgn.l + iw || bx.t < mgn.t - 4 || bx.b > mgn.t + ih + 2) return false;
+      return occupati.every(function (o) { return bx.r < o.l || bx.l > o.r || bx.b < o.t || bx.t > o.b; });
+    };
+    pts.slice().sort(function (p, q) { return q.s - p.s; }).forEach(function (p) {
+      var r = b.size ? 4 + 7 * Math.sqrt(p.s / smax) : 6, cx = X(p.x), cy = Y(p.y), lw2 = M.largh(p.l, 8.5);
+      [[cx + r + 3, cy + 3, 'start'], [cx - r - 3, cy + 3, 'end'], [cx, cy + r + 10, 'middle'], [cx, cy - r - 4, 'middle']].some(function (pos) {
+        var x0 = pos[2] === 'start' ? pos[0] : pos[2] === 'end' ? pos[0] - lw2 : pos[0] - lw2 / 2;
+        var bx = { l: x0 - 1, r: x0 + lw2 + 1, t: pos[1] - 8, b: pos[1] + 2 };
+        if (!libero(bx)) return false;
+        occupati.push(bx);
+        s += '<text x="' + pos[0].toFixed(1) + '" y="' + pos[1].toFixed(1) + '" text-anchor="' + pos[2] + '" font-size="8.5" fill="var(--ink2)" style="pointer-events:none">' + M.esc(p.l) + '</text>';
+        return true;
+      });
     });
     s += '<text x="' + (mgn.l + iw) + '" y="' + (h - 7) + '" text-anchor="end" font-size="8.5" fill="var(--muted)">' + M.esc(A.meas(b.x).label || b.x) + ' →</text>';
     return A.card(v, s + '</svg>');

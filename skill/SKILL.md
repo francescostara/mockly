@@ -114,6 +114,13 @@ Follow these steps in order. Each references a detailed file — read it before 
 - **Never use real client data.** Only invented companies, brands and numbers. Client
   materials (real accounts, real deliverables) are confidential and must not appear in
   anything shippable. Fictional cases only.
+- **Data the user PROVIDES is the exception (Fra, 20 Oct 2026).** When the user gives a dataset
+  (a CSV or Excel export, or public statistics they ask for: Penn World Table, World Bank, Eurostat),
+  the mockup is built on THOSE numbers, loaded with `engine/dati-forniti.js`, never on synthetic
+  ones. Rules: the source is named in `meta.source` and in the watermark; nothing missing is
+  invented — a year or a sector without data stays empty ("—") and the README says so; annual data
+  stays annual (no months); any derived figure (growth rates, contributions, a model's steady state)
+  is computed from the data with the formula written in the kit. See `references/data-realism.md`.
 - **Canvas is 1280x720 landscape** by default. If the user works at another size, the number
   of visuals per row and type sizes must change — you cannot just scale.
 - **Reproducible in Power BI.** Every visual must map to something buildable: KPI cards with

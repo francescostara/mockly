@@ -138,6 +138,12 @@ debt/EBITDA) so the variance colours flip.
 - **A visual can be detached from a filter:** `"ignoreFilters": ["seg"]` in its `bind` keeps every
   member and ignores that filter (Power BI: Format → Edit interactions → None; the kit says so).
   Use it where the full breakdown is the point (the mix of all segments next to a segment filter).
+  `"date"` detaches from the period slicer: the visual keeps every year (growth by decade next to
+  KPI cards on the latest year).
+- **Data the user provides** is loaded with `engine/dati-forniti.js` instead of `dataParams`:
+  `carica({ csv | righe, anno, mese?, dimensioni: [{ id, colonna, membri }], campi })` returns the
+  same `data` that `render(spec, data)` takes. Without a month column the data is annual: no
+  quarter or month anywhere, the time axis in years, and no 12-year cap.
 - Every declared dim filters through the one shared slice layer. There is no way to declare a
   decorative filter: a dim in this list slices the fact table or it is not in the list.
 

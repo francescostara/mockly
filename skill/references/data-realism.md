@@ -239,3 +239,22 @@ trailing text, no markdown fences. Text after the closing brace breaks parsing. 
 prefills the response with an opening brace, continue from there and stop at the matching close.
 The spec must also be complete — a spec truncated mid-object is invalid; keep the output compact
 enough (declarative params, no restated data) that it finishes within the token budget.
+
+## Data the user provides — load it, never invent it (Fra, 20 Oct 2026)
+
+When the user supplies the data (a client export, or public statistics such as Penn World Table and
+World Bank, which are CC BY 4.0 and can be used with attribution), the synthetic generator is not
+used. The table goes through `engine/dati-forniti.js`: one row per year (and month, if the data has
+months) and per member of each dimension, with numeric columns. What changes:
+- **The grain is the data's.** Annual data stays annual: the report has no month or quarter controls,
+  and the time axis is in years. The 12-year cap of the generator does not apply.
+- **Missing is missing.** A country without sector data before 1991 has no sector rows for those
+  years: the shares read "—", they are not filled with a guess. Say it in the README.
+- **Derived figures come from the data, with the formula in the kit.** Growth is Δln of the level;
+  a growth-accounting contribution is the factor share times the factor's growth; a model's steady
+  state uses TREND parameters (long-run growth, smoothed population growth), never the year's
+  realised growth — a steady state that jumps from 3.1 to 2.0 in a year while investment is flat
+  contradicts the model (Nicola, Solow K/Y).
+- **The source is named:** `meta.source`, the watermark ("Dati: PWT 11.0 · World Bank WDI") and the
+  README, with the licence.
+

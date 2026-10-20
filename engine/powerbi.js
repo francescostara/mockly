@@ -40,6 +40,12 @@ const T = {
     titolo: 'Kit Power BI', intro: (t) => 'Tutto cio che serve per ricostruire "' + t + '" in Power BI Desktop: ' +
       'il dataset da generare, il modello, le misure DAX, le pagine visual per visual e il tema. ' +
       'Generato dalla stessa spec del mockup: quello che trovi qui e quello che il mockup fa.',
+    s1f: '1. Il dataset — i dati forniti',
+    s1fa: (fonte, n, cols, annuale) => 'Il report e costruito sui dati forniti' + (fonte ? ' (' + fonte + ')' : '') + ', non su dati sintetici: non serve nessun prompt. ' +
+      'Importa in Power BI il CSV che accompagna il mockup (Recupera dati → Testo/CSV): ' + n + ' righe, colonne ' + cols + '. ' +
+      (annuale ? 'I dati sono ANNUALI: una riga per anno, Date = 1 gennaio dell\'anno; il calendario e i visual nel tempo usano l\'anno, mai il mese. ' : '') +
+      'Cio che nei dati manca resta vuoto: Power BI mostrera celle vuote, che e il comportamento giusto.',
+    fattiAnno: 'fatti — grano: un anno per',
     s1: '1. Il dataset — prompt per una GenAI', s1a: 'Copia il blocco qui sotto in una chat (Claude, ChatGPT, ' +
       'Gemini). Risponde con dei CSV da salvare e importare in Power BI con Recupera dati → Testo/CSV. ' +
       'In alternativa puoi partire dal CSV esportato dal mockup (bottone "Dati CSV"): stessi numeri che vedi a schermo.',
@@ -110,6 +116,12 @@ const T = {
     titolo: 'Power BI kit', intro: (t) => 'Everything you need to rebuild "' + t + '" in Power BI Desktop: ' +
       'the dataset to generate, the model, the DAX measures, the pages visual by visual, and the theme. ' +
       'Generated from the same spec as the mockup: what you read here is what the mockup does.',
+    s1f: '1. The dataset — the data provided',
+    s1fa: (fonte, n, cols, annuale) => 'The report is built on the data provided' + (fonte ? ' (' + fonte + ')' : '') + ', not on synthetic data: there is no prompt to run. ' +
+      'Import the CSV that comes with the mockup into Power BI (Get data → Text/CSV): ' + n + ' rows, columns ' + cols + '. ' +
+      (annuale ? 'The data is ANNUAL: one row per year, Date = 1 January of the year; the calendar and every visual over time use the year, never the month. ' : '') +
+      'What the data does not have stays empty: Power BI will show blank cells, which is the right behaviour.',
+    fattiAnno: 'facts — grain: one year per',
     s1: '1. The dataset — prompt for a GenAI', s1a: 'Paste the block below into a chat (Claude, ChatGPT, Gemini). ' +
       'It answers with CSV files to save and import with Get data → Text/CSV. ' +
       'Alternatively start from the CSV exported from the mockup ("Data CSV" button): the same numbers you see on screen.',
@@ -183,9 +195,12 @@ const linguaDi = spec => /^en/i.test((spec.meta && spec.meta.locale) || '') ? 'e
 /* ------------------------------------------------------------------ nomi */
 
 /** Il nome di una dimensione nel modello: l'etichetta del filtro se c'e, altrimenti l'id. */
+/* le etichette delle dimensioni dei dati forniti ("Settore", "Decennio"): una dimensione senza filtro
+   altrimenti si chiamava "Dim Sett" */
+let ETICHETTE = {};
 function nomeDim(spec, id) {
   const f = ((spec.filters && spec.filters.dims) || []).filter(d => d.id === id)[0];
-  const base = f && f.label ? f.label : id.charAt(0).toUpperCase() + id.slice(1);
+  const base = f && f.label ? f.label : ETICHETTE[id] || id.charAt(0).toUpperCase() + id.slice(1);
   return 'Dim ' + base;
 }
 
@@ -374,11 +389,12 @@ function descriviVisual(spec, v, L, N) {
   const dim = d => d === 'q' ? "'Date'[Quarter]" : d === 'm' ? "'Date'[Month]" : d ? q(nomeDim(spec, d)) + '[Name]' : '';
   const campi = [];
   /* un visual staccato da un filtro: in Power BI si fa con Format → Edit interactions → None */
-  if (Array.isArray(b.ignoreFilters) && b.ignoreFilters.length) righe.push('Interactions: select the ' + b.ignoreFilters.map(d => q(nomeDim(spec, d)) + ' slicer').join(' and the ') + ', then Format → Edit interactions → None on this visual: it keeps every member and ignores that filter.');
+  if (Array.isArray(b.ignoreFilters) && b.ignoreFilters.length) righe.push('Interactions: select the ' + b.ignoreFilters.map(d => d === 'date' ? '"Period" slicer' : q(nomeDim(spec, d)) + ' slicer').join(' and the ') + ', then Format → Edit interactions → None on this visual: it ' + (b.ignoreFilters.indexOf('date') >= 0 ? 'keeps every year' : 'keeps every member') + ' and ignores that filter.');
   if (b.crossFilter === false) righe.push('Interactions: select this visual, then Format → Edit interactions → None on every other visual: clicking it filters nothing; it still follows the slicers.');
   if (v.type === 'hbar' && b.parent && b.crossFilter !== false && !((spec.filters || {}).dims || []).some(f => f.id === b.dim)) righe.push('Interactions: its items are not a slicer of the report, so set Edit interactions → None from this visual to the others: it follows the slicers only.');
   switch (v.type) {
-    case 'trend': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); righe.push(L.legendaAnni, L.esenzione); break;
+    case 'trend': if (b.grain === 'year') { campi.push("X: 'Date'[Year]", 'Y: ' + m(b.measure)); break; }
+      campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); righe.push(L.legendaAnni, L.esenzione); break;
     case 'colline': campi.push("X: 'Date'[Month]", 'Y: ' + m(b.measure)); if (b.line) righe.push(L.linea(m(b.line))); righe.push(L.legendaColonne); break;   /* nel colline l'anno prima e una colonna, non un tratteggio */
     case 'donut': campi.push('Legend: ' + dim(b.dim), 'Values: ' + m(b.measure)); if (b.topN) righe.push(L.topn(b.topN)); if (b.alert) righe.push(L.alert(b.alert)); break;
     case 'hbar': campi.push('Y: ' + dim(b.dim), 'X: ' + m(b.measure)); if (b.order !== 'asc') righe.push(L.ordina); if (b.top) righe.push(b.order === 'asc' ? L.bottomn(b.top) : L.topn(b.top)); if (b.parent) righe.push(L.colore(dim(b.parent))); break;
@@ -600,23 +616,42 @@ function csv(spec, data) {
 /* ------------------------------------------------------------------ il kit intero */
 
 function kit(spec, dataParams, data) {
-  const lang = linguaDi(spec), L = T[lang];
+  /* con i dati forniti non c'e un generatore: il modello del kit si ricava dalle colonne dei fatti */
+  if (data && data.facts && (data.fonte || !(dataParams && dataParams.dims))) {
+    const cols = data.facts.cols, dimsF = cols.filter(c => data.dims[c]);
+    dataParams = { years: data.years, facts: { dim: dimsF[0], split: dimsF.slice(1).map(d => ({ dim: d })),
+      fields: cols.filter(c => c !== 'y' && c !== 'm' && !data.dims[c]).map(id => ({ id })) } };
+    if (!data.fonte) data = Object.assign({}, data, { fonte: null });
+  }
+  const lang = linguaDi(spec), L0 = T[lang];
+  ETICHETTE = (data && data.etichette) || {};
   VALUTA = (spec.meta && spec.meta.currency) || '€';
+  /* dati forniti e annuali: niente "dataset da generare" ne "grano mensile" */
+  const annualeA = !!(data && Array.isArray(data.mensili) && !data.mensili.length);
+  const L = Object.assign({}, L0, (data && data.fonte) || annualeA ? {
+    intro: t => L0.intro(t).replace('il dataset da generare', 'il dataset').replace('the dataset to generate', 'the dataset'),
+    s2a: annualeA ? L0.s2a.replace('al grano mensile', 'al grano annuale').replace('at monthly grain', 'at annual grain') : L0.s2a
+  } : {});
   const md = modello(spec, dataParams || {});
   const ms = misure(spec, dataParams || {});
   const titolo = (spec.meta && spec.meta.title) || 'Report';
   const out = ['# ' + L.titolo + ' — ' + titolo, '', L.intro(titolo), ''];
-
-  out.push('## ' + L.s1, '', L.s1a, '', '```text', promptDataset(spec, dataParams || {}, data, L), '```', '');
+  /* I DATI FORNITI (engine/dati-forniti.js) non hanno un generatore da descrivere: il kit diceva "genera
+     un dataset sintetico… 0 righe… undefined-01-01" (Nicola v3, 20 ott 2026). Si importa il CSV. */
+  const fornito = !!(data && data.facts) && !(dataParams && dataParams.dims);
+  const annuale = !!(data && Array.isArray(data.mensili) && !data.mensili.length);
+  if (fornito && data && data.facts) {
+    out.push('## ' + L.s1f, '', L.s1fa(data.fonte, data.facts.rows.length, data.facts.cols.filter(c => c !== 'm').map(c => c === 'y' ? 'Date' : c).join(', '), annuale), '');
+  } else out.push('## ' + L.s1, '', L.s1a, '', '```text', promptDataset(spec, dataParams || {}, data, L), '```', '');
 
   out.push('## ' + L.s2, '', L.s2a, '', '| ' + L.tabella + ' | ' + L.ruolo + ' | ' + L.colonne + ' |', '|---|---|---|');
   md.tabelle.forEach(t => {
-    const ruolo = t.ruolo === 'fatti' ? L.fatti + ' ' + t.grano.map(d => nomeDim(spec, d).replace(/^Dim /, '')).join(' × ')
+    const ruolo = t.ruolo === 'fatti' ? (annuale ? L.fattiAnno : L.fatti) + ' ' + t.grano.map(d => nomeDim(spec, d).replace(/^Dim /, '')).join(' × ')
       : t.ruolo === 'dettaglio' ? L.dettaglio + ' ' + t.grano.map(d => nomeDim(spec, d).replace(/^Dim /, '')).join(' × ')
         : t.ruolo === 'calendario' ? L.calendario : L.dimensione;
     out.push('| ' + t.nome + ' | ' + ruolo + ' | ' + t.colonne.join(', ') + ' |');
   });
-  const anni = (dataParams && dataParams.years) || [];
+  const anni = (dataParams && dataParams.years) || (data && data.years) || [];
   out.push('', '```dax', 'Date =', 'ADDCOLUMNS (', '    CALENDAR ( DATE ( ' + anni[0] + ', 1, 1 ), DATE ( ' + anni[anni.length - 1] + ', 12, 31 ) ),',
     '    "Year", YEAR ( [Date] ),', '    "Quarter", "Q" & QUARTER ( [Date] ),', '    "MonthNo", MONTH ( [Date] ),',
     '    "Month", FORMAT ( [Date], "MMM" ),', '    "YearMonth", FORMAT ( [Date], "YYYY-MM" )', ')', '```', '', L.ordinamento, '');

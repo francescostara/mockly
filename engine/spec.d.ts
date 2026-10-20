@@ -197,7 +197,7 @@ export interface LegendItem { l: string; c?: string; dash?: boolean }
 
 /** Ogni bind puo staccare il visual da alcuni filtri della barra: `ignoreFilters: ["seg"]` — il
  *  visual tiene sempre tutti i membri e non segue quei filtri (Power BI: Edit interactions → None). */
-export interface BindCommon { ignoreFilters?: string[]; /** false: i clic dentro il visual non filtrano gli altri (Edit interactions → None) */ crossFilter?: boolean }
+export interface BindCommon { /** id dei filtri della barra, e "date" per lo slicer del periodo (il visual tiene tutti gli anni) */ ignoreFilters?: string[]; /** false: i clic dentro il visual non filtrano gli altri (Edit interactions → None) */ crossFilter?: boolean }
 
 export interface MatrixColumn {
   measure: string;

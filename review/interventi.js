@@ -885,6 +885,38 @@ const INTERVENTI = [
     fatto: "Gli importi oltre i mille miliardi si raggruppano (\"$15.115,7 Mld\", \"$2,523.4B\"). Gate: test/runtime.smoke.js.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 3,
+    commento: "(Nicola) Per un tema economico chi guarda si aspetta i numeri veri della Penn World Table e della Banca Mondiale. (Fra) Immaginiamo come se lui ci avesse fornito i dati: potremmo partire anche da una base di dati.",
+    dove: "dati forniti · skill · motore · kit · gate",
+    fatto: "Nuovo ingresso del motore: engine/dati-forniti.js carica una tabella fornita (righe o CSV, anno, mese facoltativo, dimensioni con i membri, campi numerici) nello stesso formato che render() riceve dal generatore. Rifiuta membri sconosciuti, numeri non numerici, anni sbagliati; somma le righe con la stessa chiave; anni contigui; tetto sulle celle invece dei 12 anni. Il kit dei dati forniti dice di importare il CSV invece di proporre un prompt sintetico, con grano e calendario annuali. Regola nella skill (SKILL.md e data-realism.md): i dati forniti si usano cosi come sono, cio che manca resta vuoto, la fonte e citata, i derivati hanno la formula nel kit. Gate: test/dati-forniti.test.js (9 controlli).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 3,
+    commento: "(Nicola) PIL pro capite, capitale ecc. sono dati annuali, quindi il dettaglio per mese non ha molto senso; la trasformazione strutturale si vede bene solo partendo dal 1970.",
+    dove: "dati forniti · runtime · kit",
+    fatto: "Una tabella senza mese e annuale: data.mensili vuoto, nessun trimestre ne mese nel report, il trend per anni, il kit con il grano annuale. Il tetto dei 12 anni vale solo per il generatore sintetico: Nicola v3 copre 1970-2023 (54 anni). Un visual si stacca dallo slicer del periodo con ignoreFilters [\"date\"] (Edit interactions → None, scritto nel kit): la crescita media per decennio resta sui decenni qualunque anno guardino le card. Gate: test/dati-forniti.test.js.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 3,
+    commento: "(Nicola) Il K/Y di steady state salta parecchio da un anno all'altro (la Spagna passa da 3,1 a 2,0) mentre gli investimenti restano quasi uguali: col modello di Solow non dovrebbe succedere.",
+    dove: "dati · skill",
+    fatto: "Errore mio nella preparazione: g era la media mobile della crescita effettiva, crollo del 2020 compreso. Ora K/Y* = s / (n + g + delta) con g di tendenza costante per paese (progresso tecnico labour-augmenting medio 1971-2023), n crescita della popolazione in media mobile su 10 anni (gli occupati crollano nelle crisi), s e delta di PWT. Con gli investimenti fermi lo steady state non si muove piu di 0,41 in un anno (prima 1,6). Regola nella skill: un valore teorico di un modello si calcola su parametri di tendenza, mai sui valori dell'anno. Gate nella preparazione dei dati (out/nicola/v3-dati.py rifiuta un salto oltre 0,5 con gli investimenti fermi).",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 3,
+    commento: "(Nicola, concordando coi punti segnalati) I punti dello scatter non hanno il nome del paese; le pile per settore non hanno la legenda; (visto coi dati veri) un paese senza il dato finiva sullo zero dello scatter.",
+    dove: "stack100 · scatter · runtime · gate",
+    fatto: "Le pile 100% portano la legenda dei membri che compaiono, e un gruppo senza dati scrive \"dato non disponibile\"; lo scatter scrive il nome accanto a ogni punto (a destra, a sinistra, sotto, sopra: dove non tocca altri nomi) e non disegna un membro senza il dato. Gate: test/legenda.test.js (legenda e nomi su ogni pila e scatter del corpus, verificato che fallisce senza) e test/dati-forniti.test.js (niente punti senza dato).",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

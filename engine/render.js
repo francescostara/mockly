@@ -835,7 +835,8 @@ function validate(specIn, data) {
         /* un visual staccato da un filtro (Edit interactions → None di Power BI): solo filtri che esistono */
         if (b.crossFilter !== undefined && typeof b.crossFilter !== 'boolean') e.push(`page "${pg.id}" ${v.type}: "crossFilter" e true o false`);
         if (b.ignoreFilters !== undefined) {
-          const fd = new Set(((spec.filters || {}).dims || []).map(x => x.id));
+          /* "date" e lo slicer del periodo: il visual tiene tutti gli anni (Nicola, crescita per decennio) */
+          const fd = new Set(((spec.filters || {}).dims || []).map(x => x.id).concat(['date']));
           if (!Array.isArray(b.ignoreFilters) || b.ignoreFilters.some(x => !fd.has(x))) e.push(`page "${pg.id}" ${v.type}: "ignoreFilters" e un elenco di filtri della barra (${[...fd].join(', ')}) da cui il visual si stacca`);
         }
         /* la colonna di scostamento dal budget, il conto economico, il ponte da stock a stock */
@@ -1439,7 +1440,7 @@ const INGLESE = {
   reset: 'Reset filters', updatedLabel: 'Last updated', report: 'Report',
   all: 'All', allM: 'All', compare: 'Compare', qtr: 'Qtr', month: 'Month', varShort: 'Var', actual: 'Actual', of: 'of', target: 'target', opening: 'Opening', closing: 'Closing', vsBud: 'vs Bud', vsPY: 'vs PY', bud: 'Budget', py: 'PY',
   spanUno: '1 year', spanTutti: 'All', anni: 'years', others: 'Others', target: 'target',
-  conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory',
+  conv: 'conv.', noPrev: 'no comparable previous period', trajectory: 'monthly trajectory', nd: 'no data',
   sopra: 'above', sotto: 'below', inLinea: 'in line with', nuova: 'new'
 };
 
