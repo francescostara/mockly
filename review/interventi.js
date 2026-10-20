@@ -925,6 +925,14 @@ const INTERVENTI = [
     fatto: "Oltre i dodici anni la griglia degli anni scorre in una finestra di cinque righe, quattro anni per riga, e si apre sull'anno scelto. Regola nella skill (data-realism.md). Gate in Chrome (test/barra.test.js): su ogni mockup del corpus e su una serie 1970-2023 il pannello resta nella pagina e l'anno scelto si vede; sul codice vecchio la serie lunga fallisce.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/nicola-crescita",
+    versione: 3,
+    commento: "(visto preparando il video in inglese) La guida \"How to use\" diceva \"Period — piu anni\" e, coi dati annuali, \"Monthly detail is available on ;\"; gli anni disponibili erano 54 numeri in fila.",
+    dove: "guida · lingua · gate",
+    fatto: "Il dizionario inglese della guida ha la sua parola per piu anni; coi dati annuali la guida dice che i dati sono annuali, senza trimestri ne mesi, invece della frase sul dettaglio mensile con l'elenco vuoto; oltre sei anni gli anni disponibili si scrivono come intervallo (1970–2023). Gate: test/dati-forniti.test.js, guida italiana e inglese, verificato che fallisce sul testo vecchio.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

@@ -46,9 +46,11 @@ const T = {
     sottoOk: 'sotto l\u2019obiettivo e verde, sopra e rosso', base: q => 'Si legge insieme al totale: ' + q,
     confronto: 'Il confronto e col periodo precedente (stesso periodo dell\u2019anno prima, o mese prima se scegli un mese).',
     periodo: 'Periodo',
+    /* con tanti anni l'elenco diventa un intervallo: 54 anni scritti uno per uno erano una riga illeggibile (Nicola v3) */
     periodoTxt: (liv, anni) => 'In alto il selettore del periodo: ' + liv +
-      '. Anni disponibili: ' + anni.join(', ') + '.',
-    finestraTxt: (mens) => 'Puoi guardare piu anni insieme: "Quanti anni" allarga la ' +
+      '. Anni disponibili: ' + (anni.length > 6 ? anni[0] + '–' + anni[anni.length - 1] : anni.join(', ')) + '.',
+    piuAnni: 'piu anni',
+    finestraTxt: (mens) => !mens.length ? 'Puoi guardare piu anni insieme: "Quanti anni" allarga la selezione all\u2019indietro a partire dall\u2019anno scelto, e tutta la pagina si aggiorna sull\u2019intervallo. I dati sono annuali: un valore per anno, senza trimestri ne mesi.' : 'Puoi guardare piu anni insieme: "Quanti anni" allarga la ' +
       'selezione all\u2019indietro a partire dall\u2019anno scelto, e tutta la pagina — numeri, ' +
       'confronto col periodo precedente, grafici — si aggiorna sull\u2019intervallo. Il ' +
       'confronto diventa intervallo su intervallo: tre anni contro i tre precedenti. ' +
@@ -93,8 +95,10 @@ const T = {
     confronto: 'Each card compares with the same period a year earlier, or with the previous month when you pick a month.',
     periodo: 'Period',
     periodoTxt: (liv, anni) => 'The period selector sits at the top: ' + liv +
-      '. Years available: ' + anni.join(', ') + '.',
-    finestraTxt: (mens) => 'You can look at several years at once: "How many years" widens the ' +
+      '. Years available: ' + (anni.length > 6 ? anni[0] + '–' + anni[anni.length - 1] : anni.join(', ')) + '.',
+    /* "Period — piu anni" in una guida inglese: la parola mancava nel dizionario inglese (Nicola v3) */
+    piuAnni: 'several years',
+    finestraTxt: (mens) => !mens.length ? 'You can look at several years at once: "How many years" widens the selection backwards from the chosen year, and the whole page follows the interval. The data is annual: one value per year, no quarters or months.' : 'You can look at several years at once: "How many years" widens the ' +
       'selection backwards from the chosen year, and the whole page — figures, prior-period ' +
       'comparison, charts — follows the interval. Monthly detail is available on ' +
       mens.join(', ') + '; older years are read by year, and the quarter and month controls ' +

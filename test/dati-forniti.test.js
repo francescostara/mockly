@@ -133,4 +133,15 @@ ok('lo scatter non disegna un paese senza il dato: niente punti sullo zero', () 
   dom.window.close();
 });
 
+ok('la guida dei dati annuali: niente "dettaglio mensile su ;", gli anni come intervallo, e in inglese nessuna parola italiana', () => {
+  const SCHEDA = require('../engine/scheda.js');
+  const it = SCHEDA.testo(spec, data);
+  assert.ok(/I dati sono annuali/.test(it) && /1970–2023/.test(it), 'la guida italiana deve dire che i dati sono annuali e dare l intervallo');
+  assert.ok(!/disponibile su\s*;/.test(it), 'frase col dettaglio mensile vuoto');
+  const en = JSON.parse(JSON.stringify(spec)); en.meta.locale = 'en-GB';
+  const t = SCHEDA.testo(en, data);
+  assert.ok(/The data is annual/.test(t) && !/available on\s*;/.test(t), 'la guida inglese dei dati annuali');
+  assert.ok(!/piu anni|più anni/.test(t), 'una parola italiana nella guida inglese: ' + (t.match(/.{20}piu anni.{10}/) || [''])[0]);
+});
+
 console.log('  ' + n + ' checks');
