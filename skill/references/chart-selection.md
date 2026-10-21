@@ -121,6 +121,18 @@ name's line, right-aligned. What that asks of the spec:
   colour of its bar in the ranked list; the engine does it, so do not fight it with a `parent`
   unless the parent is the point.
 - **Nothing outside the card, nothing overlapping.** That is a gate, not a preference.
+- **A target is written once (Fra, 21 Oct 2026).** `targetLabel` is the word ("Target", "Budget");
+  the engine appends the value. A label that already contains the number is written as it is, never
+  "Target 85 85".
+- **No budget, no budget columns.** A statement whose lines have no `budget` shows Actual only:
+  empty Budget and Var columns read as missing data.
+- **Durations have their own unit.** A time in seconds (seconds per line, handling time) is
+  `"unit": "seconds"`, `"format": "dur"`: the engine writes "42 s", "2:07 min", "1 h 05". Never
+  ask the reader to divide 127 by 60.
+- **Ranked bars fill their card.** In a flex row the bars grow (row height and bar thickness) up to a
+  maximum, instead of floating in the middle of a tall card; the layout does not change.
+- **The guide explains every measure that has a `description`**, not only the KPI cards: the
+  marketing metrics of a page (MER, ROAS, nCAC) are the ones a business owner needs explained.
 - **Never the same chart twice on a page: use a bookmark (Fra, 15 Oct 2026).** Two visuals of the
   same type on the same dimension (value added by sector and employment by sector, both as 100%
   stacked bars by country; capital/output and investment rate, both as ranked bars by country)

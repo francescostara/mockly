@@ -64,6 +64,20 @@ function tuttiIFiltri() {
   return dims.size;
 }
 
+/* Gira nella pagina: le barre riempiono la loro card (Teigor, 21 ott 2026). Una card hbar con piu di un
+   quarto dell'altezza vuota e un guasto, a meno che le righe siano gia al loro massimo (data-rh 64). */
+function hbarVuote() {
+  return [...document.querySelectorAll('#page .card')].filter(c => c.querySelector('svg rect.barra')).map(c => {
+    const svg = [...c.querySelectorAll('svg')].find(x => x.querySelector('rect.barra'));
+    const barre = [...c.querySelectorAll('rect.barra')], K = c.getBoundingClientRect(), H = (c.querySelector('.ch') || c).getBoundingClientRect();
+    const fondo = Math.max.apply(null, barre.map(b => b.getBoundingClientRect().bottom));
+    const testa = Math.min.apply(null, [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect().top));
+    const corpo = K.bottom - (H === K ? K.top : H.bottom), vuoto = (K.bottom - fondo) + Math.max(0, testa - (H === K ? K.top : H.bottom) - 12);
+    if (+svg.getAttribute('data-rh') >= 64 || vuoto <= corpo * 0.25) return null;
+    return '"' + ((c.querySelector('.ch h3') || {}).textContent || '?').trim().slice(0, 40) + '": ' + Math.round(vuoto) + 'px vuoti su ' + Math.round(corpo);
+  }).filter(Boolean);
+}
+
 /* Gira nella pagina: ogni testo su una forma colorata e il suo contrasto col fondo reale. */
 function contrastoPagina() {
           const st = document.createElement('style');
@@ -119,6 +133,7 @@ function contrastoPagina() {
   const layout = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const guastiCapo = [], guastiStima = [], guastiTabelle = [], guastiBarre = [];
   const guastiContrasto = [], guastiTip = [];
+  const guastiHbar = [];
   let testiSuColore = 0;
   let viste2 = 0, menu = 0;
   let viste = 0, misure = 0;
@@ -300,6 +315,7 @@ function contrastoPagina() {
            reale di cio che sta sotto il centro del testo: la card, poi ogni forma con la sua opacita. */
         const illeggibili = await page.evaluate(contrastoPagina);
         illeggibili.slice(0, 3).forEach(x => guastiContrasto.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
+        (await page.evaluate(hbarVuote)).forEach(x => guastiHbar.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
         testiSuColore++;
       }
       /* anche la pagina di drill-through: il donut dei costi di Verona aveva il 15% bianco su giallo */
@@ -309,6 +325,7 @@ function contrastoPagina() {
         if (aperto) {
           await layout();
           (await page.evaluate(contrastoPagina)).slice(0, 3).forEach(x => guastiContrasto.push(dove0 + ' · drill-through · ' + x));
+          (await page.evaluate(hbarVuote)).forEach(x => guastiHbar.push(dove0 + ' · drill-through · ' + x));
           await page.evaluate(() => { const b = document.getElementById('btnBack'); if (b) b.click(); });
           await layout();
         }
@@ -367,6 +384,10 @@ function contrastoPagina() {
   }
   await okAsync('il pannello del periodo resta nella pagina e mostra l anno scelto, anche con 54 anni', async () => {
     assert.deepStrictEqual(guastiPeriodo, [], guastiPeriodo.join(String.fromCharCode(10) + '       '));
+  });
+  await okAsync('le barre orizzontali riempiono la loro card: righe piu alte fino al massimo, mai barre che galleggiano', async () => {
+    const g = [...new Set(guastiHbar)];
+    assert.deepStrictEqual(g.slice(0, 12), [], g.length + ' casi:' + String.fromCharCode(10) + '       ' + g.slice(0, 12).join(String.fromCharCode(10) + '       '));
   });
   await okAsync('nessun errore JavaScript in nessuna pagina, drill-through compreso', async () => {
     assert.deepStrictEqual([...new Set(erroriPagina)].slice(0, 10), []);

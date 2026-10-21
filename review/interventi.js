@@ -941,6 +941,46 @@ const INTERVENTI = [
     fatto: "La sigla dell'anno nel confronto fra finestre viene dal dizionario: 5A vs 5A in italiano, 5Y vs 5Y in inglese. Gate: test/dati-forniti.test.js, nelle due lingue, verificato che fallisce sul codice vecchio.",
     stato: "fatto"
   }
+  ,{
+    id: "locale/teigor-picking",
+    versione: 1,
+    commento: "(visto rifacendo il mockup) Sulla linea del target \"Target 85 85\": la spec scriveva l'etichetta col numero e il motore aggiungeva il valore.",
+    dove: "colline · gauge · runtime · skill · gate",
+    fatto: "L'etichetta del target si scrive una volta: se contiene gia un numero non si aggiunge il valore (M.etTarget, colline e gauge). Regola nella skill. Gate: test/aperti-ottobre.test.js, verificato che fallisce sul codice vecchio. (Q&A di Fra, 21 ott 2026.)",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/mauricio-store",
+    versione: 1,
+    commento: "(visto rifacendo il mockup) Il riepilogo finanziario senza budget disegnava le colonne Budget, Var e Var % vuote su ogni riga.",
+    dove: "statement · runtime · kit · gate",
+    fatto: "Un conto economico senza misure di budget mostra solo Actual; il kit non chiede le colonne di budget. Gate: test/aperti-ottobre.test.js. (Q&A di Fra, 21 ott 2026.)",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/teigor-picking",
+    versione: 1,
+    commento: "(visto rifacendo il mockup) I tempi uscivano solo in secondi: \"Secondi per ordine 127\".",
+    dove: "formati · runtime · kit · grammatica · gate",
+    fatto: "Nuova unita \"seconds\" con formato \"dur\": 42 s, 2:07 min, 1 h 05; il kit scrive il formato dinamico DAX. Gate: test/aperti-ottobre.test.js. (Q&A di Fra, 21 ott 2026.)",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/teigor-picking",
+    versione: 1,
+    commento: "(visto rifacendo il mockup) Nel drill-through le barre galleggiavano a meta di una card troppo alta, con spazio vuoto sopra e sotto.",
+    dove: "hbar · fit · runtime · gate",
+    fatto: "Fra: \"si aumenta la grandezza delle righe, senza modificare il layout, fino a un massimo\". In una riga flessibile l'hbar prende l'altezza della riga; righe (fino a 64px) e barre (fino a 26px) crescono, e oltre il massimo partono dall'alto. Gate in Chrome (test/barra.test.js): nessuna card hbar con piu di un quarto vuoto, pagine e drill-through; sul codice vecchio fallisce su quattro drill del corpus e su messy-retail-human.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/mauricio-store",
+    versione: 1,
+    commento: "(visto rifacendo il mockup) La guida spiegava solo le card della banda KPI: MER, ROAS e nCAC della pagina Meta, chiesti dal brief, avevano la descrizione nella spec ma non comparivano.",
+    dove: "guida · gate",
+    fatto: "La guida ha la sezione \"Le altre misure del report\": ogni misura con una descrizione che compare in un visual e non e nella banda, pagina per pagina, con il calcolo. Gate: test/aperti-ottobre.test.js. (Q&A di Fra, 21 ott 2026.)",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

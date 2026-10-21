@@ -314,6 +314,11 @@ function fitPage(spec, page, data) {
     flexRows[0].visuals.forEach(v => {
       if (v.h && v.type !== 'matrix' && v.type !== 'statement' && v.h + chromeOf(v) > avail - 4)
         v.h = Math.max(MIN_CHART_H, Math.floor(avail - chromeOf(v) - 4));
+      /* LE BARRE RIEMPIONO LA CARD (Fra su Teigor, 21 ott 2026: "si aumenta la grandezza delle righe,
+         senza modificare il layout, fino a un massimo"). Un hbar con "h" in una riga flessibile prende
+         l'altezza della riga; e il runtime che ferma le righe al loro massimo. */
+      else if (v.type === 'hbar' && (v.h || 190) + chromeOf(v) < avail - 4)
+        v.h = Math.floor(avail - chromeOf(v) - 4);
     });
   }
   return plan;
@@ -871,7 +876,9 @@ function validate(specIn, data) {
     pp: ['pp'],
     days: ['days'],
     x: ['x'],
-    months: ['months']
+    months: ['months'],
+    /* le durate in secondi (Teigor): 42 s, 2:07 min, 1 h 05 */
+    seconds: ['dur']
   };
   ((spec.model || {}).measures || []).forEach(m => {
     if (!m.unit) {

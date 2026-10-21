@@ -39,6 +39,7 @@ const T = {
     intro: 'Non e un\'immagine: e un report vero, con i dati sintetici. Tutto quello che segue funziona.',
     filtri: 'Filtri',
     kpi: 'Come si calcolano i KPI',
+    altre: 'Le altre misure del report',
     kpiIntro: 'Ogni numero della fascia in alto, spiegato senza dare nulla per scontato.',
     formula: { sum: a => 'somma di ' + a, ratio: (a, b) => a + ' diviso ' + b,
       diff: (a, b) => a + ' meno ' + b, last: a => a + ' alla fine del periodo' },
@@ -87,6 +88,7 @@ const T = {
     intro: 'This is not a picture: it is a working report on synthetic data. Everything below works.',
     filtri: 'Filters',
     kpi: 'How the KPIs are calculated',
+    altre: 'The other measures in the report',
     kpiIntro: 'Every figure in the top band, explained without assuming anything.',
     formula: { sum: a => 'total of ' + a, ratio: (a, b) => a + ' divided by ' + b,
       diff: (a, b) => a + ' minus ' + b, last: a => a + ' at the end of the period' },
@@ -262,6 +264,29 @@ function testo(spec, data) {
       s.push('- **' + k.label + '** — ' + pezzi.join(' '));
     });
     s.push('', L.confronto, '');
+  }
+  /* LE ALTRE MISURE DEL REPORT, pagina per pagina: MER, ROAS e nCAC della pagina Meta di Mauricio
+     (13 ott 2026) avevano la loro descrizione nella spec e la guida non le diceva. Ogni misura con una
+     `description` che compare in un visual e non e gia nella banda. */
+  const inBanda = new Set((spec.kpiBand || []).map(k => k.measure));
+  const ids = o => {
+    const out = [];
+    JSON.stringify(o, (k, v) => { if (['measure', 'line', 'x', 'y', 'size', 'subMeasure', 'budget'].indexOf(k) >= 0 && typeof v === 'string') out.push(v); return v; });
+    return out;
+  };
+  const visti = new Set();
+  const perPagina = (spec.pages || []).map(pg => {
+    const m2 = ids(pg.rows).filter(id => mis[id] && mis[id].description && !inBanda.has(id) && !visti.has(id));
+    m2.forEach(id => visti.add(id));
+    return { pg, m2: [...new Set(m2)] };
+  }).filter(x => x.m2.length);
+  if (perPagina.length && L.altre) {
+    s.push('## ' + L.altre, '');
+    perPagina.forEach(({ pg, m2 }) => {
+      if (perPagina.length > 1 || (spec.pages || []).length > 1) s.push('**' + (pg.nav || pg.title) + '**', '');
+      m2.forEach(id => s.push('- **' + nome(id) + '** — ' + mis[id].description.replace(/\.?$/, '.') + ' ' + L.calcolo + ': ' + formula(id) + '.'));
+      s.push('');
+    });
   }
 
   s.push('## ' + L.filtri, '');

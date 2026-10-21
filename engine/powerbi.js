@@ -363,7 +363,9 @@ function formatoPbi(m) {
   const f = m.format || 'N', v = VALUTA;
   if (m.unit === 'pp' || f === 'pp') return '+0.0" pp";-0.0" pp";0.0" pp"';
   return ({ eur: v + '#,0.0,,"M";-' + v + '#,0.0,,"M"', eurF: v + '#,0', pc: '0.0%', sgp: '+0.0%;-0.0%',
-    bps: '+0" bps"', N: '#,0', x: '0.0"×"', days: '#,0" d"', months: '0.0', raw: 'General' })[f] || '#,0';
+    bps: '+0" bps"', N: '#,0', x: '0.0"×"', days: '#,0" d"', months: '0.0', raw: 'General',
+    /* una durata: formato dinamico (Format → Dynamic) con questa espressione */
+    dur: 'dynamic: VAR s = SELECTEDMEASURE() RETURN IF ( s < 60, "0\" s\"", IF ( s < 3600, FORMAT ( INT ( s / 60 ), "0" ) & ":" & FORMAT ( MOD ( s, 60 ), "00" ) & " min", FORMAT ( INT ( s / 3600 ), "0" ) & " h " & FORMAT ( INT ( MOD ( s, 3600 ) / 60 ), "00" ) ) )' })[f] || '#,0';
 }
 
 /* ------------------------------------------------------------------ 4. il front end */
@@ -406,7 +408,7 @@ function descriviVisual(spec, v, L, N) {
       else campi.push('Category: ' + dim(b.dim), 'Y: ' + m(b.measure));
       break;
     case 'statement':
-      campi.push("Rows: 'P&L line'[Line] → 'Account'[Account] (drill down with +/−)", 'Values: [Line actual], [Line budget], [Line vs budget], [Line vs budget %] and the same four in YTD');
+      campi.push("Rows: 'P&L line'[Line] → 'Account'[Account] (drill down with +/−)", (b.lines || []).some(l => l.budget) ? 'Values: [Line actual], [Line budget], [Line vs budget], [Line vs budget %] and the same four in YTD' : 'Values: [Line actual] (no budget in this report: no budget or variance columns)');
       righe.push('A disconnected table of P&L lines in order (' + (b.lines || []).map(l => l.label).join(', ') + '), sorted by a Sort column; a SWITCH measure returns, for each line, its own measure (' + (b.lines || []).map(l => m(l.measure)).join(', ') + '), so subtotals stay calculated measures and are never summed from the rows. Accounts are a child level of each line. Conditional formatting on the variance columns: red when unfavourable, green when favourable, using the line cost or revenue sign.');
       break;
     case 'scatter': campi.push('Values: ' + dim(b.dim), 'X: ' + m(b.x), 'Y: ' + m(b.y)); if (b.size) campi.push('Size: ' + m(b.size)); righe.push(L.mediane); break;

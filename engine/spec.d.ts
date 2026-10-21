@@ -90,13 +90,14 @@ export interface Skin {
 
 /** eur = compact €1,2M/€41K · eurF = full grouped · pc = 42,1% · pp = +1,2 pp
  *  sgp = signed % · bps = +34bps · N = grouped integer · x = 1,8× · days · months = 18,3 mesi · raw */
-export type Format = 'eur' | 'eurF' | 'pc' | 'pp' | 'sgp' | 'bps' | 'N' | 'x' | 'days' | 'months' | 'raw';
+export type Format = 'eur' | 'eurF' | 'pc' | 'pp' | 'sgp' | 'bps' | 'N' | 'x' | 'days' | 'months' | 'raw' | 'dur';
 
 /** COSA misura, non come si scrive. Il formato e una conseguenza dell'unita, non una scelta
  *  indipendente: un modello reale ha scritto `format:"eur"` su reach e impression — due conte —
  *  pur avendo `N` nella grammatica e usandolo correttamente due righe piu sotto. Con l'unita
  *  dichiarata, quella combinazione non e piu esprimibile. */
-export type Unit = 'money' | 'count' | 'pct' | 'pp' | 'days' | 'months' | 'x';
+/** seconds: una durata in secondi, con format "dur" (42 s · 2:07 min · 1 h 05) */
+export type Unit = 'money' | 'count' | 'pct' | 'pp' | 'days' | 'months' | 'x' | 'seconds';
 
 export interface Meta {
   title: string;

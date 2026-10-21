@@ -226,6 +226,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       return d(v.toFixed(1)) + (o.locale && o.locale.slice(0, 2) === 'it' ? ' mesi' : ' mo');
     };
     f.raw = v => String(isFinite(v) ? Math.round(v) : 0);
+    /* LE DURATE: un tempo in secondi si legge come lo direbbe una persona (Teigor, 12 ott 2026: "Secondi
+       per ordine 127"). Sotto il minuto "42 s", sotto l'ora "2:07 min", oltre "1 h 05". */
+    f.dur = function (v) {
+      v = isFinite(v) ? Math.round(Math.abs(v)) : 0;
+      var sg = '';
+      if (v < 60) return sg + v + ' s';
+      if (v < 3600) return sg + Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0') + ' min';
+      return sg + Math.floor(v / 3600) + ' h ' + String(Math.floor((v % 3600) / 60)).padStart(2, '0');
+    };
     f.apply = (id, v) => (f[id] || f.N)(v);
     return f;
   };
@@ -264,6 +273,10 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     }
     return M.asseStretto(lo, hi);
   };
+
+  /* L'ETICHETTA DEL TARGET SI SCRIVE UNA VOLTA SOLA: "Target 85 85" (Teigor, 12 ott 2026). Se
+     l'etichetta della spec contiene gia un numero, il valore non si riaggiunge. */
+  M.etTarget = function (lab, val) { lab = String(lab); return /\d/.test(lab) ? lab : lab + ' ' + val; };
 
   M.ticks = function (max, n) {
     n = n || 4;
@@ -1587,8 +1600,11 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       data.forEach(d => { if (d.cat && visti.indexOf(d.cat) < 0) visti.push(d.cat); });
       lgd = A.legend(visti.map(id => ({ l: A.dimLabel(b.parent, id), c: A.color(b.parent, id) })));
     }
-    var rh = (h - m.t - m.b) / n;
-    var bh = Math.max(8, Math.min(18, rh - lblH - 6));
+    /* righe e barre crescono con lo spazio fino a un massimo: oltre, le righe restano al loro massimo
+       e partono dall'alto, invece di galleggiare a meta di una card troppo alta (Teigor) */
+    var RH_MAX = 64, rh = Math.min(RH_MAX, (h - m.t - m.b) / n);
+    var bh = Math.max(8, Math.min(26, rh - lblH - 10));
+    if (rh === RH_MAX) h = Math.ceil(m.t + m.b + rh * n);
     var max = Math.max.apply(null, data.map(d => d.v)) || 1;
     var mm = A.meas(ms), quota = (b.share !== false && mm.agg === 'sum' && data.every(d => d.v >= 0))
       ? grp.keys.reduce((t, id) => t + Math.max(0, A.mv(ms, grp.agg[id])), 0) : 0;
@@ -1626,7 +1642,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         '<rect class="barra" x="' + x0 + '" y="' + yb.toFixed(1) + '" width="' + bl.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="1.5" fill="' + (A.statoT(ms, d.v) ? 'var(--' + A.statoT(ms, d.v).slice(1) + ')' : (d.c || 'var(--c1)')) + '"/>' +
         et + '</g>';
     });
-    return A.card(v, lgd + '<div style="flex:1;display:flex;align-items:center;padding-bottom:6px">' + s + '</svg></div>', { flex: true });
+    return A.card(v, lgd + '<div style="flex:1;display:flex;align-items:' + (rh === RH_MAX ? 'flex-start;padding-top:4px' : 'center') + ';padding-bottom:6px">' + s.replace('<svg ', '<svg data-rh="' + Math.round(rh) + '" ') + '</svg></div>', { flex: true });
   };
 })(MK);
 /*#endregion*/
@@ -1798,7 +1814,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       aL.tk.forEach(t => s += '<text x="' + (mgn.l + iw + 6) + '" y="' + (Y2(t) + 3).toFixed(1) + '" font-size="8" fill="' + lc + '" class="tnum l2">' + A.mfmt(ln, t) + '</text>');
       /* LA LINEA DEL TARGET, fissa e tratteggiata, con la sua etichetta a sinistra sopra la linea */
       if (tg !== null) {
-        var yT = Y2(tg).toFixed(1), tl = (b.targetLabel || 'Target') + ' ' + A.mfmt(ln, tg);
+        var yT = Y2(tg).toFixed(1), tl = M.etTarget(b.targetLabel || 'Target', A.mfmt(ln, tg));
         s += '<line class="tgt" x1="' + mgn.l + '" y1="' + yT + '" x2="' + (mgn.l + iw) + '" y2="' + yT + '" stroke="' + lc + '" stroke-width="1.4" stroke-dasharray="5 3" opacity=".8"/>' +
           M.testoVelato(tl, mgn.l + 4, +yT - 4, { px: 8.5, anc: 'start', velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 3, padY: 1 });
       }
@@ -1839,7 +1855,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       /* minimo, massimo e ultimo valore della linea; l'ultimo sta sotto il punto, perche sopra c'e
          il nome della serie, e nessuno tocca il nome o la scritta del target */
       var evita = [{ l: xN - wLbl / 2 - 4, r: xN + wLbl / 2 + 4, t: yL - 10, b: yL + 3 }];
-      if (tg !== null) evita.push({ l: mgn.l, r: mgn.l + 8 + M.larghN((b.targetLabel || 'Target') + ' ' + A.mfmt(ln, tg), 8.5), t: Y2(tg) - 14, b: Y2(tg) });
+      if (tg !== null) evita.push({ l: mgn.l, r: mgn.l + 8 + M.larghN(M.etTarget(b.targetLabel || 'Target', A.mfmt(ln, tg)), 8.5), t: Y2(tg) - 14, b: Y2(tg) });
       if (b.labels !== false) s += M.etichettePunti(line.map((val, k2) => ({ x: mgn.l + cw * k2 + cw / 2, y: val === null ? 0 : Y2(val), v: val })),
         { fmt: x => A.mfmt(ln, x), col: lc, l: mgn.l, r: mgn.l + iw, t: mgn.t, b: mgn.t + ih, ultimoGiu: true, evita: evita });
     }
@@ -1866,12 +1882,16 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var mesi = A.ytdMesi();
       gruppi.push({ l: 'YTD ' + A.MON[mesi[mesi.length - 1]], a: A.agg(A.slice({ y: S.y, months: mesi })) });
     }
-    var T = A.T, cn = [T.actual || 'Effettivo', T.bud || 'Budget', T.varShort || 'Var', (T.varShort || 'Var') + ' %'];
+    /* SENZA BUDGET, NIENTE COLONNE DI BUDGET: il riepilogo finanziario di Mauricio (13 ott 2026) aveva
+       Budget, Var e Var % vuote su ogni riga, che si leggono come dati mancanti */
+    var conBud = lines.some(l => l.budget);
+    var T = A.T, cn = conBud ? [T.actual || 'Effettivo', T.bud || 'Budget', T.varShort || 'Var', (T.varShort || 'Var') + ' %'] : [T.actual || 'Effettivo'];
     var head = '<tr><th rowspan="2" style="text-align:left">' + M.esc(A.tpl(b.label || '')) + '</th>' +
-      gruppi.map(g => '<th colspan="4" class="grp">' + M.esc(g.l) + '</th>').join('') + '</tr><tr>' +
+      gruppi.map(g => '<th colspan="' + cn.length + '" class="grp">' + M.esc(g.l) + '</th>').join('') + '</tr><tr>' +
       gruppi.map(() => cn.map((c, ci) => '<th' + (ci === 1 ? ' class="bdg"' : '') + '>' + M.esc(c) + '</th>').join('')).join('') + '</tr>';
     var celle = function (ms, bud, inv, a, chiave, quota, quotaB) {
       var act = A.mv(ms, a) * (quota === undefined ? 1 : quota), bv = bud ? A.mv(bud, a) * (quotaB === undefined ? 1 : quotaB) : null;
+      if (!conBud) return '<td class="tnum">' + A.mfmt(ms, act) + '</td>';
       var out = '<td class="tnum">' + A.mfmt(ms, act) + '</td><td class="tnum bdg">' + (bv === null ? '' : A.mfmt(ms, bv)) + '</td>';
       if (bv === null) return out + '<td></td><td></td>';
       var sc = A.scost(ms, act, bv, inv), d = act - bv;
@@ -2058,7 +2078,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          non a meta strada. */
       var lblX = cx + (r1 + 4) * c, lblY = cy - (r1 + 4) * sn - 2;
       var anc = qt > .62 ? 'end' : (qt < .38 ? 'start' : 'middle');
-      var wLbl = M.largh(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target), 8.5);
+      var wLbl = M.largh(M.etTarget(A.tpl(b.targetLabel || 'target'), A.mfmt(ms, target)), 8.5);
       if (anc === 'end') lblX = Math.min(lblX, w - 2); else if (anc === 'start') lblX = Math.max(lblX, 2);
       else lblX = Math.min(Math.max(lblX, wLbl / 2 + 2), w - wLbl / 2 - 2);
       /* Il velo qui e del colore della SUPERFICIE, non dell'inchiostro: l'etichetta cade
@@ -2072,7 +2092,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       var fsV = Math.round(r * .38), wV = M.larghN(A.mfmt(ms, val), fsV);
       var lx0 = anc === 'end' ? lblX - wLbl : anc === 'start' ? lblX : lblX - wLbl / 2, ly = Math.max(10, lblY);
       if (lx0 < cx + wV / 2 + 2 && lx0 + wLbl > cx - wV / 2 - 2 && ly - 10 < cy - 6 && ly + 2 > cy - 6 - fsV) tocca = true;
-      if (!piccolo && !tocca) s += M.testoVelato(A.tpl(b.targetLabel || 'target') + ' ' + A.mfmt(ms, target),
+      if (!piccolo && !tocca) s += M.testoVelato(M.etTarget(A.tpl(b.targetLabel || 'target'), A.mfmt(ms, target)),
         lblX, Math.max(10, lblY), { px: 8.5, anc: anc, velo: 'var(--card)', opacita: 0.88,
           ink: 'var(--ink)', padX: 4, padY: 2 });
     }
