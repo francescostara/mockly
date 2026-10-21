@@ -129,6 +129,10 @@ name's line, right-aligned. What that asks of the spec:
 - **Durations have their own unit.** A time in seconds (seconds per line, handling time) is
   `"unit": "seconds"`, `"format": "dur"`: the engine writes "42 s", "2:07 min", "1 h 05". Never
   ask the reader to divide 127 by 60.
+- **A 100% bar adds up to 100.** The percentages written on a 100% stacked bar are rounded by
+  largest remainder, so each bar reads 100%, never 101% or 99% (Fra, 22 Oct 2026).
+- **Labels never cover a data point.** The target label of a column + line chart moves along its line
+  to where no point sits; a KPI detail line that would wrap shrinks its type instead.
 - **Ranked bars fill their card.** In a flex row the bars grow (row height and bar thickness) up to a
   maximum, instead of floating in the middle of a tall card; the layout does not change.
 - **The guide explains every measure that has a `description`**, not only the KPI cards: the

@@ -64,6 +64,29 @@ function tuttiIFiltri() {
   return dims.size;
 }
 
+/* Gira nella pagina: nessun testo copre un punto di una linea, e la riga di dettaglio di ogni card sta
+   su una riga (Fra, 22 ott 2026: "la pillola 85 di gennaio e coperta", "Var −2 s va a capo"). */
+function letturaPunti() {
+  const out = [];
+  document.querySelectorAll('#page svg').forEach(svg => {
+    const punti = [...svg.querySelectorAll('circle.l2p, circle.hit')].filter(c => !c.closest('.sct') && !svg.classList.contains('sct'));
+    if (!punti.length) return;
+    [...svg.querySelectorAll('text')].filter(t => t.textContent.trim() && /target|obiettivo|budget/i.test(t.textContent)).forEach(t => {
+      const a = t.getBoundingClientRect();
+      punti.forEach(c => {
+        const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy'), m = svg.getScreenCTM(); if (!m) return;
+        const X = m.a * cx + m.e, Y = m.d * cy + m.f, r = (+c.getAttribute('r') || 3) * m.a;
+        if (X + r > a.left + 1 && X - r < a.right - 1 && Y + r > a.top + 1 && Y - r < a.bottom - 1) out.push('"' + t.textContent.trim().slice(0, 16) + '" copre un punto');
+      });
+    });
+  });
+  document.querySelectorAll('.kpi .det').forEach(d => {
+    const lh = parseFloat(getComputedStyle(d).lineHeight) || 12;
+    if (d.getBoundingClientRect().height > lh * 1.4) out.push('dettaglio della card su due righe: "' + d.textContent.trim().slice(0, 40) + '"');
+  });
+  return [...new Set(out)];
+}
+
 /* Gira nella pagina: le barre riempiono la loro card (Teigor, 21 ott 2026). Una card hbar con piu di un
    quarto dell'altezza vuota e un guasto, a meno che le righe siano gia al loro massimo (data-rh 64). */
 function hbarVuote() {
@@ -133,7 +156,7 @@ function contrastoPagina() {
   const layout = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const guastiCapo = [], guastiStima = [], guastiTabelle = [], guastiBarre = [];
   const guastiContrasto = [], guastiTip = [];
-  const guastiHbar = [];
+  const guastiHbar = [], guastiPunti = [];
   let testiSuColore = 0;
   let viste2 = 0, menu = 0;
   let viste = 0, misure = 0;
@@ -316,6 +339,7 @@ function contrastoPagina() {
         const illeggibili = await page.evaluate(contrastoPagina);
         illeggibili.slice(0, 3).forEach(x => guastiContrasto.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
         (await page.evaluate(hbarVuote)).forEach(x => guastiHbar.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
+        (await page.evaluate(letturaPunti)).forEach(x => guastiPunti.push(dove0 + ' · pagina ' + pg.id + ' · ' + x));
         testiSuColore++;
       }
       /* anche la pagina di drill-through: il donut dei costi di Verona aveva il 15% bianco su giallo */
@@ -387,6 +411,10 @@ function contrastoPagina() {
   });
   await okAsync('le barre orizzontali riempiono la loro card: righe piu alte fino al massimo, mai barre che galleggiano', async () => {
     const g = [...new Set(guastiHbar)];
+    assert.deepStrictEqual(g.slice(0, 12), [], g.length + ' casi:' + String.fromCharCode(10) + '       ' + g.slice(0, 12).join(String.fromCharCode(10) + '       '));
+  });
+  await okAsync('nessuna etichetta del target copre un punto, e la riga di dettaglio di ogni card sta su una riga', async () => {
+    const g = [...new Set(guastiPunti)];
     assert.deepStrictEqual(g.slice(0, 12), [], g.length + ' casi:' + String.fromCharCode(10) + '       ' + g.slice(0, 12).join(String.fromCharCode(10) + '       '));
   });
   await okAsync('nessun errore JavaScript in nessuna pagina, drill-through compreso', async () => {

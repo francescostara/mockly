@@ -981,6 +981,30 @@ const INTERVENTI = [
     fatto: "La guida ha la sezione \"Le altre misure del report\": ogni misura con una descrizione che compare in un visual e non e nella banda, pagina per pagina, con il calcolo. Gate: test/aperti-ottobre.test.js. (Q&A di Fra, 21 ott 2026.)",
     stato: "fatto"
   }
+  ,{
+    id: "archetipi/canonical-funnel",
+    versione: 5,
+    commento: "(Fra, carosello dei difetti, 22 ott 2026) Nella pila al 100% Q1 sommava 101% (SMB 31%).",
+    dove: "stack100 · runtime · skill · gate",
+    fatto: "Le quote scritte su una pila al 100% si arrotondano a resto maggiore: ogni barra fa 100. Gate: test/aperti-ottobre.test.js su ogni pila completa del corpus; sul codice vecchio canonical-funnel somma 101% e 99%.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/teigor-picking",
+    versione: 1,
+    commento: "(Fra, carosello dei difetti, 22 ott 2026) L'etichetta \"Target 85\" copriva il pallino di gennaio, che stava sul target.",
+    dove: "colline · runtime · skill · gate",
+    fatto: "L'etichetta del target prova sinistra e destra, sopra e sotto la linea, e prende la prima posizione che non tocca un punto; le etichette di minimo, massimo e ultimo la evitano dove sta davvero. Gate in Chrome (test/barra.test.js): nessuna etichetta del target copre un punto.",
+    stato: "fatto"
+  }
+  ,{
+    id: "locale/teigor-picking",
+    versione: 1,
+    commento: "(Fra, carosello dei difetti, 22 ott 2026) Nella card \"Tempo per ordine\" la riga di dettaglio andava a capo (\"Var −2 s\").",
+    dove: "kpi · runtime · gate",
+    fatto: "Dopo il disegno la riga di dettaglio di una card che andrebbe a capo stringe il carattere a gradini fino a 7px. Gate in Chrome (test/barra.test.js): ogni riga di dettaglio su una riga, ogni mockup in due lingue; sul codice vecchio fallisce su pagamenti-luca.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

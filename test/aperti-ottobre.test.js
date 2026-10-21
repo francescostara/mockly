@@ -87,4 +87,30 @@ ok('la guida spiega anche le misure dei visual che hanno una descrizione, pagina
   assert.ok(t.indexOf('Una misura di prova spiegata nella guida') >= 0, 'la descrizione della misura non e nella guida');
 });
 
+ok('ogni pila al 100% scrive quote che fanno 100, su ogni pagina di ogni mockup', () => {
+  const guasti = []; let pile = 0;
+  casi().forEach(c => {
+    const dom = new JSDOM(renderCaso(c), { runScripts: 'dangerously', pretendToBeVisual: true });
+    const doc = dom.window.document;
+    const pagine = [...doc.querySelectorAll('.navbtn')].map(b => b.dataset.page);
+    (pagine.length ? pagine : [null]).forEach(p => {
+      if (p) doc.querySelector('.navbtn[data-page="' + p + '"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      doc.querySelectorAll('#page svg.s100').forEach(svg => {
+        const righe = {};
+        svg.querySelectorAll('rect.hit[data-f]').forEach(r => { const y = r.getAttribute('y'); (righe[y] = righe[y] || []).push(r); });
+        Object.values(righe).forEach(rs => {
+          const testi = rs.map(r => r.nextElementSibling && r.nextElementSibling.tagName === 'text' && /^\d+%$/.test(r.nextElementSibling.textContent.trim()) ? parseInt(r.nextElementSibling.textContent, 10) : null);
+          if (testi.some(t => t === null)) return;    /* una parte troppo stretta per la sua quota: niente da sommare */
+          pile++;
+          const t = testi.reduce((a, b) => a + b, 0);
+          if (t !== 100) guasti.push(c.id + ' · ' + (p || '') + ': una pila somma ' + t + '%');
+        });
+      });
+    });
+    dom.window.close();
+  });
+  assert.ok(pile >= 5, 'solo ' + pile + ' pile complete');
+  assert.deepStrictEqual(guasti, []);
+});
+
 console.log('  ' + n + ' checks');

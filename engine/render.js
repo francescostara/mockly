@@ -1269,7 +1269,7 @@ ${JSON.stringify(spec.pages || []).indexOf('"viste"') >= 0 ? `.vsw{display:inlin
 .kpi .vr{display:flex;align-items:flex-end;gap:7px;margin-top:6px}
 .kpi .v{font-size:25px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-1px}
 .kpi .d{font-size:10px;font-weight:600;padding-bottom:2px;white-space:nowrap}
-.kpi .det{font-size:9px;color:var(--muted);margin-top:7px}
+.kpi .det{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.3}
 ${usaFinanza(spec) ? `td.bdg,th.bdg{background:var(--bud)}th.bdg{color:var(--ink2)}tr.tot td.bdg{background:var(--bud)}
 .st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
 .kpi .kf{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;display:flex;gap:10px}.kpi .kf b{font-weight:600}

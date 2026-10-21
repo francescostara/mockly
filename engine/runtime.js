@@ -1021,6 +1021,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       A.doc.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('on', b.getAttribute('data-page') === S.page));
       $('#page').innerHTML = A.buildPage(pg);
       A.stringiTabelle();
+      A.stringiDettagli();
     };
     /* UNA TABELLA NON SI TAGLIA. Il conto dello spazio si fa prima del disegno, con altezze
        stimate: giuste per le righe, sbagliate di qualche pixel su intestazioni e titoli che
@@ -1028,6 +1029,15 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
        del corpus e il mockup di Muttahar, 29 set 2026). Dopo il disegno si misura: una tabella che
        non entra nel suo riquadro stringe le righe, in due gradini, finche entra. Dove non c'e
        layout (i test in jsdom) le misure sono zero e non cambia niente. */
+    /* LA RIGA DI DETTAGLIO DI UNA CARD NON VA A CAPO: "Var −2 s" finiva sulla seconda riga in una banda
+       di cinque card (Teigor, Fra 22 ott 2026). Dopo il disegno si misura e si stringe il carattere a
+       gradini, fino a 7px; in jsdom le misure sono zero e non cambia niente. */
+    A.stringiDettagli = function () {
+      [].forEach.call(A.doc.querySelectorAll('.kpi .det'), function (d) {
+        var lh = parseFloat(getComputedStyle(d).lineHeight) || 12;
+        for (var fs = 8.5; fs >= 7 && d.getBoundingClientRect().height > lh * 1.4; fs -= 0.5) { d.style.fontSize = fs + 'px'; lh = parseFloat(getComputedStyle(d).lineHeight) || lh; }
+      });
+    };
     A.stringiTabelle = function () {
       [].forEach.call(A.doc.querySelectorAll('#page .mx'), function (c) {
         if (!c.querySelector('table')) return;
@@ -1813,10 +1823,23 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       /* l'asse secondario: tacche a destra, nel colore della linea */
       aL.tk.forEach(t => s += '<text x="' + (mgn.l + iw + 6) + '" y="' + (Y2(t) + 3).toFixed(1) + '" font-size="8" fill="' + lc + '" class="tnum l2">' + A.mfmt(ln, t) + '</text>');
       /* LA LINEA DEL TARGET, fissa e tratteggiata, con la sua etichetta a sinistra sopra la linea */
+      var tPos = null;
       if (tg !== null) {
         var yT = Y2(tg).toFixed(1), tl = M.etTarget(b.targetLabel || 'Target', A.mfmt(ln, tg));
         s += '<line class="tgt" x1="' + mgn.l + '" y1="' + yT + '" x2="' + (mgn.l + iw) + '" y2="' + yT + '" stroke="' + lc + '" stroke-width="1.4" stroke-dasharray="5 3" opacity=".8"/>' +
-          M.testoVelato(tl, mgn.l + 4, +yT - 4, { px: 8.5, anc: 'start', velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 3, padY: 1 });
+          (function () {
+            /* L'ETICHETTA DEL TARGET NON COPRE UN PUNTO: a sinistra copriva il pallino di gennaio quando
+               gennaio stava sul target (Teigor, Fra 22 ott 2026). Si prova a sinistra e a destra, sopra e
+               sotto la linea; vince la prima posizione che non tocca nessun punto. */
+            var wT = M.larghN(tl, 8.5) + 8, cand = [[mgn.l + 4, +yT - 4, 'start'], [mgn.l + iw - 4, +yT - 4, 'end'], [mgn.l + 4, +yT + 12, 'start'], [mgn.l + iw - 4, +yT + 12, 'end']];
+            var libera = function (c) {
+              var x0 = c[2] === 'start' ? c[0] - 3 : c[0] - wT + 3, x1 = x0 + wT, y0 = c[1] - 10, y1 = c[1] + 3;
+              return line.every(function (val, k2) { if (val === null) return true; var px = mgn.l + cw * k2 + cw / 2, py = Y2(val); return px < x0 - 4 || px > x1 + 4 || py < y0 - 4 || py > y1 + 4; });
+            };
+            var sc = cand.filter(libera)[0] || cand[0];
+            tPos = { x0: sc[2] === 'start' ? sc[0] - 3 : sc[0] - wT + 3, y: sc[1] };
+            return M.testoVelato(tl, sc[0], sc[1], { px: 8.5, anc: sc[2], velo: 'var(--card)', opacita: 0.9, ink: lc, padX: 3, padY: 1 });
+          })();
       }
       var p = '', su = false;
       line.forEach((val, k) => { if (val === null) { su = false; return; } p += (su ? 'L' : 'M') + (mgn.l + cw * k + cw / 2).toFixed(1) + ',' + Y2(val).toFixed(1); su = true; });
@@ -1855,7 +1878,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       /* minimo, massimo e ultimo valore della linea; l'ultimo sta sotto il punto, perche sopra c'e
          il nome della serie, e nessuno tocca il nome o la scritta del target */
       var evita = [{ l: xN - wLbl / 2 - 4, r: xN + wLbl / 2 + 4, t: yL - 10, b: yL + 3 }];
-      if (tg !== null) evita.push({ l: mgn.l, r: mgn.l + 8 + M.larghN(M.etTarget(b.targetLabel || 'Target', A.mfmt(ln, tg)), 8.5), t: Y2(tg) - 14, b: Y2(tg) });
+      if (tg !== null && tPos) evita.push({ l: tPos.x0, r: tPos.x0 + M.larghN(M.etTarget(b.targetLabel || 'Target', A.mfmt(ln, tg)), 8.5) + 8, t: tPos.y - 11, b: tPos.y + 4 });
       if (b.labels !== false) s += M.etichettePunti(line.map((val, k2) => ({ x: mgn.l + cw * k2 + cw / 2, y: val === null ? 0 : Y2(val), v: val })),
         { fmt: x => A.mfmt(ln, x), col: lc, l: mgn.l, r: mgn.l + iw, t: mgn.t, b: mgn.t + ih, ultimoGiu: true, evita: evita });
     }
@@ -1952,6 +1975,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
       });
       var vuoto = !tot;
       tot = tot || 1;
+      /* LE QUOTE SCRITTE FANNO 100: arrotondate una per una, Q1 sommava 101% (27 + 43 + 31,
+         canonical-funnel, Fra 22 ott 2026). Resto maggiore: i punti mancanti vanno alle parti con
+         il decimale piu alto. */
+      var qInt = {}, qRes = [], qSom = 0;
+      cats.forEach(function (c) { var q = vals[c.id] / tot * 100; qInt[c.id] = Math.floor(q); qSom += qInt[c.id]; qRes.push({ id: c.id, r: q - Math.floor(q) }); });
+      if (!vuoto) qRes.sort(function (a, b2) { return b2.r - a.r; }).slice(0, Math.max(0, 100 - qSom)).forEach(function (o) { qInt[o.id]++; });
       var x = lw;
       s += '<text x="' + (lw - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="10" fill="var(--ink2)">' + M.esc(grp.l) + '</text>';
       /* un gruppo senza dati lo dice, invece di una riga vuota che sembra un errore */
@@ -1964,7 +1993,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         s += '<rect class="hit ' + (dimd ? 'dimd' : '') + '" x="' + x.toFixed(1) + '" y="' + (y - bh / 2).toFixed(1) + '" width="' + Math.max(0, bl - 1).toFixed(1) +
           '" height="' + bh + '" fill="' + c.c + '" data-f="' + dim + ':' + c.id + '" data-tip="<b>' + M.esc(grp.l + ' · ' + c.n) + '</b><br>' +
           A.mfmt(ms, val) + '<br>' + f.pc(val / tot) + '"/>';
-        if (bl > 34) s += '<text x="' + (x + bl / 2).toFixed(1) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="middle" font-size="8.5" fill="' + M.inkSu(c.c) + '">' + Math.round(val / tot * 100) + '%</text>';
+        if (bl > 34) s += '<text x="' + (x + bl / 2).toFixed(1) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="middle" font-size="8.5" fill="' + M.inkSu(c.c) + '">' + qInt[c.id] + '%</text>';
         x += bl;
       });
     });
