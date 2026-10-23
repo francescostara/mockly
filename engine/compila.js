@@ -13,6 +13,7 @@ const CAT = require('./catalogo.js');
 const P = require('./progetto.js');
 const LY = require('./layout.js');
 const DF = require('./dati-forniti.js');
+const R = require('./render.js');
 
 /* il dataset d'esempio di ogni nicchia: un caso del corpus, in inglese dove esiste */
 const ESEMPIO = {
@@ -62,8 +63,9 @@ function buildDi(progetto, pg) {
   return progetto.build[pg.id] || P.buildIniziale(progetto, kpiDisponibili(progetto).map(k => k.id));
 }
 
-const ALTEZZA = { 1: 400, 2: 190, 3: 118 };
-
+/* il sottotitolo del segnaposto: il contenuto della pagina dove ci sta, altrimenti la parola sola. Un
+   pannello stretto con una frase lunga andava a capo e alzava l'intestazione: e una prova di forma,
+   il sottotitolo vero lo scrive Fill page. */
 /** progetto -> { spec, data } */
 function compila(progetto) {
   const B = base(progetto);
@@ -76,7 +78,6 @@ function compila(progetto) {
     const cards = b.kpiRow === 'off' ? [] : b.kpis.map(id => ({ id: 'k_' + pg.id + '_' + id, label: (misure[id] && misure[id].label) || id, measure: id, span: 1 }));
     const righe = LY.leggi(b.layout) || [[cards.length || 4]];
     const nc = cards.length || LY.colonne(b.layout) || 4;
-    const h = ALTEZZA[righe.length] || 118;
     let n = 0;
     const out = {
       id: pg.id, title: pg.title, subtitle: pg.subtitle || undefined,
@@ -84,7 +85,7 @@ function compila(progetto) {
       panels: { header: b.panelHeader, subtitle: b.panelSubtitle },
       rows: righe.map(r => ({ visuals: r.map(span => {
         n++;
-        return { type: 'segnaposto', span, h, title: 'Panel ' + n, subtitle: b.panelSubtitle ? (pg.content || 'filled by Fill page') : undefined, bind: { etichetta: 'Panel ' + n } };
+        return { type: 'segnaposto', span, h: 100, title: 'Panel ' + n, subtitle: b.panelSubtitle ? (span / nc >= 0.4 && pg.content ? pg.content : 'Subtitle') : undefined, bind: { etichetta: 'Panel ' + n } };
       }) }))
     };
     if (!cards.length) out.columns = nc;
@@ -107,6 +108,17 @@ function compila(progetto) {
     kpiBand: [],
     pages: pagine
   };
+  /* LA BARRA DEI FILTRI CI DEVE STARE CON OGNI TEMPLATE. Sulla rail stretta i filtri stanno in una riga
+     sopra la pagina, e i tre menu del retail sforavano di 16px: il template consigliato per la
+     nicchia veniva rifiutato (retail-stili, 23 ott 2026). Cedono i filtri in coda, uno per volta,
+     finche la riga ci sta; il periodo resta sempre. */
+  while (spec.filters.dims.length && R.toolbarBudget(spec, B.data).overflow) spec.filters.dims = spec.filters.dims.slice(0, -1);
+  /* LE ALTEZZE DEI SEGNAPOSTO dallo spazio vero della pagina, righe uguali: con altezze fisse una
+     shell piu alta o una riga KPI con grafico sforavano di un pixel, e il motore rifiutava la pagina */
+  pagine.forEach(pg => {
+    const libero = R.spazioPannelli(spec, pg), n = pg.rows.length;
+    pg.rows.forEach(r => r.visuals.forEach(v => { v.h = Math.max(60, Math.floor(libero / n) - R.chromeOf(v) - 2); }));
+  });
   return { spec, data: B.data };
 }
 

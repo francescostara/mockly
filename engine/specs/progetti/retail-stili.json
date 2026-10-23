@@ -1,0 +1,23 @@
+{
+ "versione": 1,
+ "lingua": "en",
+ "brief": {
+  "testo": "Store network review for the retail director: revenue, profit and margin by region, how the year is going against target, which stores pull the network down."
+ },
+ "struttura": {
+  "title": "Store network review",
+  "purpose": "Where the network makes and loses margin",
+  "niche": "retail",
+  "pages": [
+   { "id": "p1", "title": "Margin and target", "subtitle": "", "content": "margin and attainment by region" },
+   { "id": "p2", "title": "Revenue mix", "subtitle": "", "content": "revenue split by region and month" },
+   { "id": "p3", "title": "Trend", "subtitle": "", "content": "monthly revenue and profit" }
+  ]
+ },
+ "template": { "id": "commerciale-slate" },
+ "build": {
+  "p1": { "kpiRow": "full", "cardStyle": "ring", "cardStyleScelto": true, "kpis": ["gm", "mdr", "att"], "panelHeader": "tab", "panelHeaderScelto": true, "panelSubtitle": true, "archetipo": "scorecard", "layout": "2+1/3" },
+  "p2": { "kpiRow": "full", "cardStyle": "stack", "cardStyleScelto": true, "kpis": ["rev", "profit", "orders", "mdn"], "panelHeader": "band", "panelHeaderScelto": true, "panelSubtitle": false, "archetipo": "scorecard", "layout": "4/2+2" },
+  "p3": { "kpiRow": "value", "cardStyle": "area", "cardStyleScelto": true, "kpis": ["rev", "profit", "orders", "aov", "tgt"], "panelHeader": "quiet", "panelHeaderScelto": true, "panelSubtitle": true, "archetipo": "scorecard", "layout": "3+2/5" }
+ }
+}

@@ -26,9 +26,9 @@ const FILES = ['runtime.smoke.js', 'data-model.test.js', 'canonical-equivalence.
   'powerbi.test.js', 'lingua.test.js', 'flusso-stock.test.js', 'video.test.js', 'dettaglio.test.js', 'conteggi.test.js',
   'legenda.test.js', 'video-export.test.js', 'bersaglio.test.js', 'barra.test.js', 'grammatica.test.js',
   'viste-validazione.test.js', 'variazioni.test.js', 'periodo-precedente.test.js', 'dimensioni.test.js',
-  'filtri-visual.test.js', 'colori-categorie.test.js', 'tooltip.test.js', 'eventi.test.js', 'tassi.test.js', 'assi.test.js', 'finanza.test.js', 'interazioni.test.js', 'lettura.test.js', 'dati-forniti.test.js', 'aperti-ottobre.test.js', 'progetto.test.js'];
+  'filtri-visual.test.js', 'colori-categorie.test.js', 'tooltip.test.js', 'eventi.test.js', 'tassi.test.js', 'assi.test.js', 'finanza.test.js', 'interazioni.test.js', 'lettura.test.js', 'dati-forniti.test.js', 'aperti-ottobre.test.js', 'progetto.test.js', 'stili.test.js', 'progetto-api.test.js'];
 /* hanno un browser o un processo figlio da aspettare: non possono stare in un gruppo sincrono */
-const ASINCRONI = ['video-export.test.js', 'bersaglio.test.js', 'barra.test.js'];
+const ASINCRONI = ['video-export.test.js', 'bersaglio.test.js', 'barra.test.js', 'progetto-api.test.js'];
 const TETTO_MS = 30000;
 const FILE_TEMPI = path.join(os.tmpdir(), 'pruva-test-tempi.json');
 

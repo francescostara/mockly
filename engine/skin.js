@@ -253,6 +253,13 @@ function calcolaPalette(id, opz) {
        grafico. */
     chrome: mix(rail, '#FFFFFF', 0.30),
     chromeInk: '#FFFFFF',
+    /* L'ACCENTO DEGLI STILI DELLE CARD E DEI PANNELLI (flusso guidato, skill/references/flusso.md):
+       lo stesso principio della cornice, mai un colore dei dati e mai il rosso del problema. Sul
+       chiaro e la rail; sullo scuro la rail sarebbe un nero sul nero, e sale di un gradino. */
+    acc: scuro ? mix(rail, '#FFFFFF', 0.30) : rail,
+    accInk: '#FFFFFF',
+    wash: mix(card, scuro ? mix(rail, '#FFFFFF', 0.30) : rail, scuro ? 0.10 : 0.07),
+    bandBg: mix(card, scuro ? mix(rail, '#FFFFFF', 0.30) : rail, 0.09),
     radius: f.radius
   };
 

@@ -786,11 +786,27 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
          allo span dentro l'unica superficie, cosi i separatori cadono dove cade la griglia. */
       var kb = (SPEC.__pelle || {}).banda === 'blocco';
       var geo = kb ? 'flex:' + (k.span || 1) + ' 1 0;min-width:0' : 'width:' + g.span(k.span || 1) + 'px';
+      /* LO STILE DELLA RIGA (flusso guidato, skill/references/flusso.md): il Badge mette un glifo
+         dall'unita della misura; le card con grafico disegnano i dati del report al posto della
+         riga di dettaglio (Columns, Area, Stack) o accanto al valore (Ring), alla stessa altezza */
+      var st = A.kpiStile, gr = st && M.kpiGraf ? M.kpiGraf(A, st, k, kb ? 0 : g.span(k.span || 1) - 28) : '';
+      var striscia = gr && st !== 'ring';
       return '<div class="card kpi" style="' + geo + '">' +
-        '<div><div class="k">' + M.esc(k.label) + '</div><div class="vr">' +
+        '<div><div class="k">' + (st === 'badge' ? A.glifo(k.measure) : '') + M.esc(k.label) + '</div><div class="vr">' +
         '<div class="v tnum ' + A.statoT(k.measure, cv) + '">' + (defin ? A.mfmt(k.measure, cv) : '—') + '</div>' +
         '<div class="d ' + cls + ' tnum">' + (ar ? ar + ' ' : '') + ent + (ent === '—' || nuova ? '' : ' ' + A.basis()) + '</div></div></div>' +
-        '<div class="det tnum">' + (k.of ? A.base(k, c, p) : A.detail(k, cv, pv)) + A.tgt(k.measure, cv) + '</div></div>';
+        (striscia ? '<div class="kg">' + gr + '</div>' : '<div class="det tnum">' + (k.of ? A.base(k, c, p) : A.detail(k, cv, pv)) + A.tgt(k.measure, cv) + '</div>') +
+        (gr && !striscia ? '<div class="kr">' + gr + '</div>' : '') + '</div>';
+    };
+    /* IL GLIFO DEL BADGE: denaro, quota, durata, conteggio. Un tratto solo nell'accento del tema,
+       dentro un quadratino velato: dice che tipo di numero segue, non decora. */
+    A.glifo = function (ms) {
+      var m = A.meas(ms), u = m.unit || '', fm = String(m.format || '');
+      var d = u === 'money' || /eur|usd|cur|k1|\$/.test(fm) ? 'M7 2.5v9M9.2 4.6c-.4-.7-1.2-1.1-2.2-1.1-1.3 0-2.2.7-2.2 1.7 0 2.4 4.6 1.3 4.6 3.7 0 1-1 1.8-2.4 1.8-1.1 0-2-.5-2.4-1.3'
+        : u === 'pct' || /pc/.test(fm) ? 'M4 10l6-6M4.6 4.6h.1M9.4 9.4h.1'
+          : /days|months|dur|min/.test(u + fm) ? 'M7 3.2a3.8 3.8 0 1 0 .01 0M7 4.8V7l1.6 1'
+            : 'M3.5 10.5V7.5M7 10.5V4M10.5 10.5V6';
+      return '<span class="kb2"><svg width="14" height="14" viewBox="0 0 14 14"><path d="' + d + '" fill="none" stroke="var(--acc)" stroke-width="1.3" stroke-linecap="round"/></svg></span>';
     };
     /* Riga descrittore: nomina i due periodi confrontati invece di abbreviarli.
        "AP"/"AC" (o "PY"/"CY") li capisce chi ha scritto il report, non il cliente che lo
@@ -905,10 +921,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
         A.kpiState = { cur: A.cur(), prev: A.prev() };
         var kb = (SPEC.__pelle || {}).banda === 'blocco';
         /* `value`: solo il valore, niente variazioni (il flusso guidato, riga KPI "Value") */
-        out += '<div class="row' + (kb ? ' kb' : '') + (pg.kpi && pg.kpi.mode === 'value' ? ' kv' : '') + '">' + carte.map(A.kpi).join('') + '</div>';
+        A.kpiStile = pg.kpi && pg.kpi.style && pg.kpi.style !== 'plain' ? pg.kpi.style : null;
+        out += '<div class="row' + (kb ? ' kb' : '') + (pg.kpi && pg.kpi.mode === 'value' ? ' kv' : '') + (A.kpiStile ? ' ks-' + A.kpiStile : '') + '">' + carte.map(A.kpi).join('') + '</div>';
+        A.kpiStile = null;
       }
+      var ph = pg.panels && pg.panels.header ? ' ph-' + pg.panels.header : '';
       (pg.rows || []).forEach(function (row) {
-        out += '<div class="row"' + (row.flex ? ' style="flex:1;min-height:0"' : '') + '>' +
+        out += '<div class="row' + ph + '"' + (row.flex ? ' style="flex:1;min-height:0"' : '') + '>' +
           row.visuals.map(v => A.visual(v, row)).join('') + '</div>';
       });
       return out;
@@ -2590,6 +2609,66 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     });
     s += '<text x="' + (mgn.l + iw) + '" y="' + (h - 7) + '" text-anchor="end" font-size="8.5" fill="var(--muted)">' + M.esc(A.meas(b.x).label || b.x) + ' →</text>';
     return A.card(v, s + '</svg>');
+  };
+})(MK);
+/*#endregion*/
+
+/*#region kpi:grafico*/
+/* LE CARD CON GRAFICO (flusso guidato): dati veri del report, senza assi ne griglia. Columns e Area
+   i dodici mesi dell'anno scelto (o gli anni, coi dati annuali), il periodo scelto in --cur e il
+   resto in --prior; Stack gli stessi mesi divisi per la prima dimensione (i tre membri piu grandi,
+   nei loro colori, e il resto in --prior); Ring la quota della misura su 100%. */
+(function (M) {
+  M.kpiGraf = function (A, st, k, w) {
+    var S = A.S, ms = k.measure, H = 24;
+    if (st === 'ring') {
+      var q = Math.max(0, Math.min(1, A.mv(ms, A.kpiState.cur))), r = 15, cf = 2 * Math.PI * r;
+      return '<svg width="38" height="38" viewBox="0 0 38 38"><circle cx="19" cy="19" r="' + r + '" fill="none" stroke="var(--line2)" stroke-width="5"/>' +
+        '<circle cx="19" cy="19" r="' + r + '" fill="none" stroke="var(--cur)" stroke-width="5" stroke-dasharray="' + (cf * q).toFixed(1) + ' ' + cf.toFixed(1) + '" transform="rotate(-90 19 19)"/></svg>';
+    }
+    if (st !== 'columns' && st !== 'area' && st !== 'stack') return '';
+    w = Math.max(40, w || 120);
+    var mensile = (A.DATA.mensili || A.DATA.years || []).indexOf(S.y) >= 0;
+    var chiavi = [], sel = {}, i;
+    if (mensile) { for (i = 0; i < 12; i++) { chiavi.push(i); if (A.inSel(i)) sel[i] = 1; } }
+    else { chiavi = (A.DATA.years || []).filter(function (y) { return y <= S.y; }).slice(-12); A.anniSel().forEach(function (y) { sel[y] = 1; }); }
+    var righe = mensile ? A.slice({ y: S.y, months: chiavi }) : A.slice({ finestra: [chiavi[0], S.y], timeline: true });
+    var chiave = mensile ? function (r) { return r.m; } : function (r) { return r.y; };
+    var n = chiavi.length, passo = w / n, bw = Math.max(2, passo * 0.62);
+    if (st === 'stack') {
+      var dim = Object.keys(A.dims).filter(function (d) { return (A.facts[0] || {})[d] !== undefined; })[0];
+      var tot = A.byKeyValue(righe, chiave, ms), mx = 0, strati = [];
+      if (dim) {
+        var mb = A.membri(dim).map(function (x) { return { x: x, v: A.mv(ms, A.agg(righe.filter(function (r) { return r[dim] === x.id; }))) }; })
+          .sort(function (a, b) { return b.v - a.v; }).slice(0, 3);
+        strati = mb.map(function (o) { return { c: o.x.c, val: A.byKeyValue(righe.filter(function (r) { return r[dim] === o.x.id; }), chiave, ms) }; });
+      }
+      chiavi.forEach(function (c) { mx = Math.max(mx, tot(c)); });
+      mx = mx || 1;
+      var out = '';
+      chiavi.forEach(function (c, j) {
+        var x = (j * passo + (passo - bw) / 2).toFixed(1), y0 = H, resto = tot(c);
+        strati.forEach(function (s) { var v = s.val(c), h = Math.max(0, v) / mx * H; resto -= v; y0 -= h; out += '<rect x="' + x + '" y="' + y0.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + s.c + '"/>'; });
+        var hr = Math.max(0, resto) / mx * H; y0 -= hr;
+        out += '<rect x="' + x + '" y="' + y0.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hr.toFixed(1) + '" fill="var(--prior)"/>';
+      });
+      return '<svg width="' + w + '" height="' + H + '">' + out + '</svg>';
+    }
+    var val = A.byKeyValue(righe, chiave, ms), vs = chiavi.map(val);
+    var max = Math.max.apply(null, vs.map(Math.abs)) || 1;
+    if (st === 'columns') {
+      return '<svg width="' + w + '" height="' + H + '">' + vs.map(function (v, j) {
+        var h = Math.max(1, Math.abs(v) / max * H);
+        return '<rect x="' + (j * passo + (passo - bw) / 2).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + (sel[chiavi[j]] ? 'var(--cur)' : 'var(--prior)') + '"/>';
+      }).join('') + '</svg>';
+    }
+    /* l'area e una traiettoria, come una sparkline: dal minimo al massimo della serie. Da zero, dodici
+       mesi che variano del dieci per cento erano una fascia piatta (retail-stili, 23 ott 2026). */
+    var mn = Math.min.apply(null, vs), mxA = Math.max.apply(null, vs), amp = mxA - mn || 1;
+    var pt = vs.map(function (v, j) { return [(j + 0.5) * passo, H - 3 - (v - mn) / amp * (H - 7)]; });
+    var linea = pt.map(function (p, j) { return (j ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('');
+    return '<svg width="' + w + '" height="' + H + '"><path d="' + linea + 'L' + pt[n - 1][0].toFixed(1) + ',' + H + 'L' + pt[0][0].toFixed(1) + ',' + H + 'Z" fill="var(--cur)" opacity=".14"/>' +
+      '<path d="' + linea + '" fill="none" stroke="var(--cur)" stroke-width="1.4"/></svg>';
   };
 })(MK);
 /*#endregion*/

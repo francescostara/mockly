@@ -44,6 +44,8 @@ function bundle(types, opts) {
     if (!R[k]) throw new Error(`render: unknown visual type "${t}"`);
     parts.push(R[k]);
   });
+  /* i grafici delle card KPI (Columns, Area, Stack, Ring) viaggiano solo se una pagina li usa */
+  if (opts && opts.kpiGrafico) parts.push(R['kpi:grafico']);
   let src = parts.join('\n');
   src = (opts && opts.finestra === false) ? src.replace(FINESTRA, '') : src.replace(BREVE, '');
   if (opts && opts.fin === false) src = src.replace(FIN, '');
@@ -133,6 +135,40 @@ const SKIN = require('./skin.js');
 const SCHEDA = require('./scheda.js');
 const VISTE = require('./viste.js');
 const PG = require('./pagine.js');
+const ST = require('./stili.js');
+/* gli stili del flusso guidato che il report usa davvero: le loro regole viaggiano solo allora */
+function stiliUsati(spec) {
+  const card = new Set(), header = new Set();
+  (spec.pages || []).forEach(pg => {
+    if (pg.kpi && pg.kpi.style && pg.kpi.style !== 'plain' && pg.kpi.mode !== 'off') card.add(pg.kpi.style);
+    if (pg.panels && pg.panels.header) header.add(pg.panels.header);
+  });
+  return { card: [...card], header: [...header] };
+}
+/* LE REGOLE DEGLI STILI (skill/references/flusso.md, "How the styles are drawn"). Nessuna cambia
+   l'altezza della card o dell'intestazione: il budget della pagina resta quello di prima. */
+const CSS_CARD = {
+  badge: '.ks-badge .kpi .k{display:flex;align-items:center;gap:6px}.kb2{display:inline-flex;width:18px;height:18px;margin:-4px 0 -4px;align-items:center;justify-content:center;border-radius:4px;background:var(--wash);flex:0 0 auto}',
+  banner: '.ks-banner .kpi{padding-top:0}.ks-banner .kpi .k{margin:0 -14px;padding:4px 14px;background:var(--acc);color:var(--accInk);border-radius:var(--radius) var(--radius) 0 0}',
+  ruled: '.ks-ruled .kpi .k{border-bottom:1px solid var(--line);padding-bottom:2px}.ks-ruled .kpi .vr{margin-top:3px}',
+  wash: '.row.ks-wash>.card.kpi{background:var(--wash)}',
+  outline: '.row.ks-outline>.card.kpi{border-color:var(--acc);box-shadow:inset 0 0 0 .5px var(--acc)}.row.kb.ks-outline{border-color:var(--acc);box-shadow:inset 0 0 0 .5px var(--acc)}',
+  solid: '.row.ks-solid>.card.kpi{background:var(--acc);border-color:var(--acc)}.ks-solid .kpi .k,.ks-solid .kpi .v,.ks-solid .kpi .d,.ks-solid .kpi .det,.ks-solid .kpi .det *{color:var(--accInk)!important}.ks-solid .kpi .k,.ks-solid .kpi .det{opacity:.86}',
+  columns: '', area: '', stack: '',
+  ring: '.ks-ring .kpi{padding-right:62px}.kr{position:absolute;right:13px;top:50%;margin-top:-19px;line-height:0}'
+};
+const CSS_GRAFICO = '.kg{margin-top:7px;line-height:0;height:24px;overflow:hidden}';
+const CSS_HEADER = {
+  quiet: '.ph-quiet>.card>.ch h3{white-space:nowrap}.ph-quiet>.card>.ch h3::before{content:"";display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--acc);margin-right:6px;vertical-align:1px}',
+  framed: '.ph-framed>.card>.ch{padding-bottom:4px;border-bottom:1px solid var(--line2)}',
+  band: '.ph-band>.card>.ch{padding-bottom:4px;background:var(--bandBg);border-bottom:1px solid var(--line2);border-radius:var(--radius) var(--radius) 0 0}',
+  tab: '.ph-tab>.card>.ch{width:max-content;max-width:100%;padding-bottom:4px;background:var(--bandBg);border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:var(--radius) 0 var(--radius) 0}'
+};
+function cssStili(spec) {
+  const u = stiliUsati(spec);
+  return u.card.map(s => CSS_CARD[s] || '').join('') + (u.card.some(s => s === 'columns' || s === 'area' || s === 'stack') ? CSS_GRAFICO : '') +
+    u.header.map(h => CSS_HEADER[h] || '').join('');
+}
 const { tassiPiatti } = require('./tassi.js');
 
 /** La pelle risolta di una spec: shell + token + caratteri + ritmo. */
@@ -162,7 +198,9 @@ const PAGE_PAD_DEF = 28;    /* padding verticale di #page, valore di riferimento
 const padDi = spec => pelle(spec).densita.pad * 2;
 const KPI_H0 = 90;          /* banda KPI: altezza reale della card */
 /* una card con budget o YTD porta due righe di scostamenti in piu (Bodan, 3 ott 2026) */
-const KPI_H = spec => PG.tutteKpi(spec).some(k => k.budget || k.ytd) ? 122 : KPI_H0;
+/* le card con grafico (Columns, Area, Stack) portano la striscia di 24px al posto della riga di dettaglio */
+const KPI_H = (spec, page) => (PG.tutteKpi(spec).some(k => k.budget || k.ytd) ? 122 : KPI_H0) +
+  (page && page.kpi && ['columns', 'area', 'stack'].indexOf(page.kpi.style) >= 0 ? 13 : 0);
 const CHROME_H = 34;        /* intestazione della card (.ch) */
 const LEGEND_H = 18;        /* riga legenda, quando c'e */
 const MIN_CHART_H = 110;    /* sotto questa soglia un grafico non si legge piu */
@@ -226,6 +264,11 @@ function pageBudget(spec, page, gutter) {
   return 720 - shell - padDi(spec) - (gutter || spec.grid.gutter) * Math.max(0, rows - 1);
 }
 
+/** Lo spazio dei pannelli sotto la riga KPI, e quanto ne prende l'intestazione di un visual: il
+    flusso guidato ci dimensiona i segnaposto (engine/compila.js), invece di altezze fisse che su
+    una shell piu alta sforavano di un pixel. */
+const spazioPannelli = (spec, page) => pageBudget(spec, page) - (PG.kpiDi(spec, page).length ? KPI_H(spec, page) : 0);
+
 /** Quanto chiede una riga cosi com'e scritta nella spec. */
 const rowHeight = row => Math.max(...row.visuals.map(v => (v.h || (row.flex ? 0 : 200)) + chromeOf(v)));
 
@@ -239,7 +282,7 @@ function planFit(spec, page, data, dense) {
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   const minChart = dense ? DENSE_MIN_CHART_H : MIN_CHART_H;
   let budget = pageBudget(spec, page, gutter) + (dense ? (padDi(spec) - DENSE_PAD) : 0);
-  if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
+  if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec, page) - 6 : KPI_H(spec, page);
   if (page.drillHeader) budget -= 46;
 
   const fixed = rows.filter(r => !r.flex);
@@ -309,7 +352,7 @@ function fitPage(spec, page, data) {
   if (flexRows.length === 1) {
     const dense = !!plan.dense, gutter = dense ? DENSE_GUTTER : spec.grid.gutter;
     let budget = pageBudget(spec, page, gutter) + (dense ? (padDi(spec) - DENSE_PAD) : 0);
-    if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
+    if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec, page) - 6 : KPI_H(spec, page);
     if (page.drillHeader) budget -= 46;
     const avail = budget - page.rows.filter(r => !r.flex).reduce((a2, r) => a2 + rowHeight(r), 0);
     flexRows[0].visuals.forEach(v => {
@@ -387,7 +430,7 @@ function measurePage(spec, data, pageId) {
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   let budget = pageBudget(fitted.spec, page, dense ? DENSE_GUTTER : spec.grid.gutter)
     + (dense ? padDi(spec) - DENSE_PAD : 0);
-  if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
+  if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec, page) - 6 : KPI_H(spec, page);
   const drillDim = fitted.spec.drill && page === fitted.spec.drill.page ? fitted.spec.drill.dim : null;
   const h = r => r.flex ? flexNeed(r, data, rowH, drillDim) : rowHeight(r);
   const rows = page.rows.map(h);
@@ -1279,6 +1322,7 @@ ${JSON.stringify(spec.pages || []).indexOf('"viste"') >= 0 ? `.vsw{display:inlin
 .kpi .det{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.3}
 .kv .kpi .d,.kv .kpi .det{display:none}
 .sgn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1.5px dashed var(--line);border-radius:4px;color:var(--muted);font-size:11px;margin-top:4px}.sgn2{font-size:9.5px;color:var(--muted2)}
+${cssStili(spec)}
 ${usaFinanza(spec) ? `td.bdg,th.bdg{background:var(--bud)}th.bdg{color:var(--ink2)}tr.tot td.bdg{background:var(--bud)}
 .st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
 .kpi .kf{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;display:flex;gap:10px}.kpi .kf b{font-weight:600}
@@ -1547,7 +1591,7 @@ ${cssMinimo(css(spec, compact))}
 </div></div>
 <div id="tip"></div>
 <script>
-${bundle(types, { finestra: ((data && data.years) || []).length > 2, fin: usaFinanza(spec), tgt: usaTarget(spec) })}
+${bundle(types, { finestra: ((data && data.years) || []).length > 2, fin: usaFinanza(spec), tgt: usaTarget(spec), kpiGrafico: stiliUsati(spec).card.some(s => ST.CARD.some(c => c.id === s && c.gruppo === 'chart')) })}
 var SPEC=${JSON.stringify(spec, function (k, v) { return (this === spec && SOLO_MOTORE[k]) || (this === spec.meta && !META_RUNTIME[k]) ? undefined : v; })};
 var DATA=${dataJSON(data)};
 MK.__A=MK.boot(SPEC,DATA,document);
@@ -1557,4 +1601,4 @@ MK.__A=MK.boot(SPEC,DATA,document);
 `;
 }
 
-module.exports = { render, validate, lint, toolbarBudget, destraBarra, bundle, css, AESTHETICS, fitSpec, measurePage, pageBudget, rowHeight, INGLESE };
+module.exports = { spazioPannelli, chromeOf, render, validate, lint, toolbarBudget, destraBarra, bundle, css, AESTHETICS, fitSpec, measurePage, pageBudget, rowHeight, INGLESE };

@@ -5,7 +5,8 @@ const config: NextConfig = {
      be bundled by webpack (__dirname would point at the bundle). lib/engine.ts loads it with
      createRequire at runtime; this tells Vercel's file tracer to ship the files anyway. */
   outputFileTracingIncludes: {
-    '/api/generate': ['./engine/**/*', './skill/references/*.md', './skill/SKILL.md']
+    '/api/generate': ['./engine/**/*', './skill/references/*.md', './skill/SKILL.md'],
+    '/api/progetto': ['./engine/**/*', './lib/progetto-api.js']
   }
 };
 

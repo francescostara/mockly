@@ -406,6 +406,46 @@ function contrastoPagina() {
     const x = await pannello();
     if (!x || x.fuori || x.anno) guastiPeriodo.push('serie 1970-2023: ' + (!x ? 'nessun pannello' : x.fuori ? 'il pannello esce dalla pagina' : 'il 2023 non si vede'));
   }
+  /* GLI STILI DEL FLUSSO GUIDATO NON CAMBIANO L'ALTEZZA (fase B): ogni stile di card e di intestazione,
+     su un template a riquadri e su uno a blocco unico, tiene la card e l'intestazione alte quanto lo
+     stile base; le card con grafico crescono solo dei 13px che il budget gia conta. Nessuna pagina
+     sfora. Nati dalla prova: Quiet mandava a capo il titolo (+16px), Ruled e Outline alzavano la
+     card di 4 e 2 pixel, e ogni pixel in piu faceva sforare la pagina. */
+  const guastiStili = [];
+  {
+    const A = require('../engine/azioni.js'), C = require('../engine/compila.js'), ST = require('../engine/stili.js'), R = require('../engine/render.js');
+    const PR = require('../engine/specs/progetti/index.js');
+    const misuraStile = () => page.evaluate(() => {
+      const h = s => Math.max(0, ...[...document.querySelectorAll(s)].map(e => e.getBoundingClientRect().height));
+      const pg = document.getElementById('page');
+      return { k: h('.kpi'), ch: h('.row>.card>.ch'), sfora: pg.scrollHeight - pg.clientHeight };
+    });
+    for (const tpl of ['operazioni-ghiaccio', 'agenzia-scura']) {
+      let base = null;
+      for (let i = 0; i < ST.CARD.length; i++) {
+        const c = ST.CARD[i], hd = ST.HEADER[i % ST.HEADER.length].id;
+        const pid = c.id === 'ring' || c.id === 'stack' ? 'retail-stili' : 'teigor-picking', pg = c.id === 'stack' ? 'p2' : 'p1';
+        let s = A.storia(PR[pid]);
+        for (const a of [{ tipo: 'scegliTemplate', valore: tpl }, { tipo: 'setCardStyle', pagina: pg, valore: c.id }, { tipo: 'setPanelHeader', pagina: pg, valore: hd }]) {
+          const r = A.mutateSpec(s, a);
+          if (!r.ok) { guastiStili.push(tpl + '/' + c.id + ': ' + a.tipo + ' rifiutata — ' + r.errori[0]); break; }
+          s = r.storia;
+        }
+        const { spec, data } = C.compila(s.presente);
+        await page.setContent(R.render(spec, data), { waitUntil: 'load' }); await layout();
+        await page.evaluate(id => { const b = document.querySelector('.navbtn[data-page="' + id + '"]'); if (b) b.click(); }, pg); await layout();
+        const m = await misuraStile();
+        if (c.id === 'plain') { base = m; continue; }
+        const extra = c.gruppo === 'chart' && c.id !== 'ring' ? 13 : 0;
+        if (pid === 'teigor-picking' && base && m.k > base.k + extra + 0.5) guastiStili.push(tpl + '/' + c.id + ': card alta ' + m.k.toFixed(1) + ' contro ' + base.k.toFixed(1) + (extra ? ' + ' + extra : ''));
+        if (base && m.ch > base.ch + 0.5) guastiStili.push(tpl + '/' + hd + ': intestazione alta ' + m.ch.toFixed(1) + ' contro ' + base.ch.toFixed(1));
+        if (m.sfora > 0) guastiStili.push(tpl + '/' + c.id + '/' + hd + ': la pagina sfora di ' + m.sfora + 'px');
+      }
+    }
+  }
+  await okAsync('gli stili delle card e dei pannelli non alzano card ne intestazioni, e nessuna pagina sfora', async () => {
+    assert.deepStrictEqual(guastiStili, [], guastiStili.join(String.fromCharCode(10) + '       '));
+  });
   await okAsync('il pannello del periodo resta nella pagina e mostra l anno scelto, anche con 54 anni', async () => {
     assert.deepStrictEqual(guastiPeriodo, [], guastiPeriodo.join(String.fromCharCode(10) + '       '));
   });

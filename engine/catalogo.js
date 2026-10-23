@@ -20,7 +20,8 @@
 
 /**
  * I PRESET APPROVATI. Ognuno e archetipo-indipendente: descrive la PELLE, non la composizione.
- * Il campo `nome` e quello che l'utente legge; `nicchie` e il recinto in cui il preset e
+ * Il campo `name` e quello che l'utente legge nell'app (in inglese, come l'interfaccia; Fra, 23 ott
+ * 2026), `nome` quello dell'intervista in italiano; `nicchie` e il recinto in cui il preset e
  * proponibile in automatico (vuoto = qualunque nicchia).
  *
  * Questo elenco cresce col lavoro di cura. Parte dalle combinazioni gia in uso negli esempi
@@ -28,54 +29,54 @@
  */
 const PRESET_APPROVATI = [
   {
-    id: 'corporate-classico', nome: 'Corporate classico',
+    id: 'corporate-classico', name: 'Corporate Classic', nome: 'Corporate classico',
     skin: { shell: 'rail', palette: 'navy-corporate', tipografia: 'neutro-ui', densita: 'medio', banda: 'box' },
     nicchie: ['retail', 'b2b-sales', 'logistica', 'generica']
   },
   {
-    id: 'editoriale-chiaro', nome: 'Editoriale chiaro',
+    id: 'editoriale-chiaro', name: 'Editorial Light', nome: 'Editoriale chiaro',
     skin: { shell: 'bare', palette: 'carta-inchiostro', tipografia: 'editoriale', densita: 'arioso', banda: 'box' },
     nicchie: ['finanziario', 'saas', 'immobiliare', 'generica']
   },
   {
-    id: 'tecnico-scuro', nome: 'Tecnico scuro',
+    id: 'tecnico-scuro', name: 'Technical Dark', nome: 'Tecnico scuro',
     skin: { shell: 'top', palette: 'dark-tecnico', tipografia: 'tecnico', densita: 'denso', banda: 'blocco' },
     nicchie: ['energia-manifattura', 'logistica', 'saas']
   },
   {
-    id: 'commerciale-slate', nome: 'Commerciale slate',
+    id: 'commerciale-slate', name: 'Slate Sales', nome: 'Commerciale slate',
     skin: { shell: 'rail', palette: 'slate-freddo', tipografia: 'corporate', densita: 'medio', banda: 'box' },
     nicchie: ['b2b-sales', 'finanziario', 'generica']
   },
   {
-    id: 'operativo-salvia', nome: 'Operativo salvia',
+    id: 'operativo-salvia', name: 'Sage Operations', nome: 'Operativo salvia',
     skin: { shell: 'rail', palette: 'salvia', tipografia: 'umanista', densita: 'denso', banda: 'box' },
     nicchie: ['palestre', 'ristorazione', 'retail']
   },
   {
-    id: 'agenzia-scura', nome: 'Agenzia scura',
+    id: 'agenzia-scura', name: 'Agency Night', nome: 'Agenzia scura',
     skin: { shell: 'top', palette: 'dark-agency', tipografia: 'grottesco', densita: 'medio', banda: 'blocco' },
     nicchie: ['social', 'creator-economy', 'ecommerce-moda']
   },
   {
-    id: 'ristorazione-terrosa', nome: 'Terroso caldo',
+    id: 'ristorazione-terrosa', name: 'Earth Hospitality', nome: 'Terroso caldo',
     skin: { shell: 'rail-slim', palette: 'terroso', tipografia: 'umanista', densita: 'medio', banda: 'box' },
     nicchie: ['ristorazione', 'retail', 'ecommerce-moda']
   },
   {
-    id: 'consiglio-jewel', nome: 'Consiglio, toni gioiello',
+    id: 'consiglio-jewel', name: 'Boardroom Jewel', nome: 'Consiglio, toni gioiello',
     skin: { shell: 'top', palette: 'jewel-desaturati', tipografia: 'editoriale', densita: 'arioso', banda: 'box' },
     nicchie: ['creator-economy', 'saas', 'finanziario']
   },
   /* i due presi dalle versioni finali dei tester, approvati da Fra il 23 ott 2026 */
   {
-    id: 'analisi-editoriale', nome: 'Analisi editoriale',
+    id: 'analisi-editoriale', name: 'Editorial Analysis', nome: 'Analisi editoriale',
     /* Nicola v3: crescita e trasformazione strutturale, dati PWT e World Bank */
     skin: { shell: 'rail', palette: 'slate-freddo', tipografia: 'editoriale', densita: 'medio', banda: 'box' },
     nicchie: ['finanziario', 'generica']
   },
   {
-    id: 'operazioni-ghiaccio', nome: 'Operazioni ghiaccio',
+    id: 'operazioni-ghiaccio', name: 'Ice Operations', nome: 'Operazioni ghiaccio',
     /* Muttahar v2: supply chain, servizio contro target */
     skin: { shell: 'rail', palette: 'blu-ghiaccio', tipografia: 'tecnico', densita: 'medio', banda: 'box' },
     nicchie: ['logistica', 'energia-manifattura']

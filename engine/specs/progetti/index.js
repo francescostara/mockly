@@ -4,5 +4,7 @@
 module.exports = {
   'teigor-picking': require('./teigor-picking.json'),
   'nicola-dati': require('./nicola-dati.js'),
-  'minimo-senza-kpi': require('./minimo-senza-kpi.json')
+  'minimo-senza-kpi': require('./minimo-senza-kpi.json'),
+  /* fase B: un report che usa Ring, Stack e Area sui dati che li reggono, e tre intestazioni */
+  'retail-stili': require('./retail-stili.json')
 };

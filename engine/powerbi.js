@@ -452,6 +452,67 @@ function descriviVisual(spec, v, L, N) {
   return { campi, righe };
 }
 
+/* GLI STILI DEL FLUSSO GUIDATO IN POWER BI: ogni stile della riga KPI e delle intestazioni dei
+   pannelli detto con le impostazioni del pannello Formato di Power BI Desktop. Un report che non
+   dichiara stili non ne parla. I colori sono quelli del tema importabile (accento = colore della
+   cornice del tema). */
+const PBI_STILI = {
+  it: {
+    riga: 'Stile delle card', intest: 'Intestazione dei pannelli', sottotitolo: 'sottotitolo', si: 'sì', no: 'no', accento: 'colore accento',
+    card: {
+      plain: 'Scheda (nuova) · Sfondo bianco, bordo 1 px colore linea; nessun altro ornamento',
+      badge: 'Scheda (nuova) · Etichetta con icona a sinistra (Formato → Immagine, 14 px, colore accento)',
+      banner: 'Scheda (nuova) · Etichetta in una fascia: Formato → Titolo con sfondo colore accento, testo bianco',
+      ruled: 'Scheda (nuova) · Linea sottile sotto l’etichetta: Formato → Divisore, 1 px colore linea',
+      wash: 'Scheda (nuova) · Sfondo colore accento al 7% (trasparenza 93%)',
+      outline: 'Scheda (nuova) · Bordo 1,5 px colore accento, nessuna ombra',
+      solid: 'Scheda (nuova) · Sfondo colore accento pieno, tutti i testi bianchi',
+      columns: 'Scheda (nuova) con grafico a colonne sotto il valore: 12 mesi della misura (o gli anni), il periodo scelto in antracite e il resto in grigio, senza assi',
+      area: 'Scheda (nuova) con grafico ad area sotto il valore: 12 mesi della misura (o gli anni), linea antracite e area al 14%, senza assi',
+      stack: 'Scheda (nuova) con colonne in pila sotto il valore: gli stessi mesi divisi per la prima dimensione (i tre membri piu grandi nei loro colori, il resto in grigio)',
+      ring: 'Scheda (nuova) con anello a destra: grafico ad anello della quota contro 100%, antracite su grigio chiaro'
+    },
+    header: {
+      quiet: 'Titolo con un quadratino colore accento davanti, nessun separatore',
+      framed: 'Titolo dentro la cornice, linea 1 px sotto il titolo (Formato → Divisore)',
+      band: 'Titolo su una fascia velata colore accento al 9%, linea sotto',
+      tab: 'Titolo in un riquadro staccato in alto a sinistra (forma rettangolo sopra il visual, sfondo velato)'
+    }
+  },
+  en: {
+    riga: 'Card style', intest: 'Panel header', sottotitolo: 'subtitle', si: 'yes', no: 'no', accento: 'accent colour',
+    card: {
+      plain: 'Card (new) · White background, 1 px border in the line colour; no other ornament',
+      badge: 'Card (new) · Label with an icon on the left (Format → Image, 14 px, accent colour)',
+      banner: 'Card (new) · Label in a band: Format → Title with the accent colour as background, white text',
+      ruled: 'Card (new) · A thin rule under the label: Format → Divider, 1 px in the line colour',
+      wash: 'Card (new) · Background in the accent colour at 7% (93% transparency)',
+      outline: 'Card (new) · 1.5 px border in the accent colour, no shadow',
+      solid: 'Card (new) · Background filled with the accent colour, all text white',
+      columns: 'Card (new) with a column chart under the value: 12 months of the measure (or the years), the selected period in charcoal and the rest in grey, no axes',
+      area: 'Card (new) with an area chart under the value: 12 months of the measure (or the years), charcoal line and a 14% area, no axes',
+      stack: 'Card (new) with stacked columns under the value: the same months split by the first dimension (the three largest members in their colours, the rest in grey)',
+      ring: 'Card (new) with a ring on the right: a donut of the share against 100%, charcoal on light grey'
+    },
+    header: {
+      quiet: 'Title with a small accent-colour square in front, no separator',
+      framed: 'Title inside the frame, a 1 px rule under the title (Format → Divider)',
+      band: 'Title on a band veiled in the accent colour at 9%, a rule below',
+      tab: 'Title in a detached box at the top left (a rectangle shape above the visual, veiled background)'
+    }
+  }
+};
+function stiliPagina(spec, p) {
+  const S = PBI_STILI[linguaDi(spec)] || PBI_STILI.en, out = [];
+  let acc = '';
+  try { acc = require('./skin.js').palette((spec.skin || {}).palette || 'navy-corporate').acc; } catch (e) { acc = ''; }
+  const carte = require('./pagine.js').kpiDi(spec, p);
+  if (p.kpi && p.kpi.style && carte.length) out.push('- ' + S.riga + ': **' + p.kpi.style + '** — ' + S.card[p.kpi.style]);
+  if (out.length || (p.panels && p.panels.header)) { if (acc) out.push('- ' + S.accento + ': ' + acc); }
+  if (p.panels && p.panels.header) out.push('- ' + S.intest + ': **' + p.panels.header + '** — ' + S.header[p.panels.header] + '; ' + S.sottotitolo + ' ' + (p.panels.subtitle === false ? S.no : S.si));
+  return out;
+}
+
 function frontEnd(spec, L, N) {
   const out = [];
   const pel = SKIN.pelleDi(spec);
@@ -476,6 +537,8 @@ function frontEnd(spec, L, N) {
       cards.forEach(k => out.push('- **' + k.label + '** — ' + L.vis.kpi + ': [' + (N[k.measure] || k.measure) + ']; ' + L.larghezza + ' ' + pxW(spec, k.span || 1, p) + ' px' + (p.kpi.mode === 'value' ? ' · ' + (L.soloValore || 'value only, no variance') : '')));
       if (cards.length) out.push('');
     }
+    const stili = stiliPagina(spec, p);
+    if (stili.length) out.push(...stili, '');
     (p.rows || []).forEach((row, ri) => {
       let x = x0;
       out.push('**' + L.riga + ' ' + (ri + 1) + '**', '');
