@@ -33,3 +33,14 @@ type PowerBiModule = {
 export const engine: EngineModule = fromRoot('engine', 'render.js');
 export const powerbi: PowerBiModule = fromRoot('engine', 'powerbi.js');
 export const dataBuilder: DataBuilderModule = fromRoot('engine', 'data-builder.js');
+
+/* IL FLUSSO GUIDATO (fase A): il progetto e le sue azioni. Stessi moduli in locale e online. */
+type FlussoModule = {
+  mutateSpec: (storia: unknown, azione: unknown) => { ok: boolean; storia: unknown; errori: string[]; avvisi: string[] };
+  storia: (progetto: unknown) => unknown;
+  annulla: (storia: unknown) => unknown;
+  ripeti: (storia: unknown) => unknown;
+  controlla: (progetto: unknown) => string[];
+};
+export const flusso: FlussoModule = fromRoot('engine', 'azioni.js');
+

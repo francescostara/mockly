@@ -367,6 +367,13 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     var meta = SPEC.meta || {};
     var f = M.fmt(meta);
     var g = M.grid(SPEC.grid.contentWidth, SPEC.grid.gutter, SPEC.grid.columns);
+    /* LA RIGA KPI E LA GRIGLIA PER PAGINA: stesse regole di engine/pagine.js */
+    A.kpiDi = function (pg) { if (pg && pg.kpi) return pg.kpi.mode === 'off' ? [] : (pg.kpi.cards || []); if (pg && pg.kpiBand === false) return []; return SPEC.kpiBand || []; };
+    A.colonneDi = function (pg) {
+      if (pg && pg.columns) return pg.columns;
+      if (pg && pg.kpi) { var k = A.kpiDi(pg); if (k.length) return k.reduce(function (a, c) { return a + (c.span || 1); }, 0); }
+      return SPEC.grid.columns;
+    };
     var MON = meta.months || ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
     var T = meta.strings || {};
     var model = SPEC.model || {};
@@ -885,6 +892,7 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
 
     A.buildPage = function (pg) {
       var out = '';
+      g = M.grid(SPEC.grid.contentWidth, SPEC.grid.gutter, A.colonneDi(pg));
       if (pg.drillHeader) {
         var mb = A.member(S.drill.dim, S.drill.id);
         out += '<div class="row"><div class="card" style="width:' + g.CW + 'px;background:transparent;border:0;box-shadow:none;padding:0">' +
@@ -892,10 +900,12 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
           '<div class="dt"><span class="sw" style="background:' + mb.c + ';width:9px;height:9px"></span>' + M.esc(mb.n) + '</div>' +
           '<div class="dsub">' + M.esc(A.tpl(pg.drillHeader)) + '</div></div></div></div></div>';
       }
-      if (pg.kpiBand !== false && SPEC.kpiBand && SPEC.kpiBand.length) {
+      var carte = A.kpiDi(pg);
+      if (carte.length) {
         A.kpiState = { cur: A.cur(), prev: A.prev() };
         var kb = (SPEC.__pelle || {}).banda === 'blocco';
-        out += '<div class="row' + (kb ? ' kb' : '') + '">' + SPEC.kpiBand.map(A.kpi).join('') + '</div>';
+        /* `value`: solo il valore, niente variazioni (il flusso guidato, riga KPI "Value") */
+        out += '<div class="row' + (kb ? ' kb' : '') + (pg.kpi && pg.kpi.mode === 'value' ? ' kv' : '') + '">' + carte.map(A.kpi).join('') + '</div>';
       }
       (pg.rows || []).forEach(function (row) {
         out += '<div class="row"' + (row.flex ? ' style="flex:1;min-height:0"' : '') + '>' +
@@ -2580,6 +2590,19 @@ var MK = (typeof MK !== 'undefined' && MK) ? MK : {};
     });
     s += '<text x="' + (mgn.l + iw) + '" y="' + (h - 7) + '" text-anchor="end" font-size="8.5" fill="var(--muted)">' + M.esc(A.meas(b.x).label || b.x) + ' →</text>';
     return A.card(v, s + '</svg>');
+  };
+})(MK);
+/*#endregion*/
+
+/*#region chart:segnaposto*/
+/* IL PANNELLO SEGNAPOSTO del flusso guidato: un pannello del layout scelto, prima di Fill page.
+   Cornice vera, titolo vero, e dentro solo quanto e largo: la pagina si prova senza modello. */
+(function (M) {
+  M.V.segnaposto = function (A, v, w, h) {
+    h = v.h || h || 160;
+    var b = v.bind || {};
+    return A.card(v, '<div class="sgn" style="height:' + h + 'px"><span>' + M.esc(b.etichetta || 'Panel') + '</span>' +
+      '<span class="sgn2">' + (v.span || 1) + ' col · ' + Math.round(w) + ' px</span></div>');
   };
 })(MK);
 /*#endregion*/

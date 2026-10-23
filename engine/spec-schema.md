@@ -173,6 +173,15 @@ percentage measures show a `pp` move instead of a `Var`). Spans must sum to `gri
 
 ---
 
+**A KPI row per page (23 Oct 2026, the guided flow):** a page can declare its own row,
+`"kpi": { "mode": "full" | "value" | "off", "cards": [ ...KpiCard ], "style": "<card style>" }`, which wins
+over the report's band. Its grid has as many columns as its cards; a page with no cards (or `off`)
+declares `"columns": N`. `value` shows the value only, no variations. When every page has its own row,
+`kpiBand` can be empty. `"panels": { "header": "quiet" | "framed" | "band" | "tab", "subtitle": true }`
+is the page's panel style. A `segnaposto` visual is the empty, framed panel of a layout before Fill page
+fills it; a page made only of placeholders is not judged on its archetype. See
+`skill/references/flusso.md`.
+
 ## 5. `pages` and visuals
 
 ```jsonc

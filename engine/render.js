@@ -32,9 +32,9 @@ const BREVE = /\/\*#breve\*\/[\s\S]*?\/\*#\/breve\*\//g;
    dal budget. In un report senza budget sarebbero un chilo in piu dentro il tetto del file. */
 /* IL CODICE DEI TARGET viaggia solo dove una misura ha un target o una card ha la sua base (`of`) */
 const TGT = /\/\*#tgt\*\/[\s\S]*?\/\*#\/tgt\*\//g;
-const usaTarget = spec => ((spec.model || {}).measures || []).some(m => typeof m.target === 'number') || (spec.kpiBand || []).some(k => k.of);
+const usaTarget = spec => ((spec.model || {}).measures || []).some(m => typeof m.target === 'number') || PG.tutteKpi(spec).some(k => k.of);
 const FIN = /\/\*#fin\*\/[\s\S]*?\/\*#\/fin\*\//g;
-const usaFinanza = spec => (spec.kpiBand || []).some(k => k.budget || k.ytd) || (spec.meta || {}).numberFormat === 'k1' ||
+const usaFinanza = spec => PG.tutteKpi(spec).some(k => k.budget || k.ytd) || (spec.meta || {}).numberFormat === 'k1' ||
   JSON.stringify(spec.pages || []).concat(JSON.stringify((spec.drill || {}).page || {})).search(/"kind":"bud"|"type":"statement"/) >= 0;
 function bundle(types, opts) {
   const R = regions(fs.readFileSync(RUNTIME_PATH, 'utf8'));
@@ -132,6 +132,7 @@ const prevSig = s => { for (let k = s.length - 1; k >= 0; k--) if (!/\s/.test(s[
 const SKIN = require('./skin.js');
 const SCHEDA = require('./scheda.js');
 const VISTE = require('./viste.js');
+const PG = require('./pagine.js');
 const { tassiPiatti } = require('./tassi.js');
 
 /** La pelle risolta di una spec: shell + token + caratteri + ritmo. */
@@ -161,7 +162,7 @@ const PAGE_PAD_DEF = 28;    /* padding verticale di #page, valore di riferimento
 const padDi = spec => pelle(spec).densita.pad * 2;
 const KPI_H0 = 90;          /* banda KPI: altezza reale della card */
 /* una card con budget o YTD porta due righe di scostamenti in piu (Bodan, 3 ott 2026) */
-const KPI_H = spec => (spec.kpiBand || []).some(k => k.budget || k.ytd) ? 122 : KPI_H0;
+const KPI_H = spec => PG.tutteKpi(spec).some(k => k.budget || k.ytd) ? 122 : KPI_H0;
 const CHROME_H = 34;        /* intestazione della card (.ch) */
 const LEGEND_H = 18;        /* riga legenda, quando c'e */
 const MIN_CHART_H = 110;    /* sotto questa soglia un grafico non si legge piu */
@@ -220,7 +221,7 @@ const chromeOf = v => (v.title ? CHROME_H + (righeTitolo(v) - 1) * 15 : 0) + (LE
 /** Altezza utile della pagina, al netto di shell, padding e gutter. */
 function pageBudget(spec, page, gutter) {
   const shell = shellPx(spec);
-  const rows = (page.rows || []).length + (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length ? 1 : 0)
+  const rows = (page.rows || []).length + (PG.kpiDi(spec, page).length ? 1 : 0)
     + (page.drillHeader ? 1 : 0);
   return 720 - shell - padDi(spec) - (gutter || spec.grid.gutter) * Math.max(0, rows - 1);
 }
@@ -238,7 +239,7 @@ function planFit(spec, page, data, dense) {
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   const minChart = dense ? DENSE_MIN_CHART_H : MIN_CHART_H;
   let budget = pageBudget(spec, page, gutter) + (dense ? (padDi(spec) - DENSE_PAD) : 0);
-  if (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
+  if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
   if (page.drillHeader) budget -= 46;
 
   const fixed = rows.filter(r => !r.flex);
@@ -308,7 +309,7 @@ function fitPage(spec, page, data) {
   if (flexRows.length === 1) {
     const dense = !!plan.dense, gutter = dense ? DENSE_GUTTER : spec.grid.gutter;
     let budget = pageBudget(spec, page, gutter) + (dense ? (padDi(spec) - DENSE_PAD) : 0);
-    if (page.kpiBand !== false && spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
+    if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
     if (page.drillHeader) budget -= 46;
     const avail = budget - page.rows.filter(r => !r.flex).reduce((a2, r) => a2 + rowHeight(r), 0);
     flexRows[0].visuals.forEach(v => {
@@ -361,10 +362,12 @@ function fitSpec(spec, data) {
   copy.__fit = true;
   espandiViste(copy);
   /* la larghezza di ogni card, per contare le righe della sua intestazione */
-  const colW = (copy.grid.contentWidth - copy.grid.gutter * (copy.grid.columns - 1)) / copy.grid.columns;
-  copy.pages.concat(copy.drill && copy.drill.page ? [copy.drill.page] : []).forEach(pg => (pg.rows || []).forEach(r => r.visuals.forEach(v => {
-    Object.defineProperty(v, '__w', { value: colW * (v.span || 1) + copy.grid.gutter * ((v.span || 1) - 1), enumerable: false, writable: true });
-  })));
+  copy.pages.concat(copy.drill && copy.drill.page ? [copy.drill.page] : []).forEach(pg => {
+    const nc = PG.colonneDi(copy, pg), colW = (copy.grid.contentWidth - copy.grid.gutter * (nc - 1)) / nc;
+    (pg.rows || []).forEach(r => r.visuals.forEach(v => {
+      Object.defineProperty(v, '__w', { value: colW * (v.span || 1) + copy.grid.gutter * ((v.span || 1) - 1), enumerable: false, writable: true });
+    }));
+  });
   copy.pages.forEach(p => { const r = fitPage(copy, p, data); if (r && r.scaled) report.push({ page: p.id, ...r }); });
   if (copy.drill && copy.drill.page) {
     const r = fitPage(copy, copy.drill.page, data);
@@ -384,7 +387,7 @@ function measurePage(spec, data, pageId) {
   const rowH = dense ? TABLE_ROW_H_CMP : TABLE_ROW_H;
   let budget = pageBudget(fitted.spec, page, dense ? DENSE_GUTTER : spec.grid.gutter)
     + (dense ? padDi(spec) - DENSE_PAD : 0);
-  if (spec.kpiBand && spec.kpiBand.length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
+  if (PG.kpiDi(spec, page).length) budget -= dense ? KPI_H(spec) - 6 : KPI_H(spec);
   const drillDim = fitted.spec.drill && page === fitted.spec.drill.page ? fitted.spec.drill.dim : null;
   const h = r => r.flex ? flexNeed(r, data, rowH, drillDim) : rowHeight(r);
   const rows = page.rows.map(h);
@@ -445,8 +448,10 @@ function gateArchetipo(spec, e) {
      cui si giudica "e l'ennesimo template?" — piu ogni pagina che ne dichiari uno suo. Le
      pagine di approfondimento non devono forzare un archetipo che non hanno: la regola "una
      pagina per archetipo" e un'opzione, non un obbligo. */
-  const daVerificare = spec.pages.filter((pg, i) => i === 0 || pg.archetype);
+  const soloSegnaposto = pg => (pg.rows || []).length && (pg.rows || []).every(r => r.visuals.every(v => v.type === 'segnaposto'));
+  const daVerificare = spec.pages.filter((pg, i) => (i === 0 || pg.archetype) && !soloSegnaposto(pg));
   daVerificare.forEach(pg => {
+    const NC = PG.colonneDi(spec, pg);
     const A = ARCHETIPI[pg.archetype || a] || A0;
     const rows = pg.rows || [];
     if (!rows.length) return;
@@ -486,7 +491,7 @@ function gateArchetipo(spec, e) {
     }
 
     /* LA DENSITA. Il conteggio include la banda KPI, che occupa una riga intera. */
-    const conta = spec.kpiBand.length + rows.reduce((n, r) => n + r.visuals.length, 0);
+    const conta = PG.kpiDi(spec, pg).length + rows.reduce((n, r) => n + r.visuals.length, 0);
     if (A.max && conta > A.max) {
       e.push(`page "${pg.id}": archetype "${a}" e a densita BASSA (al massimo ${A.max} fra card ` +
         `e visual), la pagina ne conta ${conta}. Un board legge un numero e un grafico, non ` +
@@ -542,17 +547,19 @@ function validate(specIn, data) {
      e un difetto di composizione come un gauge su una misura assoluta. */
   VISTE.valida(spec).forEach(m => e.push(m));
   const NC = spec.grid.columns;
-  if (!spec.kpiBand || !spec.kpiBand.length) e.push('kpiBand is required (full-width top row)');
-  else {
+  /* la riga KPI per pagina (pagine.js): la banda del report serve solo se una pagina la usa */
+  PG.valida(spec).forEach(m => e.push(m));
+  if ((!spec.kpiBand || !spec.kpiBand.length) && PG.servonoBanda(spec)) e.push('kpiBand is required (full-width top row)');
+  else if (spec.kpiBand && spec.kpiBand.length) {
     if (NC !== spec.kpiBand.length) e.push(`grid.columns (${NC}) must equal kpiBand.length (${spec.kpiBand.length})`);
     const s = spec.kpiBand.reduce((a, k) => a + (k.span || 1), 0);
     if (s !== NC) e.push(`kpi spans sum to ${s}, expected ${NC}`);
   }
   const measures = new Set((spec.model.measures || []).map(m => m.id));
   const known = new Set([...measures, ...(spec.model.sums || [])]);
-  spec.kpiBand.forEach(k => { if (!measures.has(k.measure)) e.push(`kpi "${k.id}": unknown measure "${k.measure}"`); });
+  PG.tutteKpi(spec).forEach(k => { if (!measures.has(k.measure)) e.push(`kpi "${k.id}": unknown measure "${k.measure}"`); });
   /* la card finance: il budget e una misura del modello */
-  spec.kpiBand.forEach(k => { if (k.budget && !measures.has(k.budget)) e.push(`kpi "${k.id}": budget "${k.budget}" non e una misura del modello`); });
+  PG.tutteKpi(spec).forEach(k => { if (k.budget && !measures.has(k.budget)) e.push(`kpi "${k.id}": budget "${k.budget}" non e una misura del modello`); });
   /* UN CONTEGGIO NON E MAI NEGATIVO: una causa calcolata per differenza usciva -2,4% (Luca, v4) */
   if (data && data.facts && data.facts.cols) {
     (spec.model.measures || []).filter(m => m.agg === 'sum' && m.unit === 'count' && !m.signed).forEach(m => {
@@ -561,7 +568,7 @@ function validate(specIn, data) {
     });
   }
   /* un conteggio si legge col suo totale: `of` e la misura base, nella stessa unita */
-  spec.kpiBand.forEach(k => { if (k.of && !measures.has(k.of)) e.push(`kpi "${k.id}": of "${k.of}" non e una misura del modello`); });
+  PG.tutteKpi(spec).forEach(k => { if (k.of && !measures.has(k.of)) e.push(`kpi "${k.id}": of "${k.of}" non e una misura del modello`); });
   (spec.model.measures || []).forEach(m => { if (m.target !== undefined && (typeof m.target !== 'number' || !isFinite(m.target))) e.push(`measure "${m.id}": target deve essere un numero sulla scala della misura (0.98 per il 98%)`); });
   (spec.model.measures || []).forEach((m, i) => {
     const deps = m.agg === 'diff' ? [m.a, m.b] : m.agg === 'ratio' ? [m.num, m.den] : [];
@@ -605,7 +612,7 @@ function validate(specIn, data) {
     if (!factCols.has(fd.id) && !padre) {
       const dm = data.detailModel;
       const detailFields = new Set(dm && dm.dim === fd.id ? (dm.fields || []) : []);
-      const reaches = (spec.kpiBand || []).some(k => {
+      const reaches = PG.tutteKpi(spec).some(k => {
         const m = (spec.model.measures || []).filter(x => x.id === k.measure)[0];
         if (!m) return false;
         return [m.field, m.num, m.den, m.a, m.b].filter(Boolean).some(x => detailFields.has(x));
@@ -633,7 +640,7 @@ function validate(specIn, data) {
      sola a viste, e lo spazio liberato prende un altro visual. Uguali = stesso tipo sulla stessa
      dimensione (e lo stesso asse `by`); per i grafici nel tempo basta il tipo. Le card a viste sono
      gia il bookmark; le card delta, i gauge e le tabelle hanno le loro regole. */
-  const RIPETIBILI = new Set(['matrix', 'delta-card', 'gauge', 'narrative', 'sparkline', 'statement']);
+  const RIPETIBILI = new Set(['matrix', 'delta-card', 'gauge', 'narrative', 'sparkline', 'statement', 'segnaposto']);
   spec.pages.concat(spec.drill ? [spec.drill.page] : []).forEach(pg => {
     const visti = {};
     (pg.rows || []).forEach(row => row.visuals.forEach(v => {
@@ -669,8 +676,8 @@ function validate(specIn, data) {
   pages.forEach(pg => {
     (pg.rows || []).forEach((row, ri) => {
       if (row.visuals.length > MAX_PER_ROW) e.push(`page "${pg.id}" row ${ri}: ${row.visuals.length} visuals (max ${MAX_PER_ROW})`);
-      const sum = row.visuals.reduce((a, v) => a + v.span, 0);
-      if (sum !== NC) e.push(`page "${pg.id}" row ${ri}: spans sum to ${sum}, expected ${NC} (shared grid)`);
+      const sum = row.visuals.reduce((a, v) => a + v.span, 0), NCp = PG.colonneDi(spec, pg);
+      if (sum !== NCp) e.push(`page "${pg.id}" row ${ri}: spans sum to ${sum}, expected ${NCp} (shared grid)`);
       /* Una riga `flex` e pensata per la MATRICE, che si allunga con le sue righe: il motore
          le riserva lo spazio residuo e la matrice lo occupa. Senza matrice, la riga vale il
          pavimento (150px) mentre i visual dentro disegnano alla loro altezza di default —
@@ -788,7 +795,7 @@ function validate(specIn, data) {
              card larga meta pagina occupa lo spazio di un grafico per l'informazione di una KPI
              (Fra, 29 set 2026, due mockup di fila). Un gauge singolo sta in una card stretta; per
              una card larga ne servono due o tre (bind.misure), ognuno col suo bersaglio. */
-          const colW = (spec.grid.contentWidth - spec.grid.gutter * (NC - 1)) / NC;
+          const NCp = PG.colonneDi(spec, pg), colW = (spec.grid.contentWidth - spec.grid.gutter * (NCp - 1)) / NCp;
           const cardW = colW * v.span + spec.grid.gutter * (v.span - 1);
           const quanti = Array.isArray(b.misure) ? b.misure.length : 1;
           const maxSpan = Math.max(1, Math.floor((300 + spec.grid.gutter) / (colW + spec.grid.gutter)));
@@ -806,7 +813,7 @@ function validate(specIn, data) {
              ripete lo stesso numero con piu inchiostro (Fra, 29 set 2026: "se un gauge mostra gia
              qualcosa che c'e nelle card KPI, non metterlo"). Il gauge sta dove il numero non e in
              banda; se lo e, lo spazio va a un visual che aggiunge informazione. */
-          const inBanda = new Set((spec.kpiBand || []).map(k => k.measure));
+          const inBanda = new Set(PG.kpiDi(spec, pg).map(k => k.measure));
           const doppi = (Array.isArray(b.misure) ? b.misure : [b]).map(g => g.measure).filter(m => inBanda.has(m));
           if (doppi.length)
             e.push(`page "${pg.id}" gauge: ${doppi.map(m => '"' + m + '"').join(', ')} ${doppi.length > 1 ? 'hanno' : 'ha'} gia una card nella banda KPI: il gauge ripeterebbe lo stesso numero. ` +
@@ -1270,6 +1277,8 @@ ${JSON.stringify(spec.pages || []).indexOf('"viste"') >= 0 ? `.vsw{display:inlin
 .kpi .v{font-size:25px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-1px}
 .kpi .d{font-size:10px;font-weight:600;padding-bottom:2px;white-space:nowrap}
 .kpi .det{font-size:9px;color:var(--muted);margin-top:7px;line-height:1.3}
+.kv .kpi .d,.kv .kpi .det{display:none}
+.sgn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1.5px dashed var(--line);border-radius:4px;color:var(--muted);font-size:11px;margin-top:4px}.sgn2{font-size:9.5px;color:var(--muted2)}
 ${usaFinanza(spec) ? `td.bdg,th.bdg{background:var(--bud)}th.bdg{color:var(--ink2)}tr.tot td.bdg{background:var(--bud)}
 .st th.grp{text-align:center;border-bottom:1px solid var(--line2)}.st tr.sub td{font-weight:700;border-top:1px solid var(--line)}.st tr.sub td:not(.up):not(.dn){color:var(--ink)}.st tr.tot td{font-weight:700;border-top:2px solid var(--ink2)}.st tr.pct td{font-style:italic}.st tr.pct td:not(.up):not(.dn){color:var(--muted)}.st tr.acc td{font-size:.92em}.st tr.acc td:not(.up):not(.dn){color:var(--ink2)}.st tr.acc td:first-child{padding-left:26px}.st .tg{display:inline-block;width:10px;color:var(--muted)}
 .kpi .kf{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;display:flex;gap:10px}.kpi .kf b{font-weight:600}

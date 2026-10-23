@@ -264,8 +264,11 @@ export type Bind =
   | { misure: Array<{ measure: string; target?: string | number; targetLabel?: string; max?: number; label?: string }> } // gauge
   | { dim: string; label?: string; sort?: string; drill?: boolean; totals?: boolean; totalsLabel?: string; columns: MatrixColumn[] } // matrix
   | { template: string; dim?: string; primary?: string };                     // narrative
+  | { etichetta?: string };                                                   // segnaposto
 
 export type VisualType =
+  /** il pannello segnaposto del flusso guidato, prima di Fill page: cornice e titolo, niente dati */
+  | 'segnaposto'
   | 'trend' | 'colline' | 'donut' | 'hbar' | 'stack100' | 'ribbon' | 'statement'
   | 'funnel' | 'waterfall' | 'scatter' | 'matrix' | 'sparkline' | 'narrative' | 'gauge'
   | 'heatmap' | 'delta-card';
@@ -299,6 +302,13 @@ export interface Page {
   nav?: string;
   /** false = no KPI band on this page */
   kpiBand?: boolean;
+  /** LA RIGA KPI DELLA PAGINA (flusso guidato, 23 ott 2026): vince sulla banda del report. mode full = valore
+   *  e variazioni, value = solo valore, off = niente riga; style = stile delle card (engine/stili.js) */
+  kpi?: { mode?: 'full' | 'value' | 'off'; cards?: KpiCard[]; style?: string };
+  /** le colonne della griglia della pagina; obbligatorie se la pagina non ha card KPI */
+  columns?: number;
+  /** lo stile dei pannelli della pagina: intestazione quiet · framed · band · tab, sottotitolo si/no */
+  panels?: { header?: 'quiet' | 'framed' | 'band' | 'tab'; subtitle?: boolean };
   /** Archetipo proprio della pagina: e la regola "domande di forma diversa -> pagine diverse,
    *  una per archetipo". Senza, la PRIMA pagina porta quello del report e le altre non
    *  vengono verificate: sono approfondimenti, non la faccia del report. */

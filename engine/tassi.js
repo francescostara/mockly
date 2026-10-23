@@ -72,7 +72,7 @@ function tassiPiatti(spec, data) {
 
   /* 2. negli anni */
   if (anni.length >= 2) {
-    const kpi = [...new Set((spec.kpiBand || []).map(k => k.measure).filter(tasso))];
+    const kpi = [...new Set(require('./pagine.js').tutteKpi(spec).map(k => k.measure).filter(tasso))];
     const perAnno = kpi.map(m => anni.map(y => valore(m, righe.filter(r => r[ix.y] === y))));
     if (kpi.length && perAnno.every(s => s.every(x => x !== null) && s.every((x, i) => !i || fermo(x, s[i - 1], SOGLIA_ANNI, REL_ANNI))))
       out.push(`every KPI rate (${kpi.join(', ')}) is flat across the years, so every comparison with the prior period is flat — give the rates that tell the story a value per year: "attr": [v${anni[0]}, …, v${anni[anni.length - 1]}]`);

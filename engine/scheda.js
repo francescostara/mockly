@@ -249,9 +249,10 @@ function testo(spec, data) {
     if (m.agg === 'last') return L.formula.last(nome(m.field || id));
     return L.formula.sum(nome(m.field || id));
   };
-  if ((spec.kpiBand || []).length && L.kpi) {
+  const BANDA = require('./pagine.js').tutteKpi(spec);
+  if (BANDA.length && L.kpi) {
     s.push('## ' + L.kpi, '');
-    spec.kpiBand.forEach(k => {
+    BANDA.forEach(k => {
       const m = mis[k.measure] || {};
       const pezzi = [];
       if (m.description) pezzi.push(m.description.replace(/\.?$/, '.'));
@@ -268,7 +269,7 @@ function testo(spec, data) {
   /* LE ALTRE MISURE DEL REPORT, pagina per pagina: MER, ROAS e nCAC della pagina Meta di Mauricio
      (13 ott 2026) avevano la loro descrizione nella spec e la guida non le diceva. Ogni misura con una
      `description` che compare in un visual e non e gia nella banda. */
-  const inBanda = new Set((spec.kpiBand || []).map(k => k.measure));
+  const inBanda = new Set(BANDA.map(k => k.measure));
   const ids = o => {
     const out = [];
     JSON.stringify(o, (k, v) => { if (['measure', 'line', 'x', 'y', 'size', 'subMeasure', 'budget'].indexOf(k) >= 0 && typeof v === 'string') out.push(v); return v; });

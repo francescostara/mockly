@@ -66,6 +66,19 @@ const PRESET_APPROVATI = [
     id: 'consiglio-jewel', nome: 'Consiglio, toni gioiello',
     skin: { shell: 'top', palette: 'jewel-desaturati', tipografia: 'editoriale', densita: 'arioso', banda: 'box' },
     nicchie: ['creator-economy', 'saas', 'finanziario']
+  },
+  /* i due presi dalle versioni finali dei tester, approvati da Fra il 23 ott 2026 */
+  {
+    id: 'analisi-editoriale', nome: 'Analisi editoriale',
+    /* Nicola v3: crescita e trasformazione strutturale, dati PWT e World Bank */
+    skin: { shell: 'rail', palette: 'slate-freddo', tipografia: 'editoriale', densita: 'medio', banda: 'box' },
+    nicchie: ['finanziario', 'generica']
+  },
+  {
+    id: 'operazioni-ghiaccio', nome: 'Operazioni ghiaccio',
+    /* Muttahar v2: supply chain, servizio contro target */
+    skin: { shell: 'rail', palette: 'blu-ghiaccio', tipografia: 'tecnico', densita: 'medio', banda: 'box' },
+    nicchie: ['logistica', 'energia-manifattura']
   }
 ];
 

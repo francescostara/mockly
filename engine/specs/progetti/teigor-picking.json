@@ -1,0 +1,30 @@
+{
+ "versione": 1,
+ "lingua": "it",
+ "brief": {
+  "testo": "Crea una dashboard per l'ottimizzazione del picking in un magazzino logistico: righe prelevate, righe/ora per operatore, tempo medio per riga e per ordine, classificazione ABC, mappa del magazzino, andamento orario, ubicazioni da spostare. Filtri per magazzino, periodo e operatore."
+ },
+ "struttura": {
+  "title": "Ottimizzazione picking",
+  "purpose": "Dove si perde tempo e come riorganizzare le ubicazioni",
+  "niche": "logistica",
+  "pages": [
+   {
+    "id": "p1",
+    "title": "Dove si perde tempo",
+    "subtitle": "",
+    "content": "tempi per riga e per ordine, corsie lente"
+   },
+   {
+    "id": "p2",
+    "title": "Riorganizzare",
+    "subtitle": "",
+    "content": "ubicazioni da avvicinare"
+   }
+  ]
+ },
+ "template": {
+  "id": "operazioni-ghiaccio"
+ },
+ "build": {}
+}

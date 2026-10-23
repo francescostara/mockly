@@ -1,0 +1,34 @@
+{
+ "versione": 1,
+ "lingua": "en",
+ "brief": {
+  "testo": "A one-page overview with no KPI row."
+ },
+ "struttura": {
+  "title": "Overview",
+  "purpose": "",
+  "niche": "generica",
+  "pages": [
+   {
+    "id": "p1",
+    "title": "Overview",
+    "subtitle": "",
+    "content": ""
+   }
+  ]
+ },
+ "template": {
+  "id": "editoriale-chiaro"
+ },
+ "build": {
+  "p1": {
+   "kpiRow": "off",
+   "cardStyle": "ruled",
+   "kpis": [],
+   "panelHeader": "quiet",
+   "panelSubtitle": false,
+   "archetipo": "executive-summary",
+   "layout": "4/1+3"
+  }
+ }
+}

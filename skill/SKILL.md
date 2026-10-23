@@ -138,7 +138,9 @@ example. Treat them as hard gates, not suggestions. **The canonical example
 markup, CSS and JS directly.** Where any other example in `assets/` differs from these rules
 (older off-grid widths, chip-style date filters), **the rules and the canonical example win.**
 
-1. **Shared column grid — use `span()` verbatim.** The KPI band defines N equal columns; every
+1. **Shared column grid — use `span()` verbatim.** (Since 23 Oct 2026 the grid is per page: a page
+   with its own KPI row, `page.kpi`, has as many columns as its own cards; see `references/flusso.md`.)
+   The KPI band defines N equal columns; every
    card in every content row below must be sized with the `span(k)` helper so all vertical
    edges align top to bottom. Never hand-pick widths like `604 / 328`. Copy this and use it for
    every card width:
@@ -257,6 +259,8 @@ card said "click una riga", and whose header said "Ultimo aggiornamento".
   charts were wrong, it was that every report opened with KPI+trend+donut and closed with the
   full-width matrix — the beginner formula from the Power BI cheat-sheets. `spec.archetype` is
   mandatory and the engine checks the composition against it.
+- `references/flusso.md` — the guided flow (Structure, Template, Build): the project, mutateSpec,
+  per-page KPI rows and grids, card and panel styles, layout codes.
 - `references/chart-selection.md` — how to CHOOSE the right visual for each analytical question
   (ribbon, 100% stacked, Pareto, when pie is and isn't allowed) and how to vary the mix and
   palette. Read this to avoid shipping the same bars-and-donut every time.

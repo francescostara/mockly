@@ -1005,6 +1005,14 @@ const INTERVENTI = [
     fatto: "Dopo il disegno la riga di dettaglio di una card che andrebbe a capo stringe il carattere a gradini fino a 7px. Gate in Chrome (test/barra.test.js): ogni riga di dettaglio su una riga, ogni mockup in due lingue; sul codice vecchio fallisce su pagamenti-luca.",
     stato: "fatto"
   }
+  ,{
+    id: "progetti/teigor-picking",
+    versione: 1,
+    commento: "(Fra, 23 ott 2026, specifica del prodotto) Il flusso guidato sceglie riga KPI, numero di KPI, stili e layout pagina per pagina; ogni azione passa da mutateSpec, validazione e ri-render, con annulla e ripeti.",
+    dove: "progetto · azioni · compila · layout · stili · pagine · runtime · skill · gate",
+    fatto: "Fase A. Il progetto (engine/progetto.js) e il documento del flusso; engine/compila.js ne ricava spec e dati, con i pannelli segnaposto finche Fill page non li riempie; engine/azioni.js e mutateSpec: ogni azione produce un progetto nuovo, lo compila e lo fa validare dal motore, e se fallisce lo stato non cambia; annulla e ripeti su una storia di 100 passi. Riga KPI e griglia per pagina (engine/pagine.js, regola approvata da Fra): page.kpi con mode full · value · off, cards e style; page.columns; page.panels. Codici di layout di Pruva (engine/layout.js: righe con /, colonne con +, span sulla griglia) con il layout consigliato dall'archetipo; stili delle card e dei pannelli con il controllo di cosa regge la misura (engine/stili.js). Due template nuovi dal catalogo, dalle versioni finali di Nicola e Muttahar. Il caso del corpus ha trovato i filtri a bottoni che sforavano nella shell senza rail: nel flusso i filtri sono menu a tendina. Corpus: engine/specs/progetti (Teigor, Nicola coi dati PWT, una pagina senza KPI). Gate: test/progetto.test.js (8 controlli), verificato che fallisce sul runtime vecchio.",
+    stato: "fatto"
+  }
 ];
 
 /** Gli interventi che riguardano un mockup, dal piu recente. */

@@ -93,7 +93,7 @@ const T = {
     vis: {
       trend: 'Grafico a linee', colline: 'Grafico a linee e istogramma raggruppato', donut: 'Grafico ad anello',
       hbar: 'Grafico a barre raggruppate', stack100: 'Grafico a barre in pila 100%', ribbon: 'Grafico a nastro',
-      funnel: 'Imbuto', waterfall: 'Grafico a cascata', scatter: 'Grafico a dispersione', matrix: 'Matrice', statement: 'Matrice (conto economico)',
+      funnel: 'Imbuto', waterfall: 'Grafico a cascata', scatter: 'Grafico a dispersione', matrix: 'Matrice', statement: 'Matrice (conto economico)', segnaposto: 'Riquadro vuoto, da riempire',
       sparkline: 'Scheda (nuova) con sparkline', narrative: 'Narrazione intelligente / casella di testo con valori dinamici',
       gauge: 'Misuratore', heatmap: 'Matrice con formattazione condizionale (mappa di calore)',
       'delta-card': 'Scheda (nuova) — variazione come valore principale', kpi: 'Scheda (nuova)'
@@ -169,7 +169,7 @@ const T = {
     vis: {
       trend: 'Line chart', colline: 'Line and clustered column chart', donut: 'Donut chart',
       hbar: 'Clustered bar chart', stack100: '100% stacked bar chart', ribbon: 'Ribbon chart',
-      funnel: 'Funnel', waterfall: 'Waterfall chart', scatter: 'Scatter chart', matrix: 'Matrix', statement: 'Matrix (income statement)',
+      funnel: 'Funnel', waterfall: 'Waterfall chart', scatter: 'Scatter chart', matrix: 'Matrix', statement: 'Matrix (income statement)', segnaposto: 'Empty panel, to be filled',
       sparkline: 'Card (new) with sparkline', narrative: 'Smart narrative / text box with dynamic values',
       gauge: 'Gauge', heatmap: 'Matrix with conditional formatting (heatmap)',
       'delta-card': 'Card (new) — change as the main value', kpi: 'Card (new)'
@@ -270,7 +270,7 @@ function misure(spec, dp) {
   /* il confronto serve dove il mockup lo mostra: la banda KPI, le delta-card, le colonne var */
   const conConfronto = [];
   const aggiungi = id => { if (perId[id] && conConfronto.indexOf(id) < 0) conConfronto.push(id); };
-  (spec.kpiBand || []).forEach(k => aggiungi(k.measure));
+  require('./pagine.js').tutteKpi(spec).forEach(k => aggiungi(k.measure));
   const quote = [], bersagli = [];
   visuali(spec).forEach(({ v }) => {
     const b = v.bind || {};
@@ -313,7 +313,7 @@ function misure(spec, dp) {
     bud.push({ id, nome: n + ' vs Budget', formato: pp ? '+0.0" pp";-0.0" pp"' : formatoPbi(perId[id]), expr: pp ? '( [' + n + '] - [' + N[bid] + '] ) * 100' : '[' + n + '] - [' + N[bid] + ']' });
     if (!pp) bud.push({ id: id + '%', nome: n + ' vs Budget %', formato: '+0.0%;-0.0%;0.0%', expr: 'DIVIDE ( [' + n + '] - [' + N[bid] + '], ABS ( [' + N[bid] + '] ) )' });
   };
-  (spec.kpiBand || []).forEach(k => { if (k.ytd) { aggYtd(k.measure); if (k.budget) aggYtd(k.budget); } if (k.budget) aggBud(k.measure, k.budget); });
+  require('./pagine.js').tutteKpi(spec).forEach(k => { if (k.ytd) { aggYtd(k.measure); if (k.budget) aggYtd(k.budget); } if (k.budget) aggBud(k.measure, k.budget); });
   visuali(spec).forEach(({ v }) => {
     const b = v.bind || {};
     (b.columns || []).filter(c => c.kind === 'bud').forEach(c => aggBud(c.measure, c.budget));
@@ -380,8 +380,9 @@ function visuali(spec) {
   return out;
 }
 
-const pxW = (spec, span) => {
-  const g = spec.grid, col = (g.contentWidth - g.gutter * (g.columns - 1)) / g.columns;
+/* la larghezza sulla griglia della PAGINA: ogni pagina puo avere la sua (engine/pagine.js) */
+const pxW = (spec, span, pg) => {
+  const g = spec.grid, nc = require('./pagine.js').colonneDi(spec, pg), col = (g.contentWidth - g.gutter * (nc - 1)) / nc;
   return Math.round(col * span + g.gutter * (span - 1));
 };
 
@@ -458,7 +459,7 @@ function frontEnd(spec, L, N) {
   out.push(L.s4a(spec.grid.contentWidth, spec.grid.gutter), '');
   out.push('### ' + L.slicer, '', '- ' + L.slicerData);
   ((spec.filters && spec.filters.dims) || []).forEach(d => out.push('- ' + L.slicerDim(d.label || d.id, nomeDim(spec, d.id), d.control)));
-  out.push('', '### ' + L.banda, '');
+  if ((spec.kpiBand || []).length) out.push('', '### ' + L.banda, '');
   (spec.kpiBand || []).forEach(k => {
     const nm = N[k.measure] || k.measure;
     out.push('- **' + k.label + '** — ' + L.vis.kpi + ': [' + nm + ']; ' + L.larghezza + ' ' + pxW(spec, k.span || 1) + ' px');
@@ -468,11 +469,18 @@ function frontEnd(spec, L, N) {
   pagine.forEach(({ p, drill }) => {
     out.push('', '### ' + (drill ? L.drill : L.pagina + ': ' + (p.title || p.id)), '');
     if (drill) out.push(L.drillA(nomeDim(spec, spec.drill.dim)), '');
+    /* la riga KPI della pagina, quando la pagina ha la sua */
+    if (p.kpi) {
+      const PGm = require('./pagine.js'), cards = PGm.kpiDi(spec, p);
+      if (!cards.length) out.push('- ' + (L.senzaKpi || 'No KPI row on this page.'), '');
+      cards.forEach(k => out.push('- **' + k.label + '** — ' + L.vis.kpi + ': [' + (N[k.measure] || k.measure) + ']; ' + L.larghezza + ' ' + pxW(spec, k.span || 1, p) + ' px' + (p.kpi.mode === 'value' ? ' · ' + (L.soloValore || 'value only, no variance') : '')));
+      if (cards.length) out.push('');
+    }
     (p.rows || []).forEach((row, ri) => {
       let x = x0;
       out.push('**' + L.riga + ' ' + (ri + 1) + '**', '');
       (row.visuals || []).forEach(v => {
-        const w = pxW(spec, v.span);
+        const w = pxW(spec, v.span, p);
         const vs = v.viste && v.viste.length ? v.viste : [v];
         vs.forEach((vi, k) => {
           const d = descriviVisual(spec, vi, L, N);
